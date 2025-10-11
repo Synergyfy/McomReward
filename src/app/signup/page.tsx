@@ -4,9 +4,13 @@ import { useBusinessSignUp } from '@/services/business/hook';
 import { CreateBusinessDto } from '@/services/business/types';
 import { useRouter } from 'next/navigation';
 import { SectorCombobox } from '@/components/SectorCombobox';
+import { Eye, EyeOff } from 'lucide-react';
 
 const SignUpPage = () => {
   const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '' });
   const [formData, setFormData] = useState<CreateBusinessDto>({
     name: '',
     email: '',
@@ -27,6 +31,23 @@ const SignUpPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear validation error on change
+    if (errors.email || errors.password) {
+      setErrors({ email: '', password: '' });
+    }
+  };
+
+  const validate = () => {
+    const newErrors = { email: '', password: '' };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+    if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long.";
+    }
+    setErrors(newErrors);
+    return !newErrors.email && !newErrors.password;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +56,9 @@ const SignUpPage = () => {
       setPasswordError("Passwords do not match");
       return;
     }
-    mutate(formData);
+    if (validate()) {
+      mutate(formData);
+    }
   };
 
   const nextStep = () => {
@@ -43,8 +66,10 @@ const SignUpPage = () => {
       setPasswordError("Passwords do not match");
       return;
     }
-    setPasswordError('');
-    setStep(step + 1);
+    if (validate()) {
+      setPasswordError('');
+      setStep(step + 1);
+    }
   };
   const prevStep = () => setStep(step - 1);
 
@@ -90,35 +115,51 @@ const SignUpPage = () => {
                   <input
                     type="email"
                     name="email"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
+                    className={`w-full p-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
                     value={formData.email}
                     onChange={handleChange}
                     required
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
-                <div className="py-3">
+                <div className="py-3 relative">
                   <span className="mb-2 text-md">Password</span>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
+                    className={`w-full p-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
                     value={formData.password}
                     onChange={handleChange}
                     required
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(false)} />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(true)} />
+                    )}
+                  </div>
                 </div>
-                <div className="py-3">
+                <div className="py-3 relative">
                   <span className="mb-2 text-md">Confirm Password</span>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" onClick={() => setShowConfirmPassword(false)} />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" onClick={() => setShowConfirmPassword(true)} />
+                    )}
+                  </div>
                 </div>
                 {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 <button
                   type="button"
                   onClick={nextStep}

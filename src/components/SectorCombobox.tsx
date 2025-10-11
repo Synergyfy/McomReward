@@ -68,7 +68,10 @@ export function SectorCombobox({ value, onChange }: SectorComboboxProps) {
                   key={sector.id}
                   value={sector.id}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
+                    const selected = sectors?.find(s => s.id.toLowerCase() === currentValue);
+                    if (selected) {
+                      onChange(selected.id === value ? "" : selected.id);
+                    }
                     setOpen(false);
                   }}
                 >

@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { useBusinessSignIn } from '@/services/business/hook';
 import { BusinessLoginDto } from '@/services/business/types';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 
 const SignInPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<BusinessLoginDto>({
     email: '',
     password: '',
@@ -47,16 +49,23 @@ const SignInPage = () => {
                 required
               />
             </div>
-            <div className="py-4">
+            <div className="py-4 relative">
               <span className="mb-2 text-md">Password</span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light placeholder:text-gray-500"
                 value={formData.password}
                 onChange={handleChange}
                 required
               />
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(false)} />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(true)} />
+                )}
+              </div>
             </div>
             <div className="flex justify-between w-full py-4">
               <div className="mr-24">

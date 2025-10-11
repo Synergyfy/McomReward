@@ -1,7 +1,7 @@
 export interface CreateBusinessDto {
   name: string;
   email: string;
-  password?: string;
+  password: string;
   phone: string;
   address: string;
   sectorId: string;
@@ -28,7 +28,7 @@ export interface Business {
 
 export interface BusinessLoginDto {
   email: string;
-  password?: string;
+  password: string;
 }
 
 export interface BusinessLoginResponse {

@@ -62,16 +62,13 @@ export function SectorCombobox({ value, onChange }: SectorComboboxProps) {
           <CommandList>
             {isLoading && <CommandEmpty>Loading...</CommandEmpty>}
             <CommandEmpty>No sector found.</CommandEmpty>
-            <CommandGroup>
+
               {sectors?.map((sector) => (
                 <CommandItem
                   key={sector.id}
                   value={sector.id}
                   onSelect={(currentValue) => {
-                    const selected = sectors?.find(s => s.id.toLowerCase() === currentValue);
-                    if (selected) {
-                      onChange(selected.id === value ? "" : selected.id);
-                    }
+                    onChange(currentValue === value ? "" : currentValue);
                     setOpen(false);
                   }}
                 >
@@ -88,7 +85,7 @@ export function SectorCombobox({ value, onChange }: SectorComboboxProps) {
                   />
                 </CommandItem>
               ))}
-            </CommandGroup>
+
           </CommandList>
         </Command>
       </PopoverContent>

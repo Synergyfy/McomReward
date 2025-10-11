@@ -68,8 +68,8 @@ export function SectorCombobox({ value, onChange }: SectorComboboxProps) {
                   key={sector.id}
                   value={sector.id}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue)
-                    setOpen(false)
+                    onChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
                   }}
                 >
                   <Avatar className="h-6 w-6 mr-2">

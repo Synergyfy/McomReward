@@ -4,6 +4,7 @@ import { useBusinessSignIn } from '@/services/business/hook';
 import { BusinessLoginDto } from '@/services/business/types';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 
 const SignInPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,11 +14,7 @@ const SignInPage = () => {
   });
   const router = useRouter();
 
-  const { mutate, isPending } = useBusinessSignIn({
-    onSuccess: () => {
-      router.push('/');
-    },
-  });
+  const { mutate, isPending } = useBusinessSignIn();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,7 +22,11 @@ const SignInPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutate(formData);
+    mutate(formData, {
+      onSuccess: () => {
+        router.push('/');
+      },
+    });
   };
 
   return (
@@ -83,16 +84,18 @@ const SignInPage = () => {
             </button>
           </form>
           <div className="text-center text-gray-400">
-            Don't have an account?
+            Don&apos;t have an account?
             <a href="/signup" className="font-bold text-black"> Sign up for free</a>
           </div>
         </div>
         {/* Right side */}
         <div className="relative">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1527689368864-3a821dbccc34?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
             alt="img"
             className="w-[400px] h-full hidden rounded-r-2xl md:block object-cover"
+            width={400}
+            height={600}
           />
         </div>
       </div>

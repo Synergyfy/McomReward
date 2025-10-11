@@ -5,6 +5,7 @@ import { CreateBusinessDto } from '@/services/business/types';
 import { useRouter } from 'next/navigation';
 import { SectorSelect } from '@/components/SectorSelect';
 import { Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 
 const SignUpPage = () => {
   const [step, setStep] = useState(1);
@@ -23,11 +24,7 @@ const SignUpPage = () => {
   const [passwordError, setPasswordError] = useState('');
   const router = useRouter();
 
-  const { mutate, isPending } = useBusinessSignUp({
-    onSuccess: () => {
-      router.push('/signin');
-    },
-  });
+  const { mutate, isPending } = useBusinessSignUp();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,7 +54,11 @@ const SignUpPage = () => {
       return;
     }
     if (validate()) {
-      mutate(formData);
+      mutate(formData, {
+        onSuccess: () => {
+          router.push('/signin');
+        },
+      });
     }
   };
 
@@ -83,7 +84,7 @@ const SignUpPage = () => {
           <div className="mb-8">
             <span className="mb-3 text-4xl font-bold">Create Your Account</span>
             <p className="font-light text-gray-500 mt-2">
-              Let's get you started.
+              Let&apos;s get you started.
             </p>
           </div>
 
@@ -230,10 +231,12 @@ const SignUpPage = () => {
         </div>
         {/* Right side */}
         <div className="relative md:w-1/2">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1527689368864-3a821dbccc34?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
             alt="img"
             className="w-full h-full hidden rounded-r-2xl md:block object-cover"
+            width={400}
+            height={600}
           />
         </div>
       </div>

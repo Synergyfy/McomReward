@@ -15,6 +15,8 @@ const SignUpPage = () => {
     address: '',
     sectorId: '',
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const router = useRouter();
 
   const { mutate, isPending } = useBusinessSignUp({
@@ -29,10 +31,21 @@ const SignUpPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
     mutate(formData);
   };
 
-  const nextStep = () => setStep(step + 1);
+  const nextStep = () => {
+    if (formData.password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    setPasswordError('');
+    setStep(step + 1);
+  };
   const prevStep = () => setStep(step - 1);
 
   const progress = (step / 2) * 100;
@@ -94,10 +107,23 @@ const SignUpPage = () => {
                     required
                   />
                 </div>
+                <div className="py-3">
+                  <span className="mb-2 text-md">Confirm Password</span>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="w-full bg-orange-600 text-white p-2 mt-4 rounded-lg hover:bg-orange-700"
+                  disabled={formData.password !== confirmPassword}
+                  className="w-full bg-orange-600 text-white p-2 mt-4 rounded-lg hover:bg-orange-700 disabled:bg-orange-300"
                 >
                   Next
                 </button>

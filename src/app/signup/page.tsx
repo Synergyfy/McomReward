@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useBusinessSignUp } from '@/services/business/hook';
 import { CreateBusinessDto } from '@/services/business/types';
 import { useRouter } from 'next/navigation';
-import { SectorCombobox } from '@/components/SectorCombobox';
+import { SectorSelect } from '@/components/SectorSelect';
 import { Eye, EyeOff } from 'lucide-react';
 
 const SignUpPage = () => {
@@ -198,7 +198,7 @@ const SignUpPage = () => {
                 </div>
                 <div className="py-3">
                   <span className="mb-2 text-md">Sector</span>
-                  <SectorCombobox
+                  <SectorSelect
                     value={formData.sectorId}
                     onChange={(value) => setFormData({ ...formData, sectorId: value })}
                   />

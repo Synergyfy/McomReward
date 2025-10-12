@@ -21,6 +21,7 @@ const EditStaffPage = () => {
     password: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string | undefined>(undefined);
   const [errors, setErrors] = useState<Partial<UpdateStaffDto>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +59,13 @@ const EditStaffPage = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAvatarFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -155,7 +162,15 @@ const EditStaffPage = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Avatar</label>
               <div className="mt-1 flex items-center">
-                {currentAvatar && !avatarFile && (
+                {avatarPreview ? (
+                  <Image
+                    src={avatarPreview}
+                    alt="New Avatar Preview"
+                    width={60}
+                    height={60}
+                    className="rounded-full mr-4"
+                  />
+                ) : currentAvatar && (
                   <Image
                     src={currentAvatar}
                     alt="Current Avatar"

@@ -80,7 +80,7 @@ const SignUpPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="relative flex flex-col w-full max-w-4xl m-6 bg-white shadow-2xl rounded-2xl md:flex-row md:space-y-0">
         {/* Left side */}
-        <div className="flex flex-col justify-center w-full max-w-md p-8 md:p-14">
+        <div className="flex flex-col justify-center w-full max-w-lg p-8 md:p-14">
           <div className="mb-8">
             <span className="mb-3 text-4xl font-bold">Create Your Account</span>
             <p className="font-light text-gray-500 mt-2">

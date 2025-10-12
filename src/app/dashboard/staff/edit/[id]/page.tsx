@@ -107,7 +107,7 @@ const EditStaffPage = () => {
   return (
     <div className="container mx-auto">
       <h1 className="text-3xl font-bold mb-6">Edit Staff</h1>
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-lg mx-auto">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

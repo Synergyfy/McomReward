@@ -1,8 +1,8 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const HowItWorks = () => {
   return (
@@ -24,7 +24,15 @@ const HowItWorks = () => {
         className='grid grid-cols-1 md:grid-cols-3 gap-8'>
         <Card>
           <CardHeader>
-            <div className='w-full h-48 bg-gray-300'></div>
+            <div className='relative w-full h-48'>
+              <Image
+                src='https://picsum.photos/seed/promotion/400/300'
+                alt='Create Promotion'
+                fill
+                style={{ objectFit: 'cover' }}
+                className='rounded-t-lg'
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <h3 className='font-bold'>Step 1: Create Your Promotion</h3>
@@ -36,7 +44,15 @@ const HowItWorks = () => {
         </Card>
         <Card>
           <CardHeader>
-            <div className='w-full h-48 bg-gray-300'></div>
+            <div className='relative w-full h-48'>
+              <Image
+                src='https://picsum.photos/seed/share/400/300'
+                alt='Share with Customers'
+                fill
+                style={{ objectFit: 'cover' }}
+                className='rounded-t-lg'
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <h3 className='font-bold'>Step 2: Share with Customers</h3>
@@ -48,7 +64,15 @@ const HowItWorks = () => {
         </Card>
         <Card>
           <CardHeader>
-            <div className='w-full h-48 bg-gray-300'></div>
+            <div className='relative w-full h-48'>
+              <Image
+                src='https://picsum.photos/seed/grow/400/300'
+                alt='Watch Your Business Grow'
+                fill
+                style={{ objectFit: 'cover' }}
+                className='rounded-t-lg'
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <h3 className='font-bold'>Step 3: Watch Your Business Grow</h3>

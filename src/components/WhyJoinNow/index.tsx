@@ -1,7 +1,9 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const WhyJoinNow = () => {
   return (
@@ -26,10 +28,42 @@ const WhyJoinNow = () => {
           <Button>Claim Your Spot</Button>
         </div>
         <div className='grid grid-cols-2 gap-4'>
-          <div className='w-full h-48 bg-gray-300'></div>
-          <div className='w-full h-48 bg-gray-300'></div>
-          <div className='w-full h-48 bg-gray-300'></div>
-          <div className='w-full h-48 bg-gray-300'></div>
+          <div className='relative w-full h-48'>
+            <Image
+              src='https://picsum.photos/seed/whyjoin1/300/200'
+              alt='Why Join 1'
+              fill
+              style={{ objectFit: 'cover' }}
+              className='rounded-lg'
+            />
+          </div>
+          <div className='relative w-full h-48'>
+            <Image
+              src='https://picsum.photos/seed/whyjoin2/300/200'
+              alt='Why Join 2'
+              fill
+              style={{ objectFit: 'cover' }}
+              className='rounded-lg'
+            />
+          </div>
+          <div className='relative w-full h-48'>
+            <Image
+              src='https://picsum.photos/seed/whyjoin3/300/200'
+              alt='Why Join 3'
+              fill
+              style={{ objectFit: 'cover' }}
+              className='rounded-lg'
+            />
+          </div>
+          <div className='relative w-full h-48'>
+            <Image
+              src='https://picsum.photos/seed/whyjoin4/300/200'
+              alt='Why Join 4'
+              fill
+              style={{ objectFit: 'cover' }}
+              className='rounded-lg'
+            />
+          </div>
         </div>
       </motion.div>
     </section>

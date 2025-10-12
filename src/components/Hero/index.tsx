@@ -1,7 +1,9 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Hero = () => {
   return (
@@ -27,7 +29,15 @@ const Hero = () => {
             <Button variant='outline'>Learn More</Button>
           </div>
         </div>
-        <div className='w-full md:w-[500px] h-[300px] md:h-[500px] bg-gray-300'></div>
+        <div className='relative w-full md:w-[500px] h-[300px] md:h-[500px]'>
+          <Image
+            src='https://picsum.photos/seed/hero/500/500'
+            alt='Digital Loyalty Platform'
+            fill
+            style={{ objectFit: 'cover' }}
+            className='rounded-lg'
+          />
+        </div>
       </motion.div>
     </section>
   );

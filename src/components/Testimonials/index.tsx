@@ -1,8 +1,8 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Testimonials = () => {
   return (
@@ -24,7 +24,15 @@ const Testimonials = () => {
         className='grid grid-cols-1 md:grid-cols-2 gap-8'>
         <Card>
           <CardHeader className='flex flex-row items-center gap-4'>
-            <div className='w-12 h-12 bg-gray-300 rounded-full'></div>
+            <div className='relative w-12 h-12 rounded-full'>
+              <Image
+                src='https://picsum.photos/seed/sophia/50/50'
+                alt='Sophia Carter'
+                fill
+                style={{ objectFit: 'cover' }}
+                className='rounded-full'
+              />
+            </div>
             <div>
               <CardTitle>Sophia Carter</CardTitle>
               <p className='text-sm'>Coffee Shop Owner</p>
@@ -39,7 +47,15 @@ const Testimonials = () => {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center gap-4'>
-            <div className='w-12 h-12 bg-gray-300 rounded-full'></div>
+            <div className='relative w-12 h-12 rounded-full'>
+              <Image
+                src='https://picsum.photos/seed/ethan/50/50'
+                alt='Ethan Bennett'
+                fill
+                style={{ objectFit: 'cover' }}
+                className='rounded-full'
+              />
+            </div>
             <div>
               <CardTitle>Ethan Bennett</CardTitle>
               <p className='text-sm'>Boutique Owner</p>

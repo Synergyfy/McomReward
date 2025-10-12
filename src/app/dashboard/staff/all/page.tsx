@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGetAllStaff, useDeleteStaff } from '@/services/staff/hook';
 import { Pencil, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 
 const AllStaffPage = () => {
   const router = useRouter();
@@ -45,22 +46,30 @@ const AllStaffPage = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avatar</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {staff?.map((s) => (
               <tr key={s.id}>
-                <td className="px-6 py-4 whitespace-nowrap">{s.firstName}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{s.lastName}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {s.avatar ? (
+                    <Image
+                      src={s.avatar}
+                      alt={s.name}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200" />
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">{s.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{s.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{s.phone}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{s.role}</td>
                 <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-4">
                   <button
                     onClick={() => router.push(`/dashboard/staff/edit/${s.id}`)}

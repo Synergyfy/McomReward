@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useGetStaffById, useUpdateStaff } from '@/services/staff/hook';
 import { UpdateStaffDto } from '@/services/staff/types';
 import { Eye, EyeOff } from 'lucide-react';
+import axios from 'axios';
+import Image from 'next/image';
 
 const EditStaffPage = () => {
   const router = useRouter();
@@ -13,36 +15,38 @@ const EditStaffPage = () => {
   const { data: staff, isLoading, isError, error } = useGetStaffById(id);
   const { mutate: updateStaff, isPending } = useUpdateStaff();
 
-  const [formData, setFormData] = useState<UpdateStaffDto>({});
+  const [formData, setFormData] = useState<Omit<UpdateStaffDto, 'avatar'>>({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [currentAvatar, setCurrentAvatar] = useState<string | undefined>(undefined);
   const [errors, setErrors] = useState<Partial<UpdateStaffDto>>({});
-  const [showPin, setShowPin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (staff) {
       setFormData({
-        firstName: staff.firstName,
-        lastName: staff.lastName,
+        name: staff.name,
         email: staff.email,
-        phone: staff.phone,
-        role: staff.role,
-        pin: '', // PIN is optional on update
+        password: '', // Password is optional on update
       });
+      setCurrentAvatar(staff.avatar);
     }
   }, [staff]);
 
   const validate = (): boolean => {
     const newErrors: Partial<UpdateStaffDto> = {};
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.name) newErrors.name = 'Name is required';
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    if (!formData.phone) newErrors.phone = 'Phone is required';
-    if (!formData.role) newErrors.role = 'Role is required';
-    if (formData.pin && formData.pin.length < 4) {
-      newErrors.pin = 'PIN must be at least 4 characters';
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -52,13 +56,35 @@ const EditStaffPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setAvatarFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      const updateData = { ...formData };
-      if (!updateData.pin) {
-        delete updateData.pin; // Don't send empty pin
+    if (!validate()) return;
+
+    setIsUploading(true);
+
+    try {
+      let avatarUrl: string | undefined = currentAvatar;
+      if (avatarFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', avatarFile);
+
+        const response = await axios.post(`/api/upload/staff-avatars`, uploadFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        avatarUrl = response.data.secure_url;
       }
+
+      const updateData: UpdateStaffDto = { ...formData, avatar: avatarUrl };
+      if (!updateData.password) {
+        delete updateData.password; // Don't send empty password
+      }
+
       updateStaff({ id, ...updateData }, {
         onSuccess: () => {
           alert('Staff member updated successfully');
@@ -68,6 +94,10 @@ const EditStaffPage = () => {
           alert(`Error updating staff: ${error.message}`);
         },
       });
+    } catch (error) {
+      alert(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -80,27 +110,16 @@ const EditStaffPage = () => {
       <div className="bg-white p-8 rounded-lg shadow-md">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div>
-              <label className="block text-sm font-medium text-gray-700">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-              />
-              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
-            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Last Name</label>
+              <label className="block text-sm font-medium text-gray-700">Full Name</label>
               <input
                 type="text"
-                name="lastName"
-                value={formData.lastName || ''}
+                name="name"
+                value={formData.name || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
               />
-              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -114,55 +133,54 @@ const EditStaffPage = () => {
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Phone</label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-              />
-              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Role</label>
-              <input
-                type="text"
-                name="role"
-                value={formData.role || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-              />
-              {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">New PIN (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700">New Password (Optional)</label>
               <div className="relative">
                 <input
-                  type={showPin ? 'text' : 'password'}
-                  name="pin"
-                  value={formData.pin || ''}
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password || ''}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  {showPin ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPin(false)} />
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(false)} />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPin(true)} />
+                    <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(true)} />
                   )}
                 </div>
               </div>
-              {errors.pin && <p className="text-red-500 text-xs mt-1">{errors.pin}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Avatar</label>
+              <div className="mt-1 flex items-center">
+                {currentAvatar && !avatarFile && (
+                  <Image
+                    src={currentAvatar}
+                    alt="Current Avatar"
+                    width={60}
+                    height={60}
+                    className="rounded-full mr-4"
+                  />
+                )}
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                />
+              </div>
             </div>
           </div>
           <div className="mt-6">
             <button
               type="submit"
-              disabled={isPending}
-              className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              disabled={isPending || isUploading}
+              className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:bg-gray-400"
             >
-              {isPending ? 'Updating Staff...' : 'Update Staff'}
+              {isPending || isUploading ? 'Updating Staff...' : 'Update Staff'}
             </button>
           </div>
         </form>

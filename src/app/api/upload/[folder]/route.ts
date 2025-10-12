@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
-import multer from 'multer';
-import { Readable } from 'stream';
 
 // Configure Cloudinary
-cloudinary.config({
+const cloudinaryConfig = cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
-// Configure Multer for memory storage (keeps parity with existing route)
-const storage = multer.memoryStorage();
-multer({ storage });
-
 export async function POST(req: NextRequest, { params }: { params: Promise<{ folder: string }> }) {
+  // Check for Cloudinary configuration
+  if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
+    return NextResponse.json(
+      { error: 'Cloudinary configuration is missing. Check environment variables.' },
+      { status: 500 }
+    );
+  }
+
   try {
     const { folder } = await params;
     if (!folder || typeof folder !== 'string') {
@@ -45,22 +48,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fol
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const readableStream = new Readable();
-    readableStream.push(buffer);
-    readableStream.push(null);
+    const base64Image = buffer.toString('base64');
+    const dataUri = `data:${file.type};base64,${base64Image}`;
 
-    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder, resource_type: 'image' },
-        (error, result) => {
-          if (result) {
-            resolve(result);
-          } else {
-            reject(error);
-          }
-        }
-      );
-      readableStream.pipe(stream);
+    const result: UploadApiResponse = await cloudinary.uploader.upload(dataUri, {
+      folder,
+      resource_type: 'image',
     });
 
     return NextResponse.json(result);
@@ -71,8 +64,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fol
     } else if (typeof error === 'string') {
       message = error;
     }
+    console.error('Upload Error:', error);
     return NextResponse.json(
-      { error: message },
+      { error: `Upload failed: ${message}` },
       { status: 500 }
     );
   }

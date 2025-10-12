@@ -1,11 +1,18 @@
-
+'use client';
 import { Button } from '@/components/ui/button';
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const WhyJoinNow = () => {
   return (
     <section className='py-20 px-8'>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-8 items-center'>
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.5 }}
+        className='grid grid-cols-1 md:grid-cols-2 gap-8 items-center'
+      >
         <div>
           <h2 className='text-3xl font-bold mb-4'>Why Join Now?</h2>
           <p className='mb-4'>
@@ -24,7 +31,7 @@ const WhyJoinNow = () => {
           <div className='w-full h-48 bg-gray-300'></div>
           <div className='w-full h-48 bg-gray-300'></div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };

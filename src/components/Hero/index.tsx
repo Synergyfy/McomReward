@@ -1,11 +1,18 @@
-
+'use client';
 import { Button } from '@/components/ui/button';
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const Hero = () => {
   return (
     <section className='flex items-center justify-center py-20 px-8'>
-      <div className='flex flex-col md:flex-row items-center gap-16'>
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.5 }}
+        className='flex flex-col md:flex-row items-center gap-16'
+      >
         <div className='flex flex-col gap-4 text-center md:text-left'>
           <h1 className='text-4xl md:text-5xl font-bold'>
             Loyalty CardX: Boost Your Business with Digital Loyalty
@@ -21,7 +28,7 @@ const Hero = () => {
           </div>
         </div>
         <div className='w-full md:w-[500px] h-[300px] md:h-[500px] bg-gray-300'></div>
-      </div>
+      </motion.div>
     </section>
   );
 };

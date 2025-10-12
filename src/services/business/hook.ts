@@ -45,9 +45,9 @@ export const useBusinessSignIn = () => {
   return useMutation({
     mutationFn: businessSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.access_token);
-      Cookies.set('refresh', data.refresh_token);
-      setBearerToken(data.access_token);
+      Cookies.set('access', data.accessToken);
+      Cookies.set('refresh', data.refreshToken);
+      setBearerToken(data.accessToken);
     },
   });
 };

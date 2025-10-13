@@ -29,7 +29,7 @@ const Hero = () => {
             <Button variant='outline'>Learn More</Button>
           </div>
         </div>
-        <div className='relative w-full md:w-[500px] h-[300px] md:h-[500px]'>
+        <div className='relative w-full md:w-1/2 h-[300px] md:h-[400px]'>
           <Image
             src='https://picsum.photos/seed/hero/500/500'
             alt='Digital Loyalty Platform'

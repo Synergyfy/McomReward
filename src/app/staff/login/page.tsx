@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
+import {useStaffLogin} from "@/services/staff/hook";
 
 type StaffLoginForm = {
   email: string;
@@ -45,25 +47,20 @@ const router = useRouter();
     formState: { errors: forgotErrors },
     reset: resetForgot,
   } = useForm<ForgotPasswordForm>();
+    
+    const { mutateAsync: staffLogin, isPending } = useStaffLogin();
 
   // ✅ Login handler
   const onSubmit = async (data: StaffLoginForm) => {
-      setLoading(true);
-      router.push("/staff/dashboard");
-      
-    try {
-      const response = await fetch("/api/staff/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error("Invalid credentials");
-
-      window.location.href = "/staff/dashboard";
-    } catch (err) {
-      alert("Login failed. Please check your email and password.");
-    } finally {
+      setLoading(isPending);
+      try {
+          await staffLogin(data);
+          router.push("/staff/dashboard");
+      } catch (error) {
+          console.log("Login error:", error);
+          toast.error("Login failed. Please check your email and password.");
+        }
+ finally {
       setLoading(false);
     }
   };

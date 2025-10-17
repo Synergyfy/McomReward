@@ -1,9 +1,11 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import LoginDialog from '@/components/LoginDialog';
 
 const FinalCTA = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   return (
     <section className='py-20 px-8'>
       <motion.div
@@ -18,8 +20,9 @@ const FinalCTA = () => {
           Join the Loyalty CardX Beta program today and start building stronger
           customer relationships.
         </p>
-        <Button>Get Started Now</Button>
+        <Button onClick={() => setIsLoginOpen(true)}>Get Started Now</Button>
       </motion.div>
+      <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </section>
   );
 };

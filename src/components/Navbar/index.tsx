@@ -2,9 +2,11 @@
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
+import LoginDialog from '@/components/LoginDialog';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   return (
     <nav className='sticky top-0 z-50 backdrop-blur-lg bg-opacity-80 flex items-center justify-between px-4 py-2'>
@@ -24,8 +26,8 @@ const Navbar = () => {
         </a>
       </div>
       <div className='hidden md:flex items-center gap-2'>
-        <Button variant='ghost'>Login</Button>
-        <Button>Join Beta</Button>
+        <Button variant='ghost' onClick={() => setIsLoginOpen(true)}>Login</Button>
+        <Button onClick={() => setIsLoginOpen(true)}>Join Beta</Button>
       </div>
       <div className='md:hidden'>
         <button onClick={() => setIsOpen(!isOpen)}>
@@ -46,10 +48,11 @@ const Navbar = () => {
           <a href='#faq' className='text-base font-medium'>
             FAQ
           </a>
-          <Button variant='ghost'>Login</Button>
-          <Button>Join Beta</Button>
+          <Button variant='ghost' onClick={() => setIsLoginOpen(true)}>Login</Button>
+          <Button onClick={() => setIsLoginOpen(true)}>Join Beta</Button>
         </div>
       )}
+      <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </nav>
   );
 };

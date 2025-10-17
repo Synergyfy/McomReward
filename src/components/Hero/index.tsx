@@ -1,11 +1,13 @@
 
 'use client';
 import { Button } from '@/components/ui/button';
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import LoginDialog from '@/components/LoginDialog';
 
 const Hero = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   return (
     <section className='flex items-center justify-center py-20 px-8'>
       <motion.div
@@ -25,7 +27,7 @@ const Hero = () => {
             our easy-to-use digital loyalty platform.
           </p>
           <div className='flex gap-4 justify-center md:justify-start'>
-            <Button>Join Beta</Button>
+            <Button onClick={() => setIsLoginOpen(true)}>Join Beta</Button>
             <Button variant='outline'>Learn More</Button>
           </div>
         </div>
@@ -39,6 +41,7 @@ const Hero = () => {
           />
         </div>
       </motion.div>
+      <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </section>
   );
 };

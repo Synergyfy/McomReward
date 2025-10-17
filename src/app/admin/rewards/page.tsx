@@ -25,7 +25,7 @@ export default function RewardsPage() {
   const [quantity, setQuantity] = useState(0);
   const createRewardMutation = useCreateReward();
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(
     page,
     limit

@@ -56,7 +56,8 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      {...props}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...(props as any)}
     />
   )
 }

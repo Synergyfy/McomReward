@@ -19,7 +19,8 @@ export const useLogin = () => {
       if (onSuccess) {
         onSuccess();
       }
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       setError('Invalid email or password');
     } finally {
       setLoading(false);

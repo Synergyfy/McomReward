@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
 
 export default function RewardsPage() {
@@ -132,17 +133,24 @@ export default function RewardsPage() {
             </div>
             <div>
               <label htmlFor="image" className="block text-sm font-medium mb-1">
-                Image URL
+                Image
               </label>
-              <Input
-                id="image"
-                type="url"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://example.com/image.png"
-                required
-              />
-              <p className="text-sm text-muted-foreground mt-1">A URL for the reward's image.</p>
+              <CloudinaryUpload onUpload={setImage} />
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload an image for the reward.
+              </p>
+              {image && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium">Uploaded Image:</p>
+                  <Image
+                    src={image}
+                    alt="Uploaded reward image"
+                    width={100}
+                    height={100}
+                    className="rounded-md"
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label

@@ -54,6 +54,21 @@ export const useGetBusinessRewards = (page: number, limit: number) => {
   });
 };
 
+// Get All Business Rewards
+const getAllBusinessRewards = async (): Promise<GetRewardsResponse> => {
+  const { data } = await api.get<GetRewardsResponse>('/rewards/business/rewards', {
+    params: { page: 1, limit: 1000 }, // Fetch up to 1000 rewards
+  });
+  return data;
+};
+
+export const useGetAllBusinessRewards = () => {
+  return useQuery({
+    queryKey: [BUSINESS_REWARDS_QUERY_KEY, 'all'],
+    queryFn: getAllBusinessRewards,
+  });
+};
+
 // Add Reward to Business
 const addRewardToBusiness = async ({ rewardId, ...rest }: { rewardId: string } & AddRewardToBusinessRequest): Promise<RewardResponse> => {
   const { data } = await api.post<RewardResponse>(`/rewards/business/rewards/${rewardId}`, rest);

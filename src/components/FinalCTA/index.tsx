@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const FinalCTA = () => {
   return (
@@ -18,7 +19,9 @@ const FinalCTA = () => {
           Join the Loyalty CardX Beta program today and start building stronger
           customer relationships.
         </p>
-        <Button>Get Started Now</Button>
+        <Link href='/signup'>
+          <Button>Get Started Now</Button>
+        </Link>
       </motion.div>
     </section>
   );

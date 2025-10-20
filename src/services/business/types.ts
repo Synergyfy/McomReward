@@ -13,13 +13,14 @@ export interface CreateBusinessDto {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
   phone: string;
   address: string;
-  sector: string;
+  sectorId: string;
   website?: string;
-  // socialMedia?: {
-  //   [key: string]: string;
-  // };
+  socialMedia?: {
+    [key: string]: string;
+  };
 }
 
 export interface Business {
@@ -43,8 +44,11 @@ export interface BusinessLoginDto {
 }
 
 export interface BusinessLoginResponse {
-  access_token: string;
-  refresh_token: string;
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    role: string;
+  };
 }
 
 export interface Sector {

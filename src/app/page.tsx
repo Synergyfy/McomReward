@@ -8,7 +8,6 @@ import HowItWorks from '@/components/HowItWorks';
 import Navbar from '@/components/Navbar';
 import WhyJoinNow from '@/components/WhyJoinNow';
 import Testimonials from '@/components/Testimonials';
-import Image from 'next/image';
 
 export default function Home() {
   return (

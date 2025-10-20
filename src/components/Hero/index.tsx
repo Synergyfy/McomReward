@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const Hero = () => {
   return (
@@ -25,7 +26,9 @@ const Hero = () => {
             our easy-to-use digital loyalty platform.
           </p>
           <div className='flex gap-4 justify-center md:justify-start'>
-            <Button>Join Beta</Button>
+            <Link href='/signup'>
+              <Button>Join Beta</Button>
+            </Link>
             <Button variant='outline'>Learn More</Button>
           </div>
         </div>

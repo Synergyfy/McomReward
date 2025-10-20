@@ -1,22 +1,23 @@
-import { useMutation, useQuery, useQueryClient, } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
 import {  Business,  BusinessLoginDto,  BusinessLoginResponse,  Sector, BusinessSignUpDto, businessOnboardDto} from './types';
 import Cookies from 'js-cookie';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 const BUSINESS_QUERY_KEY = 'business';
 
 // Business Sign-up
 
-const initialBusinessSignUp = async (signUpData: BusinessSignUpDto): Promise<Business> => {
+const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<Business> => {
   const { data } = await api.post<Business>('/business/signup', signUpData);
   return data;
-}
+};
 
 export const useBusinessSignUp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: initialBusinessSignUp,
+    mutationFn: businessSignUp,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BUSINESS_QUERY_KEY] });
     },
@@ -63,12 +64,20 @@ const businessSignIn = async (loginData: BusinessLoginDto): Promise<BusinessLogi
 };
 
 export const useBusinessSignIn = () => {
+  const router = useRouter();
+
   return useMutation({
     mutationFn: businessSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.access_token);
-      Cookies.set('refresh', data.refresh_token);
-      setBearerToken(data.access_token);
+      Cookies.set('access', data.accessToken);
+      Cookies.set('refresh', data.refreshToken);
+      setBearerToken(data.accessToken);
+
+      if (data.user.role === 'Admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     },
   });
 };

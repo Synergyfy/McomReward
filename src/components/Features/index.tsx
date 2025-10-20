@@ -50,7 +50,7 @@ const Features = () => {
           </CardHeader>
           <CardContent>
             <p>
-              Monitor your promotion's success and optimize for better results.
+              Monitor your promotion&apos;s success and optimize for better results.
             </p>
           </CardContent>
         </Card>

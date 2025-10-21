@@ -8,24 +8,22 @@ import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter } from "next/router";
-
-type SignupFormData = {
-  email: string;
-  password: string;
-};
+import { useRouter } from "next/navigation";
+import { BusinessSignUpDto } from "@/services/business/types";
 
 export default function BusinessSignupPage() {
-  const router = useRouter()
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignupFormData>();
+    watch,
+  } = useForm<BusinessSignUpDto>();
+  const router = useRouter();
 
-  const { mutateAsync: signUp, error} = useBusinessSignUp();
+
+  const { mutateAsync: signUp,} = useBusinessSignUp();
   const [showPassword, setShowPassword] = useState(false);
-    const onSubmit = async (data: SignupFormData) => {
+    const onSubmit = async (data: BusinessSignUpDto) => {
      try {
       await signUp(data);
       toast.success('Business account created successfully!');
@@ -72,11 +70,25 @@ export default function BusinessSignupPage() {
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="email">Business Email</Label>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Your Name"
+              {...register("name", { required: "Name is required" })}
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="business@email.com"
+              placeholder="email@example.com"
               {...register("email", { required: "Email is required" })}
             />
             {errors.email && (
@@ -115,10 +127,28 @@ export default function BusinessSignupPage() {
               </p>
             )}
           </div>
+          <div>
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              {...register("confirmPassword", {
+                required: "Confirm Password is required",
+                validate: (value) =>
+                  value === watch("password") || "Passwords do not match",
+              })}
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
 
           <Button
             type="submit"
-            className="w-full bg-button text-white"
+            className="w-full bg-orange-500 text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Creating Account..." : "Sign Up"}

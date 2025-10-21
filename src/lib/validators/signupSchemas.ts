@@ -1,24 +1,29 @@
 // src/lib/validators/signupSchemas.ts
 import * as z from "zod";
 
-export const businessInfoSchema = z.object({
-  businessName: z.string().min(2, "Business name is required"),
-  businessSector: z.string().min(2, "Select a sector"),
-  businessEmail: z.email("Valid email is required"),
-  businessPhone: z.string().optional().nullable(),
-  businessAddress: z.string().optional().nullable(),
-  businessWebsite: z.url().optional().nullable(),
-  businessLogo: z
-  .any()
-  .refine(
-    (file) => {
-      if (!file) return true; // optional
-      return file instanceof File && ["image/png", "image/jpeg", "image/webp"].includes(file.type);
-    },
-    { message: "Only PNG, JPEG, or WEBP images allowed" }
-  )
-  .optional()
-  .nullable(),
+const socialMediaSchema = z
+  .object({
+    facebook: z.url().nullish().or(z.literal("")).optional(),
+    twitter: z.url().nullish().or(z.literal("")).optional(),
+    instagram: z.url().nullish().or(z.literal("")).optional(),
+  })
+  .optional();
+
+export const createBusinessSchema = z.object({
+sectorId: z
+  .string()
+  .transform((v) => (v === "" ? null : v))
+  .nullable()
+  .refine((val) => !val || (typeof val === "string" && val.length >= 2), "Select a sector"),
+  email: z.email("Valid email is required"),
+  phone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  website: z.url().nullish().or(z.literal("")).optional(),
+  socialMedia: socialMediaSchema,
+  referralCapacity: z.number({
+    error: "Referral capacity is required",
+}).min(0, "Referral capacity must be >= 0")
+ 
 });
 
 export const staffSchema = z.object({
@@ -55,8 +60,8 @@ export const rewardSchema = z.object({
     )
 });
 
-export const onboardingFullSchema = z.object({
-  ...businessInfoSchema.shape,
-  ...staffSchema.shape,
-  ...rewardSchema.shape,
-})
+// export const onboardingFullSchema = z.object({
+//   ...businessInfoSchema.shape,
+//   ...staffSchema.shape,
+//   ...rewardSchema.shape,
+// })

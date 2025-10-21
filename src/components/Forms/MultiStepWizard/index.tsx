@@ -10,7 +10,7 @@ import {
   onboardingFullSchema,
 } from "@/lib/validators/signupSchemas";
 import useFormPersistence from "@/hooks/useFormPersistence";
-import BusinessInfoStep from "./steps/BusinessInfo";
+import BusinessInfoStep from "./steps/BusinessOnboarding";
 import StaffSetupStep from "./steps/StaffSetup";
 import RewardsSetupStep from "./steps/RewardsSetup";
 import ReviewSubmitStep from "./steps/ReviewSubmit";

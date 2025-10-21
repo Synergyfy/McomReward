@@ -1,5 +1,5 @@
 import api, { setBearerToken } from '../api';
-import {  Business,  BusinessLoginDto,  BusinessLoginResponse,  Sector, BusinessSignUpDto, businessOnboardDto} from './types';
+import {  Business,  BusinessLoginDto,  BusinessLoginResponse,  Sector, BusinessSignUpDto, CreateBusinessDto} from './types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -26,8 +26,8 @@ export const useBusinessSignUp = () => {
 
 
 // Business onboard
-const businessOnboard = async (onboardData: businessOnboardDto): Promise<Business> => {
-  const { data } = await api.post<Business>('/business/onboard', onboardData);
+const businessOnboard = async (onboardData: CreateBusinessDto): Promise<Business> => {
+  const { data } = await api.post<Business>('/business/onboarding', onboardData);
   return data;
 };
 

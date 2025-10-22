@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCreateReward, useGetRewards } from '@/services/rewards/hook';
-import { CreateRewardRequest } from '@/services/rewards/types';
+import { useCreateReward, useGetRewards, useUpdateReward, useDeleteReward } from '@/services/rewards/hook';
+import { CreateRewardRequest, RewardResponse } from '@/services/rewards/types';
 import {
   Table,
   TableBody,
@@ -16,6 +16,18 @@ import {
 } from '@/components/ui/table';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
+import EditRewardDialog from '@/components/admin/rewards/EditRewardDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function RewardsPage() {
@@ -32,6 +44,25 @@ export default function RewardsPage() {
     page,
     limit
   );
+  const { mutate: deleteReward } = useDeleteReward();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
+
+  const handleEditClick = (reward: RewardResponse) => {
+    setSelectedReward(reward);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (rewardId: string) => {
+    deleteReward(rewardId, {
+      onSuccess: () => {
+        alert('Reward deleted successfully!');
+      },
+      onError: (error) => {
+        alert(`Error deleting reward: ${error.message}`);
+      },
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,6 +262,7 @@ export default function RewardsPage() {
                   <TableHead>Points Required</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Quantity</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,6 +282,26 @@ export default function RewardsPage() {
                     <TableCell>{reward.pointsRequired}</TableCell>
                     <TableCell>{reward.value}</TableCell>
                     <TableCell>{reward.quantity}</TableCell>
+                    <TableCell>
+                      <Button onClick={() => handleEditClick(reward)} className="mr-2">Edit</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the reward.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteClick(reward.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -262,16 +314,23 @@ export default function RewardsPage() {
                 Previous
               </Button>
               <span>
-                Page {page} of {rewardsData ? Math.ceil(rewardsData.total / limit) : 1}
+                Page {rewardsData?.currentPage} of {rewardsData?.totalPages}
               </span>
               <Button
                 onClick={() => setPage(page + 1)}
-                disabled={!rewardsData || page === Math.ceil(rewardsData.total / limit)}
+                disabled={!rewardsData || page === rewardsData.totalPages}
               >
                 Next
               </Button>
             </div>
           </Card>
+        )}
+        {selectedReward && (
+          <EditRewardDialog
+            reward={selectedReward}
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+          />
         )}
       </div>
     </TooltipProvider>

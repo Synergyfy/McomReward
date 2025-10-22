@@ -2,9 +2,20 @@ import React from 'react';
 import Link from 'next/link';
 import { Award, Megaphone, UserCheck } from 'lucide-react';
 
-export default function BusinessSidebar() {
+interface BusinessSidebarProps {
+  isOpen: boolean;
+}
+
+export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
   return (
-    <div className="fixed h-screen w-64 bg-gray-900 text-white p-5 z-50 overflow-y-auto">
+    <div
+      className={`
+        fixed top-0 left-0 h-full w-64 bg-gray-900 text-white p-5 z-40
+        transform transition-transform duration-300 ease-in-out
+        md:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}
+    >
       <h2 className="text-lg font-semibold mb-5">Business Menu</h2>
       <ul>
         <li className="mb-2">

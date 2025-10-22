@@ -29,7 +29,9 @@ export default function AdminLayout({
         )}
 
         <div className="flex h-screen">
+        <div className={`fixed h-screen w-full md:w-64 max-w-[70%] md:max-w-none z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
           <Sidebar isOpen={isSidebarOpen} />
+        </div>
           <div 
             className={`flex-1 p-10 bg-gray-100 transition-all duration-300 ease-in-out ${
               isSidebarOpen ? 'ml-0 md:ml-64' : 'ml-64'

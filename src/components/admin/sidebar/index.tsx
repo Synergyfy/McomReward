@@ -10,10 +10,10 @@ interface SidebarProps {
 export default function Sidebar({ isOpen }: SidebarProps) {
   return (
     <div className={`
-      fixed h-screen w-64 bg-gray-900 text-white p-5 z-50 overflow-y-auto
+      fixed h-screen bg-gray-900 text-white p-5 z-50 overflow-y-auto w-full
       transform transition-transform duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:translate-x-0 md:block
+      md:translate-x-0
     `}>
       <h2 className="text-lg font-semibold mb-5">Admin Menu</h2>
       <ul>

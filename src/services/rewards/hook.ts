@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
-import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse } from './types';
+import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse, UpdateRewardRequest } from './types';
 import Cookies from 'js-cookie';
 
 const REWARDS_QUERY_KEY = 'rewards';
@@ -82,6 +82,39 @@ export const useAddRewardToBusiness = () => {
     mutationFn: addRewardToBusiness,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BUSINESS_REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Update Reward
+const updateReward = async ({ rewardId, ...rest }: { rewardId: string } & UpdateRewardRequest): Promise<RewardResponse> => {
+  const { data } = await api.patch<RewardResponse>(`/rewards/admin/rewards/${rewardId}`, rest);
+  return data;
+};
+
+export const useUpdateReward = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Delete Reward
+const deleteReward = async (rewardId: string): Promise<void> => {
+  await api.delete(`/rewards/admin/rewards/${rewardId}`);
+};
+
+export const useDeleteReward = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
     },
   });
 };

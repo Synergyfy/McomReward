@@ -1,11 +1,10 @@
-
 'use client';
 
-import AdminSidebar from '@/components/admin/sidebar';
-import AdminHeader from '@/components/admin/header';
+import CustomerSidebar from '@/components/customer/sidebar';
+import CustomerHeader from '@/components/customer/header';
 import React, { useState } from 'react';
 
-export default function AdminLayout({
+export default function CustomerLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -27,12 +26,12 @@ export default function AdminLayout({
           )}
 
           {/* Sidebar */}
-          <AdminSidebar isOpen={isSidebarOpen} />
+          <CustomerSidebar isOpen={isSidebarOpen} />
 
           {/* Main content */}
           <div className="flex-1 md:ml-64">
             {/* Header for mobile */}
-            <AdminHeader onMenuClick={toggleSidebar} />
+            <CustomerHeader onMenuClick={toggleSidebar} />
             <main className="p-4 sm:p-6 md:p-10">
               {children}
             </main>

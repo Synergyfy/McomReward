@@ -3,18 +3,20 @@ import React from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, Award, Briefcase } from 'lucide-react';
 
-interface SidebarProps {
+interface AdminSidebarProps {
   isOpen: boolean;
 }
 
-export default function Sidebar({ isOpen }: SidebarProps) {
+export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
   return (
-    <div className={`
-      fixed h-screen bg-gray-900 text-white p-5 z-50 overflow-y-auto w-full
-      transform transition-transform duration-300 ease-in-out
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:translate-x-0
-    `}>
+    <div
+      className={`
+        fixed top-0 left-0 h-full w-64 bg-gray-900 text-white p-5 z-40
+        transform transition-transform duration-300 ease-in-out
+        md:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}
+    >
       <h2 className="text-lg font-semibold mb-5">Admin Menu</h2>
       <ul>
         <li className="mb-2">

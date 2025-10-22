@@ -12,7 +12,7 @@ export interface UpdateRewardRequest extends Partial<CreateRewardRequest> {}
 export interface RewardResponse {
   id: string;
   title: string;
-  points_required: number;
+  pointsRequired: number;
   value: number;
   description: string;
   image: string;
@@ -22,7 +22,7 @@ export interface RewardResponse {
 }
 
 export interface GetRewardsResponse {
-  rewards: RewardResponse[];
+  data: RewardResponse[];
   totalPages: number;
   currentPage: number;
   count: number;

@@ -69,6 +69,20 @@ export const useGetAllBusinessRewards = () => {
   });
 };
 
+// Get Reward by ID
+const getRewardById = async (rewardId: string): Promise<RewardResponse> => {
+  const { data } = await api.get<RewardResponse>(`/rewards/admin/rewards/${rewardId}`);
+  return data;
+};
+
+export const useGetRewardById = (rewardId: string) => {
+  return useQuery<RewardResponse, Error>({
+    queryKey: [REWARDS_QUERY_KEY, rewardId],
+    queryFn: () => getRewardById(rewardId),
+    enabled: !!rewardId, // Only fetch if rewardId is provided
+  });
+};
+
 // Add Reward to Business
 const addRewardToBusiness = async ({ rewardId, ...rest }: { rewardId: string } & AddRewardToBusinessRequest): Promise<RewardResponse> => {
   const { data } = await api.post<RewardResponse>(`/rewards/business/rewards/${rewardId}`, rest);

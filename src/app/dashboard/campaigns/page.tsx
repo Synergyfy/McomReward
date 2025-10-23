@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Stepper from '@/components/dashboard/campaigns/Stepper';
 import Step1Details from '@/components/dashboard/campaigns/Step1Details';
 import Step2Dates from '@/components/dashboard/campaigns/Step2Dates';
-import Step3Reward from '@/components/dashboard/campaigns/Step3Reward';
+import Step3Images from '@/components/dashboard/campaigns/Step3Images';
 import Step4Review from '@/components/dashboard/campaigns/Step4Review';
+import Step3Reward from '@/components/dashboard/campaigns/Step3Reward';
 
-const steps = ['Details', 'Dates', 'Reward', 'Review'];
+const steps = ['Details', 'Dates', 'Images', 'Reward', 'Review'];
 
 export default function CampaignsPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -21,6 +22,8 @@ export default function CampaignsPage() {
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [subImageUrls, setSubImageUrls] = useState<string[]>([]);
   const [rewardId, setRewardId] = useState('');
   
   const { mutate: createCampaign, isPending: isCreatingCampaign } = useCreateCampaign();
@@ -45,6 +48,8 @@ export default function CampaignsPage() {
       description,
       startDate: startDate?.toISOString() || '',
       endDate: endDate?.toISOString() || '',
+      thumbnailUrl,
+      subImageUrls: subImageUrls.filter(url => url), // Ensure only valid URLs are sent
       rewardId,
     };
     createCampaign(campaignData, {
@@ -56,6 +61,8 @@ export default function CampaignsPage() {
         setDescription('');
         setStartDate(undefined);
         setEndDate(undefined);
+        setThumbnailUrl('');
+        setSubImageUrls([]);
         setRewardId('');
       },
       onError: (error) => {
@@ -93,13 +100,23 @@ export default function CampaignsPage() {
                 setEndDate={setEndDate}
               />
             )}
-            {currentStep === 3 && <Step3Reward rewardId={rewardId} setRewardId={setRewardId} />}
-            {currentStep === 4 && (
+            {currentStep === 3 && (
+              <Step3Images
+                thumbnailUrl={thumbnailUrl}
+                subImageUrls={subImageUrls}
+                setThumbnailUrl={setThumbnailUrl}
+                setSubImageUrls={setSubImageUrls}
+              />
+            )}
+            {currentStep === 4 && <Step3Reward rewardId={rewardId} setRewardId={setRewardId} />}
+            {currentStep === 5 && (
               <Step4Review
                 title={title}
                 description={description}
                 startDate={startDate}
                 endDate={endDate}
+                thumbnailUrl={thumbnailUrl}
+                subImageUrls={subImageUrls}
                 rewardId={rewardId}
               />
             )}

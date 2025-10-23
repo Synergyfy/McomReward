@@ -81,7 +81,7 @@ const SignUpPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="relative flex flex-col w-full max-w-4xl m-6 bg-white shadow-2xl rounded-2xl md:flex-row md:space-y-0">
         {/* Left side */}
-        <div className="flex flex-col justify-center w-full p-8 md:p-14">
+        <div className="flex flex-col justify-center w-full max-w-lg p-8 md:p-14">
           <div className="mb-8">
             <span className="mb-3 text-4xl font-bold">Create Your Account</span>
             <p className="font-light text-gray-500 mt-2">
@@ -124,40 +124,44 @@ const SignUpPage = () => {
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
-                <div className="py-3 relative">
+                <div className="py-3">
                   <span className="mb-2 text-md">Password</span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    className={`w-full p-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(false)} />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" onClick={() => setShowPassword(true)} />
-                    )}
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      className={`w-full p-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(false)} />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(true)} />
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="py-3 relative">
+                <div className="py-3">
                   <span className="mb-2 text-md">Confirm Password</span>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" onClick={() => setShowConfirmPassword(false)} />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" onClick={() => setShowConfirmPassword(true)} />
-                    )}
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(false)} />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(true)} />
+                      )}
+                    </div>
                   </div>
                 </div>
                 {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}

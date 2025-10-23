@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
-import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse } from './types';
+import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse, UpdateRewardRequest } from './types';
 import Cookies from 'js-cookie';
 
 const REWARDS_QUERY_KEY = 'rewards';
@@ -69,6 +69,20 @@ export const useGetAllBusinessRewards = () => {
   });
 };
 
+// Get Reward by ID
+const getRewardById = async (rewardId: string): Promise<RewardResponse> => {
+  const { data } = await api.get<RewardResponse>(`/rewards/admin/rewards/${rewardId}`);
+  return data;
+};
+
+export const useGetRewardById = (rewardId: string) => {
+  return useQuery<RewardResponse, Error>({
+    queryKey: [REWARDS_QUERY_KEY, rewardId],
+    queryFn: () => getRewardById(rewardId),
+    enabled: !!rewardId, // Only fetch if rewardId is provided
+  });
+};
+
 // Add Reward to Business
 const addRewardToBusiness = async ({ rewardId, ...rest }: { rewardId: string } & AddRewardToBusinessRequest): Promise<RewardResponse> => {
   const { data } = await api.post<RewardResponse>(`/rewards/business/rewards/${rewardId}`, rest);
@@ -82,6 +96,39 @@ export const useAddRewardToBusiness = () => {
     mutationFn: addRewardToBusiness,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BUSINESS_REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Update Reward
+const updateReward = async ({ rewardId, ...rest }: { rewardId: string } & UpdateRewardRequest): Promise<RewardResponse> => {
+  const { data } = await api.patch<RewardResponse>(`/rewards/admin/rewards/${rewardId}`, rest);
+  return data;
+};
+
+export const useUpdateReward = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Delete Reward
+const deleteReward = async (rewardId: string): Promise<void> => {
+  await api.delete(`/rewards/admin/rewards/${rewardId}`);
+};
+
+export const useDeleteReward = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
     },
   });
 };

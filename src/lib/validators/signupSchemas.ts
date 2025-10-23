@@ -1,11 +1,11 @@
 // src/lib/validators/signupSchemas.ts
-import * as z from "zod";
+import z from "zod";
 
 const socialMediaSchema = z
   .object({
-    facebook: z.url().nullish().or(z.literal("")).optional(),
-    twitter: z.url().nullish().or(z.literal("")).optional(),
-    instagram: z.url().nullish().or(z.literal("")).optional(),
+    facebook: z.string().url().nullish().or(z.literal("")).optional(),
+    twitter: z.string().url().nullish().or(z.literal("")).optional(),
+    instagram: z.string().url().nullish().or(z.literal("")).optional(),
   })
   .optional();
 
@@ -15,10 +15,10 @@ sectorId: z
   .transform((v) => (v === "" ? null : v))
   .nullable()
   .refine((val) => !val || (typeof val === "string" && val.length >= 2), "Select a sector"),
-  email: z.email("Valid email is required"),
+  email: z.string().email("Valid email is required"),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
-  website: z.url().nullish().or(z.literal("")).optional(),
+  website: z.string().url().nullish().or(z.literal("")).optional(),
   socialMedia: socialMediaSchema,
   referralCapacity: z.number({
     error: "Referral capacity is required",
@@ -28,7 +28,7 @@ sectorId: z
 
 export const staffSchema = z.object({
   staffName: z.string().min(2, "Staff name required").optional().nullable(),
-  staffEmail: z.email("Valid staff email required").optional().nullable(),
+  staffEmail: z.string().email("Valid staff email required").optional().nullable(),
   staffPassword: z.string().min(10, "Valid staff password required").optional().nullable(),
   staffAvatar: z
     .any()

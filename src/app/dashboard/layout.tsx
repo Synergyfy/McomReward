@@ -1,5 +1,7 @@
-import BusinessSidebar from '@/components/dashboard/sidebar';
-import React from 'react';
+'use client';
+
+import BusinessSidebar from '@/components/dashboard/sidebar/index';
+import React from 'react'; 
 
 export default function DashboardLayout({
   children,

@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
+  const { whileHover, transition, ...rest } = props as React.ComponentProps<typeof motion.div>;
+
   return (
     <motion.div
       data-slot="card"
@@ -12,10 +14,9 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
         className
       )}
-      whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
-      transition={{ duration: 0.2 }}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {...(props as any)}
+      whileHover={whileHover || { y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+      transition={transition || { duration: 0.2 }}
+      {...rest}
     />
   )
 }

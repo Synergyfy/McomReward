@@ -32,6 +32,6 @@ export const useGetPointHistory = (page: number, limit: number, campaignId?: str
   return useQuery({
     queryKey: [POINT_HISTORY_QUERY_KEY, page, limit, campaignId],
     queryFn: () => getPointHistory(page, limit, campaignId),
-    keepPreviousData: true, // Useful for pagination to avoid flickering
+    placeholderData: (previousData) => previousData, // Useful for pagination to avoid flickering
   });
 };

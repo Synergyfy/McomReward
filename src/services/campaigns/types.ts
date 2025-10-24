@@ -4,6 +4,8 @@ export interface CreateCampaignRequest {
   startDate: string;
   endDate: string;
   rewardId: string;
+  thumbnailUrl: string;
+  subImageUrls: string[];
 }
 
 export interface CampaignResponse {
@@ -13,6 +15,8 @@ export interface CampaignResponse {
   startDate: string;
   endDate: string;
   rewardId: string;
+  thumbnailUrl: string;
+  subImageUrls: string[];
   createdAt: string;
   updatedAt: string;
 }

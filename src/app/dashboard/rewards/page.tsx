@@ -24,7 +24,7 @@ export default function BusinessRewardsPage() {
   const { mutate: addReward, isPending: isAddingReward } = useAddRewardToBusiness();
   const [quantity, setQuantity] = useState(100);
 
-  const totalPages = rewardsData ? Math.ceil(rewardsData.total / limit) : 0;
+  const totalPages = rewardsData ? Math.ceil(rewardsData.count / limit) : 0;
 
   const handleAddReward = (rewardId: string) => {
     addReward({ rewardId, quantity }, {

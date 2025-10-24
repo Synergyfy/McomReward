@@ -1,4 +1,5 @@
-import React from 'react';
+'use client';
+
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -8,11 +9,11 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   return (
-    <header className="md:hidden bg-white dark:bg-gray-800 shadow-md p-4 flex items-center">
-      <Button variant="ghost" size="icon" onClick={onMenuClick}>
+    <header className="md:hidden flex items-center justify-between p-4 bg-gray-900 text-white">
+      <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+      <Button onClick={onMenuClick} variant="ghost" size="icon">
         <Menu />
       </Button>
-      <h1 className="text-lg font-semibold ml-4">Admin Dashboard</h1>
     </header>
   );
 }

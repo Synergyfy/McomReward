@@ -1,7 +1,7 @@
 
-"use client";
+'use client';
 
-import Sidebar from '@/components/admin/sidebar';
+import AdminSidebar from '@/components/admin/sidebar';
 import AdminHeader from '@/components/admin/header';
 import React, { useState } from 'react';
 
@@ -17,25 +17,25 @@ export default function AdminLayout({
   return (
     <html lang="en">
       <body>
-        {/* Mobile Header */}
-        <AdminHeader onMenuClick={toggleSidebar} />
+        <div className="relative min-h-screen md:flex">
+          {/* Mobile overlay */}
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+              onClick={toggleSidebar}
+            ></div>
+          )}
 
-        {/* Mobile Sidebar Overlay */}
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
-            onClick={toggleSidebar}
-          />
-        )}
+          {/* Sidebar */}
+          <AdminSidebar isOpen={isSidebarOpen} />
 
-        <div className="flex h-screen">
-          <Sidebar isOpen={isSidebarOpen} />
-          <div 
-            className={`flex-1 p-10 bg-gray-100 transition-all duration-300 ease-in-out ${
-              isSidebarOpen ? 'ml-0 md:ml-64' : 'ml-64'
-            }`}
-          >
-            {children}
+          {/* Main content */}
+          <div className="flex-1 md:ml-64">
+            {/* Header for mobile */}
+            <AdminHeader onMenuClick={toggleSidebar} />
+            <main className="p-4 sm:p-6 md:p-10">
+              {children}
+            </main>
           </div>
         </div>
       </body>

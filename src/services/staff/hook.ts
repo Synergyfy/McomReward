@@ -4,6 +4,20 @@ import { Staff, CreateStaffDto, UpdateStaffDto } from './types';
 
 const STAFF_QUERY_KEY = 'staff';
 
+
+// staff login
+const staffLogin = async (credentials: { email: string; password: string }): Promise<Staff> => {
+  const { data } = await api.post<Staff>('/staff/login', credentials);
+  return data;
+};
+
+
+export const useStaffLogin = () => {
+  return useMutation({
+    mutationFn: staffLogin,
+  });
+};
+
 // Create Staff
 const createStaff = async (staffData: CreateStaffDto): Promise<Staff> => {
   const { data } = await api.post<Staff>('/staff', staffData);

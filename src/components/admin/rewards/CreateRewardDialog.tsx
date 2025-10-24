@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCreateReward } from "@/services/rewards/hook";
 import { CreateRewardRequest } from "@/services/rewards/types";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CloudinaryUpload } from "@/components/ui/cloudinary-upload";
 import Image from "next/image";
 
@@ -29,6 +29,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createReward, isPending: isCreatingReward } = useCreateReward();
 
@@ -36,6 +37,23 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
     setSelectedFile(file);
     setImagePreviewUrl(previewUrl);
   };
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors: Record<string, string> = {};
+    if (!title.trim()) newErrors.title = 'Title is required.';
+    if (pointsRequired <= 0) newErrors.pointsRequired = 'Points Required must be greater than 0.';
+    if (value <= 0) newErrors.value = 'Value must be greater than 0.';
+    if (!description.trim()) newErrors.description = 'Description is required.';
+    if (!selectedFile) newErrors.image = 'Image is required.';
+    if (quantity <= 0) newErrors.quantity = 'Quantity must be greater than 0.';
+    setErrors(newErrors);
+  }, [title, pointsRequired, value, description, selectedFile, quantity]);
+
+  // Form is valid if no errors
+  const isFormValid = useMemo(() => {
+    return Object.keys(errors).length === 0;
+  }, [errors]);
 
   const uploadImageToCloudinary = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
@@ -74,6 +92,10 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
   };
 
   const handleSubmit = async () => {
+    if (!isFormValid) {
+      return;
+    }
+
     let imageUrlToSubmit = '';
 
     if (selectedFile) {
@@ -106,6 +128,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
         setQuantity(0);
         setSelectedFile(null);
         setImagePreviewUrl(null);
+        setErrors({});
       },
       onError: (error) => {
         alert(`Error creating reward: ${error.message}`);
@@ -120,16 +143,36 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
           <DialogTitle>Create New Reward</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* Form fields for title, points, etc. */}
-          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Input placeholder="Points Required" type="number" value={pointsRequired} onChange={(e) => setPointsRequired(Number(e.target.value))} />
-          <Input placeholder="Value" type="number" value={value} onChange={(e) => setValue(Number(e.target.value))} />
-          <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <Input placeholder="Quantity" type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium mb-1">Title</label>
+            <Input id="title" placeholder="Title" value={title} onChange={(e) => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }} className={errors.title ? 'border-red-500' : ''} />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+          </div>
+          <div>
+            <label htmlFor="pointsRequired" className="block text-sm font-medium mb-1">Points Required</label>
+            <Input id="pointsRequired" placeholder="Points Required" type="number" value={pointsRequired} onChange={(e) => { setPointsRequired(Number(e.target.value)); setErrors({ ...errors, pointsRequired: '' }); }} className={errors.pointsRequired ? 'border-red-500' : ''} />
+            {errors.pointsRequired && <p className="text-red-500 text-xs mt-1">{errors.pointsRequired}</p>}
+          </div>
+          <div>
+            <label htmlFor="value" className="block text-sm font-medium mb-1">Value</label>
+            <Input id="value" placeholder="Value" type="number" value={value} onChange={(e) => { setValue(Number(e.target.value)); setErrors({ ...errors, value: '' }); }} className={errors.value ? 'border-red-500' : ''} />
+            {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value}</p>}
+          </div>
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
+            <Input id="description" placeholder="Description" value={description} onChange={(e) => { setDescription(e.target.value); setErrors({ ...errors, description: '' }); }} className={errors.description ? 'border-red-500' : ''} />
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+          </div>
+          <div>
+            <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>
+            <Input id="quantity" placeholder="Quantity" type="number" value={quantity} onChange={(e) => { setQuantity(Number(e.target.value)); setErrors({ ...errors, quantity: '' }); }} className={errors.quantity ? 'border-red-500' : ''} />
+            {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
+          </div>
           
           <div>
             <label className="block text-sm font-medium mb-2">Reward Image</label>
             <CloudinaryUpload onFileSelect={handleFileSelect} />
+            {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
             {imagePreviewUrl && (
               <div className="mt-4">
                 <p className="text-sm font-medium">Image Preview:</p>
@@ -145,7 +188,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
             )}
           </div>
         </div>
-        <Button onClick={handleSubmit} disabled={isUploadingImage || isCreatingReward}>
+        <Button onClick={handleSubmit} disabled={isUploadingImage || isCreatingReward || !isFormValid}>
           {isUploadingImage ? 'Uploading Image...' : isCreatingReward ? 'Creating Reward...' : 'Create Reward'}
         </Button>
       </DialogContent>

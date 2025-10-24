@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
 import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse, UpdateRewardRequest } from './types';
 import Cookies from 'js-cookie';
+import toast from 'react-hot-toast';
 
 const REWARDS_QUERY_KEY = 'rewards';
 const BUSINESS_REWARDS_QUERY_KEY = 'business_rewards';
@@ -19,7 +20,12 @@ export const useCreateReward = () => {
   return useMutation({
     mutationFn: createReward,
     onSuccess: () => {
+      toast.success('Reward created successfully!');
       queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'An unexpected error occurred.';
+      toast.error(message);
     },
   });
 };
@@ -102,7 +108,7 @@ export const useAddRewardToBusiness = () => {
 
 // Update Reward
 const updateReward = async ({ rewardId, ...rest }: { rewardId: string } & UpdateRewardRequest): Promise<RewardResponse> => {
-  const { data } = await api.patch<RewardResponse>(`/rewards/admin/rewards/${rewardId}`, rest);
+  const { data } = await api.put<RewardResponse>(`/rewards/admin/rewards/${rewardId}`, rest);
   return data;
 };
 

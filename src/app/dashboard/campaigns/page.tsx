@@ -20,22 +20,33 @@ export default function CampaignsPage() {
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [startDate, setStartDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [subImageUrls, setSubImageUrls] = useState<string[]>([]);
   const [rewardId, setRewardId] = useState('');
   
   const { mutate: createCampaign, isPending: isCreatingCampaign } = useCreateCampaign();
 
-  const nextStep = () => {
+  const handleNext = () => {
+    if (currentStep === 3) {
+      if (!thumbnailUrl) {
+        alert('Please upload a thumbnail image.');
+        return;
+      }
+      if (subImageUrls.filter(url => url).length === 0) {
+        alert('Please upload at least one sub-image.');
+        return;
+      }
+    }
+
     if (currentStep < steps.length) {
       setCompletedSteps([...completedSteps, currentStep]);
       setCurrentStep(currentStep + 1);
     }
   };
 
-  const prevStep = () => {
+  const handlePrev = () => {
     if (currentStep > 1) {
       setCompletedSteps(completedSteps.filter(step => step !== currentStep - 1));
       setCurrentStep(currentStep - 1);
@@ -46,8 +57,8 @@ export default function CampaignsPage() {
     const campaignData: CreateCampaignRequest = {
       title,
       description,
-      startDate: startDate?.toISOString() || '',
-      endDate: endDate?.toISOString() || '',
+      startDate: startDate || '',
+      endDate: endDate || '',
       thumbnailUrl,
       subImageUrls: subImageUrls.filter(url => url), // Ensure only valid URLs are sent
       rewardId,
@@ -96,8 +107,8 @@ export default function CampaignsPage() {
               <Step2Dates
                 startDate={startDate}
                 endDate={endDate}
-                setStartDate={setStartDate}
-                setEndDate={setEndDate}
+                setStartDate={(date) => setStartDate(date?.toISOString())}
+                setEndDate={(date) => setEndDate(date?.toISOString())}
               />
             )}
             {currentStep === 3 && (
@@ -122,11 +133,11 @@ export default function CampaignsPage() {
             )}
           </div>
           <div className="flex justify-between mt-12 border-t pt-6">
-            <Button onClick={prevStep} variant="outline" disabled={currentStep === 1}>
+            <Button onClick={handlePrev} variant="outline" disabled={currentStep === 1}>
               Back
             </Button>
             {currentStep < steps.length ? (
-              <Button onClick={nextStep}>Next</Button>
+              <Button onClick={handleNext}>Next</Button>
             ) : (
               <Button onClick={handleSubmit} disabled={isCreatingCampaign} className="bg-green-600 hover:bg-green-700">
                 {isCreatingCampaign ? 'Creating...' : 'Finish & Create Campaign'}

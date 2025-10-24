@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import CampaignTransactionHistoryDialog from '@/components/customer/CampaignTransactionHistoryDialog';
 
 const mockMyCampaigns = [
   {
@@ -32,6 +33,16 @@ const mockMyCampaigns = [
 ];
 
 export default function MyCampaignsPage() {
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState('');
+  const [selectedCampaignTitle, setSelectedCampaignTitle] = useState('');
+
+  const handleCardClick = (campaignId: string, campaignTitle: string) => {
+    setSelectedCampaignId(campaignId);
+    setSelectedCampaignTitle(campaignTitle);
+    setIsHistoryDialogOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -41,7 +52,11 @@ export default function MyCampaignsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {mockMyCampaigns.map((campaign) => (
-          <Card key={campaign.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
+          <Card 
+            key={campaign.id} 
+            className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl cursor-pointer"
+            onClick={() => handleCardClick(campaign.id, campaign.title)}
+          >
             <div className="relative h-40 w-full">
               <img src={campaign.imageUrl} alt={campaign.title} className="h-full w-full object-cover" />
             </div>
@@ -55,6 +70,13 @@ export default function MyCampaignsPage() {
           </Card>
         ))}
       </div>
+
+      <CampaignTransactionHistoryDialog
+        isOpen={isHistoryDialogOpen}
+        onClose={() => setIsHistoryDialogOpen(false)}
+        campaignId={selectedCampaignId}
+        campaignTitle={selectedCampaignTitle}
+      />
     </div>
   );
 }

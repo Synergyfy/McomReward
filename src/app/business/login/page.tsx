@@ -36,8 +36,10 @@ export default function BusinessLoginPage() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000)); // mock delay
       toast.success("Login successful! Redirecting...");
-    } catch (error: any) {
-      toast.error(error.message || "Login failed. Please try again.");
+    } catch (error) {
+      toast.error("Login failed. Please try again.");
+      console.error("Login error:", error);
+      
     }
   };
 

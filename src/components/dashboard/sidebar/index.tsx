@@ -35,7 +35,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
           </Link>
         </li>
         <li>
-          <Link href="/dashboard/campaigns" className={linkClasses("/dashboard/campaigns")}>
+          <Link href="/dashboard/campaigns/list" className={linkClasses("/dashboard/campaigns/list")}>
             <Megaphone className="mr-3" />
             Campaigns
           </Link>

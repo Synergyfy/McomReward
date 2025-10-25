@@ -13,6 +13,8 @@ import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 import { useCreateReward } from '@/services/rewards/hook';
 import { CreateRewardRequest } from '@/services/rewards/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -189,7 +191,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, onCampaignPro
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Type</label>
                 <Select value={rewardType} onValueChange={setRewardType}>
-                  <SelectTrigger className={errors.rewardType ? 'border-red-500' : ''}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select reward type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -200,26 +202,22 @@ export default function CreateRewardWizardModal({ isOpen, onClose, onCampaignPro
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.rewardType && <p className="text-red-500 text-xs mt-1">{errors.rewardType}</p>}
               </div>
 
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-                <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} className={errors.name ? 'border-red-500' : ''} />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
               <div>
                 <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
-                <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} className={errors.description ? 'border-red-500' : ''} />
-                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+                <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="value" className="block text-sm font-medium mb-1">Value ($)</label>
-                  <Input id="value" type="number" placeholder="0" value={value} onChange={(e) => setValue(Number(e.target.value))} className={errors.value ? 'border-red-500' : ''} />
-                  {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value}</p>}
+                  <Input id="value" type="number" placeholder="0" value={value} onChange={(e) => setValue(Number(e.target.value))} />
                 </div>
                 <div>
                   <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
@@ -240,7 +238,6 @@ export default function CreateRewardWizardModal({ isOpen, onClose, onCampaignPro
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Image</label>
                 <CloudinaryUpload onFileSelect={handleFileSelect} />
-                {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
                 {imagePreviewUrl && (
                   <div className="mt-4">
                     <p className="text-sm font-medium">Image Preview:</p>
@@ -255,17 +252,56 @@ export default function CreateRewardWizardModal({ isOpen, onClose, onCampaignPro
 
           {step === 2 && (
             <div className="grid gap-4 py-4">
-              <h3 className="text-lg font-semibold">Review Your Reward</h3>
-              <div className="space-y-2">
-                <p><strong>Type:</strong> {rewardTypes.find(t => t.value === rewardType)?.label}</p>
-                <p><strong>Name:</strong> {name}</p>
-                <p><strong>Description:</strong> {description}</p>
-                <p><strong>Value:</strong> ${value}</p>
-                <p><strong>Points Required:</strong> {pointsRequired}</p>
-                <p><strong>Badge Level:</strong> {badgeLevel || 'None'}</p>
-                <p><strong>Expiry:</strong> {expiry.toLocaleString()}</p>
-                {imagePreviewUrl && <Image src={imagePreviewUrl} alt="Review" width={100} height={100} className="rounded" />}
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Review Your Reward</h3>
+              <Card className="hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
+                        {imagePreviewUrl && (
+                          <Image
+                            src={imagePreviewUrl}
+                            alt={name}
+                            layout="fill"
+                            objectFit="cover"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{name}</CardTitle>
+                        <Badge variant="default">Active</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 mb-3">{description}</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Type:</span>
+                      <span>{rewardTypes.find(t => t.value === rewardType)?.label}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Value:</span>
+                      <span>${value}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Points:</span>
+                      <span>{pointsRequired}</span>
+                    </div>
+                    {badgeLevel && (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Badge Level:</span>
+                        <span>{badgeLevel}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="font-medium">Expires:</span>
+                      <span>{expiry.toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 

@@ -102,11 +102,8 @@ export default function StaffRedeemPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-semibold text-gray-800">
-            Staff Reward Redemption
+          Scan a customer QR code or search manually to redeem rewards.
           </h1>
-          <p className="text-gray-500">
-            Scan a customer QR code or search manually to redeem rewards.
-          </p>
         </div>
 
         {/* Notification */}

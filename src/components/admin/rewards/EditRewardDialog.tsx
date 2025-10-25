@@ -23,7 +23,6 @@ export default function EditRewardDialog({ reward, isOpen, onClose }: EditReward
   const [pointsRequired, setPointsRequired] = useState(reward.pointsRequired);
   const [value, setValue] = useState(reward.value);
   const [description, setDescription] = useState(reward.description);
-  const [image, setImage] = useState(reward.image);
   const [quantity, setQuantity] = useState(reward.quantity);
   const { mutate: updateReward, isPending: isUpdatingReward } = useUpdateReward();
 

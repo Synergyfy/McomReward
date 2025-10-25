@@ -7,14 +7,15 @@ import { useGetRewards, useDeleteReward } from '@/services/rewards/hook';
 import { RewardResponse } from '@/services/rewards/types';
 import EditRewardDialog from '@/components/admin/rewards/EditRewardDialog';
 import CreateRewardDialog from '@/components/admin/rewards/CreateRewardDialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus } from 'lucide-react';
 import RewardCard from '@/components/admin/rewards/RewardCard';
 
 export default function RewardsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(page, limit);
+    const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(page, limit);
+    console.log('Rewards Data:', rewardsData);
+  
   const { mutate: deleteReward } = useDeleteReward();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

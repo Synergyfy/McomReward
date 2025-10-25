@@ -27,9 +27,10 @@ interface CampaignFormData {
     pauseOnRewardEmpty: boolean;
     autoSwitchToPoints: boolean;
   };
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
+  bgColor: string;
+  ctaBgColor: string;
+  bgColorTextColor: string;
+  ctaTextColor: string;
 }
 
 interface CampaignFormContextType {
@@ -62,6 +63,10 @@ const defaultFormData: CampaignFormData = {
     pauseOnRewardEmpty: false,
     autoSwitchToPoints: false,
   },
+  bgColor: '#FFFFFF',
+  ctaBgColor: '#000000',
+  bgColorTextColor: '#000000',
+  ctaTextColor: '#FFFFFF',
 };
 
 const CampaignFormContext = createContext<CampaignFormContextType | undefined>(undefined);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState} from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -18,8 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
-import {useStaffLogin} from "@/services/staff/hook";
+import { toast } from "sonner";
+import { useStaffLogin } from "@/services/staff/hook";
+import FakeTurnstile from "@/components/ui/turnstile";
 
 type StaffLoginForm = {
   email: string;
@@ -31,9 +32,12 @@ type ForgotPasswordForm = {
 };
 
 export default function StaffLoginPage() {
-const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
   const [forgotLoading, setForgotLoading] = useState(false);
+
+  const { mutateAsync: staffLogin, isPending } = useStaffLogin();
 
   const {
     register,
@@ -47,21 +51,15 @@ const router = useRouter();
     formState: { errors: forgotErrors },
     reset: resetForgot,
   } = useForm<ForgotPasswordForm>();
-    
-    const { mutateAsync: staffLogin, isPending } = useStaffLogin();
 
   // ✅ Login handler
   const onSubmit = async (data: StaffLoginForm) => {
-      setLoading(isPending);
-      try {
-          await staffLogin(data);
-          router.push("/staff/dashboard");
-      } catch (error) {
-          console.log("Login error:", error);
-          toast.error("Login failed. Please check your email and password.");
-        }
- finally {
-      setLoading(false);
+    try {
+      await staffLogin({ ...data,});
+      router.push("/staff/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please check your credentials.");
     }
   };
 
@@ -69,19 +67,18 @@ const router = useRouter();
   const onForgotSubmit = async (data: ForgotPasswordForm) => {
     setForgotLoading(true);
     try {
-      // Example API — replace with your backend route
-      const response = await fetch("/api/staff/forgot-password", {
+      const res = await fetch("/api/staff/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error("Error sending reset email");
+      if (!res.ok) throw new Error("Failed to send reset link");
 
-      alert("Password reset link sent to your email!");
+      toast.success("Password reset link sent!");
       resetForgot();
     } catch {
-      alert("Could not send reset link. Try again.");
+      toast.error("Could not send reset link. Try again.");
     } finally {
       setForgotLoading(false);
     }
@@ -104,9 +101,8 @@ const router = useRouter();
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Email */}
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label>Email Address</Label>
             <Input
-              id="email"
               type="email"
               placeholder="staff@example.com"
               {...register("email", { required: "Email is required" })}
@@ -120,9 +116,8 @@ const router = useRouter();
 
           {/* Password */}
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label>Password</Label>
             <Input
-              id="password"
               type="password"
               placeholder="••••••••"
               {...register("password", { required: "Password is required" })}
@@ -134,13 +129,16 @@ const router = useRouter();
             )}
           </div>
 
+          {/* Turnstile widget */}
+         <FakeTurnstile onVerify={(token) => setTurnstileToken(token)} />
+
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-full py-2 mt-2"
+            disabled={isPending}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-full py-2 mt-3"
           >
-            {loading ? (
+            {isPending ? (
               <Loader2 className="animate-spin h-4 w-4 mr-2 inline-block" />
             ) : (
               "Login"
@@ -152,7 +150,7 @@ const router = useRouter();
         <div className="text-center mt-4">
           <Dialog>
             <DialogTrigger asChild>
-              <button className="text-sm text-orange-500 hover:text-orange-600 underline">
+              <button className="text-sm text-black hover:text-orange-600 underline">
                 Forgot your password?
               </button>
             </DialogTrigger>
@@ -170,9 +168,8 @@ const router = useRouter();
                 className="space-y-4 mt-2"
               >
                 <div>
-                  <Label htmlFor="forgot-email">Email Address</Label>
+                  <Label>Email Address</Label>
                   <Input
-                    id="forgot-email"
                     type="email"
                     placeholder="staff@example.com"
                     {...registerForgot("email", {

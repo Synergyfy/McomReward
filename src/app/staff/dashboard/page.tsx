@@ -1,25 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Menu,
-  LogOut,
-  UserCircle,
-  Gift,
-  Users,
-  CheckCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Gift, LogOut, Menu, UserCircle, Users } from "lucide-react";
+
+const stats = [
+  {
+    label: "Total Vouchers Redeemed",
+    value: "1,250",
+    icon: <Gift className="h-6 w-6" />,
+  },
+  {
+    label: "Active Customers",
+    value: "3,400",
+    icon: <Users className="h-6 w-6" />,
+  },
+  {
+    label: "Pending Requests",
+    value: "24",
+    icon: <UserCircle className="h-6 w-6" />,
+  },
+];
 
 export default function StaffDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const stats = [
-    { label: "Vouchers Redeemed", value: 128, icon: <Gift /> },
-    { label: "Customers Served", value: 94, icon: <Users /> },
-    { label: "Active Campaigns", value: 6, icon: <CheckCircle /> },
-  ];
+
 
   const activities = [
     {
@@ -43,58 +47,12 @@ export default function StaffDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-pink-50">
-      {/* Sidebar */}
-      <aside
-        className={`${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-50 w-64 bg-white border-r shadow-md transition-transform duration-300 md:translate-x-0`}
-      >
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-bold text-pink-600">Staff Panel</h2>
-          <button
-            className="md:hidden text-gray-500"
-            onClick={() => setSidebarOpen(false)}
-          >
-            ✕
-          </button>
-        </div>
-
-        <nav className="p-4 flex flex-col gap-3">
-          <Button variant="ghost" className="justify-start">
-            <Gift className="h-4 w-4 mr-2" /> Redeem Voucher
-          </Button>
-          <Button variant="ghost" className="justify-start">
-            <Users className="h-4 w-4 mr-2" /> Customers
-          </Button>
-          <Button variant="ghost" className="justify-start">
-            <UserCircle className="h-4 w-4 mr-2" /> My Profile
-          </Button>
-          <Button variant="ghost" className="justify-start text-red-500 mt-4">
-            <LogOut className="h-4 w-4 mr-2" /> Logout
-          </Button>
-        </nav>
-      </aside>
-
+    <div className="flex min-h-screen bg-white">
+  
       {/* 💻 Main Content */}
       <div className="flex-1 flex flex-col min-h-screen md:ml-64">
         {/* 🔝 Top Bar */}
-        <header className="flex items-center justify-between bg-white shadow-sm p-4 md:px-8">
-          <div className="flex items-center gap-2">
-            <button
-              className="md:hidden text-gray-700"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <h1 className="text-lg font-semibold text-gray-800">
-              Welcome, <span className="text-pink-600">Staff</span>
-            </h1>
-          </div>
-
-          <UserCircle className="h-8 w-8 text-gray-600" />
-        </header>
-
+      
         {/* 📊 Dashboard Body */}
         <main className="flex-1 p-4 md:p-8 space-y-6">
           {/* Stats */}
@@ -107,7 +65,7 @@ export default function StaffDashboard() {
                 transition={{ delay: i * 0.1 }}
                 className="bg-white rounded-xl shadow-md p-4 flex items-center gap-3"
               >
-                <div className="bg-pink-100 text-pink-600 p-3 rounded-full">
+                <div className="bg-pink-100 text-orange-600 p-3 rounded-full">
                   {item.icon}
                 </div>
                 <div>
@@ -137,7 +95,7 @@ export default function StaffDashboard() {
                   {activities.map((a) => (
                     <tr
                       key={a.id}
-                      className="border-b last:border-none hover:bg-pink-50"
+                      className="border-b last:border-none hover:bg-orange-50 transition-colors"
                     >
                       <td className="py-2 px-3 font-medium text-gray-800">
                         {a.customer}

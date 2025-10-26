@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
+import { useBusinessSignIn } from "@/services/business/hook";
+import { useRouter } from "next/navigation";
 
 type LoginFormData = {
   email: string;
@@ -23,23 +25,25 @@ export default function BusinessLoginPage() {
   } = useForm<LoginFormData>({
     defaultValues: { rememberMe: false },
   });
-
+  const { mutate: businessSignin } = useBusinessSignIn();
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const onboard = false
 
   const onSubmit = async (data: LoginFormData) => {
+
     try {
       console.log("Logging in:", data);
-
-      // Example API logic
-      // const res = await signIn("credentials", { redirect: false, ...data });
-      // if (!res?.ok) throw new Error("Invalid credentials");
-
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // mock delay
+      businessSignin(data);
       toast.success("Login successful! Redirecting...");
+      if (!onboard) {
+        router.push("/business/onboard");
+      } else {
+        router.push("/business/dashboard");
+      }
     } catch (error) {
-      toast.error("Login failed. Please try again.");
       console.error("Login error:", error);
-      
+      toast.error("Login failed. Please try again.");
     }
   };
 
@@ -53,7 +57,7 @@ export default function BusinessLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br bg-white p-6">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
           Welcome Back 
@@ -123,7 +127,7 @@ export default function BusinessLoginPage() {
           {/* Remember me */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Switch id="rememberMe" {...register("rememberMe")} />
+              <Switch id="rememberMe" />
               <Label htmlFor="rememberMe">Remember me</Label>
             </div>
             <a
@@ -145,7 +149,7 @@ export default function BusinessLoginPage() {
 
         <p className="text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href="/signup" className="text-pink-600 hover:underline font-medium">
+          <a href="/signup" className="text-orange-400 hover:underline font-medium">
             Sign up
           </a>
         </p>

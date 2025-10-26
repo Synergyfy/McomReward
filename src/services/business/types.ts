@@ -6,7 +6,7 @@ export type CreateBusinessDto = z.infer<typeof createBusinessSchema>;
 
 
 export interface BusinessSignUpDto {
-    password: string;
+  password: string;
   email: string;
   confirmPassword: string;
   name: string;

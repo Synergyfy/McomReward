@@ -10,6 +10,7 @@ const BUSINESS_QUERY_KEY = 'business';
 
 const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<Business> => {
   const { data } = await api.post<Business>('/business/signup', signUpData);
+
   return data;
 };
 
@@ -63,7 +64,7 @@ const businessSignIn = async (loginData: BusinessLoginDto): Promise<BusinessLogi
   return data;
 };
 
-export const useBusinessSignIn = () => {
+export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
   const router = useRouter();
 
   return useMutation({
@@ -73,11 +74,13 @@ export const useBusinessSignIn = () => {
       Cookies.set('refresh', data.refreshToken);
       setBearerToken(data.accessToken);
 
-      if (data.user.role === 'Admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+      if (!options?.skipRedirect) {
+        if (data.user.role === 'Admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      };
     },
   });
 };

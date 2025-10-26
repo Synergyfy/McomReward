@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
-import { useBusinessSignUp } from "@/services/business/hook";
+import { useBusinessSignUp, useBusinessSignIn } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
 import { useRouter } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
@@ -21,19 +21,33 @@ export default function BusinessSignupPage() {
   const router = useRouter();
 
 
-  const { mutateAsync: signUp,} = useBusinessSignUp();
+  const { mutateAsync: signUp, } = useBusinessSignUp();
+  const { mutateAsync: signIn } = useBusinessSignIn({ skipRedirect: true });
   const [showPassword, setShowPassword] = useState(false);
-    const onSubmit = async (data: BusinessSignUpDto) => {
-     try {
-      await signUp(data);
-      toast.success('Business account created successfully!');
-      // Redirect to dashboard, onboarding, etc.
-      router.push('/business/onboard');
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast.error('Failed to create account. Please try again.');
-    }
-  };
+
+const onSubmit = async (data: BusinessSignUpDto) => {
+  try {
+    // 1️⃣ Call the signup mutation
+    const response = await signUp(data);
+    console.log("Signup response:", response);
+
+    // 2️⃣ Automatically sign in after signup
+     await signIn({
+      email: data.email,
+      password: data.password,
+    });
+
+    toast.success('Business account created successfully!');
+    router.push('/business/onboard');
+
+  } catch (error) {
+    console.error('Signup or login error:', error);
+    toast.error(
+      'Failed to create account. Please try again.'
+    );
+  }
+};
+
 
   const handleGoogleSignup = () => {
     console.log("Google signup clicked");

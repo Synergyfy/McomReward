@@ -105,12 +105,12 @@ export default function WalletPage() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
                   <CardTitle className="text-2xl font-bold mb-4 sm:mb-0">Point History</CardTitle>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
                     {filterCategories.map(filter => (
                       <Button
                         key={filter}
                         variant={activeFilter === filter ? 'default' : 'outline'}
-                        className="rounded-full"
+                        className="rounded-full text-xs px-3 py-1"
                         onClick={() => setActiveFilter(filter)}
                       >
                         {filter}

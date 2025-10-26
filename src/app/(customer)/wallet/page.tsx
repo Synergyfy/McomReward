@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { PointHistoryRecord } from '@/services/wallet/types';
-import { ArrowDown, ArrowUp, Gift, ShoppingCart, Users, Award } from 'lucide-react';
+import { ArrowDown, ArrowUp, Gift, ShoppingCart, Users, Award, Tag } from 'lucide-react';
 
 // --- Mock Data ---
 const mockWalletData = { balance: 1250 };
@@ -19,11 +19,12 @@ const mockPointHistoryData: PointHistoryRecord[] = [
     { id: '4', timestamp: '2025-10-23T18:00:00Z', description: 'Admin bonus', type: 'manual_adjustment', points: 20 },
     { id: '5', timestamp: '2025-10-22T11:00:00Z', description: 'Joined Loyalty Exclusive', type: 'earned', points: 200, campaign: { id: '3', title: 'Loyalty Members Exclusive' } },
     { id: '6', timestamp: '2025-10-21T16:45:00Z', description: 'Redeemed: 10% Discount', type: 'spent', points: 100 },
+    { id: '9', timestamp: '2025-10-20T12:00:00Z', description: 'Deal Redemption: 50% off Pizza', type: 'deal_redemption', points: 200 },
     { id: '11', timestamp: '2025-10-16T10:00:00Z', description: 'Welcome bonus', type: 'earned', points: 500 },
   ];
 // --- End of Mock Data ---
 
-const filterCategories = ['All', 'Earned', 'Spent', 'Purchase'];
+const filterCategories = ['All', 'Earned', 'Spent', 'Purchase', 'Referral Bonus', 'Manual Adjustment', 'Deal Redemption'];
 
 export default function WalletPage() {
   const [page, setPage] = useState(1);
@@ -36,6 +37,15 @@ export default function WalletPage() {
     }
     if (activeFilter === 'Purchase') {
         return mockPointHistoryData.filter(record => record.type === 'purchase');
+    }
+    if (activeFilter === 'Referral Bonus') {
+        return mockPointHistoryData.filter(record => record.type === 'referral_bonus');
+    }
+    if (activeFilter === 'Manual Adjustment') {
+        return mockPointHistoryData.filter(record => record.type === 'manual_adjustment');
+    }
+    if (activeFilter === 'Deal Redemption') {
+        return mockPointHistoryData.filter(record => record.type === 'deal_redemption');
     }
     return mockPointHistoryData.filter(record => record.type === activeFilter.toLowerCase());
   }, [activeFilter]);
@@ -59,6 +69,8 @@ export default function WalletPage() {
         return <Users className="w-5 h-5 text-purple-500" />;
       case 'manual_adjustment':
         return <Award className="w-5 h-5 text-yellow-500" />;
+      case 'deal_redemption':
+        return <Tag className="w-5 h-5 text-indigo-500" />;
       default:
         return <Gift className="w-5 h-5 text-gray-500" />;
     }
@@ -158,3 +170,4 @@ export default function WalletPage() {
     </div>
   );
 }
+

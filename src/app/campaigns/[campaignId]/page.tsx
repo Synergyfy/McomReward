@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState } from 'react';
 import { useGetPublicCampaignDetails, useJoinCampaign } from "@/services/customer-campaigns/hook";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,8 +50,7 @@ const mockCampaign = {
 };
 
 export default function CampaignDetailPage({ params }: PageProps) {
-  const resolvedParams = use(params); // Unwrap params with React.use()
-  const { campaignId } = resolvedParams;
+  const { campaignId } = params; // Destructure campaignId from params
 
   // const { data: campaign, isLoading } = useGetPublicCampaignDetails(campaignId); // Use destructured campaignId
   const { mutate: joinCampaign, isPending: isJoining } = useJoinCampaign();
@@ -63,16 +62,20 @@ export default function CampaignDetailPage({ params }: PageProps) {
   const isLoading = false;
 
   const handleJoin = () => {
-    joinCampaign(campaignId, {
-      onSuccess: (data) => {
-        setJoinedCampaignTitle(campaign.title); // Set campaign title
-        setIsJoinDialogOpen(true); // Open dialog
-      },
-      onError: (error) => {
-        // For now, just log the error. A proper error dialog could be implemented later.
-        console.error(`Error joining campaign: ${error.message}`);
-      },
-    });
+    // Temporarily bypass actual joinCampaign for modal testing
+    // joinCampaign(campaignId, {
+    //   onSuccess: (data) => {
+    //     setJoinedCampaignTitle(campaign.title);
+    //     setIsJoinDialogOpen(true);
+    //   },
+    //   onError: (error) => {
+    //     console.error(`Error joining campaign: ${error.message}`);
+    //   },
+    // });
+
+    // Simulate success directly
+    setJoinedCampaignTitle(campaign.title);
+    setIsJoinDialogOpen(true);
   };
 
 

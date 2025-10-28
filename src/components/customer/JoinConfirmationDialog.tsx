@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,13 @@ export const JoinConfirmationDialog = ({
   onClose,
   campaignTitle,
 }: JoinConfirmationDialogProps) => {
+  const router = useRouter();
+
+  const handleAwesomeClick = () => {
+    onClose();
+    router.push('/campaigns');
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -37,7 +45,7 @@ export const JoinConfirmationDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onClose} className="w-full bg-orange-600 hover:bg-orange-700">
+          <AlertDialogAction onClick={handleAwesomeClick} className="w-full bg-orange-600 hover:bg-orange-700">
             Awesome!
           </AlertDialogAction>
         </AlertDialogFooter>

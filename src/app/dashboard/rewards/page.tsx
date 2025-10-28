@@ -124,16 +124,16 @@ export default function BusinessRewardsPage() {
     });
   }, [searchTerm, filterType]);
 
-  const handleCampaignPrompt = () => {
-    // Mock navigation to campaign builder
-    alert('Navigating to Campaign Builder...');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Rewards</h1>
-        <p className="text-gray-600 mb-8">Manage and create rewards for your business campaigns.</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Rewards</h1>
+            <p className="text-gray-600">Manage and create rewards for your business campaigns.</p>
+          </div>
+          <Button onClick={() => setIsModalOpen(true)}>Create New Reward</Button>
+        </div>
 
         {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -215,20 +215,10 @@ export default function BusinessRewardsPage() {
           </div>
         )}
 
-        {/* FAB */}
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200"
-          size="lg"
-        >
-          <span className="text-2xl">+</span>
-        </Button>
-
         {/* Modal */}
         <CreateRewardWizardModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onCampaignPrompt={handleCampaignPrompt}
         />
       </div>
     </div>

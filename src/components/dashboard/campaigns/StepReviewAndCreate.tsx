@@ -1,8 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
@@ -18,109 +28,130 @@ const mockRewards = [
   { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
 ];
 
-const ctaButtonLabels = {
-  'Claim Reward': 'Claim Reward',
-  'Join Now': 'Join Now',
-  'Refer & Earn': 'Refer & Earn',
-};
-
 export default function StepReviewAndCreate({ onBack }: StepProps) {
+  const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const handleCreateCampaign = () => {
     // Here you would typically send the formData to your API
     console.log('Creating campaign with data:', formData);
-    alert('Campaign Created Successfully!');
-    resetFormData(); // Clear form after submission
-    // Optionally navigate to campaign list or detail page
+    setShowSuccessDialog(true);
+  };
+
+  const handleDialogAcknowledge = () => {
+    setShowSuccessDialog(false);
+    resetFormData();
+    router.push('/dashboard/campaigns/list');
   };
 
   const selectedReward = mockRewards.find(r => r.id === formData.rewardId);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Step 5: Review and Create Campaign</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mt-6 p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-xl border border-gray-300">
-            <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Campaign Preview</h4>
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-                <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                    {formData.imageUrl && (
-                        <Image src={formData.imageUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />
-                    )}
-                </div>
-                <div className="relative px-5">
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                        <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
-                            {formData.logoUrl ? (
-                                <Image src={formData.logoUrl} alt="Logo Preview" layout="fill" objectFit="cover" />
-                            ) : (
-                                <div className="h-full w-full flex items-center justify-center text-gray-500">
-                                    <span className="text-xs">Logo</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-              <div className="pt-16 p-5 text-center">
-                <h5 className="font-extrabold text-2xl text-gray-900 mb-2">{formData.campaignName || '[Campaign Name]'}</h5>
-                <p className="text-gray-700 text-base mb-4">{formData.campaignMessage || '[Campaign Message]'}</p>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Step 5: Review and Create Campaign</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mt-6 p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-xl border border-gray-300">
+              <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Campaign Preview</h4>
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                  <div className="relative h-48 w-full overflow-hidden bg-gray-200">
+                      {formData.imageUrl && (
+                          <Image src={formData.imageUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />
+                      )}
+                  </div>
+                  <div className="relative px-5">
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2">
+                          <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
+                              {formData.logoUrl ? (
+                                  <Image src={formData.logoUrl} alt="Logo Preview" layout="fill" objectFit="cover" />
+                              ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-gray-500">
+                                      <span className="text-xs">Logo</span>
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+                <div className="pt-16 p-5 text-center">
+                  <h5 className="font-extrabold text-2xl text-gray-900 mb-2">{formData.campaignName || '[Campaign Name]'}</h5>
+                  <p className="text-gray-700 text-base mb-4">{formData.campaignMessage || '[Campaign Message]'}</p>
 
-                <div className="space-y-3 text-sm text-gray-800 mb-5 border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center font-medium text-gray-600"><Gift className="h-4 w-4 mr-2 text-blue-500" />Reward:</span>
-                    <span className="text-right">{selectedReward?.title || '[Select Reward]'}</span>
+                  <div className="space-y-3 text-sm text-gray-800 mb-5 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center font-medium text-gray-600"><Gift className="h-4 w-4 mr-2 text-blue-500" />Reward:</span>
+                      <span className="text-right">{selectedReward?.title || '[Select Reward]'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center font-medium text-gray-600"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
+                      <span className="text-right">{Number(formData.rewardsAvailable) > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
+                      <span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span>
+                      <span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center font-medium text-gray-600"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span>
+                      <span className="text-right">
+                        {formData.audienceType.map(type => {
+                          if (type === 'badge_level') {
+                            return `Badge: ${formData.badgeLevel || '[Level]'}`;
+                          }
+                          if (type === 'wishlist_target') {
+                            return `Wishlist: ${formData.wishlistItemId || '[Item]'}`;
+                          }
+                          return type.charAt(0).toUpperCase() + type.slice(1);
+                        }).join(', ')}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center font-medium text-gray-600"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
-                    <span className="text-right">{formData.rewardsAvailable > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
-                    <span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span>
-                    <span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center font-medium text-gray-600"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span>
-                    <span className="text-right">
-                      {formData.audienceType === 'badge_level'
-                        ? `Badge Level: ${formData.badgeLevel || '[Level]'}`
-                        : formData.audienceType}
-                    </span>
-                  </div>
+                  <Button className="w-full py-3 text-lg font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
+                    {formData.ctaButtonText}
+                  </Button>
                 </div>
-                <Button className="w-full py-3 text-lg font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
-                  {ctaButtonLabels[formData.ctaButtonText]}
-                </Button>
               </div>
             </div>
+
+          <h4 className="text-lg font-semibold mb-3 mt-6">Distribution Channels</h4>
+          <div className="grid gap-2 mb-6 text-sm">
+            <p><strong>QR Code:</strong> {formData.distributionChannels.qrCode ? 'Enabled' : 'Disabled'}</p>
+            <p><strong>Share Link:</strong> {formData.distributionChannels.shareLink ? 'Enabled' : 'Disabled'}</p>
+            <p><strong>Embed Button:</strong> {formData.distributionChannels.embedButton ? 'Enabled' : 'Disabled'}</p>
+            <p><strong>Email Send:</strong> {formData.distributionChannels.emailSend ? 'Enabled' : 'Disabled'}</p>
           </div>
 
-        <h4 className="text-lg font-semibold mb-3 mt-6">Distribution Channels</h4>
-        <div className="grid gap-2 mb-6 text-sm">
-          <p><strong>QR Code:</strong> {formData.distributionChannels.qrCode ? 'Enabled' : 'Disabled'}</p>
-          <p><strong>Share Link:</strong> {formData.distributionChannels.shareLink ? 'Enabled' : 'Disabled'}</p>
-          <p><strong>Embed Button:</strong> {formData.distributionChannels.embedButton ? 'Enabled' : 'Disabled'}</p>
-          <p><strong>Email Send:</strong> {formData.distributionChannels.emailSend ? 'Enabled' : 'Disabled'}</p>
-        </div>
+          <h4 className="text-lg font-semibold mb-3">Scheduling & Auto Rules</h4>
+          <div className="grid gap-2 mb-6 text-sm">
+            <p><strong>Stop after claims:</strong> {Number(formData.schedulingRules.stopAfterClaims) > 0 ? formData.schedulingRules.stopAfterClaims : 'Unlimited'}</p>
+            <p><strong>Pause on reward empty:</strong> {formData.schedulingRules.pauseOnRewardEmpty ? 'Yes' : 'No'}</p>
+            <p><strong>Auto-switch to points:</strong> {formData.schedulingRules.autoSwitchToPoints ? 'Yes' : 'No'}</p>
+          </div>
 
-        <h4 className="text-lg font-semibold mb-3">Scheduling & Auto Rules</h4>
-        <div className="grid gap-2 mb-6 text-sm">
-          <p><strong>Stop after claims:</strong> {formData.schedulingRules.stopAfterClaims > 0 ? formData.schedulingRules.stopAfterClaims : 'Unlimited'}</p>
-          <p><strong>Pause on reward empty:</strong> {formData.schedulingRules.pauseOnRewardEmpty ? 'Yes' : 'No'}</p>
-          <p><strong>Auto-switch to points:</strong> {formData.schedulingRules.autoSwitchToPoints ? 'Yes' : 'No'}</p>
-        </div>
-
-        <div className="flex justify-between mt-6">
-          <Button variant="outline" onClick={onBack}>Back</Button>
-          <Button onClick={handleCreateCampaign}>Create Campaign</Button>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex justify-between mt-6">
+            <Button variant="outline" onClick={onBack}>Back</Button>
+            <Button onClick={handleCreateCampaign}>Create Campaign</Button>
+          </div>
+        </CardContent>
+      </Card>
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Campaign Created Successfully!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your new campaign has been created.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleDialogAcknowledge}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

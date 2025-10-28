@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 import Image from 'next/image';
@@ -27,6 +27,24 @@ const mockRewards = [
   { id: '3', title: 'Discount Coupon (20% off)', image: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
 ];
 
+const mockWishlistInsights = [
+  {
+    itemName: 'Gourmet Burger',
+    category: 'Food',
+    estimatedCount: 124,
+  },
+  {
+    itemName: 'Winter Jacket',
+    category: 'Fashion',
+    estimatedCount: 78,
+  },
+  {
+    itemName: 'Wireless Headphones',
+    category: 'Electronics',
+    estimatedCount: 210,
+  },
+];
+
 export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const { formData, updateFormData } = useCampaignForm();
   const searchParams = useSearchParams();
@@ -37,7 +55,11 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   useEffect(() => {
     if (itemName && !formData.campaignName) {
-      updateFormData({ campaignName: `${itemName} Campaign`, audienceType: 'wishlist_target' });
+      updateFormData({ 
+        campaignName: `${itemName} Campaign`, 
+        audienceType: ['wishlist_target'],
+        wishlistItemId: itemName 
+      });
     }
   }, [searchParams, formData.campaignName, updateFormData, itemName]);
 
@@ -62,15 +84,44 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   };
 
   const isFormValid = () => {
-    return (
-      formData.campaignName.trim() !== '' &&
-      formData.rewardId.trim() !== '' &&
-      formData.startDate !== undefined &&
-      formData.endDate !== undefined &&
-      formData.rewardsAvailable > 0 &&
-      formData.campaignMessage.trim() !== '' &&
-      formData.ctaButtonText.trim() !== ''
-    );
+    const {
+      campaignName,
+      rewardId,
+      startDate,
+      endDate,
+      rewardsAvailable,
+      campaignMessage,
+      ctaButtonText,
+      audienceType,
+      badgeLevel,
+      wishlistItemId,
+    } = formData;
+
+    if (
+      !campaignName.trim() ||
+      !rewardId.trim() ||
+      !startDate ||
+      !endDate ||
+      Number(rewardsAvailable) <= 0 ||
+      !campaignMessage.trim() ||
+      !ctaButtonText.trim()
+    ) {
+      return false;
+    }
+
+    if (audienceType.length === 0) {
+      return false;
+    }
+
+    if (audienceType.includes('badge_level') && !badgeLevel?.trim()) {
+      return false;
+    }
+
+    if (audienceType.includes('wishlist_target') && !wishlistItemId?.trim()) {
+      return false;
+    }
+
+    return true;
   };
 
   return (
@@ -150,38 +201,79 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
           <div>
             <Label>Audience Type</Label>
-            <RadioGroup
-              value={formData.audienceType}
-              onValueChange={(value) => updateFormData({ audienceType: value })}
-              className="flex flex-col space-y-1"
-            >
-              {itemName && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="wishlist_target" id="r4" />
-                  <Label htmlFor="r4">Target Wishlist: <span className="font-bold">{itemName}</span></Label>
-                </div>
-              )}
+            <div className="flex flex-col space-y-1">
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="everyone" id="r1" />
-                <Label htmlFor="r1">Everyone</Label>
+                <Checkbox 
+                  id="members" 
+                  checked={formData.audienceType.includes('members')}
+                  onCheckedChange={(checked) => {
+                    const newAudienceType = checked 
+                      ? [...formData.audienceType, 'members'] 
+                      : formData.audienceType.filter(t => t !== 'members');
+                    updateFormData({ audienceType: newAudienceType });
+                  }}
+                />
+                <Label htmlFor="members">Members</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="members" id="r2" />
-                <Label htmlFor="r2">Members</Label>
+                <Checkbox 
+                  id="badge_level"
+                  checked={formData.audienceType.includes('badge_level')}
+                  onCheckedChange={(checked) => {
+                    const newAudienceType = checked 
+                      ? [...formData.audienceType, 'badge_level'] 
+                      : formData.audienceType.filter(t => t !== 'badge_level');
+                    updateFormData({ audienceType: newAudienceType });
+                  }}
+                />
+                <Label htmlFor="badge_level">Badge Level</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="badge_level" id="r3" />
-                <Label htmlFor="r3">Badge Level</Label>
+                <Checkbox 
+                  id="wishlist_target"
+                  checked={formData.audienceType.includes('wishlist_target')}
+                  onCheckedChange={(checked) => {
+                    const newAudienceType = checked 
+                      ? [...formData.audienceType, 'wishlist_target'] 
+                      : formData.audienceType.filter(t => t !== 'wishlist_target');
+                    updateFormData({ audienceType: newAudienceType });
+                  }}
+                />
+                <Label htmlFor="wishlist_target">Target Wishlist</Label>
               </div>
-            </RadioGroup>
+            </div>
             <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
-            {formData.audienceType === 'badge_level' && (
-              <Input
-                className="mt-2"
-                placeholder="e.g., Gold, Platinum"
-                value={formData.badgeLevel || ''}
-                onChange={(e) => updateFormData({ badgeLevel: e.target.value })}
-              />
+            {formData.audienceType.includes('badge_level') && (
+              <Select
+                value={formData.badgeLevel}
+                onValueChange={(value) => updateFormData({ badgeLevel: value })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a badge level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map(level => (
+                    <SelectItem key={level} value={level}>{level}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {formData.audienceType.includes('wishlist_target') && (
+              <Select
+                value={formData.wishlistItemId}
+                onValueChange={(value) => updateFormData({ wishlistItemId: value })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a wishlist item to target" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockWishlistInsights.map((item) => (
+                    <SelectItem key={item.itemName} value={item.itemName}>
+                      {item.itemName} ({item.estimatedCount} users)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -324,7 +416,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center font-medium"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
-                    <span className="text-right">{formData.rewardsAvailable > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
+                    <span className="text-right">{Number(formData.rewardsAvailable) > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
@@ -337,9 +429,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                   <div className="flex items-center justify-between">
                     <span className="flex items-center font-medium"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span>
                     <span className="text-right">
-                      {formData.audienceType === 'badge_level'
-                        ? `Badge Level: ${formData.badgeLevel || '[Level]'}`
-                        : formData.audienceType}
+                      {formData.audienceType.map(type => {
+                        if (type === 'badge_level') {
+                          return `Badge: ${formData.badgeLevel || '[Level]'}`;
+                        }
+                        if (type === 'wishlist_target') {
+                          return `Wishlist: ${formData.wishlistItemId || '[Item]'}`;
+                        }
+                        return type.charAt(0).toUpperCase() + type.slice(1);
+                      }).join(', ')}
                     </span>
                   </div>
                 </div>

@@ -37,7 +37,7 @@ export default function StepCampaignScheduling({ onNext, onBack }: StepProps) {
               type="number"
               placeholder="0 (unlimited)"
               value={formData.schedulingRules.stopAfterClaims}
-              onChange={(e) => updateFormData({ schedulingRules: { ...formData.schedulingRules, stopAfterClaims: Number(e.target.value) } })}
+              onChange={(e) => updateFormData({ schedulingRules: { ...formData.schedulingRules, stopAfterClaims: e.target.value === '' ? '' : Number(e.target.value) } })}
             />
           </div>
 

@@ -8,9 +8,10 @@ interface CampaignFormData {
   rewardId: string;
   startDate: Date | undefined;
   endDate: Date | undefined;
-  rewardsAvailable: number;
-  audienceType: 'everyone' | 'members' | 'badge_level' | 'wishlist_target';
+  rewardsAvailable: number | string;
+  audienceType: string[];
   badgeLevel?: string;
+  wishlistItemId?: string;
   campaignMessage: string;
   imageUrl: string;
   logoUrl: string;
@@ -23,7 +24,7 @@ interface CampaignFormData {
   };
   schedulingRules: {
     startDate: Date | undefined;
-    stopAfterClaims: number;
+    stopAfterClaims: number | string;
     pauseOnRewardEmpty: boolean;
     autoSwitchToPoints: boolean;
   };
@@ -46,7 +47,8 @@ const defaultFormData: CampaignFormData = {
   startDate: undefined,
   endDate: undefined,
   rewardsAvailable: 0,
-  audienceType: 'everyone',
+  audienceType: [],
+  wishlistItemId: '',
   campaignMessage: '',
   imageUrl: '',
   logoUrl: '',

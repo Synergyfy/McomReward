@@ -68,7 +68,7 @@ export const ClaimableCampaignsTicker = () => {
                 <div className="p-6">
                     <div className="flex items-center mb-4">
                         <Award className="w-8 h-8 text-yellow-500 mr-3" />
-                        <h3 className="text-2xl font-bold text-gray-800">Rewards Ready to Claim!</h3>
+                        <h3 className="text-2xl font-bold text-gray-800">Campaigns Ready to Claim!</h3>
                     </div>
                     <div className="marquee">
                         <div className="marquee-content">

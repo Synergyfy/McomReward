@@ -1,0 +1,62 @@
+export type DealType = 'Discount' | 'Package' | 'Gig Reward' | 'Special Offer';
+export type DealAudience = 'Local' | 'National';
+
+export interface Deal {
+  id: string;
+  businessId: string;
+  businessName: string;
+  title: string;
+  description: string;
+  type: DealType;
+  value: string; // e.g., "20%", "$10 Off", "Free Item"
+  startDate: string;
+  endDate: string;
+  audience: DealAudience;
+  terms: string;
+  status: 'Active' | 'Scheduled' | 'Expired';
+}
+
+export const dealsData: Deal[] = [
+    {
+        id: 'deal-1',
+        businessId: 'biz-123',
+        businessName: 'The Coffee Spot',
+        title: '20% Off All Espresso Drinks',
+        description: 'Start your morning right with a discount on our signature espresso beverages.',
+        type: 'Discount',
+        value: '20%',
+        startDate: '2025-10-01',
+        endDate: '2025-10-31',
+        audience: 'Local',
+        terms: 'Offer valid only at our downtown location. Cannot be combined with other offers.',
+        status: 'Active',
+    },
+    {
+        id: 'deal-2',
+        businessId: 'biz-456',
+        businessName: 'Local Threads',
+        title: 'Buy One Get One Free on All T-Shirts',
+        description: 'Stock up on our unique, locally designed t-shirts. Perfect for gifts!',
+        type: 'Package',
+        value: 'BOGO',
+        startDate: '2025-11-01',
+        endDate: '2025-11-15',
+        audience: 'National',
+        terms: 'Applies to all t-shirts of equal or lesser value. Online only.',
+        status: 'Scheduled',
+    },
+    {
+        id: 'deal-3',
+        businessId: 'biz-789',
+        businessName: 'Quick Bites',
+        title: 'Free Fries with Any Burger Purchase',
+        description: 'A classic combo to satisfy your cravings. Get a free side of our crispy fries.',
+        type: 'Special Offer',
+        value: 'Free Item',
+        startDate: '2025-09-15',
+        endDate: '2025-09-30',
+        audience: 'Local',
+        terms: 'Limit one per customer per day.',
+        status: 'Expired',
+    },
+];

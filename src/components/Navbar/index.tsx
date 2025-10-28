@@ -11,6 +11,9 @@ const Navbar = () => {
     <nav className='sticky top-0 z-50 backdrop-blur-lg bg-opacity-80 flex items-center justify-between px-4 py-2'>
       <div className='text-xl font-bold'>Loyalty CardX</div>
       <div className='hidden md:flex items-center gap-4'>
+        <Link href='/deals' className='text-base font-medium'>
+          Deals
+        </Link>
         <a href='#features' className='text-base font-medium'>
           Features
         </a>
@@ -39,6 +42,9 @@ const Navbar = () => {
       </div>
       {isOpen && (
         <div className='absolute top-16 left-0 w-full bg-white flex flex-col items-center gap-4 md:hidden'>
+          <Link href='/deals' className='text-base font-medium'>
+            Deals
+          </Link>
           <a href='#features' className='text-base font-medium'>
             Features
           </a>

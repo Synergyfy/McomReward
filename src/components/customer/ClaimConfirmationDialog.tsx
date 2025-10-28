@@ -15,12 +15,14 @@ interface ClaimConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   campaignName: string;
+  pointsCost: number; // New prop for points cost
 }
 
 export const ClaimConfirmationDialog = ({
   isOpen,
   onClose,
   campaignName,
+  pointsCost,
 }: ClaimConfirmationDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -34,6 +36,8 @@ export const ClaimConfirmationDialog = ({
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-lg">
             You have successfully claimed the reward for <span className="font-semibold">{campaignName}</span>.
+            <br />
+            <span className="font-medium">{-pointsCost} points have been deducted from your balance.</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

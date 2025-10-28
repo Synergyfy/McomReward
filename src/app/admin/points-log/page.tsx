@@ -11,26 +11,19 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PointHistoryRecord } from '@/services/wallet/types';
-
-// Mock data for all transactions
-const mockAllTransactions: (PointHistoryRecord & { customer: { name: string, email: string } })[] = [
-  { id: '1', timestamp: '2025-10-26T10:00:00Z', description: 'Joined Summer Bonanza', type: 'earned', points: 100, customer: { name: 'Alice Johnson', email: 'alice@example.com' }, campaign: { id: '1', title: 'Summer Bonanza' } },
-  { id: '2', timestamp: '2025-10-25T14:30:00Z', description: 'Redeemed: Free Coffee', type: 'spent', points: 50, customer: { name: 'Bob Williams', email: 'bob@example.com' }, reward: { id: '1', title: 'Free Coffee' } },
-  { id: '7', timestamp: '2025-10-25T11:00:00Z', description: 'Purchase at Burger Queen', type: 'purchase', points: 75, customer: { name: 'Alice Johnson', email: 'alice@example.com' } },
-  { id: '3', timestamp: '2025-10-24T09:00:00Z', description: 'Joined Winter Wonderland', type: 'earned', points: 150, customer: { name: 'Charlie Brown', email: 'charlie@example.com' }, campaign: { id: '2', title: 'Winter Wonderland Deals' } },
-  { id: '8', timestamp: '2025-10-23T20:00:00Z', description: 'Referral bonus', type: 'referral_bonus', points: 100, customer: { name: 'David Davis', email: 'david@example.com' } },
-  { id: '4', timestamp: '2025-10-23T18:00:00Z', description: 'Admin bonus', type: 'manual_adjustment', points: 20, customer: { name: 'Alice Johnson', email: 'alice@example.com' } },
-];
+import { mockAdminTransactions, AdminPointTransaction } from '@/lib/mock-data/admin-transactions'; // Updated import
 
 export default function PointsLogPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [filterTransactionType, setFilterTransactionType] = useState('all'); // Renamed for clarity
+  const [filterPointType, setFilterPointType] = useState('all'); // New state for point type filter
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   const filteredTransactions = useMemo(() => {
-    return mockAllTransactions.filter(tx => {
-      const matchesType = filterType === 'all' || tx.type === filterType;
+    return mockAdminTransactions.filter(tx => {
+      const matchesTransactionType = filterTransactionType === 'all' || tx.transactionType === filterTransactionType;
+      const matchesPointType = filterPointType === 'all' || tx.pointType === filterPointType; // New filter logic
+
       const matchesSearch = tx.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             tx.customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,9 +34,9 @@ export default function PointsLogPage() {
       const matchesDateRange = (!dateRange.from || txDate >= dateRange.from) &&
                                (!dateRange.to || txDate <= dateRange.to);
 
-      return matchesType && matchesSearch && matchesDateRange;
+      return matchesTransactionType && matchesPointType && matchesSearch && matchesDateRange; // Combined filters
     });
-  }, [searchTerm, filterType, dateRange]);
+  }, [searchTerm, filterTransactionType, filterPointType, dateRange]); // Added filterPointType to dependencies
 
   return (
     <div className="space-y-8">
@@ -63,18 +56,29 @@ export default function PointsLogPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full max-w-sm"
               />
-              <Select value={filterType} onValueChange={setFilterType}>
+              <Select value={filterTransactionType} onValueChange={setFilterTransactionType}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by type" />
+                  <SelectValue placeholder="Filter by transaction type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All Transaction Types</SelectItem>
                   <SelectItem value="earned">Earned</SelectItem>
                   <SelectItem value="spent">Spent</SelectItem>
                   <SelectItem value="purchase">Purchase</SelectItem>
                   <SelectItem value="referral_bonus">Referral</SelectItem>
                   <SelectItem value="manual_adjustment">Adjustment</SelectItem>
                   <SelectItem value="deal_redemption">Deal Redemption</SelectItem>
+                </SelectContent>
+              </Select>
+              {/* New Select for Point Type */}
+              <Select value={filterPointType} onValueChange={setFilterPointType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by point type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Point Types</SelectItem>
+                  <SelectItem value="regular">Regular Points</SelectItem>
+                  <SelectItem value="matching">Matching Points</SelectItem>
                 </SelectContent>
               </Select>
               <Popover>
@@ -120,7 +124,8 @@ export default function PointsLogPage() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Campaign/Reward</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Transaction Type</TableHead> {/* Renamed for clarity */}
+                <TableHead>Point Type</TableHead> {/* New TableHead */}
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Points</TableHead>
               </TableRow>
@@ -137,11 +142,16 @@ export default function PointsLogPage() {
                     {tx.campaign?.title || tx.reward?.title || '-'}
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize bg-muted px-2 py-1 rounded-md text-xs">{tx.type.replace('_', ' ')}</span>
+                    <span className="capitalize bg-muted px-2 py-1 rounded-md text-xs">{tx.transactionType.replace('_', ' ')}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`capitalize px-2 py-1 rounded-md text-xs ${tx.pointType === 'matching' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {tx.pointType}
+                    </span>
                   </TableCell>
                   <TableCell>{new Date(tx.timestamp).toLocaleString()}</TableCell>
-                  <TableCell className={`text-right font-bold ${tx.type === 'spent' ? 'text-red-600' : 'text-green-600'}`}>
-                    {tx.type === 'spent' ? '-' : '+'}{tx.points}
+                  <TableCell className={`text-right font-bold ${tx.points < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {tx.points > 0 ? '+' : ''}{tx.points}
                   </TableCell>
                 </TableRow>
               ))}

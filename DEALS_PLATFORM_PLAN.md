@@ -1,3 +1,4 @@
+
 # Deals Platform Integration — Frontend Build Guide
 
 ### 1. One-line purpose

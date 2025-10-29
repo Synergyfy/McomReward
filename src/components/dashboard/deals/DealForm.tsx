@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,14 +30,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { Deal } from '@/lib/mock-data/deals';
 
 // Omitting id, businessId, businessName, and status for the form
 type DealFormData = Omit<Deal, 'id' | 'businessId' | 'businessName' | 'status'>;
 
 export default function DealForm() {
-  const { register, handleSubmit, formState: { errors } } = useForm<DealFormData>();
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<DealFormData>();
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  const currentImageUrl = watch("imageUrl");
+
+  useEffect(() => {
+    if (currentImageUrl) {
+      setImagePreviewUrl(currentImageUrl);
+    }
+  }, [currentImageUrl]);
+
+  const handleImageSelect = (file: File | null, previewUrl: string | null) => {
+    setImagePreviewUrl(previewUrl);
+    setValue("imageUrl", previewUrl || '', { shouldValidate: true });
+  };
 
   const onSubmit = (data: DealFormData) => {
     console.log(data);
@@ -78,12 +94,28 @@ export default function DealForm() {
               {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
             </div>
 
+            <div className="flex items-center space-x-4">
+              <Label htmlFor="imageUrl" className="shrink-0">Deal Image</Label>
+              <CloudinaryUpload
+                onFileSelect={handleImageSelect}
+              />
+              {errors.imageUrl && <p className="text-red-500 text-sm">{errors.imageUrl.message}</p>}
+            </div>
+            {imagePreviewUrl && (
+              <div className="mt-4">
+                <p className="text-sm font-medium">Image Preview:</p>
+                <div className="relative h-32 w-full rounded-lg overflow-hidden bg-gray-200">
+                  <Image src={imagePreviewUrl} alt="Deal Image Preview" layout="fill" objectFit="cover" />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                   <Label htmlFor="type">Deal Type</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Select onValueChange={() => {}}>
+                      <Select onValueChange={(value) => setValue("type", value as Deal['type'], { shouldValidate: true })}>
                           <SelectTrigger id="type">
                               <SelectValue placeholder="Select a type" />
                           </SelectTrigger>
@@ -99,6 +131,7 @@ export default function DealForm() {
                       <p>Choose the category that best describes your deal.</p>
                     </TooltipContent>
                   </Tooltip>
+                  {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">Value (£)</Label>
@@ -145,7 +178,7 @@ export default function DealForm() {
               <Label htmlFor="audience">Audience</Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Select onValueChange={() => {}}>
+                  <Select onValueChange={(value) => setValue("audience", value as Deal['audience'], { shouldValidate: true })}>
                       <SelectTrigger id="audience">
                           <SelectValue placeholder="Select audience" />
                       </SelectTrigger>
@@ -159,6 +192,31 @@ export default function DealForm() {
                   <p>Choose whether your deal is for local or national customers.</p>
                 </TooltipContent>
               </Tooltip>
+              {errors.audience && <p className="text-red-500 text-sm">{errors.audience.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Select onValueChange={(value) => setValue("category", value as Deal['category'], { shouldValidate: true })}>
+                      <SelectTrigger id="category">
+                          <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="Food & Drink">Food & Drink</SelectItem>
+                          <SelectItem value="Retail">Retail</SelectItem>
+                          <SelectItem value="Services">Services</SelectItem>
+                          <SelectItem value="Entertainment">Entertainment</SelectItem>
+                          <SelectItem value="Travel">Travel</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Select the category that best fits your deal.</p>
+                </TooltipContent>
+              </Tooltip>
+              {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
             </div>
 
             <div className="space-y-2">

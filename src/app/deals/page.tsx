@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useMemo } from 'react';
 import DealCard from '@/components/deals/DealCard';
 import SearchBar from '@/components/deals/filters/SearchBar';

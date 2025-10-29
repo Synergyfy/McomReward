@@ -101,6 +101,17 @@ export default function EditRewardDialog({ reward, isOpen, onClose }: EditReward
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <label htmlFor="image" className="text-right col-span-1">
+              Image URL
+            </label>
+            <Input
+              id="image"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <label htmlFor="quantity" className="text-right col-span-1">
               Quantity
             </label>

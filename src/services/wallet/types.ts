@@ -5,7 +5,7 @@ export interface Wallet {
 export interface PointHistoryRecord {
   id: string;
   points: number;
-  type: 'earned' | 'spent';
+  type: 'earned' | 'spent' | 'purchase' | 'referral_bonus' | 'manual_adjustment';
   description: string;
   timestamp: string;
   campaign?: {

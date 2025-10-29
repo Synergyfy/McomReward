@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 import { usePathname } from 'next/navigation';
 
-import { LayoutDashboard, Award, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Award, Briefcase, History } from 'lucide-react';
 
 
 
@@ -93,6 +93,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
 
           </Link>
 
+        </li>
+        <li>
+          <Link href="/admin/points-log" className={linkClasses("/admin/points-log")}>
+            <History className="mr-3" />
+            Points Log
+          </Link>
         </li>
 
       </ul>

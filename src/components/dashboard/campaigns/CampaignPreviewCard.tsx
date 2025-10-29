@@ -1,9 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import { format } from 'date-fns';
-import { Gift, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface CampaignPreviewCardProps {
   title: string;

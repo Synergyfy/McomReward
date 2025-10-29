@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Award, Megaphone, UserCheck } from 'lucide-react';
+import { Award, Megaphone, Heart, Users, Ticket } from 'lucide-react';
 
 interface BusinessSidebarProps {
   isOpen: boolean;
@@ -35,16 +35,34 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
           </Link>
         </li>
         <li>
-          <Link href="/dashboard/campaigns" className={linkClasses("/dashboard/campaigns")}>
+          <Link href="/dashboard/campaigns/list" className={linkClasses("/dashboard/campaigns/list")}>
             <Megaphone className="mr-3" />
             Campaigns
           </Link>
         </li>
         <li>
-          <Link href="/dashboard/campaign-access" className={linkClasses("/dashboard/campaign-access")}>
+          <Link href="/dashboard/wishlist-insights" className={linkClasses("/dashboard/wishlist-insights")}>
+            <Heart className="mr-3" />
+            Wishlist Insights
+          </Link>
+        </li>
+        <li>
+          <Link href="/dashboard/affiliate" className={linkClasses("/dashboard/affiliate")}>
+            <Users className="mr-3" />
+            Affiliate
+          </Link>
+        </li>
+        <li>
+          <Link href="/dashboard/deals" className={linkClasses("/dashboard/deals")}>
+            <Ticket className="mr-3" />
+            Deals
+          </Link>
+        </li>
+        <li>
+          {/* <Link href="/dashboard/campaign-access" className={linkClasses("/dashboard/campaign-access")}>
             <UserCheck className="mr-3" />
             Campaign Access
-          </Link>
+          </Link> */}
         </li>
       </ul>
     </div>

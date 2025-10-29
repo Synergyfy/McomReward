@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useBusinessSignIn } from '@/services/business/hook';
 import { BusinessLoginDto } from '@/services/business/types';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 
@@ -12,7 +11,6 @@ const SignInPage = () => {
     email: '',
     password: '',
   });
-  const router = useRouter();
 
   const { mutate, isPending } = useBusinessSignIn();
 

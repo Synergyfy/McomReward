@@ -26,7 +26,7 @@ export default function Step3Images({ thumbnailUrl, subImageUrls, setThumbnailUr
         <div>
           <label className="block text-sm font-medium mb-2">Thumbnail Image</label>
           <p className="text-xs text-muted-foreground mb-2">This is the main image for your campaign.</p>
-          <CloudinaryUpload onUpload={setThumbnailUrl} />
+          <CloudinaryUpload onFileSelect={(file, previewUrl) => setThumbnailUrl(previewUrl || '')} />
           {thumbnailUrl && (
             <div className="mt-4 p-2 border rounded-lg">
               <p className="text-sm font-medium mb-2">Thumbnail Preview:</p>
@@ -45,7 +45,7 @@ export default function Step3Images({ thumbnailUrl, subImageUrls, setThumbnailUr
             {[...Array(4)].map((_, index) => (
               <div key={index} className="flex flex-col items-center space-y-2 border p-2 rounded-lg">
                 <p className="text-xs font-semibold">Image {index + 1}</p>
-                <CloudinaryUpload onUpload={(url) => handleSubImageUpload(url, index)} />
+                <CloudinaryUpload onFileSelect={(file, previewUrl) => handleSubImageUpload(previewUrl || '', index)} />
                 {subImageUrls[index] && (
                   <div className="mt-2 relative w-24 h-24 rounded-md overflow-hidden">
                     <Image src={subImageUrls[index]} alt={`Sub-image ${index + 1}`} layout="fill" objectFit="cover" />

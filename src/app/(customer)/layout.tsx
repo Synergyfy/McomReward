@@ -2,7 +2,8 @@
 
 import CustomerSidebar from '@/components/customer/sidebar';
 import CustomerHeader from '@/components/customer/header';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { WelcomeWishlistModal } from '@/components/customer/WelcomeWishlistModal';
 
 export default function CustomerLayout({
   children,
@@ -10,8 +11,21 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isWelcomeWishlistModalOpen, setIsWelcomeWishlistModalOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  useEffect(() => {
+    const hasSeenModal = localStorage.getItem('hasSeenWelcomeWishlistModal');
+    if (!hasSeenModal) {
+      setIsWelcomeWishlistModalOpen(true);
+    }
+  }, []);
+
+  const handleWelcomeWishlistModalClose = () => {
+    setIsWelcomeWishlistModalOpen(false);
+    localStorage.setItem('hasSeenWelcomeWishlistModal', 'true');
+  };
 
   return (
     <html lang="en">
@@ -37,6 +51,11 @@ export default function CustomerLayout({
             </main>
           </div>
         </div>
+        {/* Welcome Wishlist Modal */}
+        <WelcomeWishlistModal
+          isOpen={isWelcomeWishlistModalOpen}
+          onClose={handleWelcomeWishlistModalClose}
+        />
       </body>
     </html>
   );

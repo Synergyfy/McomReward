@@ -1,8 +1,12 @@
 'use client';
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import CampaignTransactionHistoryDialog from '@/components/customer/CampaignTransactionHistoryDialog';
+import { WishlistButton } from '@/components/customer/wishlist/WishlistButton';
+import { WishlistModal } from '@/components/customer/wishlist/WishlistModal';
 
 const mockMyCampaigns = [
   {
@@ -32,6 +36,24 @@ const mockMyCampaigns = [
 ];
 
 export default function MyCampaignsPage() {
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState('');
+  const [selectedCampaignTitle, setSelectedCampaignTitle] = useState('');
+  const [selectedWishlistItemName, setSelectedWishlistItemName] = useState<string | undefined>();
+
+  const handleCardClick = (campaignId: string, campaignTitle: string) => {
+    setSelectedCampaignId(campaignId);
+    setSelectedCampaignTitle(campaignTitle);
+    setIsHistoryDialogOpen(true);
+  };
+
+  const handleWishlistClick = (e: React.MouseEvent, title: string) => {
+    e.stopPropagation();
+    setSelectedWishlistItemName(title);
+    setIsWishlistModalOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -41,9 +63,16 @@ export default function MyCampaignsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {mockMyCampaigns.map((campaign) => (
-          <Card key={campaign.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
+          <Card 
+            key={campaign.id} 
+            className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl cursor-pointer"
+            onClick={() => handleCardClick(campaign.id, campaign.title)}
+          >
             <div className="relative h-40 w-full">
-              <img src={campaign.imageUrl} alt={campaign.title} className="h-full w-full object-cover" />
+              <Image src={campaign.imageUrl} alt={campaign.title} layout='fill' objectFit='cover' />
+              <div className="absolute top-2 right-2 bg-black/30 rounded-full backdrop-blur-sm">
+                <WishlistButton onClick={(e) => handleWishlistClick(e, campaign.title)} />
+              </div>
             </div>
             <CardContent className="p-6">
               <h3 className="text-sm font-semibold text-gray-500">{campaign.business}</h3>
@@ -55,6 +84,18 @@ export default function MyCampaignsPage() {
           </Card>
         ))}
       </div>
+
+      <CampaignTransactionHistoryDialog
+        isOpen={isHistoryDialogOpen}
+        onClose={() => setIsHistoryDialogOpen(false)}
+        campaignId={selectedCampaignId}
+        campaignTitle={selectedCampaignTitle}
+      />
+      <WishlistModal 
+        isOpen={isWishlistModalOpen}
+        onClose={() => setIsWishlistModalOpen(false)}
+        itemName={selectedWishlistItemName}
+      />
     </div>
   );
 }

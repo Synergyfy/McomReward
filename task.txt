@@ -1,0 +1,167 @@
+﻿ Tasks :
+Wishlist
+Point Engine
+Matching Points
+Affiliate / Invite System
+Deals Platform Integration
+
+"*Things to Outstanding:* 
+
+Wishlist - The Wishlist allows customers to save the products, services, or experiences they want — and that data becomes a direct intent signal that helps businesses create more targeted and relevant campaigns.
+
+Point Engine - The Points Engine tracks every time someone earns or spends loyalty points — it adds points when customers do things we want (buy, refer, join a campaign) and takes points away when they redeem rewards. It keeps everything fair and visible to businesses and customers.
+
+Matching Points - Matching Points is a second reward layer inside the MCOM Rewards platform — a parallel points system that works alongside Regular Points. Regular Points = earned directly from business activities  (spending, scanning, referring, or completing a campaign)
+Matching Points = bonus or mirrored points added by MCOM  (like a system-wide incentive or support reward)
+This creates two running balances in the user’s wallet — one from the business, one from MCOM — but both count toward the customer’s total engagement and badge status.
+
+
+
+Affiliate / Invite System — Every business gets a personal invite link and QR code. When they invite other businesses (or customers) and those people join and complete required steps, the inviter earns bonus points and other ladder-based rewards.
+
+
+Deals Platform Integration - A simple place where business owners and service providers can create and publish deals and "gig rewards" (like special offers or packages). Deals can be local (nearby customers) or national. They work with Loyalty Card X so deals can also be used as rewards."  
+
+Starting with wishlist" *Wishlist & Customer Intent System — Build Guide (MCOM Rewards / LoyaltyCardX) (Dev)*
+
+1) One-line purpose
+Let customers save the things they want (items, services, occasions). Use that data (with consent) to create precise campaigns and smart notifications for businesses. Keep it simple, private, and actionable.
+
+2) High-level flow (what happens)
+Customer adds an item to their wishlist.
+Customer gives consent to receive offers for that item (opt-in).
+Wishlist item is stored and indexed.
+Business owners can see aggregated wishlist counts and audience estimates.
+The system suggests or triggers campaign templates based on wishlist signals (birthday, restock, high demand).
+Campaigns are sent only to consenting customers.
+Analytics show conversions and wishlist-driven revenue.
+
+3) Requirements & principles (Henry’s rules)
+Keep the form minimal — five fields max per wishlist entry.
+Consent first — wishlist marketing only when customers opt in.
+Privacy by default — wishlist data is private unless explicitly shared.
+Actionable for business — show counts and estimates before a business publishes a campaign.
+No spam — limit messages per customer (max 3 wishlist-driven messages/month by default).
+Easy to use — adding a wishlist should take <15 seconds.
+
+
+
+6) UI & UX — Customer flows (exact screens)
+Design should be simple and fast.
+Wishlist Entry (from listing or product page)
+Button: Save to wishlist (small heart icon). Tap opens minimal modal.
+Modal fields (single-column):
+Item name (auto-filled) — editable
+Category (auto) — optional
+Occasion (dropdown: Birthday / Anniversary / None)
+Target date (optional date picker)
+Priority (Low / Medium / High)
+Consent toggle checkbox: "Yes — I want to receive offers related to this item"
+Buttons: Save / Cancel
+After Save: small toast: "Saved. We’ll let you know when it’s available or on offer."
+Wishlist Dashboard (customer)
+List of saved items with chip for consent status and quick actions: Edit, Share, Remove.
+Show progress bar if target_date is near and number of matching businesses found.
+Settings: toggle global wishlist marketing opt-in and message frequency.
+
+7) UI & UX — Business flows (exact screens)
+Wishlist Insights Page (in Business Dashboard)
+Header: "Customers waiting for your products"
+Search: item name + filters (date range, priority, radius)
+Table / Cards: item_name, category, estimated_count, top_dates, priority_distribution
+CTA: "Create campaign for this audience" (opens Campaign Builder pre-filled with item info)
+Note: show “estimate” badge and a privacy note: "Numbers show consenting customers only. User details are not shared without consent."
+Pre-publish Audience Estimate modal
+When a business clicks Create Campaign: show modal: "Your offer matches ~124 customers. Would you like to target them?"
+Buttons: Use Targeting / Broaden Audience / Cancel
+
+8) Campaign Integration (how wishlist plugs into campaigns)
+In Campaign Builder, add a new targeting option: Target by Wishlist.
+Dropdown: Select item_name (autocomplete) or category/occasion.
+When selected, show estimated audience size from wishlist_aggregates.
+Respect consent: only users who set consent_marketing = true will be targeted.
+When publishing: record campaign.targeting = { type: 'wishlist', item_name, min_priority, date_range }
+Back-end action on publish:
+Create a campaign audience job that queues notifications to matched users (respecting rate limits and message caps).
+Log the campaign → wishlist mapping for reporting.
+
+9) Notifications & Message rules
+Channels: Push (app), Email, SMS (if opted). Use customer preference settings.
+Frequency cap: default max 3 wishlist-related messages per month (per user). Configurable by admin.
+Personalization: Use item_name and occasion in message but avoid excessive personal details.
+Example Push copy:
+"Good news — [Business] has your wishlist item '[Item Name]' in stock. Tap to save 10% today." Example Email subject:
+"Your wishlist item is available: [Item Name] — special offer inside"
+
+10) Privacy & Consent (must be enforced)
+All marketing uses MUST check consent_marketing before sending any message.
+Add global user opt-out setting. If the user toggles it off, do not target them even if item consent is on.
+Use anonymized, rounded counts for business aggregates (e.g., display 120 instead of 123).
+Delete or export wishlist data on user request (GDPR/CCPA).
+Log all data access in wishlist_actions for audit and compliance.
+
+11) Aggregation & Performance (scaling notes)
+Maintain wishlist_aggregates as a materialized view updated periodically (e.g., every 15 minutes) or via event-driven updates on wishlist create/update/delete.
+Use a search index (ElasticSearch / Postgres trigram) for fast item matching.
+Use geo-queries for hyperlocal targeting (city/postcode/radius).
+Throttle the audience job to avoid sudden mass notifications (use a queueing system).
+
+12) Admin Tools & Controls
+Admin panel to:
+Configure recommendation rules (how many customers make a campaign suggestion)
+Set global message caps
+View platform wishlist trends
+Run manual campaigns for large wishlist events (with approval)
+
+13) QA & Acceptance Tests (checklist)
+Customer flows
+ Add wishlist item from product page.
+ Edit the item and change consent.
+ Delete item.
+ Receive push/email only when consent is true.
+Business flows
+ Get aggregated counts for an item (consent respected).
+ Click "Create campaign" and see pre-filled targeting and estimate.
+ Publish campaign and ensure notifications are queued only for consenting users.
+Privacy & Security
+ Aggregates are rounded & anonymized.
+ All accesses are logged in wishlist_actions.
+ User export and delete requests work.
+Performance
+ Aggregates update within 15 minutes of changes.
+ Search returns results under 200ms for common queries.
+
+14) Metrics to track (KPIs)
+Wishlist adoption rate (users who add at least one item).
+Conversion rate: wishlist → purchase.
+Campaign success: targeted campaign CTR and redemption rate.
+Message opt-out rate after wishlist campaigns.
+Average time from wishlist save to purchase.
+
+15) Example scenarios (developer-readable)
+Scenario A — Birthday cakes:
+User saves 'Birthday Cake' with target_date = 2025-10-12 and consent = true.
+Aggregates show 78 matches for Bella’s Bakery.
+System suggests a birthday campaign; Bakery publishes; 25 users redeem vouchers.
+Scenario B — Restock alert:
+User wishes for 'Limited Edition Candle' (out of stock).
+When merchant updates inventory, a webhook triggers: push notifications sent to 5 consenting users.
+
+16) Roadmap & incremental delivery plan
+Phase 1 (MVP) — 2 weeks
+Basic wishlist CRUD, consent toggle, customer dashboard, aggregated counts, campaign targeting option (manual trigger).
+Phase 2 (Trusted rollout) — 3–4 weeks
+Search index, aggregation materialized views, business insights page, suggestion engine (auto-suggest campaigns).
+Phase 3 (Scale & polish) — 4–6 weeks
+Geo-targeting, rate-limiting queue, admin tools, privacy export, A/B testing of messages.
+
+17) Open questions to resolve (product decisions)
+Should wishlist items be shareable publicly (opt-in)?
+Rounding policy for aggregates (nearest 10 vs 5%)?
+Default message cap per user (3/month recommended).
+Should businesses get a cost/credit charge for wishlist-targeted campaigns?
+
+18) Final notes
+Keep it simple and useful. The wishlist is about intent — don’t over-complicate the data.
+Always require consent before using wishlist data for marketing.
+Show businesses audience size but protect user details."so now what I need is a step by step prompt for each task starting from wishlist generate a step prompt I could paste on my ai website builder to build the wishlist to a production level prototype... Take note my role here is just frontend, not a backend... I'm in charge of showing the flow even if it is with mock data... I don't do backend there

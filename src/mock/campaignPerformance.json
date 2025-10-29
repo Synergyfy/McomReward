@@ -1,0 +1,30 @@
+{
+  "name": "Summer Loyalty Campaign 2025",
+  "stats": {
+    "totalCustomers": 1284,
+    "totalPointsAwarded": 542300,
+    "totalRewardsRedeemed": 312,
+    "redemptionRate": 24.3
+  },
+  "trend": [
+    { "date": "Oct 1", "signups": 34, "redemptions": 12, "pointsAwarded": 8400 },
+    { "date": "Oct 2", "signups": 28, "redemptions": 10, "pointsAwarded": 7200 },
+    { "date": "Oct 3", "signups": 45, "redemptions": 20, "pointsAwarded": 11000 },
+    { "date": "Oct 4", "signups": 52, "redemptions": 15, "pointsAwarded": 9700 },
+    { "date": "Oct 5", "signups": 40, "redemptions": 18, "pointsAwarded": 8600 },
+    { "date": "Oct 6", "signups": 37, "redemptions": 14, "pointsAwarded": 9100 },
+    { "date": "Oct 7", "signups": 50, "redemptions": 19, "pointsAwarded": 10200 }
+  ],
+  "topCustomers": [
+    { "name": "Sarah Johnson", "email": "sarah@example.com", "points": 1200, "redemptions": 5 },
+    { "name": "Kwame Mensah", "email": "kwame@example.com", "points": 1050, "redemptions": 3 },
+    { "name": "Linda Ofori", "email": "linda@example.com", "points": 950, "redemptions": 4 },
+    { "name": "James Boateng", "email": "james@example.com", "points": 880, "redemptions": 2 }
+  ],
+  "rewardsPerformance": [
+    { "rewardId": "rw1", "title": "Free Coffee", "pointsRequired": 500, "redeemed": 128 },
+    { "rewardId": "rw2", "title": "10% Off Voucher", "pointsRequired": 800, "redeemed": 96 },
+    { "rewardId": "rw3", "title": "Movie Ticket", "pointsRequired": 1500, "redeemed": 54 },
+    { "rewardId": "rw4", "title": "Gift Hamper", "pointsRequired": 2500, "redeemed": 34 }
+  ]
+}

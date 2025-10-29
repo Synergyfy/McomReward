@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import { Staff, CreateStaffDto, UpdateStaffDto } from './types';
+import { LoginResponse } from '@/services/auth/types';
 
 const STAFF_QUERY_KEY = 'staff';
 
@@ -9,6 +10,32 @@ const createStaff = async (staffData: CreateStaffDto): Promise<Staff> => {
   const { data } = await api.post<Staff>('/staff', staffData);
   return data;
 };
+
+
+interface StaffLoginDto {
+    email: string;
+    password: string;
+};
+
+// Staff login
+const staffSignIn = async (loginData: StaffLoginDto): Promise<LoginResponse> => {
+  const { data } = await api.post<LoginResponse>('/auth/login', loginData);
+  return data;
+};
+
+
+
+export const useStaffLogin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: staffSignIn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY] });
+    },
+  });
+};
+
 
 export const useCreateStaff = () => {
   const queryClient = useQueryClient();

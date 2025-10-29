@@ -1,21 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Award, Megaphone, Heart, Users, Ticket } from 'lucide-react';
+// import { Award, Megaphone, UserCheck, Trophy, ChevronDown, ChevronUp, Users  } from 'lucide-react';
+import { useLinkClasses } from '@/app/hooks';
+// import { usePathname } from 'next/navigation';
+import { Award, Megaphone, Heart, Users, Ticket, Trophy} from 'lucide-react';
 
 interface BusinessSidebarProps {
   isOpen: boolean;
 }
 
 export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
-  const pathname = usePathname();
+  const [isStaffOpen, setIsStaffOpen] = useState(true);
+  const linkClasses = useLinkClasses();
 
-  const linkClasses = (path: string) => {
-    const isActive = pathname.startsWith(path);
-    return `flex items-center p-2 rounded-lg transition-colors duration-200 ${isActive ? 'bg-orange-600 text-white' : 'text-gray-600 hover:bg-orange-100 hover:text-orange-600'}`;
-  };
+
 
   return (
     <div
@@ -28,6 +28,12 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
     >
       <h2 className="text-2xl font-bold mb-6 text-orange-600">Business Menu</h2>
       <ul className="space-y-2">
+        <li>
+          <Link href="/dashboard" className={linkClasses("/dashboard", true)}>
+            <Award className="mr-3" />
+           Dashboard
+          </Link>
+        </li>
         <li>
           <Link href="/dashboard/rewards" className={linkClasses("/dashboard/rewards")}>
             <Award className="mr-3" />
@@ -63,6 +69,46 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
             <UserCheck className="mr-3" />
             Campaign Access
           </Link> */}
+        </li>
+         <li>
+          <Link href="/dashboard/campaign-performance" className={linkClasses("/dashboard/campaign-performance")}>
+            <Trophy className="mr-3" />
+            Campaign Performance
+          </Link>
+        </li>
+
+       <li>
+          <button
+            className={linkClasses("/dashboard/staff")}
+          >
+            <span className="flex items-center">
+              <Users className="mr-3" />
+              Staff Management
+            </span>
+           
+          </button>
+
+          {/* Dropdown items */}
+          {isStaffOpen && (
+            <ul className="ml-8 mt-2 space-y-1">
+              <li>
+                <Link
+                  href="/dashboard/staff"
+                  className={linkClasses("/dashboard/staff", true)}
+                >
+                  View Staff
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dashboard/staff/add"
+                  className={linkClasses("/dashboard/staff/add", true)}
+                >
+                  Add Staff
+                </Link>
+              </li>
+            </ul>
+          )}
         </li>
       </ul>
     </div>

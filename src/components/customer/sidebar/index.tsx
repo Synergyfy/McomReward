@@ -56,6 +56,9 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
           <Link href="/redemption" className={linkClasses("/redemption")}>
             <HandCoins className="mr-3" />
             Redemption
+          </Link>
+        </li>
+        <li className="mt-8">
           <Link href="/settings" className={linkClasses("/settings")}>
             <Settings className="mr-3" />
             Settings

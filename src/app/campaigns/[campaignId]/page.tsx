@@ -112,10 +112,10 @@ export default function CampaignDetailPage({}: PageProps) {
               {/* Desktop Menu */}
               <nav className="hidden md:flex">
                 <ul className="flex space-x-6">
-                  <li><a href="#" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">EARN POINTS</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">REDEEM POINTS</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">CONTACT US</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">MY POINTS</a></li>
+                  <li><a href="/campaigns/earn-points" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">EARN POINTS</a></li>
+                  <li><a href="/campaigns/redeem-points" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">REDEEM POINTS</a></li>
+                  <li><a href="/campaigns/contact-us" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">CONTACT US</a></li>
+                  <li><a href="/my-points" className="text-gray-600 hover:text-orange-600 transition-colors duration-200">MY POINTS</a></li>
                 </ul>
               </nav>
 
@@ -131,10 +131,10 @@ export default function CampaignDetailPage({}: PageProps) {
             {isMobileMenuOpen && (
               <div className="md:hidden bg-white absolute top-full left-0 w-full shadow-lg pb-4 pt-2">
                 <ul className="flex flex-col items-center space-y-4">
-                  <li><a href="#" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>EARN POINTS</a></li>
-                  <li><a href="#" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>REDEEM POINTS</a></li>
-                  <li><a href="#" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>CONTACT US</a></li>
-                  <li><a href="#" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>MY POINTS</a></li>
+                  <li><a href="/campaigns/earn-points" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>EARN POINTS</a></li>
+                  <li><a href="/campaigns/redeem-points" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>REDEEM POINTS</a></li>
+                  <li><a href="/campaigns/contact-us" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>CONTACT US</a></li>
+                  <li><a href="/my-points" className="text-gray-800 hover:text-orange-600 transition-colors duration-200 text-lg" onClick={() => setIsMobileMenuOpen(false)}>MY POINTS</a></li>
                 </ul>
               </div>
             )}

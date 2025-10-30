@@ -32,6 +32,14 @@ interface CampaignFormData {
   ctaBgColor: string;
   bgColorTextColor: string;
   ctaTextColor: string;
+  earnTitle?: string;
+  earnText?: string;
+  redeemTitle?: string;
+  redeemText?: string;
+  contactTitle?: string;
+  contactText?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 }
 
 interface CampaignFormContextType {
@@ -69,6 +77,14 @@ const defaultFormData: CampaignFormData = {
   ctaBgColor: '#000000',
   bgColorTextColor: '#000000',
   ctaTextColor: '#FFFFFF',
+  earnTitle: '',
+  earnText: '',
+  redeemTitle: '',
+  redeemText: '',
+  contactTitle: '',
+  contactText: '',
+  contactEmail: '',
+  contactPhone: '',
 };
 
 const CampaignFormContext = createContext<CampaignFormContextType | undefined>(undefined);

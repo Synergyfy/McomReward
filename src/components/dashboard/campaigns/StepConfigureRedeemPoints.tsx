@@ -31,6 +31,7 @@ export default function StepConfigureRedeemPoints({ onNext, onBack }: StepProps)
             value={formData.redeemTitle || ''}
             onChange={(e) => updateFormData({ redeemTitle: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">This title will be displayed at the top of the Redeem Points page.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="redeemText">Page Description</Label>
@@ -40,6 +41,7 @@ export default function StepConfigureRedeemPoints({ onNext, onBack }: StepProps)
             value={formData.redeemText || ''}
             onChange={(e) => updateFormData({ redeemText: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">A short description that appears below the title on the Redeem Points page.</p>
         </div>
       </CardContent>
       <div className="flex justify-between p-6">

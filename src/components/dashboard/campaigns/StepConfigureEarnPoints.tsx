@@ -31,6 +31,7 @@ export default function StepConfigureEarnPoints({ onNext, onBack }: StepProps) {
             value={formData.earnTitle || ''}
             onChange={(e) => updateFormData({ earnTitle: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">This title will be displayed at the top of the Earn Points page.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="earnText">Page Description</Label>
@@ -40,6 +41,7 @@ export default function StepConfigureEarnPoints({ onNext, onBack }: StepProps) {
             value={formData.earnText || ''}
             onChange={(e) => updateFormData({ earnText: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">A short description that appears below the title on the Earn Points page.</p>
         </div>
         {/* Add checkboxes for enabling/disabling earn methods in the future */}
       </CardContent>

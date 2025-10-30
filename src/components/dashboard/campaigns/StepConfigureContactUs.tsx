@@ -31,6 +31,7 @@ export default function StepConfigureContactUs({ onNext, onBack }: StepProps) {
             value={formData.contactTitle || ''}
             onChange={(e) => updateFormData({ contactTitle: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">This title will be displayed at the top of the Contact Us page.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="contactText">Page Description</Label>
@@ -40,6 +41,7 @@ export default function StepConfigureContactUs({ onNext, onBack }: StepProps) {
             value={formData.contactText || ''}
             onChange={(e) => updateFormData({ contactText: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">A short description that appears below the title on the Contact Us page.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="contactEmail">Contact Email</Label>
@@ -50,6 +52,7 @@ export default function StepConfigureContactUs({ onNext, onBack }: StepProps) {
             value={formData.contactEmail || ''}
             onChange={(e) => updateFormData({ contactEmail: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">The email address customers can use to contact you.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="contactPhone">Contact Phone</Label>
@@ -60,6 +63,7 @@ export default function StepConfigureContactUs({ onNext, onBack }: StepProps) {
             value={formData.contactPhone || ''}
             onChange={(e) => updateFormData({ contactPhone: e.target.value })}
           />
+          <p className="text-sm text-gray-500 mt-1">The phone number customers can use to call you.</p>
         </div>
       </CardContent>
       <div className="flex justify-between p-6">

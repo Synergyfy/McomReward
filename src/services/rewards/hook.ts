@@ -24,8 +24,9 @@ export const useCreateReward = () => {
       toast.success('Reward created successfully!');
       queryClient.invalidateQueries({ queryKey: [REWARDS_QUERY_KEY] });
     },
-    onError: (error: AxiosError<{ message: string }>) => {
-      const message = error.response?.data?.message || 'An unexpected error occurred.';
+    onError: (error) => {
+      console.error('Error creating reward:', error);
+      const message = 'An unexpected error occurred.';
       toast.error(message);
     },
   });

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Inter } from "next/font/google";
 import { Providers } from '@/components/providers';
+import Link from "next/link";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +23,41 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           {children}
+        <footer className="bg-white border-t border-gray-200 py-10 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+
+        {/* Left Section – Branding */}
+        <div>
+        <h3 className="text-2xl font-bold text-orange-500">Loyalty CardX</h3>
+        <p className="text-gray-500 text-sm mt-1">
+        Empowering local businesses with rewards that customers love.
+        </p>
+        </div>
+
+        {/* Middle Section – Links */}
+        <div className="flex flex-wrap justify-center gap-6 text-gray-600 text-sm">
+        <Link href="/terms" className="hover:text-orange-500 transition">
+        Terms & Conditions
+        </Link>
+        <Link href="/privacy" className="hover:text-orange-500 transition">
+        Privacy Policy
+        </Link>
+        <Link href="/faq" className="hover:text-orange-500 transition">
+        FAQ
+        </Link>
+        <Link href="/contact" className="hover:text-orange-500 transition">
+        Contact
+        </Link>
+        </div>
+
+        {/* Right Section – Copyright */}
+        <div className="text-gray-400 text-sm">
+        © {new Date().getFullYear()}{" "}
+        <span className="text-orange-500 font-semibold">Loyalty CardX</span>. All
+        rights reserved.
+        </div>
+        </div>
+        </footer>
         </Providers>
       </body>
     </html>

@@ -1,6 +1,6 @@
 'use client';
 
-import BusinessSidebar from '@/components/dashboard/sidebar';
+import BusinessSidebar from '@/components/dashboard/sidebar/index';
 import BusinessHeader from '@/components/dashboard/header';
 import React, { useState } from 'react';
 

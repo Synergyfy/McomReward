@@ -1,16 +1,26 @@
-export interface CreateBusinessDto {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  phone: string;
-  address: string;
-  sectorId: string;
-  website?: string;
-  socialMedia?: {
-    [key: string]: string;
-  };
-}
+import * as z from "zod";
+import { businessSignUpSchema, createBusinessSchema} from "@/lib/validators/signupSchemas";
+
+export type CreateBusinessDto = z.infer<typeof createBusinessSchema>;
+export type BusinessSignUpDto = z.infer<typeof businessSignUpSchema>;
+
+
+
+
+// export interface CreateBusinessDto {
+//   name: string;
+//   email: string;
+//   password: string;
+//   confirmPassword: string;
+//   phone: string;
+//   address: string;
+//   sectorId: string;
+//   website?: string;
+//   socialMedia?: {
+//     [key: string]: string;
+//   };
+//   referralCapacity: number;
+// }
 
 export interface Business {
   id: string;

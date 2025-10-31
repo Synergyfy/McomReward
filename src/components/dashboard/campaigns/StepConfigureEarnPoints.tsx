@@ -4,9 +4,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCampaignForm } from "@/context/CampaignFormContext";
+import RichTextEditor from '@/components/ui/RichTextEditor';
 
 interface StepProps {
   onNext: () => void;
@@ -35,11 +35,9 @@ export default function StepConfigureEarnPoints({ onNext, onBack }: StepProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="earnText">Page Description</Label>
-          <Textarea
-            id="earnText"
-            placeholder="e.g., Get points for every dollar you spend."
+          <RichTextEditor
             value={formData.earnText || ''}
-            onChange={(e) => updateFormData({ earnText: e.target.value })}
+            onChange={(value) => updateFormData({ earnText: value })}
           />
           <p className="text-sm text-gray-500 mt-1">A short description that appears below the title on the Earn Points page.</p>
         </div>

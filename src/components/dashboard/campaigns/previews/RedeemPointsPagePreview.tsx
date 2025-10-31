@@ -75,7 +75,7 @@ export default function RedeemPointsPagePreview({ campaignData }: RedeemPointsPa
                   <CardTitle className="text-2xl font-bold text-gray-800">{reward.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col justify-between">
-                  <CardDescription className="text-lg text-gray-700 mb-4 h-20">
+                  <CardDescription className="text-lg text-gray-700 mb-4 h-20 line-clamp-3">
                     {reward.description}
                   </CardDescription>
                   <div className="flex items-center justify-between mb-4">

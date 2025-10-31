@@ -4,21 +4,45 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { Calendar, Tag, Info, Gift, CheckCircle, Users, Trophy } from "lucide-react";
+import { Calendar, Tag, Info, Gift, CheckCircle, Users, Trophy, ShoppingBag } from "lucide-react";
 import { CampaignFormData } from "@/context/CampaignFormContext";
 
 interface CampaignDetailPagePreviewProps {
   campaignData: CampaignFormData;
 }
 
+const mockAllRewards = [
+  {
+    id: '1',
+    title: 'Summer Voucher ($50)',
+    description: 'Get a $50 voucher for your summer shopping.',
+    points: 50,
+    image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
+  },
+  {
+    id: '2',
+    title: 'Gift Card ($100)',
+    description: 'A $100 gift card to use on any purchase.',
+    points: 100,
+    image: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
+  },
+  {
+    id: '3',
+    title: 'Discount Coupon (20% off)',
+    description: 'Enjoy 20% off your next order.',
+    points: 20,
+    image: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
+  },
+];
+
 export default function CampaignDetailPagePreview({ campaignData }: CampaignDetailPagePreviewProps) {
-  // Using campaignData passed as prop instead of mockCampaign
   const campaign = campaignData;
 
-  // Placeholder for handleJoin - actual join logic won't be in preview
   const handleJoin = () => {
     alert('This is a preview. Join functionality is not active here.');
   };
+
+  const selectedRewards = mockAllRewards.filter(r => campaign.rewardIds.includes(r.id));
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -31,8 +55,9 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
           objectFit="cover"
           className="brightness-75"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end pb-16 px-4 md:px-8 lg:px-16">
-          <div className="max-w-4xl mx-auto text-white text-center">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end pb-16 px-4 md:px-8 lg:px-16"
+             style={{ backgroundColor: campaign.bgColor, color: campaign.bgColorTextColor }}>
+          <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-lg">
               {campaign.campaignName || '[Campaign Name]'}
             </h1>
@@ -41,7 +66,8 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
             </p>
             <Button
               onClick={handleJoin}
-              className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+              className="w-full md:w-auto text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+              style={{ backgroundColor: campaign.ctaBgColor, color: campaign.ctaTextColor }}
             >
               {campaign.ctaButtonText || 'Join Campaign & Get Reward'}
             </Button>
@@ -134,23 +160,63 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
           </section>
 
           {/* Multiple Rewards Display */}
-          {/* This section would dynamically display rewards based on formData.rewardIds */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Rewards in this Campaign</h2>
-            <p className="text-gray-600">[Dynamic Rewards Display based on selected rewardIds]</p>
-          </section>
+          {campaign.rewardIds && campaign.rewardIds.length > 0 && (
+            <section>
+              <h2 className="text-3xl font-bold text-gray-800 mb-6">Rewards in this Campaign</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campaign.rewardIds.map((rewardId) => {
+                  const rewardItem = mockAllRewards.find(r => r.id === rewardId);
+                  if (!rewardItem) return null; // Handle case where rewardId is not found in mock
+                  return (
+                    <Card key={rewardItem.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-200">
+                      <div className="relative h-48 w-full">
+                        <Image
+                          src={rewardItem.image}
+                          alt={rewardItem.title}
+                          layout="fill"
+                          objectFit="cover"
+                        />
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">{rewardItem.title}</h3>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-3">{rewardItem.description}</p>
+                        <div className="flex justify-between items-center text-md font-semibold text-gray-700">
+                          <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {rewardItem.points > 0 ? `${rewardItem.points} Points` : 'No Points Req.'}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* How to Earn */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">How to Participate & Earn</h2>
-            <p className="text-gray-600">[Dynamic How-to-Earn instructions]</p>
-          </section>
+          {campaign.howToEarn && campaign.howToEarn.length > 0 && (
+            <section>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">How to Participate & Earn</h2>
+              <ul className="space-y-3 text-lg text-gray-700 list-disc pl-5">
+                {campaign.howToEarn.map((item, index) => (
+                  <li key={index} className="flex items-start">
+                    <CheckCircle className="w-6 h-6 mr-3 text-green-500 flex-shrink-0 mt-1" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Terms and Conditions */}
-          <section>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Terms & Conditions</h2>
-            <p className="text-gray-600">[Dynamic Terms and Conditions]</p>
-          </section>
+          {campaign.termsAndConditions && campaign.termsAndConditions.length > 0 && (
+            <section>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">Terms & Conditions</h2>
+              <ul className="space-y-3 text-base text-gray-600 list-disc pl-5">
+                {campaign.termsAndConditions.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
 
@@ -159,7 +225,8 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
         <div className="max-w-4xl mx-auto flex justify-center">
           <Button
             onClick={handleJoin}
-            className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+            className="w-full md:w-auto text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+            style={{ backgroundColor: campaign.ctaBgColor, color: campaign.ctaTextColor }}
           >
             {campaign.ctaButtonText || 'Join Campaign & Get Reward'}
           </Button>

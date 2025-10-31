@@ -64,7 +64,7 @@ export default function EarnPointsPagePreview({ campaignData }: EarnPointsPagePr
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <CardDescription className="text-lg text-gray-700 mb-6 h-20">
+                <CardDescription className="text-lg text-gray-700 mb-6 h-20 line-clamp-3">
                   {method.description}
                 </CardDescription>
                 <Button 

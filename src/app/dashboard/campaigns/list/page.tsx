@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
 
 // Mock data for prototype - consistent with campaign builder preview
 const mockCampaigns = [
@@ -77,6 +78,8 @@ export default function CampaignsListPage() {
             className="w-full max-w-sm"
           />
         </div>
+
+        <ClaimableCampaignsTicker />
 
         {filteredCampaigns.length === 0 ? (
           <div className="text-center py-12">

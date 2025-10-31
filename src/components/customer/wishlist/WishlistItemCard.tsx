@@ -15,9 +15,12 @@ export interface WishlistItem {
 
 interface WishlistItemCardProps {
   item: WishlistItem;
+  onEdit: (item: WishlistItem) => void;
+  onDelete: (id: string) => void;
+  onShare: (id: string) => void;
 }
 
-export const WishlistItemCard = ({ item }: WishlistItemCardProps) => {
+export const WishlistItemCard = ({ item, onEdit, onDelete, onShare }: WishlistItemCardProps) => {
   return (
     <Card>
       <CardHeader>
@@ -30,9 +33,9 @@ export const WishlistItemCard = ({ item }: WishlistItemCardProps) => {
         {item.targetDate && <p>Target Date: {item.targetDate}</p>}
         <p>Offers: {item.consent ? 'Enabled' : 'Disabled'}</p>
         <div className="flex justify-end space-x-2 mt-4">
-          <Button variant="outline">Edit</Button>
-          <Button variant="outline">Share</Button>
-          <Button variant="destructive">Remove</Button>
+          <Button variant="outline" onClick={() => onEdit(item)}>Edit</Button>
+          <Button variant="outline" onClick={() => onShare(item.id)}>Share</Button>
+          <Button variant="destructive" onClick={() => onDelete(item.id)}>Remove</Button>
         </div>
       </CardContent>
     </Card>

@@ -4,8 +4,6 @@ import React from 'react';
 import { mockWallet } from '@/lib/mock-data/wallet';
 import { PointsBalanceCard } from '@/components/customer/PointsBalanceCard';
 import { TransactionHistory } from '@/components/customer/TransactionHistory';
-import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker'; // Import the ticker
-
 export default function WalletPage() {
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -17,7 +15,6 @@ export default function WalletPage() {
 
         <div className="space-y-8">
           <PointsBalanceCard wallet={mockWallet} />
-          <ClaimableCampaignsTicker /> {/* Re-add the ticker */}
           <TransactionHistory transactions={mockWallet.transactions} />
         </div>
       </div>

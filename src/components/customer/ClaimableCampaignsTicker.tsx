@@ -80,7 +80,7 @@ export const ClaimableCampaignsTicker = () => {
                         <div className="marquee-content">
                         {[...mockClaimableCampaigns, ...mockClaimableCampaigns].map((campaign, index) => (
                             <div key={index} className="flex-shrink-0 w-auto mx-4">
-                                <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md min-w-[350px] border">
+                                <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md border w-[80vw] max-w-[350px]">
                                     <div className="flex flex-col">
                                         <p className="font-bold text-gray-800 truncate">{campaign.title}</p>
                                         <p className="text-sm text-gray-500">{campaign.business}</p>

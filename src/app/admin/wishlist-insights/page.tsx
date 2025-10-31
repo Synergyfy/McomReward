@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from 'next/navigation';
-import { AudienceEstimateModal } from '@/components/dashboard/campaigns/AudienceEstimateModal';
+import { AudienceEstimateModal } from '@/components/admin/campaigns/AudienceEstimateModal';
 
 type WishlistInsight = {
   itemName: string;
@@ -51,7 +51,7 @@ export default function WishlistInsightsPage() {
 
   const handleConfirmNavigation = () => {
     if (selectedItem) {
-      router.push(`/dashboard/campaigns/create?itemName=${encodeURIComponent(selectedItem.itemName)}`);
+      router.push(`/admin/campaigns/create?itemName=${encodeURIComponent(selectedItem.itemName)}`);
     }
     setIsModalOpen(false);
   };

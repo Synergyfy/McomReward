@@ -54,7 +54,11 @@ export default function RedeemPointsPagePreview({ campaignData }: RedeemPointsPa
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold text-gray-800">{campaignData.redeemTitle || 'Redeem Your Points'}</h1>
-          <p className="mt-2 text-lg text-gray-600">{campaignData.redeemText || 'Use your points to claim exclusive rewards and discounts.'} Current Points: <span className="font-bold text-orange-600">{userPoints}</span></p>
+          <div className="mt-2 text-lg text-gray-600">
+            <span dangerouslySetInnerHTML={{ __html: campaignData.redeemText || 'Use your points to claim exclusive rewards and discounts.' }} />
+            {' '}
+            Current Points: <span className="font-bold text-orange-600">{userPoints}</span>
+          </div>
         </div>
 
         {/* Rewards Grid */}

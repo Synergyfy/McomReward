@@ -46,9 +46,10 @@ export default function EarnPointsPagePreview({ campaignData }: EarnPointsPagePr
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
             {campaignData.earnTitle || 'Earn Points'}
           </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            {campaignData.earnText || 'Discover the different ways you can earn loyalty points with us.'}
-          </p>
+          <p
+            className="mt-4 text-xl text-gray-600"
+            dangerouslySetInnerHTML={{ __html: campaignData.earnText || 'Discover the different ways you can earn loyalty points with us.' }}
+          />
         </div>
 
         {/* Earn Methods Grid */}

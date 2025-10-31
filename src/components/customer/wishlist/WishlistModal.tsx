@@ -16,30 +16,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import DateTimePicker from "@/components/dashboard/campaigns/datePicker";
+import { WishlistItem } from '@/components/customer/wishlist/WishlistItemCard';
 
 interface WishlistModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave: (item: Omit<WishlistItem, 'id'> | WishlistItem) => void;
+  itemToEdit?: WishlistItem;
   itemName?: string;
 }
 
-export const WishlistModal = ({ isOpen, onClose, itemName }: WishlistModalProps) => {
-  const [name, setName] = useState(itemName || '');
+export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }: WishlistModalProps) => {
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('Food');
   const [occasion, setOccasion] = useState('None');
   const [season, setSeason] = useState('None');
   const [targetDate, setTargetDate] = useState<Date | undefined>();
-  const [priority, setPriority] = useState('Medium');
+  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [consent, setConsent] = useState(false);
 
   useEffect(() => {
-    if (itemName) {
-      setName(itemName);
+    if (itemToEdit) {
+      setName(itemToEdit.name);
+      setCategory(itemToEdit.category);
+      setPriority(itemToEdit.priority);
+      setConsent(itemToEdit.consent);
+      setOccasion(itemToEdit.occasion || 'None');
+      setTargetDate(itemToEdit.targetDate ? new Date(itemToEdit.targetDate) : undefined);
+    } else {
+      setName(itemName || '');
+      setCategory('Food');
+      setPriority('Medium');
+      setConsent(false);
+      setOccasion('None');
+      setTargetDate(undefined);
     }
-  }, [itemName]);
+  }, [itemToEdit, itemName, isOpen]);
 
   const handleSave = () => {
-    // Mock save logic
-    console.log({ name, occasion, season, targetDate, priority, consent });
+    const newItem: Omit<WishlistItem, 'id'> | WishlistItem = {
+      ...(itemToEdit || {}),
+      name,
+      category,
+      priority,
+      consent,
+      occasion,
+      targetDate: targetDate?.toISOString(),
+    };
+    onSave(newItem);
     onClose();
   };
 
@@ -47,9 +71,9 @@ export const WishlistModal = ({ isOpen, onClose, itemName }: WishlistModalProps)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Save to Wishlist</DialogTitle>
+          <DialogTitle>{itemToEdit ? 'Edit Wishlist Item' : 'Save to Wishlist'}</DialogTitle>
           <DialogDescription>
-            Add this item to your wishlist to get updates and special offers.
+            {itemToEdit ? 'Update the details of your wishlist item.' : 'Add this item to your wishlist to get updates and special offers.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -95,7 +119,7 @@ export const WishlistModal = ({ isOpen, onClose, itemName }: WishlistModalProps)
           </div>
           <div className="space-y-2">
             <Label>Priority</Label>
-            <RadioGroup defaultValue={priority} onValueChange={setPriority} className="flex space-x-4 py-2">
+            <RadioGroup defaultValue={priority} onValueChange={(v) => setPriority(v as any)} className="flex space-x-4 py-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="Low" id="p1" />
                 <Label htmlFor="p1">Low</Label>

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface CampaignFormData {
+export interface CampaignFormData {
   campaignType: string;
   campaignName: string;
   rewardIds: string[];
@@ -41,6 +41,8 @@ interface CampaignFormData {
   contactEmail?: string;
   contactPhone?: string;
   footerText?: string;
+  howToEarn: string[];
+  termsAndConditions: string[];
 }
 
 interface CampaignFormContextType {
@@ -86,7 +88,9 @@ const defaultFormData: CampaignFormData = {
   contactText: '',
   contactEmail: '',
   contactPhone: '',
-  footerText: ''
+  footerText: '',
+  howToEarn: [],
+  termsAndConditions: [],
 };
 
 const CampaignFormContext = createContext<CampaignFormContextType | undefined>(undefined);

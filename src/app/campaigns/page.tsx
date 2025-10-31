@@ -79,6 +79,10 @@ export default function CampaignsPage() {
     });
   }, [searchTerm, selectedCategory]);
 
+  const handleWishlistSave = () => {
+    console.log('Wishlist item saved');
+  }
+
   return (
     <>
       <div className="bg-gray-50 min-h-screen">
@@ -146,6 +150,7 @@ export default function CampaignsPage() {
         isOpen={isWishlistModalOpen}
         onClose={() => setIsWishlistModalOpen(false)}
         itemName={selectedWishlistItemName}
+        onSave={handleWishlistSave}
       />
     </>
   );

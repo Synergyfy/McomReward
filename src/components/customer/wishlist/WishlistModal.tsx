@@ -119,7 +119,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           </div>
           <div className="space-y-2">
             <Label>Priority</Label>
-            <RadioGroup defaultValue={priority} onValueChange={(v) => setPriority(v as any)} className="flex space-x-4 py-2">
+            <RadioGroup defaultValue={priority} onValueChange={(v) => setPriority(v as 'Low' | 'Medium' | 'High')} className="flex space-x-4 py-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="Low" id="p1" />
                 <Label htmlFor="p1">Low</Label>

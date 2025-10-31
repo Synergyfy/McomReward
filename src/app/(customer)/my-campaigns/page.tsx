@@ -54,6 +54,10 @@ export default function MyCampaignsPage() {
     setIsWishlistModalOpen(true);
   };
 
+  const handleWishlistSave = () => {
+    console.log('Wishlist item saved');
+  }
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -95,6 +99,7 @@ export default function MyCampaignsPage() {
         isOpen={isWishlistModalOpen}
         onClose={() => setIsWishlistModalOpen(false)}
         itemName={selectedWishlistItemName}
+        onSave={handleWishlistSave}
       />
     </div>
   );

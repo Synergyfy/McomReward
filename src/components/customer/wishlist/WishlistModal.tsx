@@ -352,7 +352,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
         <div className="space-y-2">
           <Label htmlFor="occasion">Occasion</Label>
-          <Select onValueChange={setOccasion} defaultValue={occasion}>
+          <Select onValueChange={setOccasion} value={occasion}>
             <SelectTrigger>
               <SelectValue placeholder="Select an occasion" />
             </SelectTrigger>
@@ -366,7 +366,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         </div>
         <div className="space-y-2">
           <Label htmlFor="season">Season</Label>
-          <Select onValueChange={setSeason} defaultValue={season}>
+          <Select onValueChange={setSeason} value={season}>
             <SelectTrigger>
               <SelectValue placeholder="Select a season" />
             </SelectTrigger>

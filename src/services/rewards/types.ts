@@ -5,6 +5,7 @@ export interface CreateRewardRequest {
     description: string;
     image: string;
     quantity: number;
+    disabled: boolean;
 }
 
 export interface UpdateRewardRequest {

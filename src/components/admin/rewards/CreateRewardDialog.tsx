@@ -114,6 +114,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
       description,
       image: imageUrlToSubmit,
       quantity,
+      disabled: false,
     };
 
     createReward(rewardData, {

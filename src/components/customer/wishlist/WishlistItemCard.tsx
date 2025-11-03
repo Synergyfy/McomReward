@@ -11,6 +11,7 @@ export interface WishlistItem {
   occasion?: string;
   targetDate?: string;
   consent: boolean;
+  imageUrl?: string;
 }
 
 interface WishlistItemCardProps {

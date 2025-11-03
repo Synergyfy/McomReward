@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ticket, ShoppingBag, Star } from "lucide-react";
+import { Gift, Ticket, ShoppingBag } from "lucide-react";
 import Image from 'next/image';
+import { Progress } from '@/components/ui/progress';
+import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
 
-const allRewards = [
+const initialRewards = [
   {
     id: '1',
     title: 'Free Coffee',
@@ -14,6 +16,8 @@ const allRewards = [
     points: 50,
     image: 'https://images.unsplash.com/photo-1511920183359-3b1d1b4a32d6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
     icon: Gift,
+    redeemed: false,
+    progress: 100,
   },
   {
     id: '2',
@@ -22,6 +26,8 @@ const allRewards = [
     points: 100,
     image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
     icon: Ticket,
+    redeemed: false,
+    progress: 100,
   },
   {
     id: '3',
@@ -30,51 +36,26 @@ const allRewards = [
     points: 250,
     image: 'https://images.unsplash.com/photo-1544441893-675d73b31985?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
     icon: ShoppingBag,
-  },
-  {
-    id: '4',
-    title: 'Gift Card ($50)',
-    description: 'A gift card to spend on anything you like in our store.',
-    points: 500,
-    image: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
-  },
-  {
-    id: '5',
-    title: 'Premium Membership (1 Month)',
-    description: 'Unlock exclusive features and benefits for one month.',
-    points: 750,
-    image: 'https://images.unsplash.com/photo-1590283149002-3f5a70f0b1f2?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Star,
-  },
-  {
-    id: '6',
-    title: 'Dinner for Two',
-    description: 'Enjoy a romantic dinner at our partner restaurant.',
-    points: 1200,
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
-  },
-  {
-    id: '7',
-    title: 'Electronics Voucher ($100)',
-    description: 'Get a $100 voucher for your next electronics purchase.',
-    points: 1500,
-    image: 'https://images.unsplash.com/photo-1526178613552-2b45c6c302f0?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: ShoppingBag,
-  },
-  {
-    id: '8',
-    title: 'Luxury Watch',
-    description: 'A high-end luxury watch for our most loyal customers.',
-    points: 5000,
-    image: 'https://images.unsplash.com/photo-1523275335684-c62162fe2115?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
+    redeemed: false,
+    progress: 70,
   },
 ];
 
 export default function RedeemPointsPage() {
-  const [userPoints, setUserPoints] = useState(300); // Mock user's current points
+  const [userPoints, setUserPoints] = useState(200); // Mock user's current points
+  const [rewards, setRewards] = useState(initialRewards);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedReward, setSelectedReward] = useState(initialRewards[0]);
+
+  const handleRedeemClick = (rewardId: string) => {
+    const newRewards = rewards.map(r => r.id === rewardId ? { ...r, redeemed: true } : r);
+    setRewards(newRewards);
+    const redeemedReward = rewards.find(r => r.id === rewardId);
+    if (redeemedReward) {
+        setSelectedReward(redeemedReward)
+    }
+    setIsDialogOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -85,8 +66,8 @@ export default function RedeemPointsPage() {
         </div>
 
         {/* Rewards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {allRewards.map((reward) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {rewards.map((reward) => {
             const canRedeem = userPoints >= reward.points;
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -102,18 +83,22 @@ export default function RedeemPointsPage() {
                   <CardTitle className="text-2xl font-bold text-gray-800">{reward.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col justify-between">
-                  <CardDescription className="text-lg text-gray-700 mb-4 h-20">
-                    {reward.description}
-                  </CardDescription>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xl font-bold text-orange-600">{reward.points} pts</span>
-                    <reward.icon className="h-8 w-8 text-gray-400" />
+                  <div>
+                    <CardDescription className="text-lg text-gray-700 mb-4 h-20">
+                      {reward.description}
+                    </CardDescription>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xl font-bold text-orange-600">{reward.points} pts</span>
+                      <reward.icon className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <Progress value={reward.progress} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500"/>
                   </div>
                   <Button 
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
-                    disabled={!canRedeem}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    disabled={!canRedeem || reward.redeemed}
+                    onClick={() => handleRedeemClick(reward.id)}
                   >
-                    {canRedeem ? 'Redeem' : `Requires ${reward.points} points`}
+                    {reward.redeemed ? 'Redeemed' : (canRedeem ? 'Redeem' : `Requires ${reward.points} points`)}
                   </Button>
                 </CardContent>
               </Card>
@@ -121,6 +106,11 @@ export default function RedeemPointsPage() {
           })}
         </div>
       </div>
+      <RedemptionSuccessDialog 
+        isOpen={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)} 
+        rewardTitle={selectedReward.title} 
+      />
     </div>
   );
 }

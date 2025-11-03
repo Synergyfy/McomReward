@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -22,6 +22,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import { SignUpDialog } from '@/components/customer/SignUpDialog';
+import { useRouter } from 'next/navigation';
 
 const pointBalance = 1250;
 
@@ -57,6 +60,39 @@ const transactionHistory = [
 ];
 
 export default function MyPointsPage() {
+  const { isMember } = useCampaignMembership();
+  const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isMember) {
+      setIsSignUpDialogOpen(true);
+    }
+  }, [isMember]);
+
+  const handleDialogClose = () => {
+    setIsSignUpDialogOpen(false);
+    if (!isMember) {
+      router.push('/campaigns');
+    }
+  };
+
+  if (!isMember) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
+          <p className="text-lg text-gray-600">You need to join a campaign to view your points.</p>
+        </div>
+        <SignUpDialog
+          isOpen={isSignUpDialogOpen}
+          onClose={handleDialogClose}
+          campaignTitle="the Campaign"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">

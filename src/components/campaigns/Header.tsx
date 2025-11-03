@@ -4,7 +4,10 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, Settings, LogOut } from "lucide-react";
+import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const mockBusiness = {
   name: 'Mcom Loyalty',
@@ -20,6 +23,7 @@ const navLinks = [
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isMember, memberName } = useCampaignMembership();
 
   return (
     <header className="relative bg-white shadow-md z-50">
@@ -37,7 +41,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop Menu */}
-        <nav className="hidden md:flex">
+        <nav className="hidden md:flex items-center space-x-6">
           <ul className="flex space-x-6">
             {navLinks.map((link) => (
               <li key={link.href}>
@@ -47,10 +51,58 @@ export default function Header() {
               </li>
             ))}
           </ul>
+          {isMember && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarFallback>{memberName.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center space-x-2">
+            {isMember && (
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Avatar className="cursor-pointer">
+                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                    <AvatarFallback>{memberName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+                </DropdownMenu>
+            )}
           <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>

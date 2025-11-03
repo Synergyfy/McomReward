@@ -166,8 +166,8 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         <AnimatePresence>
           {wishlistFor === 'friend' && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-              <Label htmlFor="friendName">Friend's Name</Label>
-              <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend's name" />
+              <Label htmlFor="friendName">Friend&apos;s Name</Label>
+              <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend&apos;s name" />
             </motion.div>
           )}
         </AnimatePresence>

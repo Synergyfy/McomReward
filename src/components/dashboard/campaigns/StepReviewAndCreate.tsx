@@ -21,7 +21,7 @@ import CampaignDetailPagePreview from './previews/CampaignDetailPagePreview';
 import EarnPointsPagePreview from './previews/EarnPointsPagePreview';
 import RedeemPointsPagePreview from './previews/RedeemPointsPagePreview';
 import ContactUsPagePreview from './previews/ContactUsPagePreview';
-import MyPointsPagePreview from './previews/MyPointsPagePreview';
+
 import FooterPreview from './previews/FooterPreview';
 
 interface StepProps {
@@ -67,12 +67,11 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
             <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Interactive Campaign Preview</h4>
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
               <Tabs value={activePreviewTab} onValueChange={setActivePreviewTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-6 h-auto p-0">
+                <TabsList className="grid w-full grid-cols-5 h-auto p-0">
                   <TabsTrigger value="campaignDetail">Main Page</TabsTrigger>
                   <TabsTrigger value="earnPoints">Earn Points</TabsTrigger>
                   <TabsTrigger value="redeemPoints">Redeem Points</TabsTrigger>
                   <TabsTrigger value="contactUs">Contact Us</TabsTrigger>
-                  <TabsTrigger value="myPoints">My Points</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger>
                 </TabsList>
                 <div className="h-[600px] overflow-y-auto relative p-4">
@@ -87,9 +86,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
                   </TabsContent>
                   <TabsContent value="contactUs">
                     <ContactUsPagePreview campaignData={formData} />
-                  </TabsContent>
-                  <TabsContent value="myPoints">
-                    <MyPointsPagePreview campaignData={formData} />
                   </TabsContent>
                   <TabsContent value="footer">
                     <FooterPreview campaignData={formData} />

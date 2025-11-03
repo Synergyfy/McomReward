@@ -34,6 +34,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
   // Step 1 state
   const [wishlistFor, setWishlistFor] = useState<'myself' | 'friend' | 'family' | ''>(itemToEdit ? 'myself' : '');
+  const [myEmail, setMyEmail] = useState(''); // New state for myself's email
   const [relationship, setRelationship] = useState('');
   const [notify, setNotify] = useState<'yes' | 'no' | ''>('');
   const [contactMethod, setContactMethod] = useState<'email' | 'phone' | ''>('');
@@ -74,6 +75,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setTargetDate(undefined);
         setStep(1);
         setWishlistFor('');
+        setMyEmail(''); // Reset myEmail
         setRelationship('');
         setNotify('');
         setContactMethod('');
@@ -94,9 +96,14 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const handleWishlistForChange = (value: 'myself' | 'friend' | 'family') => {
     setWishlistFor(value);
     if (value === 'myself') {
-      setStep(2);
+      // Do not setStep(2) directly, wait for email confirmation
+      setRelationship('');
+      setNotify('');
+      setContactMethod('');
+      setContactValue('');
     } else {
       // Reset subsequent choices if user changes from friend/family
+      setMyEmail(''); // Reset myEmail if not myself
       setRelationship('');
       setNotify('');
       setContactMethod('');
@@ -126,6 +133,14 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     }
     if (contactMethod === 'phone' && contactValue.length < 10) {
       alert('Please enter a valid phone number.');
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleConfirmMyEmail = () => {
+    if (!myEmail.includes('@')) {
+      alert('Please enter a valid email.');
       return;
     }
     setStep(2);
@@ -172,6 +187,29 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
             </SelectContent>
           </Select>
         </div>
+
+        <AnimatePresence>
+          {wishlistFor === 'myself' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4 overflow-hidden"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="myEmail">Your Email</Label>
+                <Input
+                  id="myEmail"
+                  type="email"
+                  value={myEmail}
+                  onChange={(e) => setMyEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <Button onClick={handleConfirmMyEmail} className="w-full">Confirm</Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {wishlistFor === 'family' && (

@@ -74,7 +74,7 @@ const defaultFormData: CampaignFormData = {
     startDate: undefined,
     stopAfterClaims: 0,
     pauseOnRewardEmpty: false,
-    autoSwitchToPoints: false,
+    autoSwitchToPoints: true,
   },
   bgColor: '#FFFFFF',
   ctaBgColor: '#000000',

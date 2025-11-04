@@ -18,6 +18,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import DateTimePicker from "@/components/dashboard/campaigns/datePicker";
 import { WishlistItem } from '@/components/customer/wishlist/WishlistItemCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
+import Image from 'next/image';
 
 interface WishlistModalProps {
   isOpen: boolean;
@@ -32,7 +34,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
   // Step 1 state
   const [wishlistFor, setWishlistFor] = useState<'myself' | 'friend' | 'family' | ''>(itemToEdit ? 'myself' : '');
-  const [myEmail, setMyEmail] = useState('');
+  const [myEmail, setMyEmail] = useState(''); // New state for myself's email
   const [friendName, setFriendName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [customRelationship, setCustomRelationship] = useState('');
@@ -49,6 +51,10 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const [targetDate, setTargetDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [consent, setConsent] = useState(false);
+  const [uploadOrLink, setUploadOrLink] = useState<'upload' | 'link' | '' >('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,9 +65,11 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setConsent(itemToEdit.consent);
         setOccasion(itemToEdit.occasion || 'None');
         setTargetDate(itemToEdit.targetDate ? new Date(itemToEdit.targetDate) : undefined);
-        setStep(2);
+        setImagePreviewUrl(itemToEdit.imageUrl || null);
+        setStep(2); // If editing, go straight to step 2
         setWishlistFor('myself');
       } else {
+        // Reset for new item
         setName(itemName || '');
         setCategory('Food');
         setPriority('Medium');
@@ -70,7 +78,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setTargetDate(undefined);
         setStep(1);
         setWishlistFor('');
-        setMyEmail('');
+        setMyEmail(''); // Reset myEmail
         setFriendName('');
         setRelationship('');
         setCustomRelationship('');
@@ -78,9 +86,18 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setContactMethods({ email: false, phone: false });
         setFriendEmail('');
         setFriendPhone('');
+        setUploadOrLink('');
+        setImageUrl('');
+        setSelectedFile(null);
+        setImagePreviewUrl(null);
       }
     }
   }, [itemToEdit, itemName, isOpen]);
+
+  const handleFileSelect = (file: File | null, previewUrl: string | null) => {
+    setSelectedFile(file);
+    setImagePreviewUrl(previewUrl);
+  };
 
   const handleWishlistForChange = (value: 'myself' | 'friend' | 'family') => {
     setWishlistFor(value);
@@ -138,6 +155,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
       consent,
       occasion,
       targetDate: targetDate?.toISOString(),
+      imageUrl: imagePreviewUrl || undefined,
     };
     onSave(newItem);
     onClose();
@@ -190,7 +208,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                 <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend&apos;s name" />
               </div>
               <div className="space-y-2">
-                <Label>Enter:</Label>
+                <Label>Enter Their Contacts:</Label>
                 <div className="flex space-x-4 py-2">
                   <div className="flex items-center space-x-2"><Checkbox id="contact-email" checked={contactMethods.email} onCheckedChange={() => handleContactMethodChange('email')} /><Label htmlFor="contact-email">Email</Label></div>
                   <div className="flex items-center space-x-2"><Checkbox id="contact-phone" checked={contactMethods.phone} onCheckedChange={() => handleContactMethodChange('phone')} /><Label htmlFor="contact-phone">Phone</Label></div>
@@ -233,11 +251,12 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                     <SelectValue placeholder="Select a relationship" />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="parent">Parent</SelectItem>
-                    <SelectItem value="sibling">Sibling</SelectItem>
-                    <SelectItem value="child">Child</SelectItem>
-                    <SelectItem value="spouse">Spouse (Wife/Husband)</SelectItem>
-                    <SelectItem value="distant-relative">Distant Relative</SelectItem>
+                    <SelectItem value="father">Father</SelectItem>
+                    <SelectItem value="mother">Mother</SelectItem>
+                    <SelectItem value="brother">Brother</SelectItem>
+                    <SelectItem value="sister">Sister</SelectItem>
+                    <SelectItem value="husband">Husband</SelectItem>
+                    <SelectItem value="wife">Wife</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -253,7 +272,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
               {((relationship !== '' && relationship !== 'other') || (relationship === 'other' && customRelationship !== '')) && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
                   <div className="space-y-2">
-                    <Label>Enter:</Label>
+                    <Label>Enter Their Contacts:</Label>
                     <div className="flex space-x-4 py-2">
                       <div className="flex items-center space-x-2"><Checkbox id="contact-email" checked={contactMethods.email} onCheckedChange={() => handleContactMethodChange('email')} /><Label htmlFor="contact-email">Email</Label></div>
                       <div className="flex items-center space-x-2"><Checkbox id="contact-phone" checked={contactMethods.phone} onCheckedChange={() => handleContactMethodChange('phone')} /><Label htmlFor="contact-phone">Phone</Label></div>
@@ -308,9 +327,65 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           <p className="text-xs text-gray-500">The name of the item you&apos;re wishing for.</p>
         </div>
+
+        <div className="space-y-2">
+            <Label>Item Image (Optional)</Label>
+            <RadioGroup onValueChange={(v) => setUploadOrLink(v as 'upload' | 'link')} value={uploadOrLink} className="flex space-x-4 py-2">
+                <div className="flex items-center space-x-2">
+                <RadioGroupItem value="upload" id="image-upload" />
+                <Label htmlFor="image-upload">Upload Image</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                <RadioGroupItem value="link" id="image-link" />
+                <Label htmlFor="image-link">Paste Link</Label>
+                </div>
+            </RadioGroup>
+        </div>
+
+        <AnimatePresence>
+            {uploadOrLink === 'upload' && (
+                <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 overflow-hidden"
+                >
+                    <CloudinaryUpload onFileSelect={handleFileSelect} />
+                    <p className="text-xs text-gray-500">Upload an image of the item.</p>
+                </motion.div>
+            )}
+            {uploadOrLink === 'link' && (
+                <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 overflow-hidden"
+                >
+                    <Input 
+                        placeholder="https://example.com/image.png" 
+                        value={imageUrl} 
+                        onChange={(e) => {
+                            setImageUrl(e.target.value);
+                            setImagePreviewUrl(e.target.value);
+                        }}
+                    />
+                    <p className="text-xs text-gray-500">Paste a link to an image online.</p>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {imagePreviewUrl && (
+            <div className="mt-4">
+                <p className="text-sm font-medium">Image Preview:</p>
+                <div className="relative h-24 w-24 rounded-lg overflow-hidden mt-2 border">
+                    <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                </div>
+            </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="occasion">Occasion</Label>
-          <Select onValueChange={setOccasion} defaultValue={occasion}>
+          <Select onValueChange={setOccasion} value={occasion}>
             <SelectTrigger>
               <SelectValue placeholder="Select an occasion" />
             </SelectTrigger>
@@ -324,7 +399,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         </div>
         <div className="space-y-2">
           <Label htmlFor="season">Season</Label>
-          <Select onValueChange={setSeason} defaultValue={season}>
+          <Select onValueChange={setSeason} value={season}>
             <SelectTrigger>
               <SelectValue placeholder="Select a season" />
             </SelectTrigger>

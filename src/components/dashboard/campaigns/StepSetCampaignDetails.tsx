@@ -37,6 +37,7 @@ interface StepProps {
 
 export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const { formData, updateFormData } = useCampaignForm();
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
@@ -67,16 +68,33 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     updateFormData({ logoUrl: previewUrl || '' });
   };
 
-  const isFormValid = () => {
+  const handleNextClick = () => {
+    const newErrors: Record<string, boolean> = {};
     const { campaignName, rewardIds, startDate, endDate, rewardsAvailable, campaignMessage, ctaButtonText, audienceType, badgeLevels, wishlistItemIds } = formData;
-    if (!campaignName.trim() || rewardIds.length === 0 || !startDate || !endDate || Number(rewardsAvailable) <= 0 || !campaignMessage.trim() || !ctaButtonText.trim()) return false;
-    if (audienceType.length === 0) return false;
-    if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) return false;
-    if (audienceType.includes('wishlist_target') && (!wishlistItemIds || wishlistItemIds.length === 0)) return false;
-    return true;
+
+    if (!campaignName.trim()) newErrors.campaignName = true;
+    if (rewardIds.length === 0) newErrors.rewardIds = true;
+    if (!startDate) newErrors.startDate = true;
+    if (!endDate) newErrors.endDate = true;
+    if (rewardsAvailable === '' || Number(rewardsAvailable) <= 0) newErrors.rewardsAvailable = true;
+    if (!campaignMessage.trim()) newErrors.campaignMessage = true;
+    if (!ctaButtonText.trim()) newErrors.ctaButtonText = true;
+    if (audienceType.length === 0) newErrors.audienceType = true;
+    if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) newErrors.badgeLevels = true;
+    if (audienceType.includes('wishlist_target') && (!wishlistItemIds || wishlistItemIds.length === 0)) newErrors.wishlistItemIds = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      onNext();
+    }
   };
 
   const toSelectOptions = (arr: string[]) => arr.map(item => ({ value: item, label: item }));
+
+  const selectErrorStyle = {
+    control: (base: any) => ({ ...base, borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', '&:hover': { borderColor: '#ef4444' } })
+  };
 
   return (
     <Card>
@@ -88,14 +106,14 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           {/* Campaign Name */}
           <div>
             <Label htmlFor="campaignName">Campaign Name</Label>
-            <Input id="campaignName" placeholder="e.g., Summer Sale Campaign" value={formData.campaignName} onChange={(e) => updateFormData({ campaignName: e.target.value })} />
+            <Input id="campaignName" placeholder="e.g., Summer Sale Campaign" value={formData.campaignName} onChange={(e) => updateFormData({ campaignName: e.target.value })} className={errors.campaignName ? 'border-red-500' : ''} />
             <p className="text-sm text-gray-500 mt-1">The name of your campaign, as it will be displayed to customers.</p>
           </div>
 
           {/* Rewards to Attach */}
           <div>
             <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
-            <Select isMulti options={toSelectOptions(mockRewards.map(r => r.title))} value={toSelectOptions(formData.rewardIds)} onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })} />
+            <Select isMulti options={toSelectOptions(mockRewards.map(r => r.title))} value={toSelectOptions(formData.rewardIds)} onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })} styles={errors.rewardIds ? selectErrorStyle : {}} />
             <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
           </div>
 
@@ -103,12 +121,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Start Date & Time</Label>
-              <div className="flex items-center rounded-md border px-3"><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.startDate} setDate={(date) => updateFormData({ startDate: date || undefined })} /></div>
+              <div className={`flex items-center rounded-md border px-3 ${errors.startDate ? 'border-red-500' : ''}`}><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.startDate} setDate={(date) => updateFormData({ startDate: date || undefined })} /></div>
               <p className="text-sm text-gray-500 mt-1">When the campaign will become active.</p>
             </div>
             <div>
               <Label>End Date & Time</Label>
-              <div className="flex items-center rounded-md border px-3"><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.endDate} setDate={(date) => updateFormData({ endDate: date || undefined })} /></div>
+              <div className={`flex items-center rounded-md border px-3 ${errors.endDate ? 'border-red-500' : ''}`}><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.endDate} setDate={(date) => updateFormData({ endDate: date || undefined })} /></div>
               <p className="text-sm text-gray-500 mt-1">When the campaign will automatically deactivate.</p>
             </div>
           </div>
@@ -116,40 +134,42 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           {/* Rewards Available */}
           <div>
             <Label htmlFor="rewardsAvailable">Number of Rewards Available</Label>
-            <Input id="rewardsAvailable" type="number" placeholder="0" value={formData.rewardsAvailable} onChange={(e) => updateFormData({ rewardsAvailable: e.target.value === '' ? '' : Number(e.target.value) })} />
+            <Input id="rewardsAvailable" type="number" placeholder="0" value={formData.rewardsAvailable} onChange={(e) => updateFormData({ rewardsAvailable: e.target.value === '' ? '' : Number(e.target.value) })} className={errors.rewardsAvailable ? 'border-red-500' : ''} />
             <p className="text-sm text-gray-500 mt-1">The total number of rewards that can be claimed.</p>
           </div>
 
           {/* Audience Type */}
           <div>
             <Label>Audience Type</Label>
-            <div className="flex flex-col space-y-1">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="members" checked={formData.audienceType.includes('members')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'members'] : formData.audienceType.filter(t => t !== 'members') })} />
-                <Label htmlFor="members">Members</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="badge_level" checked={formData.audienceType.includes('badge_level')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'badge_level'] : formData.audienceType.filter(t => t !== 'badge_level') })} />
-                <Label htmlFor="badge_level">Badge Level</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="wishlist_target" checked={formData.audienceType.includes('wishlist_target')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'wishlist_target'] : formData.audienceType.filter(t => t !== 'wishlist_target') })} />
-                <Label htmlFor="wishlist_target">Target Wishlist</Label>
+            <div className={`p-2 rounded-md ${errors.audienceType ? 'border border-red-500' : ''}`}>
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="members" checked={formData.audienceType.includes('members')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'members'] : formData.audienceType.filter(t => t !== 'members') })} />
+                  <Label htmlFor="members">Members</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="badge_level" checked={formData.audienceType.includes('badge_level')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'badge_level'] : formData.audienceType.filter(t => t !== 'badge_level') })} />
+                  <Label htmlFor="badge_level">Badge Level</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="wishlist_target" checked={formData.audienceType.includes('wishlist_target')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'wishlist_target'] : formData.audienceType.filter(t => t !== 'wishlist_target') })} />
+                  <Label htmlFor="wishlist_target">Target Wishlist</Label>
+                </div>
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
             {formData.audienceType.includes('badge_level') && (
-              <Select isMulti className="mt-2" options={toSelectOptions(badgeLevels)} value={toSelectOptions(formData.badgeLevels || [])} onChange={(opts) => updateFormData({ badgeLevels: opts.map(o => o.value) })} placeholder="Select badge levels..." />
+              <Select isMulti className="mt-2" options={toSelectOptions(badgeLevels)} value={toSelectOptions(formData.badgeLevels || [])} onChange={(opts) => updateFormData({ badgeLevels: opts.map(o => o.value) })} placeholder="Select badge levels..." styles={errors.badgeLevels ? selectErrorStyle : {}} />
             )}
             {formData.audienceType.includes('wishlist_target') && (
-              <Select isMulti className="mt-2" options={mockWishlistInsights.map(item => ({ value: item.itemName, label: `${item.itemName} (${item.estimatedCount} users)` }))} value={toSelectOptions(formData.wishlistItemIds || [])} onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })} placeholder="Select wishlist items..." />
+              <Select isMulti className="mt-2" options={mockWishlistInsights.map(item => ({ value: item.itemName, label: `${item.itemName} (${item.estimatedCount} users)` }))} value={toSelectOptions(formData.wishlistItemIds || [])} onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })} placeholder="Select wishlist items..." styles={errors.wishlistItemIds ? selectErrorStyle : {}} />
             )}
           </div>
 
           {/* Campaign Message */}
           <div>
             <Label htmlFor="campaignMessage">Campaign Message / Caption</Label>
-            <Textarea id="campaignMessage" placeholder="What customers will see..." value={formData.campaignMessage} onChange={(e) => updateFormData({ campaignMessage: e.target.value })} />
+            <Textarea id="campaignMessage" placeholder="What customers will see..." value={formData.campaignMessage} onChange={(e) => updateFormData({ campaignMessage: e.target.value })} className={errors.campaignMessage ? 'border-red-500' : ''} />
             <p className="text-sm text-gray-500 mt-1">A catchy message to attract customers.</p>
           </div>
 
@@ -168,7 +188,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           {/* CTA Button */}
           <div>
             <Label htmlFor="ctaButtonText">CTA Button</Label>
-            <Select options={[{value: 'Claim Reward', label: 'Claim Reward'}, {value: 'Join Now', label: 'Join Now'}, {value: 'Refer & Earn', label: 'Refer & Earn'}]} value={{value: formData.ctaButtonText, label: formData.ctaButtonText}} onChange={(opt) => updateFormData({ ctaButtonText: opt?.value || 'Claim Reward' })} />
+            <Select options={[{value: 'Claim Reward', label: 'Claim Reward'}, {value: 'Join Now', label: 'Join Now'}, {value: 'Refer & Earn', label: 'Refer & Earn'}]} value={{value: formData.ctaButtonText, label: formData.ctaButtonText}} onChange={(opt) => updateFormData({ ctaButtonText: opt?.value || 'Claim Reward' })} styles={errors.ctaButtonText ? selectErrorStyle : {}} />
             <p className="text-sm text-gray-500 mt-1">The call-to-action text for the button.</p>
           </div>
 
@@ -204,7 +224,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         </div>
         <div className="flex justify-between mt-6">
           <Button variant="outline" onClick={onBack}>Back</Button>
-          <Button onClick={onNext} disabled={!isFormValid()}>Next</Button>
+          <Button onClick={handleNextClick}>Next</Button>
         </div>
       </CardContent>
     </Card>

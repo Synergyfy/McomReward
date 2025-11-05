@@ -13,7 +13,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-
 /**
  * Small inline loading spinner used in the submit button to avoid an unresolved identifier.
  */
@@ -30,6 +29,25 @@ const LoadingSpinner: React.FC = () => (
   </svg>
 );
 
+
+const DEMO_SECTORS = [
+  { id: 1, name: "Hospitality" },
+  { id: 2, name: "Service" },
+];
+
+const DEMO_SUBCATEGORIES: Record<number, { id: string; name: string }[]> = {
+  1: [
+    { id: "11", name: "Hotels" },
+    { id: "12", name: "Restaurants" },
+    { id: "13", name: "Resorts" },
+  ],
+  2: [
+    { id: "21", name: "Salons" },
+    { id: "22", name: "Consulting" },
+    { id: "23", name: "Cleaning" },
+  ],
+};
+
 export default function BusinessOnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -41,6 +59,7 @@ export default function BusinessOnboardingWizard() {
     handleSubmit,
     formState: { errors },
     trigger,
+    watch,
   
   } = useForm<CreateBusinessDto>(
     {
@@ -50,9 +69,9 @@ export default function BusinessOnboardingWizard() {
   );
  const stepFields: Record<
   number,
-  ("sectorId" | "phone" | "address" | "website" | "socialMedia" | "referralCapacity" | "socialMedia.facebook" | "socialMedia.twitter" | "socialMedia.instagram")[]
+  ("sectorId" | "subsectorId" | "phone" | "address" | "website" | "socialMedia" | "referralCapacity" | "socialMedia.facebook" | "socialMedia.twitter" | "socialMedia.instagram")[]
 > = {
-  1: ["sectorId", "phone", "address"],
+  1: ["sectorId", "subsectorId", "phone", "address"],
   2: ["website", "socialMedia.facebook", "socialMedia.twitter", "socialMedia.instagram"],
   3: ["referralCapacity"],
 };
@@ -123,13 +142,13 @@ const handleNext = async () => {
                   </h2>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                     <div>
-                      <Label>Sector</Label>
+                      <Label className="mb-2">Sector</Label>
                       <select
                         {...register("sectorId")}
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
                         <option value="">Select sector</option>
-                        {sectors?.map((sector) => (
+                        {DEMO_SECTORS?.map((sector) => (
                           <option key={sector.id} value={sector.id}>
                             {sector.name}
                           </option>
@@ -141,9 +160,27 @@ const handleNext = async () => {
                         </p>
                       )}
                     </div>
-
                     <div>
-                      <Label>Address</Label>
+                      <Label className="mb-2">Subsector</Label>
+                      <select
+                        {...register("subsectorId")}
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option value="">Select subsector</option>
+                        {DEMO_SUBCATEGORIES[Number(watch("sectorId"))]?.map((subsector) => (
+                          <option key={subsector.id} value={subsector.id}>
+                            {subsector.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.subsectorId && (
+                        <p className="text-red-500 text-sm">
+                          {errors.subsectorId.message as unknown as string}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="mb-2">Address</Label>
                       <Input
                         type="text"
                         placeholder="123 Business St."
@@ -157,7 +194,7 @@ const handleNext = async () => {
                     </div>
 
                     <div>
-                      <Label>Phone</Label>
+                      <Label className="mb-2">Phone</Label>
                       <Input
                         placeholder="+234 801 234 5678"
                         {...register("phone")}

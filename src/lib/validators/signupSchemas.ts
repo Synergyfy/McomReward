@@ -12,6 +12,7 @@ const socialMediaSchema = z
 
 export const createBusinessSchema = z.object({
   sectorId: z.string(),
+  subsectorId: z.string().optional().nullable(),
   phone: z.string().min(7, "Valid phone number is required"),
   address: z.string(),
   website: z.url().nullish().or(z.literal("")).optional(),

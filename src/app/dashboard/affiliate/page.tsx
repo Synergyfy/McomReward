@@ -15,6 +15,7 @@ export default function AffiliatePage() {
           <InviteCard 
             referralLink={affiliateData.referralLink} 
             qrCodeUrl={affiliateData.qrCodeUrl} 
+            inviteCode={affiliateData.inviteCode}
           />
           <ReferralsHistoryTable referrals={affiliateData.referrals} />
         </div>

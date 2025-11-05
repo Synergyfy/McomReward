@@ -38,7 +38,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const [friendName, setFriendName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [customRelationship, setCustomRelationship] = useState('');
-  const [notify, setNotify] = useState<'yes' | 'no' | ''>('');
+  const [notify, setNotify] = useState<'yes' | 'no' | '' >('');
   const [contactMethods, setContactMethods] = useState({ email: false, phone: false });
   const [friendEmail, setFriendEmail] = useState('');
   const [friendPhone, setFriendPhone] = useState('');
@@ -126,31 +126,23 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     setContactMethods(prev => ({ ...prev, [method]: !prev[method] }));
   };
 
-  const handleSeasonChange = (value: string) => {
-    setSeason(value);
-    const currentYear = new Date().getFullYear();
-    let newTargetDate: Date | undefined;
-
-    switch (value) {
-      case 'Spring':
-        newTargetDate = new Date(currentYear, 2, 1); // March 1st
-        break;
-      case 'Summer':
-        newTargetDate = new Date(currentYear, 5, 1); // June 1st
-        break;
-      case 'Autumn':
-        newTargetDate = new Date(currentYear, 8, 1); // September 1st
-        break;
-      case 'Winter':
-        newTargetDate = new Date(currentYear, 11, 1); // December 1st
-        break;
-      case 'None':
-      default:
-        newTargetDate = undefined;
-        break;
+  useEffect(() => {
+    if (targetDate) {
+      const month = targetDate.getMonth();
+      // Seasons based on meteorological definition
+      if (month >= 2 && month <= 4) { // Mar, Apr, May
+        setSeason('Spring');
+      } else if (month >= 5 && month <= 7) { // Jun, Jul, Aug
+        setSeason('Summer');
+      } else if (month >= 8 && month <= 10) { // Sep, Oct, Nov
+        setSeason('Autumn');
+      } else {
+        setSeason('Winter');
+      }
+    } else {
+      setSeason('None');
     }
-    setTargetDate(newTargetDate);
-  };
+  }, [targetDate]);
 
   const handleConfirmMyEmail = () => {
     if (!myEmail.includes('@')) {
@@ -424,8 +416,13 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           <p className="text-xs text-gray-500">Is this for a special occasion?</p>
         </div>
         <div className="space-y-2">
+          <Label>Target Date</Label>
+          <DateTimePicker date={targetDate} setDate={setTargetDate} />
+          <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="season">Season</Label>
-          <Select onValueChange={handleSeasonChange} value={season}>
+          <Select onValueChange={setSeason} value={season}>
             <SelectTrigger>
               <SelectValue placeholder="Select a season" />
             </SelectTrigger>
@@ -438,11 +435,6 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500">Optionally, select a season.</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Target Date</Label>
-          <DateTimePicker date={targetDate} setDate={setTargetDate} />
-          <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
         </div>
         <div className="space-y-2">
           <Label>Priority</Label>

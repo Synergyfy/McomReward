@@ -112,6 +112,7 @@ const typeLabels = {
 export default function BusinessRewardsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Filter and search rewards
@@ -120,9 +121,10 @@ export default function BusinessRewardsPage() {
       const matchesSearch = reward.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             reward.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = !filterType || filterType === 'all' || reward.type === filterType;
-      return matchesSearch && matchesType;
+      const matchesStatus = !filterStatus || filterStatus === 'all' || reward.status === filterStatus;
+      return matchesSearch && matchesType && matchesStatus;
     });
-  }, [searchTerm, filterType]);
+  }, [searchTerm, filterType, filterStatus]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -156,6 +158,16 @@ export default function BusinessRewardsPage() {
                   {label}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
         </div>

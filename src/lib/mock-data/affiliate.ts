@@ -21,6 +21,7 @@ export interface RewardTier {
 
 export const affiliateData = {
   referralLink: 'https://mcom.loyal/signup?ref=BIZ-XYZ123',
+  inviteCode: 'BIZ-XYZ123', // Mock invite code
   qrCodeUrl: '/placeholder-qr.svg', // We will need a placeholder QR code image
   stats: {
     totalInvites: 28,

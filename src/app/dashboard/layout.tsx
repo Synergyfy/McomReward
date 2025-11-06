@@ -18,9 +18,6 @@ export default function DashboardLayout({
     <>
   
       <div className="relative min-h-screen md:flex">
-        <div className="hidden md:block">
-          <Navbar />
-        </div>
           
           {/* Mobile overlay */}
           {isSidebarOpen && (

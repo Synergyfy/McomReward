@@ -129,8 +129,8 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
                       {campaign.audienceType.map((type, index) => {
                         let audienceText = '';
                         if (type === 'members') audienceText = 'All Members';
-                        if (type === 'badge_level') audienceText = `Members with ${campaign.badgeLevel || '[Level]'} Badge`;
-                        if (type === 'wishlist_target') audienceText = `Wishlist for "${campaign.wishlistItemId || '[Item]'}"`;
+                        if (type === 'badge_level') audienceText = `Members with ${campaign.badgeLevels?.join(', ') || '[Level]'} Badge`;
+                        if (type === 'wishlist_target') audienceText = `Wishlist for "${campaign.wishlistItemIds?.join(', ') || '[Item]'}"`;
                         return (
                           <span key={index} className="inline-block bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full mr-2 mb-1">
                             {audienceText}

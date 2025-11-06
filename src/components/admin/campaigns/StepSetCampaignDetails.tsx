@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Select from 'react-select';
+import Select, { StylesConfig, MultiValue, CSSObjectWithLabel, ControlProps } from 'react-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,11 @@ import DateTimePicker from './datePicker';
 import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react'; // Added icons
 import { useCampaignForm } from '@/context/CampaignFormContext';
+
+interface RewardOption {
+  value: string;
+  label: string;
+}
 
 interface StepProps {
   onNext: () => void;
@@ -46,6 +51,17 @@ const mockWishlistInsights = [
   },
 ];
 
+const selectErrorStyle: StylesConfig<RewardOption, true> = {
+  control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
+    ...(base as CSSObjectWithLabel),
+    borderColor: '#ef4444',
+    boxShadow: '0 0 0 1px #ef4444',
+    '&:hover': {
+      borderColor: '#ef4444',
+    },
+  }),
+};
+
 export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const { formData, updateFormData } = useCampaignForm();
   const searchParams = useSearchParams();
@@ -58,7 +74,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
       updateFormData({ 
         campaignName: `${itemName} Campaign`, 
         audienceType: ['wishlist_target'],
-        wishlistItemId: itemName 
+        wishlistItemIds: [itemName] 
       });
     }
   }, [searchParams, formData.campaignName, updateFormData, itemName]);
@@ -92,8 +108,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
       campaignMessage,
       ctaButtonText,
       audienceType,
-      badgeLevel,
-      wishlistItemId,
+      badgeLevels,
+      wishlistItemIds,
     } = formData;
 
     if (
@@ -108,15 +124,18 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
       return false;
     }
 
+    // Check if audienceType is empty
     if (audienceType.length === 0) {
       return false;
     }
 
-    if (audienceType.includes('badge_level') && !badgeLevel?.trim()) {
+    // If badge_level is selected, ensure badgeLevels is not empty
+    if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) {
       return false;
     }
 
-    if (audienceType.includes('wishlist_target') && !wishlistItemId?.trim()) {
+    // If wishlist_target is selected, ensure wishlistItemIds is not empty
+    if (audienceType.includes('wishlist_target') && (!wishlistItemIds || wishlistItemIds.length === 0)) {
       return false;
     }
 
@@ -145,14 +164,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
           <div>
             <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
-            <Select
+            <Select<RewardOption, true>
               isMulti
               options={rewardOptions}
               value={rewardOptions.filter(option => formData.rewardIds.includes(option.value))}
-              onChange={(selectedOptions) => {
+              onChange={(selectedOptions: MultiValue<RewardOption>) => {
                 const selectedIds = selectedOptions ? selectedOptions.map(option => option.value) : [];
                 updateFormData({ rewardIds: selectedIds });
               }}
+              styles={selectErrorStyle}
             />
             <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
           </div>
@@ -240,8 +260,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
             {formData.audienceType.includes('badge_level') && (
               <ShadcnSelect
-                value={formData.badgeLevel}
-                onValueChange={(value) => updateFormData({ badgeLevel: value })}
+                value={formData.badgeLevels?.join(', ')}
+                onValueChange={(value) => updateFormData({ badgeLevels: value ? [value] : [] })}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Select a badge level" />
@@ -255,8 +275,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             )}
             {formData.audienceType.includes('wishlist_target') && (
               <ShadcnSelect
-                value={formData.wishlistItemId}
-                onValueChange={(value) => updateFormData({ wishlistItemId: value })}
+                value={formData.wishlistItemIds?.join(', ')}
+                onValueChange={(value) => updateFormData({ wishlistItemIds: value ? [value] : [] })}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Select a wishlist item to target" />
@@ -426,10 +446,10 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                     <span className="text-right">
                       {formData.audienceType.map(type => {
                         if (type === 'badge_level') {
-                          return `Badge: ${formData.badgeLevel || '[Level]'}`;
+                          return `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}`;
                         }
                         if (type === 'wishlist_target') {
-                          return `Wishlist: ${formData.wishlistItemId || '[Item]'}`;
+                          return `Wishlist: ${formData.wishlistItemIds?.join(', ') || '[Item]'}`;
                         }
                         return type.charAt(0).toUpperCase() + type.slice(1);
                       }).join(', ')}

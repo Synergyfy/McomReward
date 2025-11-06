@@ -52,7 +52,8 @@ export default function RedeemPointsPage() {
     setRewards(newRewards);
     const redeemedReward = rewards.find(r => r.id === rewardId);
     if (redeemedReward) {
-        setSelectedReward(redeemedReward)
+        setSelectedReward(redeemedReward);
+        setUserPoints(prevPoints => prevPoints - redeemedReward.points); // Deduct points
     }
     setIsDialogOpen(true);
   };

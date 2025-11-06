@@ -1,7 +1,8 @@
 // pages/about.js
 import Head from "next/head";
-import { Rocket, BarChart3, Users, Star, Heart, Globe2 } from "lucide-react";
-import Image from "next/image";
+import { CheckCircle, Rocket, Globe2, Heart } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function About() {
   return (

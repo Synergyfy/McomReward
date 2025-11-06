@@ -15,9 +15,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  value: number | string;
+  pointsRequired: number | string;
+  badgeLevel?: string;
+  expiry: Date;
+  image?: string | null;
+  status: 'active' | 'expired';
+}
+
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
+  reward?: Reward | null;
+  onSave: (rewardData: Reward) => void;
 }
 
 const rewardTypes = [
@@ -28,32 +43,52 @@ const rewardTypes = [
   { value: 'physical_product', label: 'Physical Product', icon: '📦' },
 ];
 
-export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewardWizardModalProps) {
+export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSave }: CreateRewardWizardModalProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const totalSteps = 2;
 
   // Step 1: Details
-  const [rewardType, setRewardType] = useState('points_offer');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [value, setValue] = useState<number | string>(0);
-  const [pointsRequired, setPointsRequired] = useState<number | string>(0);
-  const [badgeLevel, setBadgeLevel] = useState('');
-  const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // Default 30 days
+  const [rewardType, setRewardType] = useState(reward?.type || 'points_offer');
+  const [name, setName] = useState(reward?.name || '');
+  const [description, setDescription] = useState(reward?.description || '');
+  const [value, setValue] = useState<number | string>(reward?.value || 0);
+  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
+  const [badgeLevel, setBadgeLevel] = useState(reward?.badgeLevel || '');
+  const [expiry, setExpiry] = useState(reward?.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
 
-  // Step 2: Review (read-only)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
+
+  const isEditMode = useMemo(() => !!reward, [reward]);
+
+  const resetForm = () => {
+    setStep(1);
+    setRewardType(reward?.type || 'points_offer');
+    setName(reward?.name || '');
+    setDescription(reward?.description || '');
+    setValue(reward?.value || 0);
+    setPointsRequired(reward?.pointsRequired || 0);
+    setBadgeLevel(reward?.badgeLevel || '');
+    setExpiry(reward?.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    setSelectedFile(null);
+    setImagePreviewUrl(reward?.image || null);
+    setErrors({});
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, reward]);
 
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
     setImagePreviewUrl(previewUrl);
   };
 
-  // Validation for Step 1
   useEffect(() => {
     const newErrors: Record<string, string> = {};
     if (!rewardType) newErrors.rewardType = 'Reward type is required.';
@@ -61,9 +96,9 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
     if (Number(pointsRequired) <= 0 && !badgeLevel) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
-    if (!selectedFile) newErrors.image = 'Image is required.';
+    if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [rewardType, name, description, value, pointsRequired, badgeLevel, selectedFile]);
+  }, [rewardType, name, description, value, pointsRequired, badgeLevel, selectedFile, isEditMode]);
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -78,35 +113,21 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
   };
 
   const handleSubmit = () => {
-    // Prototype: Directly show campaign prompt without backend call
-    setShowCampaignPrompt(true);
-  };
+    const rewardData: Reward = {
+      id: reward?.id || new Date().toISOString(), // Create new ID for new rewards
+      name,
+      description,
+      type: rewardType,
+      value: Number(value),
+      pointsRequired: Number(pointsRequired),
+      badgeLevel,
+      expiry,
+      image: imagePreviewUrl,
+      status: 'active', // Default status
+    };
 
-  const handleCampaignYes = () => {
-    setShowCampaignPrompt(false);
-    onClose();
-    resetForm();
-    router.push('/dashboard/campaigns/create');
-  };
-
-  const handleCampaignNo = () => {
-    setShowCampaignPrompt(false);
-    onClose();
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setStep(1);
-    setRewardType('');
-    setName('');
-    setDescription('');
-    setValue(0);
-    setPointsRequired(0);
-    setBadgeLevel('');
-    setExpiry(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
-    setSelectedFile(null);
-    setImagePreviewUrl(null);
-    setErrors({});
+    onSave(rewardData);
+    onClose(); // Close the modal after saving
   };
 
   const progressValue = (step / totalSteps) * 100;
@@ -116,19 +137,20 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Reward</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Reward' : 'Create New Reward'}</DialogTitle>
             <Progress value={progressValue} className="mt-2" />
           </DialogHeader>
 
           {step === 1 && (
             <div className="grid gap-4 py-4">
+              {/* Form fields remain largely the same, but are now controlled by state that is pre-filled in edit mode */}
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Type</label>
                 <Select value={rewardType} onValueChange={setRewardType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select reward type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="z-[10000]">
                     {rewardTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.icon} {type.label}
@@ -136,31 +158,26 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground mt-1">Select the type of reward, like a voucher or gift card.</p>
               </div>
 
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
                 <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
-                <p className="text-sm text-muted-foreground mt-1">Give your reward a short, catchy name.</p>
               </div>
 
               <div>
                 <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
                 <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} />
-                <p className="text-sm text-muted-foreground mt-1">Explain what the reward is and any important details.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="value" className="block text-sm font-medium mb-1">Value (£)</label>
                   <Input id="value" type="number" placeholder="0" value={value} onChange={(e) => setValue(e.target.value === '' ? '' : Number(e.target.value))} />
-                  <p className="text-sm text-muted-foreground mt-1">Enter the monetary value of the reward in pounds.</p>
                 </div>
                 <div>
                   <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
                   <Input id="points" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
-                  <p className="text-sm text-muted-foreground mt-1">How many points does a customer need to redeem this?</p>
                 </div>
               </div>
 
@@ -170,7 +187,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
                   <SelectTrigger id="badge">
                     <SelectValue placeholder="Select a badge level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="z-[100]">
                     <SelectItem value="NONE">
                       <em>None</em>
                     </SelectItem>
@@ -179,19 +196,16 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground mt-1">If this reward is for a specific customer level, select it here.</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Expiry Date</label>
                 <DateTimePicker date={expiry} setDate={setExpiry} />
-                <p className="text-sm text-muted-foreground mt-1">Customers won&apos;t be able to claim it after this date.</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Image</label>
                 <CloudinaryUpload onFileSelect={handleFileSelect} />
-                <p className="text-sm text-muted-foreground mt-1">Upload an attractive image for the reward. This will be shown to customers.</p>
                 {imagePreviewUrl && (
                   <div className="mt-4">
                     <p className="text-sm font-medium">Image Preview:</p>
@@ -269,27 +283,12 @@ export default function CreateRewardWizardModal({ isOpen, onClose }: CreateRewar
               </Button>
             ) : (
               <Button onClick={handleSubmit}>
-                Create Reward
+                {isEditMode ? 'Update Reward' : 'Create Reward'}
               </Button>
             )}
           </div>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={showCampaignPrompt} onOpenChange={setShowCampaignPrompt}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reward Created Successfully!</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your reward has been created. Do you want to launch a campaign for this reward?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCampaignNo}>No</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCampaignYes}>Yes, Launch Campaign</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

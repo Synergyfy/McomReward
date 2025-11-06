@@ -10,8 +10,8 @@ export interface CampaignFormData {
   endDate: Date | undefined;
   rewardsAvailable: number | string;
   audienceType: string[];
-  badgeLevel?: string;
-  wishlistItemId?: string;
+  badgeLevels?: string[];
+  wishlistItemIds?: string[];
   campaignMessage: string;
   imageUrl: string;
   logoUrl: string;
@@ -59,7 +59,8 @@ const defaultFormData: CampaignFormData = {
   endDate: undefined,
   rewardsAvailable: 0,
   audienceType: [],
-  wishlistItemId: '',
+  badgeLevels: [],
+  wishlistItemIds: [],
   campaignMessage: '',
   imageUrl: '',
   logoUrl: '',

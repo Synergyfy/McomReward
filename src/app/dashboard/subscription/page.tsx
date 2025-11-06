@@ -2,16 +2,35 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import PlanComparisonCard from '@/components/dashboard/subscription/PlanComparisonCard';
 import BillingHistoryTable from '@/components/dashboard/subscription/BillingHistoryTable';
-import { subscriptionPlans, billingHistory } from '@/lib/mock-data/subscription';
+import SubscriptionChangeModal from '@/components/dashboard/subscription/SubscriptionChangeModal';
+import { subscriptionPlans as initialPlans, billingHistory, Plan } from '@/lib/mock-data/subscription';
 
 export default function SubscriptionPage() {
   const [autoRenew, setAutoRenew] = useState(true);
-  const currentPlan = subscriptionPlans.find(plan => plan.isCurrent);
+  const [plans, setPlans] = useState(initialPlans);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [targetPlan, setTargetPlan] = useState<Plan | null>(null);
+
+  const currentPlan = plans.find(plan => plan.isCurrent);
+
+  const handleChoosePlan = (plan: Plan) => {
+    setTargetPlan(plan);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmChange = () => {
+    if (targetPlan) {
+      // Simulate plan change
+      setPlans(plans.map(p => ({ ...p, isCurrent: p.id === targetPlan.id })))
+    }
+    setIsModalOpen(false);
+    setTargetPlan(null);
+    // In a real app, you would show a toast notification here
+  };
 
   return (
     <div className="space-y-8">
@@ -38,14 +57,22 @@ export default function SubscriptionPage() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Compare Plans</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {subscriptionPlans.map(plan => (
-            <PlanComparisonCard key={plan.id} plan={plan} />
+          {plans.map(plan => (
+            <PlanComparisonCard key={plan.id} plan={plan} onChoosePlan={handleChoosePlan} />
           ))}
         </div>
       </div>
 
       {/* Billing History Section */}
       <BillingHistoryTable history={billingHistory} />
+
+      <SubscriptionChangeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmChange}
+        currentPlan={currentPlan}
+        targetPlan={targetPlan}
+      />
     </div>
   );
 }

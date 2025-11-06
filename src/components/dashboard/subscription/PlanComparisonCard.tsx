@@ -6,9 +6,10 @@ import { Plan } from '@/lib/mock-data/subscription';
 
 interface PlanComparisonCardProps {
   plan: Plan;
+  onChoosePlan: (plan: Plan) => void;
 }
 
-export default function PlanComparisonCard({ plan }: PlanComparisonCardProps) {
+export default function PlanComparisonCard({ plan, onChoosePlan }: PlanComparisonCardProps) {
   return (
     <Card className={plan.isCurrent ? 'border-2 border-orange-500' : ''}>
       <CardHeader>
@@ -26,7 +27,11 @@ export default function PlanComparisonCard({ plan }: PlanComparisonCardProps) {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" disabled={plan.isCurrent}>
+        <Button
+          className="w-full"
+          disabled={plan.isCurrent}
+          onClick={() => onChoosePlan(plan)}
+        >
           {plan.isCurrent ? 'Current Plan' : 'Choose Plan'}
         </Button>
       </CardFooter>

@@ -24,7 +24,7 @@ interface StepProps {
 // Mock rewards data (should be fetched from API)
 const mockRewards = [
   { id: '1', title: 'Summer Voucher ($50)', image: 'https://via.placeholder.com/150' },
-  { id: '2', title: 'Gift Card ($100)', image: 'https://via.placeholder.com/150' },
+  { id: '2', title: 'Gift Card (00)', image: 'https://via.placeholder.com/150' },
   { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
 ];
 
@@ -82,7 +82,9 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
                   <div className="space-y-3 text-sm text-gray-800 mb-5 border-t pt-4">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center font-medium text-gray-600"><Gift className="h-4 w-4 mr-2 text-blue-500" />Rewards:</span>
-                      <span className="text-right">{selectedRewards.map(r => r.title).join(', ') || '[Select Rewards]'}</span>
+                      <span className="text-right">
+                        {selectedRewards.map(r => r.title).join(', ') || '[Select Rewards]'}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center font-medium text-gray-600"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
@@ -101,10 +103,10 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
                       <span className="text-right">
                         {formData.audienceType.map(type => {
                           if (type === 'badge_level') {
-                            return `Badge: ${formData.badgeLevel || '[Level]'}`;
+                            return `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}`;
                           }
                           if (type === 'wishlist_target') {
-                            return `Wishlist: ${formData.wishlistItemId || '[Item]'}`;
+                            return `Wishlist: ${formData.wishlistItemIds?.join(', ') || '[Item]'}`;
                           }
                           return type.charAt(0).toUpperCase() + type.slice(1);
                         }).join(', ')}

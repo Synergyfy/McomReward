@@ -3,36 +3,66 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend} from "recharts";
-import { Users, Gift, Trophy, Percent } from "lucide-react";
+import { Users, Gift, Trophy, Percent, Megaphone, Flame, Star, ArrowDown, ArrowUp } from "lucide-react";
 import { mockBusinessData } from "../data";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
 
+const timeRangeOptions: { value: TimeRange; label: string }[] = [
+  { value: "7d", label: "Last 7 Days" },
+  { value: "30d", label: "Last 30 Days" },
+  { value: "3m", label: "Last 3 Months" },
+  { value: "6m", label: "Last 6 Months" },
+  { value: "1y", label: "Last Year" },
+];
 
 export default function BusinessDashboard() {
   const [data] = useState(mockBusinessData);
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+
+  const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
   return (
     <div className="min-h-screen bg-white p-8">
      
 
       {/* === Overview Stats === */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         <StatCard title="Total Customers" value={data.totalCustomers} icon={<Users className="text-orange-500" />} />
-        <StatCard title="Points Awarded" value={data.totalPointsAwarded.toLocaleString()} icon={<Trophy className="text-orange-500" />} />
         <StatCard title="Rewards Redeemed" value={data.totalRewardsRedeemed} icon={<Gift className="text-orange-500" />} />
+        <StatCard title="Total Campaigns" value={data.totalCampaigns} icon={<Megaphone className="text-orange-500" />} />
+        <StatCard title="Top Deal" value={data.topDeal} icon={<Flame className="text-orange-500" />} />
         <StatCard title="Redemption Rate" value={`${data.redemptionRate}%`} icon={<Percent className="text-orange-500" />} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <TierProgress tier={data.tier} />
+        <PointsSummary summary={data.pointsSummary} />
       </div>
 
       {/* === Chart Section === */}
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Points Earned vs Redeemed (Last 7 Days)</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Performance ({selectedTimeRangeLabel})</CardTitle>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select time range" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeRangeOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent>
-           <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.weeklyTrend}>
-              <XAxis dataKey="week" stroke="#888" />
+            <BarChart data={data.performanceData[timeRange]}>
+              <XAxis dataKey="name" stroke="#888" />
               <YAxis stroke="#888" />
               <Tooltip
                 contentStyle={{
@@ -47,7 +77,6 @@ export default function BusinessDashboard() {
               <Bar dataKey="redeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
         </CardContent>
       </Card>
 
@@ -96,6 +125,48 @@ const StatCard = ({ title, value, icon }: { title: string; value: string | numbe
     </CardHeader>
     <CardContent>
       <p className="text-2xl font-bold text-gray-800">{value}</p>
+    </CardContent>
+  </Card>
+);
+
+const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) => (
+  <Card className="shadow-md border-none bg-white lg:col-span-1">
+    <CardHeader>
+      <CardTitle className="text-lg font-semibold">Business Tier</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-orange-500 font-bold text-xl">{tier.name}</span>
+        <Star className="text-yellow-400 fill-yellow-400" />
+      </div>
+      <Progress value={tier.progress} className="w-full" />
+      <p className="text-sm text-gray-500 mt-2">{tier.progress}% to the next tier</p>
+    </CardContent>
+  </Card>
+);
+
+const PointsSummary = ({ summary }: { summary: { earned: number; spent: number; matchingAvailable: number } }) => (
+  <Card className="shadow-md border-none bg-white lg:col-span-2">
+    <CardHeader>
+      <CardTitle className="text-lg font-semibold">Points Summary</CardTitle>
+    </CardHeader>
+    <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+      <div>
+        <p className="text-sm text-gray-500">Earned</p>
+        <p className="text-2xl font-bold flex items-center justify-center gap-1 text-green-600">
+          <ArrowUp size={20} /> {summary.earned.toLocaleString()}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Spent</p>
+        <p className="text-2xl font-bold flex items-center justify-center gap-1 text-red-600">
+          <ArrowDown size={20} /> {summary.spent.toLocaleString()}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Matching Available</p>
+        <p className="text-2xl font-bold text-blue-600">{summary.matchingAvailable.toLocaleString()}</p>
+      </div>
     </CardContent>
   </Card>
 );

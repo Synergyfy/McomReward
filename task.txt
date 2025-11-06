@@ -1,167 +1,186 @@
-﻿ Tasks :
-Wishlist
-Point Engine
-Matching Points
-Affiliate / Invite System
-Deals Platform Integration
+﻿*MCOM Rewards (LoyaltyCardX) — Business Owner Full Feature Checklist (src/app/dashboard)*
 
-"*Things to Outstanding:* 
+1. SIGN-UP & LOGIN PROCESS
+Purpose: Simple onboarding for business owners with proper data capture and automatic dashboard setup.
+Features to Include:
+ Sign-Up Page
+Fields: Business Name, Owner Name, Email, Phone, Password.
+Dropdown: Sector → Category → Sub-category (auto-populated list).
+Optional fields: Website URL, Social Media Links.
+Checkbox: “I agree to Terms & Conditions.”
+CTA Button: “Create My Business Account.”
+ Email Verification Flow (OTP or link verification).
+ Auto-sector branding: Assign default logo and theme color based on sector (e.g., Café = Food/Dining theme).
+ Welcome Tour/Tooltip Walkthrough when dashboard first loads.
 
-Wishlist - The Wishlist allows customers to save the products, services, or experiences they want — and that data becomes a direct intent signal that helps businesses create more targeted and relevant campaigns.
+2. BUSINESS OWNER DASHBOARD (Main View)
+Purpose: Central hub for all business actions, analytics, and campaign management.
+Dashboard Layout:
+Left-hand menu + central analytics area.
+Top bar: Notifications, Points Balance, Badge Status (Starter → Partner).
+Menu Tabs & Functions:
+a. Overview / Analytics Tab
+ Display KPIs: total campaigns, redemptions, customer signups, top deals.
+ Points summary (Earned / Spent / Matching Points Available).
+ Monthly performance chart (points and redemptions).
+ Business tier level progress bar.
+b. Rewards Tab
+ Add new reward button (“+ Add Reward”).
+View all Rewards with Filter Active, Expired, (Deleted history for 30days) 
+ List of existing rewards with edit/delete options. (Edit certain features for Co-branded and full edit for White-label).
+Delete Rewards should have confirmation process before deleting and (deleting rewards should show on Admin dashboard)
+ Reward data columns: Title, Type (Voucher, Gift Card, Coupon), Points Required, Expiry, Status.
+ Option to Create New Reward from Scratch (Pop to Upgrade for those that are not White-label).
+ Reward Preview (image + claim page preview).
+c. Campaigns Tab
+ “Create Campaign” button triggers Campaign Builder.
+ View all campaigns with filters (Active / Scheduled / Completed).
+ Show performance: total claims, referrals, social shares.
+ Edit campaign option (for MCOM White-Label & Co-Branded only).
+ White-label businesses can fully edit design and text.
+d. Deals Tab
+ Create new deal (product or service-based offer).
+ List of deals with filters by category, expiry, active status.
+ Connect deals to campaigns.
+ Manage visibility: Local / National / Group-only.
+ Dashboard shows sales metrics per deal.
+e. Business Details Tab(profile page)
+ Business profile edit form (Name, Address, Description, Logo, Banner, Contact Info).
+ Links: Website, WhatsApp, Instagram, etc.
+ Upload branding pack (co-branded and white-label members only).
+ View Membership Status and Tier.
+f. Wishlist Insights Tab
+ View customer wishlists related to business products.
+ Data columns: Item Name, Category, Occasion, Count, Target Date.
+ “Create Campaign from Wishlist” button (prefills audienceType; wishlist_target).
+ Export report.
+g. Customer Activities Tab
+ List of customers who redeemed, referred, or wishlisted your items.
+ Activity timeline: purchase, referral, redemption.
+ Search/filter by customer name, activity type, date.
+ View individual customer badges and history.
+h. Affiliate Tab
+ Show referral link and affiliate code.
+ Analytics: total referrals, sign-ups, commission earned.
+ Option to copy/share referral links.
+ Leaderboard view for top affiliates.
+i. Membership / Subscription Tab
+ Show current plan (Starter / Co-Brand / White Label).
+ Billing & Payment History.
+ Upgrade / Downgrade buttons.
+ Payment integration (Stripe, PayPal).
+ Auto-renew toggle and reminder system.
+j. Tier & Badges Tab
+ Show current tier level (Starter / Active / Trusted / Partner).
+ Requirements to move to next tier.
+ Progress bar with percentage complete.
+ Summary of benefits unlocked.
+k. Matching Points Tab
+ Overview: Matching Points vs Regular Points.
+ How matching points are earned.
+ Redemption rules.
+ History log of matching points activity.
+ Admin notices or restrictions.
+l. Support / Help Tab
+ FAQs section (auto-pulled from knowledge base).
+ Live chat or ticket form.
+ Training videos (“How to create a campaign”, “Understanding badges”).
+m. Logout / Account Tab
+ Account info: email, password reset.
+ Logout and deactivate account options.
 
-Point Engine - The Points Engine tracks every time someone earns or spends loyalty points — it adds points when customers do things we want (buy, refer, join a campaign) and takes points away when they redeem rewards. It keeps everything fair and visible to businesses and customers.
+3. REWARD & CAMPAIGN MANAGEMENT
+For MCOM Starter & Co-branded Businesses:
+ Can claim, edit, and schedule campaigns using templates.
+ Campaign Builder auto-launch prompt after saving reward.
+ Choose campaign type: QR, Referral, Social, Event.
+ Add campaign details (name, dates, caption, image, CTA, reward attached).
+ Add distribution channels: QR, Share Link, Embed, Email.
+ Set auto rules: start/stop date, claim limits, auto-switch to matching points.
+For White-label Businesses:
+ Full creative control over campaign visuals, text, and rules.
+ Can customize campaign page design and CTA wording.
+ Access to white-label analytics dashboard.
+ Custom branding (logos, color palette, domain branding).
 
-Matching Points - Matching Points is a second reward layer inside the MCOM Rewards platform — a parallel points system that works alongside Regular Points. Regular Points = earned directly from business activities  (spending, scanning, referring, or completing a campaign)
-Matching Points = bonus or mirrored points added by MCOM  (like a system-wide incentive or support reward)
-This creates two running balances in the user’s wallet — one from the business, one from MCOM — but both count toward the customer’s total engagement and badge status.
+4. BUSINESS WISHLIST CREATION
+ Businesses can add products or services they wish to receive or promote in B2B exchanges.
+ Field inputs: Item, Quantity, Priority, Notes.
+ Option to make wishlist public to B2B groups.
+ Can convert wishlist items into campaigns.
 
+5. DEALS & B2B EXCHANGE SYSTEM
+ Join or create deal groups.
+ Access member stock or capacity from others (first-come basis).
+ “Add to Group Listing” button for each product/service.
+ View available capacity (e.g., 100 meals left from Café X).
+ Trade products/services within credit/point balance.
 
+6. POINTS & MATCHING SYSTEM
+ Display points earned by customers through business campaigns.
+ Matching points appear automatically when business runs out of standard rewards.
+ Admin control to modify matching point values.
+ Businesses can view which campaigns issued matching points vs standard rewards.
 
-Affiliate / Invite System — Every business gets a personal invite link and QR code. When they invite other businesses (or customers) and those people join and complete required steps, the inviter earns bonus points and other ladder-based rewards.
+7. TIER LEVEL SYSTEM (Business)
+ 4 Levels: Starter → Active → Trusted → Partner.
+ Triggered by activity (campaigns run, customers redeemed, B2B trades, training attendance).
+ Auto-upgrade when thresholds met.
+ Auto-downgrade after inactivity.
+ Notifications: “You’ve been upgraded to Trusted!” or “You’re at risk of downgrade.”
+ Benefits by tier:
+Starter: Basic dashboard access
+Active: Advanced campaign analytics
+Trusted: B2B exchange access + co-brand eligibility
+Partner: White-label eligibility + commission tier
 
+8. AFFILIATE & REFERRAL STRUCTURE
+ Each business owner gets a referral code.
+ Can earn commission from new signups they refer.
+ 2-tier referral logic: Agent → Business → Consumer.
+ Passive income tracking (supervisors earn from sub-affiliates).
 
-Deals Platform Integration - A simple place where business owners and service providers can create and publish deals and "gig rewards" (like special offers or packages). Deals can be local (nearby customers) or national. They work with Loyalty Card X so deals can also be used as rewards."  
+9. SUBSCRIPTION & BILLING
+ Auto-billing and manual payment options.
+ Plan comparison and feature list.
+ Payment receipts and invoices downloadable.
+ Subscription expiry reminders.
 
-Starting with wishlist" *Wishlist & Customer Intent System — Build Guide (MCOM Rewards / LoyaltyCardX) (Dev)*
+10. TRAINING & SUPPORT
+ Built-in training modules and onboarding videos.
+ Resource library (PDFs, video tutorials, FAQs).
+ Option to book 1:1 call with Account Manager.
+ Progress tracker for training completion.
 
-1) One-line purpose
-Let customers save the things they want (items, services, occasions). Use that data (with consent) to create precise campaigns and smart notifications for businesses. Keep it simple, private, and actionable.
+11. NOTIFICATIONS & ALERTS SYSTEM
+ Push notifications for campaign performance, tier changes, or low balance.
+ Email + in-app messages for renewal, deals, updates.
+ Admin broadcast announcements.
 
-2) High-level flow (what happens)
-Customer adds an item to their wishlist.
-Customer gives consent to receive offers for that item (opt-in).
-Wishlist item is stored and indexed.
-Business owners can see aggregated wishlist counts and audience estimates.
-The system suggests or triggers campaign templates based on wishlist signals (birthday, restock, high demand).
-Campaigns are sent only to consenting customers.
-Analytics show conversions and wishlist-driven revenue.
+12. ADMIN CONTROLS (Backlink Features)
+ Admin can view all business owner data and campaign activity.
+ Admin can edit matching points or suspend campaigns.
+ Admin sees business tier levels and can adjust manually.
+ Audit log of all business actions.
 
-3) Requirements & principles (Henry’s rules)
-Keep the form minimal — five fields max per wishlist entry.
-Consent first — wishlist marketing only when customers opt in.
-Privacy by default — wishlist data is private unless explicitly shared.
-Actionable for business — show counts and estimates before a business publishes a campaign.
-No spam — limit messages per customer (max 3 wishlist-driven messages/month by default).
-Easy to use — adding a wishlist should take <15 seconds.
+13. WHITE-LABEL & CO-BRAND CONTROL PANEL
+ White-label partners get access to brand styling and domain management.
+ Co-brand partners get access to editable visuals (logo, color theme) but core text locked.
+ Both have analytics dashboard filtered for their users.
 
+14. SECURITY, COMPLIANCE, & DATA MANAGEMENT
+ Multi-factor authentication for all business logins.
+ GDPR-compliant consent and privacy control.
+ Activity logs for audits.
+ Escrow control for reward payments and refunds.
 
-
-6) UI & UX — Customer flows (exact screens)
-Design should be simple and fast.
-Wishlist Entry (from listing or product page)
-Button: Save to wishlist (small heart icon). Tap opens minimal modal.
-Modal fields (single-column):
-Item name (auto-filled) — editable
-Category (auto) — optional
-Occasion (dropdown: Birthday / Anniversary / None)
-Target date (optional date picker)
-Priority (Low / Medium / High)
-Consent toggle checkbox: "Yes — I want to receive offers related to this item"
-Buttons: Save / Cancel
-After Save: small toast: "Saved. We’ll let you know when it’s available or on offer."
-Wishlist Dashboard (customer)
-List of saved items with chip for consent status and quick actions: Edit, Share, Remove.
-Show progress bar if target_date is near and number of matching businesses found.
-Settings: toggle global wishlist marketing opt-in and message frequency.
-
-7) UI & UX — Business flows (exact screens)
-Wishlist Insights Page (in Business Dashboard)
-Header: "Customers waiting for your products"
-Search: item name + filters (date range, priority, radius)
-Table / Cards: item_name, category, estimated_count, top_dates, priority_distribution
-CTA: "Create campaign for this audience" (opens Campaign Builder pre-filled with item info)
-Note: show “estimate” badge and a privacy note: "Numbers show consenting customers only. User details are not shared without consent."
-Pre-publish Audience Estimate modal
-When a business clicks Create Campaign: show modal: "Your offer matches ~124 customers. Would you like to target them?"
-Buttons: Use Targeting / Broaden Audience / Cancel
-
-8) Campaign Integration (how wishlist plugs into campaigns)
-In Campaign Builder, add a new targeting option: Target by Wishlist.
-Dropdown: Select item_name (autocomplete) or category/occasion.
-When selected, show estimated audience size from wishlist_aggregates.
-Respect consent: only users who set consent_marketing = true will be targeted.
-When publishing: record campaign.targeting = { type: 'wishlist', item_name, min_priority, date_range }
-Back-end action on publish:
-Create a campaign audience job that queues notifications to matched users (respecting rate limits and message caps).
-Log the campaign → wishlist mapping for reporting.
-
-9) Notifications & Message rules
-Channels: Push (app), Email, SMS (if opted). Use customer preference settings.
-Frequency cap: default max 3 wishlist-related messages per month (per user). Configurable by admin.
-Personalization: Use item_name and occasion in message but avoid excessive personal details.
-Example Push copy:
-"Good news — [Business] has your wishlist item '[Item Name]' in stock. Tap to save 10% today." Example Email subject:
-"Your wishlist item is available: [Item Name] — special offer inside"
-
-10) Privacy & Consent (must be enforced)
-All marketing uses MUST check consent_marketing before sending any message.
-Add global user opt-out setting. If the user toggles it off, do not target them even if item consent is on.
-Use anonymized, rounded counts for business aggregates (e.g., display 120 instead of 123).
-Delete or export wishlist data on user request (GDPR/CCPA).
-Log all data access in wishlist_actions for audit and compliance.
-
-11) Aggregation & Performance (scaling notes)
-Maintain wishlist_aggregates as a materialized view updated periodically (e.g., every 15 minutes) or via event-driven updates on wishlist create/update/delete.
-Use a search index (ElasticSearch / Postgres trigram) for fast item matching.
-Use geo-queries for hyperlocal targeting (city/postcode/radius).
-Throttle the audience job to avoid sudden mass notifications (use a queueing system).
-
-12) Admin Tools & Controls
-Admin panel to:
-Configure recommendation rules (how many customers make a campaign suggestion)
-Set global message caps
-View platform wishlist trends
-Run manual campaigns for large wishlist events (with approval)
-
-13) QA & Acceptance Tests (checklist)
-Customer flows
- Add wishlist item from product page.
- Edit the item and change consent.
- Delete item.
- Receive push/email only when consent is true.
-Business flows
- Get aggregated counts for an item (consent respected).
- Click "Create campaign" and see pre-filled targeting and estimate.
- Publish campaign and ensure notifications are queued only for consenting users.
-Privacy & Security
- Aggregates are rounded & anonymized.
- All accesses are logged in wishlist_actions.
- User export and delete requests work.
-Performance
- Aggregates update within 15 minutes of changes.
- Search returns results under 200ms for common queries.
-
-14) Metrics to track (KPIs)
-Wishlist adoption rate (users who add at least one item).
-Conversion rate: wishlist → purchase.
-Campaign success: targeted campaign CTR and redemption rate.
-Message opt-out rate after wishlist campaigns.
-Average time from wishlist save to purchase.
-
-15) Example scenarios (developer-readable)
-Scenario A — Birthday cakes:
-User saves 'Birthday Cake' with target_date = 2025-10-12 and consent = true.
-Aggregates show 78 matches for Bella’s Bakery.
-System suggests a birthday campaign; Bakery publishes; 25 users redeem vouchers.
-Scenario B — Restock alert:
-User wishes for 'Limited Edition Candle' (out of stock).
-When merchant updates inventory, a webhook triggers: push notifications sent to 5 consenting users.
-
-16) Roadmap & incremental delivery plan
-Phase 1 (MVP) — 2 weeks
-Basic wishlist CRUD, consent toggle, customer dashboard, aggregated counts, campaign targeting option (manual trigger).
-Phase 2 (Trusted rollout) — 3–4 weeks
-Search index, aggregation materialized views, business insights page, suggestion engine (auto-suggest campaigns).
-Phase 3 (Scale & polish) — 4–6 weeks
-Geo-targeting, rate-limiting queue, admin tools, privacy export, A/B testing of messages.
-
-17) Open questions to resolve (product decisions)
-Should wishlist items be shareable publicly (opt-in)?
-Rounding policy for aggregates (nearest 10 vs 5%)?
-Default message cap per user (3/month recommended).
-Should businesses get a cost/credit charge for wishlist-targeted campaigns?
-
-18) Final notes
-Keep it simple and useful. The wishlist is about intent — don’t over-complicate the data.
-Always require consent before using wishlist data for marketing.
-Show businesses audience size but protect user details."so now what I need is a step by step prompt for each task starting from wishlist generate a step prompt I could paste on my ai website builder to build the wishlist to a production level prototype... Take note my role here is just frontend, not a backend... I'm in charge of showing the flow even if it is with mock data... I don't do backend there
+15. SUMMARY OF KEY DELIVERABLES FOR DEVELOPERS
+Build full sign-up flow with sector/category assignment and branding logic.
+Create modular dashboard with all tab sections listed.
+Implement tier logic, matching points, and affiliate connections.
+Integrate B2B exchange and deals management.
+Add wishlist insights + campaign auto-suggestion.
+Add notifications, subscriptions, analytics, and support modules.
+Ensure co-branded/white-label permissions are enforced correctly.
+Connect all features to backend APIs (Rewards, Perkzilla, Expo, Listio).
+End of Business Owner Full Feature Checklist — MCOM Rewards (LoyaltyCardX)

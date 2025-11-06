@@ -10,6 +10,15 @@ import {
   Ticket,
   User,
   LogOut,
+  CreditCard,
+  Star,
+  Coins,
+  LifeBuoy,
+  Settings,
+  Gift,
+  Activity,
+  Tag,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -51,14 +60,14 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
       <ul className="space-y-2 text-sm font-medium">
         <li>
           <Link href="/dashboard" className={linkClasses('/dashboard', true)}>
-            <Award className="mr-3" />
+            <LayoutDashboard className="mr-3" />
             Overview
           </Link>
         </li>
 
         <li>
           <Link href="/dashboard/rewards" className={linkClasses('/dashboard/rewards')}>
-            <Award className="mr-3" />
+            <Gift className="mr-3" />
             Rewards
           </Link>
         </li>
@@ -137,8 +146,50 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
         </li>
 
         <li>
+          <Link href="/dashboard/customer-activities" className={linkClasses('/dashboard/customer-activities')}>
+            <Activity className="mr-3" />
+            Customer Activities
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/subscription" className={linkClasses('/dashboard/subscription')}>
+            <CreditCard className="mr-3" />
+            Subscription
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/tier" className={linkClasses('/dashboard/tier')}>
+            <Star className="mr-3" />
+            Tier & Badges
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/matching-points" className={linkClasses('/dashboard/matching-points')}>
+            <Coins className="mr-3" />
+            Matching Points
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/support" className={linkClasses('/dashboard/support')}>
+            <LifeBuoy className="mr-3" />
+            Support / Help
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/account" className={linkClasses('/dashboard/account')}>
+            <Settings className="mr-3" />
+            Account
+          </Link>
+        </li>
+
+        <li>
           <Link href="/dashboard/deals" className={linkClasses('/dashboard/deals')}>
-            <Ticket className="mr-3" />
+            <Tag className="mr-3" />
             Deals
           </Link>
         </li>

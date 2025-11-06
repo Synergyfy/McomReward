@@ -18,6 +18,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import DateTimePicker from "@/components/dashboard/campaigns/datePicker";
 import { WishlistItem } from '@/components/customer/wishlist/WishlistItemCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
+import Image from 'next/image';
 
 interface WishlistModalProps {
   isOpen: boolean;
@@ -32,10 +34,11 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
   // Step 1 state
   const [wishlistFor, setWishlistFor] = useState<'myself' | 'friend' | 'family' | ''>(itemToEdit ? 'myself' : '');
+  const [myEmail, setMyEmail] = useState(''); // New state for myself's email
   const [friendName, setFriendName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [customRelationship, setCustomRelationship] = useState('');
-  const [notify, setNotify] = useState<'yes' | 'no' | ''>('');
+  const [notify, setNotify] = useState<'yes' | 'no' | '' >('');
   const [contactMethods, setContactMethods] = useState({ email: false, phone: false });
   const [friendEmail, setFriendEmail] = useState('');
   const [friendPhone, setFriendPhone] = useState('');
@@ -48,6 +51,10 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const [targetDate, setTargetDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [consent, setConsent] = useState(false);
+  const [uploadOrLink, setUploadOrLink] = useState<'upload' | 'link' | '' >('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,9 +65,11 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setConsent(itemToEdit.consent);
         setOccasion(itemToEdit.occasion || 'None');
         setTargetDate(itemToEdit.targetDate ? new Date(itemToEdit.targetDate) : undefined);
-        setStep(2);
+        setImagePreviewUrl(itemToEdit.imageUrl || null);
+        setStep(2); // If editing, go straight to step 2
         setWishlistFor('myself');
       } else {
+        // Reset for new item
         setName(itemName || '');
         setCategory('Food');
         setPriority('Medium');
@@ -69,6 +78,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setTargetDate(undefined);
         setStep(1);
         setWishlistFor('');
+        setMyEmail(''); // Reset myEmail
         setFriendName('');
         setRelationship('');
         setCustomRelationship('');
@@ -76,23 +86,29 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setContactMethods({ email: false, phone: false });
         setFriendEmail('');
         setFriendPhone('');
+        setUploadOrLink('');
+        setImageUrl('');
+        setSelectedFile(null);
+        setImagePreviewUrl(null);
       }
     }
   }, [itemToEdit, itemName, isOpen]);
 
+  const handleFileSelect = (file: File | null, previewUrl: string | null) => {
+    setSelectedFile(file);
+    setImagePreviewUrl(previewUrl);
+  };
+
   const handleWishlistForChange = (value: 'myself' | 'friend' | 'family') => {
     setWishlistFor(value);
-    if (value === 'myself') {
-      setStep(2);
-    } else {
-      setFriendName('');
-      setRelationship('');
-      setCustomRelationship('');
-      setNotify('');
-      setContactMethods({ email: false, phone: false });
-      setFriendEmail('');
-      setFriendPhone('');
-    }
+    setMyEmail('');
+    setFriendName('');
+    setRelationship('');
+    setCustomRelationship('');
+    setNotify('');
+    setContactMethods({ email: false, phone: false });
+    setFriendEmail('');
+    setFriendPhone('');
   };
 
   const handleRelationshipChange = (value: string) => {
@@ -108,6 +124,32 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
   const handleContactMethodChange = (method: 'email' | 'phone') => {
     setContactMethods(prev => ({ ...prev, [method]: !prev[method] }));
+  };
+
+  useEffect(() => {
+    if (targetDate) {
+      const month = targetDate.getMonth();
+      // Seasons based on meteorological definition
+      if (month >= 2 && month <= 4) { // Mar, Apr, May
+        setSeason('Spring');
+      } else if (month >= 5 && month <= 7) { // Jun, Jul, Aug
+        setSeason('Summer');
+      } else if (month >= 8 && month <= 10) { // Sep, Oct, Nov
+        setSeason('Autumn');
+      } else {
+        setSeason('Winter');
+      }
+    } else {
+      setSeason('None');
+    }
+  }, [targetDate]);
+
+  const handleConfirmMyEmail = () => {
+    if (!myEmail.includes('@')) {
+      alert('Please enter a valid email.');
+      return;
+    }
+    setStep(2);
   };
 
   const handleConfirmContact = () => {
@@ -131,6 +173,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
       consent,
       occasion,
       targetDate: targetDate?.toISOString(),
+      imageUrl: imagePreviewUrl || undefined,
     };
     onSave(newItem);
     onClose();
@@ -164,10 +207,54 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         </div>
 
         <AnimatePresence>
+          {wishlistFor === 'myself' && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
+              <div className="space-y-2">
+                <Label htmlFor="myEmail">Your Email</Label>
+                <Input id="myEmail" type="email" value={myEmail} onChange={(e) => setMyEmail(e.target.value)} placeholder="you@example.com" />
+              </div>
+              <Button onClick={handleConfirmMyEmail} className="w-full">Continue</Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {wishlistFor === 'friend' && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-              <Label htmlFor="friendName">Friend&apos;s Name</Label>
-              <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend&apos;s name" />
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
+              <div className="space-y-2">
+                <Label htmlFor="friendName">Friend&apos;s Name</Label>
+                <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend&apos;s name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Enter Their Contacts:</Label>
+                <div className="flex space-x-4 py-2">
+                  <div className="flex items-center space-x-2"><Checkbox id="contact-email" checked={contactMethods.email} onCheckedChange={() => handleContactMethodChange('email')} /><Label htmlFor="contact-email">Email</Label></div>
+                  <div className="flex items-center space-x-2"><Checkbox id="contact-phone" checked={contactMethods.phone} onCheckedChange={() => handleContactMethodChange('phone')} /><Label htmlFor="contact-phone">Phone</Label></div>
+                </div>
+              </div>
+              <AnimatePresence>
+                {contactMethods.email && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                    <Label htmlFor="friendEmail">Friend&apos;s Email</Label>
+                    <Input id="friendEmail" type="email" value={friendEmail} onChange={(e) => setFriendEmail(e.target.value)} placeholder="friend@example.com" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {contactMethods.phone && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                    <Label htmlFor="friendPhone">Friend&apos;s Phone</Label>
+                    <Input id="friendPhone" type="tel" value={friendPhone} onChange={(e) => setFriendPhone(e.target.value)} placeholder="+1234567890" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {(contactMethods.email || contactMethods.phone) && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-2">
+                    <Button onClick={handleConfirmContact} className="w-full">Confirm</Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
@@ -182,82 +269,61 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                     <SelectValue placeholder="Select a relationship" />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="parent">Parent</SelectItem>
-                    <SelectItem value="sibling">Sibling</SelectItem>
-                    <SelectItem value="child">Child</SelectItem>
-                    <SelectItem value="spouse">Spouse (Wife/Husband)</SelectItem>
-                    <SelectItem value="distant-relative">Distant Relative</SelectItem>
+                    <SelectItem value="father">Father</SelectItem>
+                    <SelectItem value="mother">Mother</SelectItem>
+                    <SelectItem value="brother">Brother</SelectItem>
+                    <SelectItem value="sister">Sister</SelectItem>
+                    <SelectItem value="husband">Husband</SelectItem>
+                    <SelectItem value="wife">Wife</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <AnimatePresence>
+                {relationship === 'other' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                    <Label htmlFor="customRelationship">Please specify</Label>
+                    <Input id="customRelationship" value={customRelationship} onChange={(e) => setCustomRelationship(e.target.value)} placeholder="e.g., Cousin, Uncle" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {((relationship !== '' && relationship !== 'other') || (relationship === 'other' && customRelationship !== '')) && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
+                  <div className="space-y-2">
+                    <Label>Enter Their Contacts:</Label>
+                    <div className="flex space-x-4 py-2">
+                      <div className="flex items-center space-x-2"><Checkbox id="contact-email" checked={contactMethods.email} onCheckedChange={() => handleContactMethodChange('email')} /><Label htmlFor="contact-email">Email</Label></div>
+                      <div className="flex items-center space-x-2"><Checkbox id="contact-phone" checked={contactMethods.phone} onCheckedChange={() => handleContactMethodChange('phone')} /><Label htmlFor="contact-phone">Phone</Label></div>
+                    </div>
+                  </div>
+                  <AnimatePresence>
+                    {contactMethods.email && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                        <Label htmlFor="friendEmail">Family Member&apos;s Email</Label>
+                        <Input id="friendEmail" type="email" value={friendEmail} onChange={(e) => setFriendEmail(e.target.value)} placeholder="relative@example.com" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <AnimatePresence>
+                    {contactMethods.phone && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                        <Label htmlFor="friendPhone">Family Member&apos;s Phone</Label>
+                        <Input id="friendPhone" type="tel" value={friendPhone} onChange={(e) => setFriendPhone(e.target.value)} placeholder="+1234567890" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <AnimatePresence>
+                    {(contactMethods.email || contactMethods.phone) && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-2">
+                        <Button onClick={handleConfirmContact} className="w-full">Confirm</Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
-
-        <AnimatePresence>
-          {relationship === 'other' && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-              <Label htmlFor="customRelationship">Please specify</Label>
-              <Input id="customRelationship" value={customRelationship} onChange={(e) => setCustomRelationship(e.target.value)} placeholder="e.g., Cousin, Uncle" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {(wishlistFor === 'friend' || (wishlistFor === 'family' && (relationship !== '' && relationship !== 'other')) || (wishlistFor === 'family' && relationship === 'other' && customRelationship !== '')) && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
-              <div className="space-y-2">
-                <Label>Do you want to let them know?</Label>
-                <RadioGroup onValueChange={handleNotifyChange} value={notify} className="flex space-x-4 py-2">
-                  <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="notify-yes" /><Label htmlFor="notify-yes">Yes</Label></div>
-                  <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="notify-no" /><Label htmlFor="notify-no">No</Label></div>
-                </RadioGroup>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {notify && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
-              <div className="space-y-2">
-                <Label>How should we notify them?</Label>
-                <div className="flex space-x-4 py-2">
-                  <div className="flex items-center space-x-2"><Checkbox id="contact-email" checked={contactMethods.email} onCheckedChange={() => handleContactMethodChange('email')} /><Label htmlFor="contact-email">Email</Label></div>
-                  <div className="flex items-center space-x-2"><Checkbox id="contact-phone" checked={contactMethods.phone} onCheckedChange={() => handleContactMethodChange('phone')} /><Label htmlFor="contact-phone">Phone</Label></div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {contactMethods.email && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-              <Label htmlFor="friendEmail">Email</Label>
-              <Input id="friendEmail" type="email" value={friendEmail} onChange={(e) => setFriendEmail(e.target.value)} placeholder="relative@example.com" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {contactMethods.phone && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-              <Label htmlFor="friendPhone">Phone</Label>
-              <Input id="friendPhone" type="tel" value={friendPhone} onChange={(e) => setFriendPhone(e.target.value)} placeholder="+1234567890" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {(contactMethods.email || contactMethods.phone) && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-2">
-              <Button onClick={handleConfirmContact} className="w-full">Confirm</Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
       </motion.div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -279,9 +345,65 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           <p className="text-xs text-gray-500">The name of the item you&apos;re wishing for.</p>
         </div>
+
+        <div className="space-y-2">
+            <Label>Item Image (Optional)</Label>
+            <RadioGroup onValueChange={(v) => setUploadOrLink(v as 'upload' | 'link')} value={uploadOrLink} className="flex space-x-4 py-2">
+                <div className="flex items-center space-x-2">
+                <RadioGroupItem value="upload" id="image-upload" />
+                <Label htmlFor="image-upload">Upload Image</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                <RadioGroupItem value="link" id="image-link" />
+                <Label htmlFor="image-link">Paste Link</Label>
+                </div>
+            </RadioGroup>
+        </div>
+
+        <AnimatePresence>
+            {uploadOrLink === 'upload' && (
+                <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 overflow-hidden"
+                >
+                    <CloudinaryUpload onFileSelect={handleFileSelect} />
+                    <p className="text-xs text-gray-500">Upload an image of the item.</p>
+                </motion.div>
+            )}
+            {uploadOrLink === 'link' && (
+                <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 overflow-hidden"
+                >
+                    <Input 
+                        placeholder="https://example.com/image.png" 
+                        value={imageUrl} 
+                        onChange={(e) => {
+                            setImageUrl(e.target.value);
+                            setImagePreviewUrl(e.target.value);
+                        }}
+                    />
+                    <p className="text-xs text-gray-500">Paste a link to an image online.</p>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {imagePreviewUrl && (
+            <div className="mt-4">
+                <p className="text-sm font-medium">Image Preview:</p>
+                <div className="relative h-24 w-24 rounded-lg overflow-hidden mt-2 border">
+                    <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                </div>
+            </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="occasion">Occasion</Label>
-          <Select onValueChange={setOccasion} defaultValue={occasion}>
+          <Select onValueChange={setOccasion} value={occasion}>
             <SelectTrigger>
               <SelectValue placeholder="Select an occasion" />
             </SelectTrigger>
@@ -294,8 +416,13 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           <p className="text-xs text-gray-500">Is this for a special occasion?</p>
         </div>
         <div className="space-y-2">
+          <Label>Target Date</Label>
+          <DateTimePicker date={targetDate} setDate={setTargetDate} />
+          <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="season">Season</Label>
-          <Select onValueChange={setSeason} defaultValue={season}>
+          <Select onValueChange={setSeason} value={season}>
             <SelectTrigger>
               <SelectValue placeholder="Select a season" />
             </SelectTrigger>
@@ -308,11 +435,6 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500">Optionally, select a season.</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Target Date</Label>
-          <DateTimePicker date={targetDate} setDate={setTargetDate} />
-          <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
         </div>
         <div className="space-y-2">
           <Label>Priority</Label>

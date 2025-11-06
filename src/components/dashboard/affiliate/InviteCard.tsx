@@ -10,15 +10,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface InviteCardProps {
   referralLink: string;
   qrCodeUrl: string;
+  inviteCode: string;
 }
 
-export default function InviteCard({ referralLink, qrCodeUrl }: InviteCardProps) {
-  const [hasCopied, setHasCopied] = useState(false);
+export default function InviteCard({ referralLink, qrCodeUrl, inviteCode }: InviteCardProps) {
+  const [hasCopiedLink, setHasCopiedLink] = useState(false);
+  const [hasCopiedCode, setHasCopiedCode] = useState(false);
 
-  const copyToClipboard = () => {
+  const copyReferralLinkToClipboard = () => {
     navigator.clipboard.writeText(referralLink).then(() => {
-      setHasCopied(true);
-      setTimeout(() => setHasCopied(false), 2000);
+      setHasCopiedLink(true);
+      setTimeout(() => setHasCopiedLink(false), 2000);
+    });
+  };
+
+  const copyInviteCodeToClipboard = () => {
+    navigator.clipboard.writeText(inviteCode).then(() => {
+      setHasCopiedCode(true);
+      setTimeout(() => setHasCopiedCode(false), 2000);
     });
   };
 
@@ -34,8 +43,19 @@ export default function InviteCard({ referralLink, qrCodeUrl }: InviteCardProps)
           </p>
           <div className="flex items-center space-x-2">
             <Input type="text" value={referralLink} readOnly className="flex-grow" />
-            <Button onClick={copyToClipboard} variant="outline" size="icon">
-              {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            <Button onClick={copyReferralLinkToClipboard} variant="outline" size="icon">
+              {hasCopiedLink ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+        <div className="flex-grow w-full">
+          <p className="text-sm text-gray-600 mb-2">
+            Or share this invite code:
+          </p>
+          <div className="flex items-center space-x-2">
+            <Input type="text" value={inviteCode} readOnly className="flex-grow" />
+            <Button onClick={copyInviteCodeToClipboard} variant="outline" size="icon">
+              {hasCopiedCode ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
         </div>

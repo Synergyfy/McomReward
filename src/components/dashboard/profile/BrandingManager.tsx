@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { Upload, Palette, Type, Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -55,7 +55,14 @@ export default function BrandingManager() {
   );
 }
 
-const Uploader = ({ title, icon, onFileSelect, multiple = false }: any) => (
+interface UploaderProps {
+  title: string;
+  icon: ReactNode;
+  onFileSelect: (file: File | null) => void;
+  multiple?: boolean;
+}
+
+const Uploader = ({ title, icon, onFileSelect, multiple = false }: UploaderProps) => (
   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
     <div className="flex justify-center items-center mb-2 text-gray-400">{icon}</div>
     <p className="text-sm text-gray-600 mb-2">{title}</p>
@@ -66,7 +73,13 @@ const Uploader = ({ title, icon, onFileSelect, multiple = false }: any) => (
   </div>
 );
 
-const ColorPicker = ({ label, color, setColor }: any) => (
+interface ColorPickerProps {
+  label: string;
+  color: string;
+  setColor: (color: string) => void;
+}
+
+const ColorPicker = ({ label, color, setColor }: ColorPickerProps) => (
   <div className="flex items-center gap-4">
     <label className="font-medium">{label}</label>
     <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 h-12 p-1" />

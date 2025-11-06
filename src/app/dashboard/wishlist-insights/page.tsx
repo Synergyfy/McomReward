@@ -10,7 +10,7 @@ import { exportToCsv } from '@/lib/utils';
 
 export default function WishlistInsightsPage() {
   const handleExport = () => {
-    exportToCsv(wishlistData, 'wishlist-insights.csv');
+    exportToCsv(wishlistData as unknown as Record<string, string | number | boolean>[], 'wishlist-insights.csv');
   };
 
   return (

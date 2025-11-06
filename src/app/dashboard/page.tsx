@@ -8,7 +8,9 @@ import { mockBusinessData } from "../data";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const timeRangeOptions = [
+type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
+
+const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "7d", label: "Last 7 Days" },
   { value: "30d", label: "Last 30 Days" },
   { value: "3m", label: "Last 3 Months" },
@@ -18,7 +20,7 @@ const timeRangeOptions = [
 
 export default function BusinessDashboard() {
   const [data] = useState(mockBusinessData);
-  const [timeRange, setTimeRange] = useState("30d");
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
@@ -44,7 +46,7 @@ export default function BusinessDashboard() {
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Performance ({selectedTimeRangeLabel})</CardTitle>
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>

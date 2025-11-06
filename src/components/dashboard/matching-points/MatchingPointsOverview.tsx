@@ -1,8 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, Info } from 'lucide-react';
+import { matchingPointsOverview as MatchingPointsOverviewType } from '@/lib/mock-data/matchingPoints';
 
-export default function MatchingPointsOverview({ overview }: { overview: any }) {
+interface MatchingPointsOverviewProps {
+  overview: typeof MatchingPointsOverviewType;
+}
+
+export default function MatchingPointsOverview({ overview }: MatchingPointsOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {/* Total Points Overview */}
@@ -20,7 +25,7 @@ export default function MatchingPointsOverview({ overview }: { overview: any }) 
       {/* How Matching Points are Earned */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">How They're Earned</CardTitle>
+          <CardTitle className="text-sm font-medium">How They&apos;re Earned</CardTitle>
           <TrendingUp className="h-4 w-4 text-gray-500" />
         </CardHeader>
         <CardContent>

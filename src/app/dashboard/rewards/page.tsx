@@ -16,10 +16,10 @@ interface Reward {
   id: string;
   name: string;
   type: string;
-  value: number;
-  pointsRequired: number;
+  value: number | string;
+  pointsRequired: number | string;
   expiry: Date;
-  image: string;
+  image?: string | null;
   description: string;
   status: 'active' | 'expired';
   deletedAt?: Date;
@@ -253,12 +253,14 @@ export default function BusinessRewardsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-                        <Image
-                          src={reward.image}
-                          alt={reward.name}
-                          layout="fill"
-                          objectFit="cover"
-                        />
+                        {reward.image && (
+                          <Image
+                            src={reward.image}
+                            alt={reward.name}
+                            layout="fill"
+                            objectFit="cover"
+                          />
+                        )}
                       </div>
                       <div>
                         <CardTitle className="text-lg">{reward.name}</CardTitle>

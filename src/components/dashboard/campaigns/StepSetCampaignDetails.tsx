@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Select from 'react-select';
+import Select, { CSSObjectWithLabel } from 'react-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -104,7 +104,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const toSelectOptions = (arr: string[]) => arr.map(item => ({ value: item, label: item }));
 
   const selectErrorStyle = {
-    control: (base: any) => ({ ...base, borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', '&:hover': { borderColor: '#ef4444' } })
+    control: (base: CSSObjectWithLabel) => ({ ...base, borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', '&:hover': { borderColor: '#ef4444' } })
   };
 
   return (

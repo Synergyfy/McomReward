@@ -222,7 +222,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           {wishlistFor === 'friend' && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 overflow-hidden">
               <div className="space-y-2">
-                <Label htmlFor="friendName">Friend's Name</Label>
+                <Label htmlFor="friendName">Friend&apos;s Name</Label>
                 <Input id="friendName" value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Enter friend&apos;s name" />
               </div>
               <div className="space-y-2">
@@ -235,7 +235,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
               <AnimatePresence>
                 {contactMethods.email && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                    <Label htmlFor="friendEmail">Friend's Email</Label>
+                    <Label htmlFor="friendEmail">Friend&apos;s Email</Label>
                     <Input id="friendEmail" type="email" value={friendEmail} onChange={(e) => setFriendEmail(e.target.value)} placeholder="friend@example.com" />
                   </motion.div>
                 )}
@@ -243,7 +243,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
               <AnimatePresence>
                 {contactMethods.phone && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                    <Label htmlFor="friendPhone">Friend's Phone</Label>
+                    <Label htmlFor="friendPhone">Friend&apos;s Phone</Label>
                     <Input id="friendPhone" type="tel" value={friendPhone} onChange={(e) => setFriendPhone(e.target.value)} placeholder="+1234567890" />
                   </motion.div>
                 )}
@@ -299,7 +299,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                   <AnimatePresence>
                     {contactMethods.email && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                        <Label htmlFor="friendEmail">Family Member's Email</Label>
+                        <Label htmlFor="friendEmail">Family Member&apos;s Email</Label>
                         <Input id="friendEmail" type="email" value={friendEmail} onChange={(e) => setFriendEmail(e.target.value)} placeholder="relative@example.com" />
                       </motion.div>
                     )}
@@ -307,7 +307,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                   <AnimatePresence>
                     {contactMethods.phone && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                        <Label htmlFor="friendPhone">Family Member's Phone</Label>
+                        <Label htmlFor="friendPhone">Family Member&apos;s Phone</Label>
                         <Input id="friendPhone" type="tel" value={friendPhone} onChange={(e) => setFriendPhone(e.target.value)} placeholder="+1234567890" />
                       </motion.div>
                     )}

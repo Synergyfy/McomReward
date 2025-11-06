@@ -33,7 +33,6 @@ type ForgotPasswordForm = {
 
 export default function StaffLoginPage() {
   const router = useRouter();
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const [forgotLoading, setForgotLoading] = useState(false);
 
@@ -130,7 +129,7 @@ export default function StaffLoginPage() {
           </div>
 
           {/* Turnstile widget */}
-         <FakeTurnstile onVerify={(token) => setTurnstileToken(token)} />
+         <FakeTurnstile onVerify={(token) => console.log("Turnstile token:", token)} />
 
           {/* Submit Button */}
           <Button

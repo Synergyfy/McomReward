@@ -15,11 +15,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  value: number | string;
+  pointsRequired: number | string;
+  badgeLevel?: string;
+  expiry: Date;
+  image?: string | null;
+  status: 'active' | 'expired';
+}
+
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  reward?: any; // Simplified for prototype
-  onSave: (rewardData: any) => void;
+  reward?: Reward | null;
+  onSave: (rewardData: Reward) => void;
 }
 
 const rewardTypes = [
@@ -36,15 +49,15 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const totalSteps = 2;
 
   // Step 1: Details
-  const [rewardType, setRewardType] = useState('points_offer');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [value, setValue] = useState<number | string>(0);
-  const [pointsRequired, setPointsRequired] = useState<number | string>(0);
-  const [badgeLevel, setBadgeLevel] = useState('');
-  const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+  const [rewardType, setRewardType] = useState(reward?.type || 'points_offer');
+  const [name, setName] = useState(reward?.name || '');
+  const [description, setDescription] = useState(reward?.description || '');
+  const [value, setValue] = useState<number | string>(reward?.value || 0);
+  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
+  const [badgeLevel, setBadgeLevel] = useState(reward?.badgeLevel || '');
+  const [expiry, setExpiry] = useState(reward?.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
@@ -100,7 +113,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   };
 
   const handleSubmit = () => {
-    const rewardData = {
+    const rewardData: Reward = {
       id: reward?.id || new Date().toISOString(), // Create new ID for new rewards
       name,
       description,

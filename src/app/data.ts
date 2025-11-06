@@ -5,6 +5,17 @@ export const mockBusinessData = {
   totalPointsAwarded: 542300,
   totalRewardsRedeemed: 3120,
   redemptionRate: 24.3,
+  totalCampaigns: 12,
+  topDeal: "2-for-1 Coffee Mornings",
+  pointsSummary: {
+    earned: 542300,
+    spent: 489000,
+    matchingAvailable: 53300,
+  },
+  tier: {
+    name: "Partner",
+    progress: 75, // Percentage to next tier
+  },
   activeCampaigns: [
     { id: "cmp001", name: "Summer Loyalty Campaign 2025", status: "Active", customers: 1284 },
     { id: "cmp004", name: "Tech Fest 2025 Loyalty Program", status: "Active", customers: 760 },

@@ -27,12 +27,11 @@ export default function BusinessDashboard() {
      
 
       {/* === Overview Stats === */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         <StatCard title="Total Customers" value={data.totalCustomers} icon={<Users className="text-orange-500" />} />
         <StatCard title="Rewards Redeemed" value={data.totalRewardsRedeemed} icon={<Gift className="text-orange-500" />} />
         <StatCard title="Total Campaigns" value={data.totalCampaigns} icon={<Megaphone className="text-orange-500" />} />
         <StatCard title="Top Deal" value={data.topDeal} icon={<Flame className="text-orange-500" />} />
-        <StatCard title="Points Awarded" value={data.totalPointsAwarded.toLocaleString()} icon={<Trophy className="text-orange-500" />} />
         <StatCard title="Redemption Rate" value={`${data.redemptionRate}%`} icon={<Percent className="text-orange-500" />} />
       </div>
 

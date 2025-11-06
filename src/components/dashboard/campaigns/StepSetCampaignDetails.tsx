@@ -41,17 +41,17 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const searchParams = useSearchParams();
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
-  const itemName = searchParams.get('itemName');
+  const dealName = searchParams.get('dealName');
 
   useEffect(() => {
-    if (itemName && !formData.campaignName) {
+    if (dealName && !formData.campaignName) {
       updateFormData({
-        campaignName: `${itemName} Campaign`,
+        campaignName: `${dealName} Campaign`,
         audienceType: ['wishlist_target'],
-        wishlistItemIds: [itemName],
+        wishlistItemIds: [dealName],
       });
     }
-  }, [searchParams, formData.campaignName, updateFormData, itemName]);
+  }, [searchParams, formData.campaignName, updateFormData, dealName]);
 
   useEffect(() => {
     if (formData.imageUrl) setImagePreviewUrl(formData.imageUrl);
@@ -197,7 +197,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <div><Label htmlFor="bgColor">BG Color</Label><Input id="bgColor" type="color" value={formData.bgColor} onChange={(e) => updateFormData({ bgColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Background color of the campaign card.</p></div>
             <div><Label htmlFor="bgColorTextColor">BG Text Color</Label><Input id="bgColorTextColor" type="color" value={formData.bgColorTextColor} onChange={(e) => updateFormData({ bgColorTextColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Text color on the campaign card.</p></div>
             <div><Label htmlFor="ctaBgColor">CTA BG Color</Label><Input id="ctaBgColor" type="color" value={formData.ctaBgColor} onChange={(e) => updateFormData({ ctaBgColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Background color of the CTA button.</p></div>
-            <div><Label htmlFor="ctaTextColor">CTA Text Color</Label><Input id="ctaTextColor" type="color" value={formData.ctaTextColor} onChange={(e) => updateFormData({ ctaTextColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Text color of the CTA button.</p></div>
+            <div><Label htmlFor="ctaTextColor">CTA Text Color</Label><Input id="ctaTextColor" type="color" value={formData.ctaTextColor} onChange={(e) => updateFormData({ ctaTextColor: e.target.value })} /><p className="text-sm text-gray-500 mt-11">Text color of the CTA button.</p></div>
           </div>
 
           {/* Campaign Preview */}

@@ -150,7 +150,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <SelectTrigger>
                     <SelectValue placeholder="Select reward type" />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[100]">
+                  <SelectContent position="popper" className="z-[10000]">
                     {rewardTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.icon} {type.label}

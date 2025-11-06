@@ -44,14 +44,25 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const dealName = searchParams.get('dealName');
 
   useEffect(() => {
-    if (dealName && !formData.campaignName) {
+    const from = searchParams.get('from');
+    const itemName = searchParams.get('itemName');
+
+    if (from === 'wishlist' && itemName) {
+      updateFormData({
+        campaignName: formData.campaignName || `${itemName} Campaign`,
+        audienceType: formData.audienceType.includes('wishlist_target')
+          ? formData.audienceType
+          : [...formData.audienceType, 'wishlist_target'],
+        wishlistItemIds: [itemName],
+      });
+    } else if (dealName && !formData.campaignName) {
       updateFormData({
         campaignName: `${dealName} Campaign`,
-        audienceType: ['wishlist_target'],
+        audienceType: ['wishlist_target'], // Assuming dealName also implies wishlist_target
         wishlistItemIds: [dealName],
       });
     }
-  }, [searchParams, formData.campaignName, updateFormData, dealName]);
+  }, [searchParams, formData.campaignName, updateFormData, dealName, formData.audienceType]);
 
   useEffect(() => {
     if (formData.imageUrl) setImagePreviewUrl(formData.imageUrl);

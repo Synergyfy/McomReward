@@ -52,7 +52,7 @@ e. Business Details Tab(profile page)
 f. Wishlist Insights Tab
  View customer wishlists related to business products.
  Data columns: Item Name, Category, Occasion, Count, Target Date.
- “Create Campaign from Wishlist” button (prefills audience).
+ “Create Campaign from Wishlist” button (prefills audienceType; wishlist_target).
  Export report.
 g. Customer Activities Tab
  List of customers who redeemed, referred, or wishlisted your items.

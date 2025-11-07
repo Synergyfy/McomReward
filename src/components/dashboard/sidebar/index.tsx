@@ -34,6 +34,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [isCampaignsOpen, setIsCampaignsOpen] = useState(false)
   const [ isVouchersOpen, setIsVouchersOpen] = useState (false);
+  const [isMyAssetsOpen, setIsMyAssetsOpen] = useState(false);
   const linkClasses = useLinkClasses();
 
   return (
@@ -203,10 +204,29 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
 
       {/* 👤 Settings & Logout */}
       <div className="space-y-2">
-        <Link href="/dashboard/my-assets" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
-            <Award className="mr-3" size={18}/>
-            My Assets
-        </Link>
+        <button
+            className={linkClasses('/dashboard/my-assets')}
+            onClick={() => setIsMyAssetsOpen(!isMyAssetsOpen)}
+          >
+            <span className="flex items-center justify-between w-full">
+              <span className="flex items-center">
+                <Award className="mr-3" />
+                My Assets
+              </span>
+              <span className="text-gray-400 text-xs">{isMyAssetsOpen ? '−' : '+'}</span>
+            </span>
+          </button>
+          {isMyAssetsOpen && (
+            <ul className="ml-8 mt-2 space-y-1">
+              <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Overview</Link></li>
+              <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
+              <li><Link href="/dashboard/my-assets/nfc-cards" className={linkClasses('/dashboard/my-assets/nfc-cards')}>NFC Cards</Link></li>
+              <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
+              <li><Link href="/dashboard/my-assets/marketing-materials" className={linkClasses('/dashboard/my-assets/marketing-materials')}>Marketing Materials</Link></li>
+              <li><Link href="/dashboard/my-assets/partner-network" className={linkClasses('/dashboard/my-assets/partner-network')}>Partner Network</Link></li>
+              <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li>
+            </ul>
+          )}
         <Link href="/dashboard/profile" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
           <User className="mr-3" size={18} />
           Business Profile

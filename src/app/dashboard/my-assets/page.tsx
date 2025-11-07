@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { QrCode, Nfc, ScanLine, PoundSterling, Users, PlusCircle, Video, Megaphone, Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Power, Replace, Eye, BarChart2, UploadCloud, FileVideo, ImageIcon, Clapperboard, Clock, Zap } from 'lucide-react';
+import { QrCode, Nfc, ScanLine, PoundSterling, Users, PlusCircle, Video, Megaphone, Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Power, Replace, Eye, BarChart2, UploadCloud, FileVideo, ImageIcon, Clapperboard, Clock, Zap, FileText, Mail, Sparkles, Palette, UserPlus, CircleDollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -50,6 +50,54 @@ const mediaAssetsData = {
         { type: 'video', url: 'https://videos.pexels.com/video-files/2792833/2792833-hd_1280_720_25fps.mp4', thumbnail: 'https://images.pexels.com/videos/2792833/pictures/preview-0.jpg' },
         { type: 'image', url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80', thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80' },
         { type: 'logo', url: 'https://images.unsplash.com/photo-1614289371518-722f2615943c?auto=format&fit=crop&w=200&q=80', thumbnail: 'https://images.unsplash.com/photo-1614289371518-722f2615943c?auto=format&fit=crop&w=200&q=80' },
+    ]
+};
+
+const marketingMaterialsData = {
+    downloadCenter: [
+        { id: 'flyer-01', type: 'Flyer', title: 'Grand Opening Flyer', format: 'PDF', icon: FileText },
+        { id: 'poster-01', type: 'Poster', title: 'Summer Sale Poster', format: 'PNG', icon: ImageIcon },
+        { id: 'banner-01', type: 'Digital Banner', title: 'Website Header Banner', format: 'JPG', icon: Clapperboard },
+        { id: 'email-01', type: 'Email Template', title: 'New Customer Welcome Email', format: 'HTML', icon: Mail },
+    ],
+};
+
+const partnerNetworkData = {
+    groupOverview: {
+        name: 'Downtown Business Alliance',
+        members: 15,
+        totalScans: 25800,
+        revenueSplit: '70/30',
+    },
+    partners: [
+        { id: 'partner-01', name: 'The Coffee Spot', role: 'Member', status: 'Active', joined: '2023-01-15', commission: 5, scans: 1250, redemptions: 350, plaques: 3 },
+        { id: 'partner-02', name: 'ReadMore Books', role: 'Member', status: 'Active', joined: '2023-02-20', commission: 5, scans: 850, redemptions: 120, plaques: 2 },
+        { id: 'partner-03', name: 'FitLife Gym', role: 'Admin', status: 'Active', joined: '2022-11-01', commission: 10, scans: 3200, redemptions: 800, plaques: 5 },
+        { id: 'partner-04', name: 'Gourmet Grocer', role: 'Pending', status: 'Invited', joined: null, commission: 5, scans: 0, redemptions: 0, plaques: 0 },
+    ]
+};
+
+const revenueData = {
+    overview: {
+        plaqueSales: 4500,
+        offerRedemptions: 1250,
+        commissions: 850,
+        pendingPayouts: 2300,
+    },
+    earningsChart: [
+        { name: 'Jan', earnings: 1200 },
+        { name: 'Feb', earnings: 1800 },
+        { name: 'Mar', earnings: 1500 },
+        { name: 'Apr', earnings: 2100 },
+        { name: 'May', earnings: 1900 },
+        { name: 'Jun', earnings: 2300 },
+    ],
+    transactions: [
+        { id: 'txn-001', date: '2025-10-28', type: 'Plaque Sale', amount: 25.00, status: 'Completed' },
+        { id: 'txn-002', date: '2025-10-27', type: 'Offer Redemption', amount: 5.50, status: 'Completed' },
+        { id: 'txn-003', date: '2025-10-26', type: 'Commission', amount: 2.50, status: 'Completed' },
+        { id: 'txn-004', date: '2025-10-25', type: 'Payout', amount: -500.00, status: 'Pending' },
+        { id: 'txn-005', date: '2025-10-24', type: 'Plaque Sale', amount: 25.00, status: 'Completed' },
     ]
 };
 
@@ -359,6 +407,221 @@ const StorefrontMediaTab = () => (
     </div>
 );
 
+const MarketingMaterialsTab = () => (
+    <div className="space-y-8">
+        {/* Download Center */}
+        <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Download Center</h2>
+            <p className="text-gray-600 mb-6">Access pre-designed promotional materials to help you spread the word.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {marketingMaterialsData.downloadCenter.map((asset) => (
+                    <div key={asset.id} className="bg-white p-4 rounded-lg shadow group text-center hover:shadow-lg transition-shadow">
+                        <div className="bg-gray-100 rounded-md flex items-center justify-center h-32 mb-4">
+                             <asset.icon className="h-12 w-12 text-gray-400" />
+                        </div>
+                        <h4 className="font-semibold text-gray-800">{asset.title}</h4>
+                        <p className="text-sm text-gray-500 mb-4">{asset.type} &bull; {asset.format}</p>
+                        <Button variant="outline" className="w-full">
+                            <Download className="mr-2 h-4 w-4" /> Download
+                        </Button>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Automated Content Pack */}
+        <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Automated Content Pack</h2>
+            <div className="bg-white p-6 rounded-lg shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-lg font-semibold flex items-center"><Sparkles className="h-5 w-5 mr-2 text-orange-500" />AI-Generated Social Media Content</h3>
+                    <p className="text-gray-600 mt-1">Get unique, ready-to-post content for your social media channels.</p>
+                </div>
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto">
+                    <Sparkles className="mr-2 h-4 w-4" /> Generate Pack
+                </Button>
+            </div>
+        </div>
+
+        {/* Custom Branding */}
+        <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Custom Branding</h2>
+            <div className="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 className="text-lg font-semibold flex items-center"><Palette className="h-5 w-5 mr-2 text-orange-500" />Generate Branded Templates</h3>
+                    <p className="text-gray-600 mb-4">Upload your logo to automatically create marketing materials with your branding.</p>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                        <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-4 text-sm text-gray-600">Drag & drop your logo here</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, or SVG</p>
+                        <Button variant="outline" className="mt-4">
+                            <UploadCloud className="mr-2 h-4 w-4" /> Upload Logo
+                        </Button>
+                    </div>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-gray-700 mb-4">Branded Previews</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="relative aspect-video rounded-lg bg-gray-200 flex items-center justify-center border">
+                            <p className="text-gray-500 text-sm">Flyer Preview</p>
+                        </div>
+                        <div className="relative aspect-video rounded-lg bg-gray-200 flex items-center justify-center border">
+                            <p className="text-gray-500 text-sm">Poster Preview</p>
+                        </div>
+                        <div className="relative aspect-video rounded-lg bg-gray-200 flex items-center justify-center border">
+                            <p className="text-gray-500 text-sm">Banner Preview</p>
+                        </div>
+                        <div className="relative aspect-video rounded-lg bg-gray-200 flex items-center justify-center border">
+                            <p className="text-gray-500 text-sm">Email Preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const PartnerNetworkTab = () => (
+    <div className="space-y-8">
+        {/* Group Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Group Name" value={partnerNetworkData.groupOverview.name} icon={Users} />
+            <StatCard title="Total Members" value={partnerNetworkData.groupOverview.members} icon={Users} />
+            <StatCard title="Total Scans" value={partnerNetworkData.groupOverview.totalScans.toLocaleString()} icon={ScanLine} />
+            <StatCard title="Revenue Split" value={partnerNetworkData.groupOverview.revenueSplit} icon={PoundSterling} />
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end">
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                <UserPlus className="mr-2 h-4 w-4" /> Invite Partner
+            </Button>
+        </div>
+
+        {/* Partner List */}
+        <div className="bg-white p-4 rounded-lg shadow">
+            <table className="w-full">
+                <thead className="text-left text-sm font-semibold text-gray-600 border-b">
+                    <tr>
+                        <th className="p-4">Business Name</th>
+                        <th className="p-4">Role</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4">Joined</th>
+                        <th className="p-4">Commission %</th>
+                        <th className="p-4">Scans</th>
+                        <th className="p-4">Redemptions</th>
+                        <th className="p-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {partnerNetworkData.partners.map((partner) => (
+                        <tr key={partner.id} className="border-b hover:bg-gray-50">
+                            <td className="p-4 font-medium">{partner.name}</td>
+                            <td className="p-4">{partner.role}</td>
+                            <td className="p-4">
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                    partner.status === 'Active' ? 'bg-green-100 text-green-800' :
+                                    partner.status === 'Invited' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {partner.status}
+                                </span>
+                            </td>
+                            <td className="p-4">{partner.joined ? new Date(partner.joined).toLocaleDateString() : 'N/A'}</td>
+                            <td className="p-4">{partner.commission}%</td>
+                            <td className="p-4">{partner.scans.toLocaleString()}</td>
+                            <td className="p-4">{partner.redemptions.toLocaleString()}</td>
+                            <td className="p-4 text-center">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem><Eye className="mr-2 h-4 w-4" /> View Plaques ({partner.plaques})</DropdownMenuItem>
+                                        <DropdownMenuItem><Pencil className="mr-2 h-4 w-4" /> Edit Commission</DropdownMenuItem>
+                                        <DropdownMenuItem><Trash2 className="mr-2 h-4 w-4" /> Remove from Group</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
+const RevenueAnalyticsTab = () => (
+    <div className="space-y-8">
+        {/* Earnings Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Plaque Sales" value={`£${revenueData.overview.plaqueSales.toLocaleString()}`} icon={PoundSterling} />
+            <StatCard title="Offer Redemptions" value={`£${revenueData.overview.offerRedemptions.toLocaleString()}`} icon={CircleDollarSign} />
+            <StatCard title="Commissions Earned" value={`£${revenueData.overview.commissions.toLocaleString()}`} icon={Users} />
+            <StatCard title="Pending Payouts" value={`£${revenueData.overview.pendingPayouts.toLocaleString()}`} icon={Clock} />
+        </div>
+
+        {/* Payout Action */}
+        <div className="flex justify-end">
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                Request Payout
+            </Button>
+        </div>
+
+        {/* Earnings Graph */}
+        <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Earnings Over Time</h3>
+            <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={revenueData.earningsChart}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `£${value}`} />
+                    <Legend />
+                    <Bar dataKey="earnings" fill="#fb923c" name="Monthly Earnings" />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+
+        {/* Transaction List */}
+        <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="text-lg font-semibold p-4">Transaction History</h3>
+            <table className="w-full">
+                <thead className="text-left text-sm font-semibold text-gray-600 border-b">
+                    <tr>
+                        <th className="p-4">Date</th>
+                        <th className="p-4">Type</th>
+                        <th className="p-4">Amount</th>
+                        <th className="p-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {revenueData.transactions.map((txn) => (
+                        <tr key={txn.id} className="border-b hover:bg-gray-50">
+                            <td className="p-4">{new Date(txn.date).toLocaleDateString()}</td>
+                            <td className="p-4">{txn.type}</td>
+                            <td className={`p-4 font-medium ${txn.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {txn.amount > 0 ? `+£${txn.amount.toFixed(2)}` : `-£${Math.abs(txn.amount).toFixed(2)}`}
+                            </td>
+                            <td className="p-4">
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                    txn.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                    txn.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                }`}>
+                                    {txn.status}
+                                </span>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
 
 export default function MyAssetsPage() {
     return (
@@ -378,6 +641,15 @@ export default function MyAssetsPage() {
                     <Tabs.Trigger value="storefront-media" className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 text-gray-500 px-4 py-2">
                         Storefront & Media
                     </Tabs.Trigger>
+                    <Tabs.Trigger value="marketing-materials" className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 text-gray-500 px-4 py-2">
+                        Marketing Materials
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="partner-network" className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 text-gray-500 px-4 py-2">
+                        Partner Network
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="revenue-analytics" className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-orange-500 text-gray-500 px-4 py-2">
+                        Revenue & Analytics
+                    </Tabs.Trigger>
                 </Tabs.List>
                 <Tabs.Content value="overview" className="pt-6">
                     <OverviewTab />
@@ -390,6 +662,15 @@ export default function MyAssetsPage() {
                 </Tabs.Content>
                 <Tabs.Content value="storefront-media" className="pt-6">
                     <StorefrontMediaTab />
+                </Tabs.Content>
+                <Tabs.Content value="marketing-materials" className="pt-6">
+                    <MarketingMaterialsTab />
+                </Tabs.Content>
+                <Tabs.Content value="partner-network" className="pt-6">
+                    <PartnerNetworkTab />
+                </Tabs.Content>
+                <Tabs.Content value="revenue-analytics" className="pt-6">
+                    <RevenueAnalyticsTab />
                 </Tabs.Content>
             </Tabs.Root>
         </div>

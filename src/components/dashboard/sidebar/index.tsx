@@ -153,37 +153,9 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
         </li>
 
         <li>
-          <Link href="/dashboard/subscription" className={linkClasses('/dashboard/subscription')}>
-            <CreditCard className="mr-3" />
-            Subscription
-          </Link>
-        </li>
-
-        <li>
-          <Link href="/dashboard/tier" className={linkClasses('/dashboard/tier')}>
-            <Star className="mr-3" />
-            Tier & Badges
-          </Link>
-        </li>
-
-        <li>
           <Link href="/dashboard/matching-points" className={linkClasses('/dashboard/matching-points')}>
             <Coins className="mr-3" />
             Matching Points
-          </Link>
-        </li>
-
-        <li>
-          <Link href="/dashboard/support" className={linkClasses('/dashboard/support')}>
-            <LifeBuoy className="mr-3" />
-            Support / Help
-          </Link>
-        </li>
-
-        <li>
-          <Link href="/dashboard/account" className={linkClasses('/dashboard/account')}>
-            <Settings className="mr-3" />
-            Account
           </Link>
         </li>
 
@@ -229,17 +201,32 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
       {/* Divider */}
       <div className="my-6 border-t border-gray-200"></div>
 
-      {/* 👤 Profile + Logout */}
+      {/* 👤 Settings & Logout */}
       <div className="space-y-2">
-        
-        <button
-          onClick={() => (window.location.href = '/dashboard/profile')}
-          className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
-        >
+        <Link href="/dashboard/my-assets" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+            <Award className="mr-3" size={18}/>
+            My Assets
+        </Link>
+        <Link href="/dashboard/profile" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
           <User className="mr-3" size={18} />
-          Profile
-        </button>
-
+          Business Profile
+        </Link>
+        <Link href="/dashboard/tier" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+            <Star className="mr-3" size={18}/>
+            Tier
+        </Link>
+        <Link href="/dashboard/subscription" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+            <CreditCard className="mr-3" size={18}/>
+            Subscription
+        </Link>
+        <Link href="/dashboard/account" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+            <Settings className="mr-3" size={18}/>
+            Settings
+        </Link>
+                <Link href="/dashboard/support" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                    <LifeBuoy className="mr-3" size={18}/>
+                    Support & Help
+                </Link>
         <button
           onClick={() => console.log('Logging out...')}
           className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-red-600 transition"

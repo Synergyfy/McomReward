@@ -11,7 +11,7 @@ import {
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
-import { Building, User, Mail, MapPin, Award, Briefcase, Activity, Calendar, DollarSign, Star, Megaphone, Tag } from 'lucide-react';
+import { Building, User, Mail, MapPin, Award, Briefcase, Activity, Calendar, DollarSign, Star, Megaphone, Tag, Users } from 'lucide-react';
 
 interface ViewUserDetailsModalProps {
   isOpen: boolean;

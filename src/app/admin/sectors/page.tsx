@@ -15,8 +15,51 @@ import CategoryDialog from '@/components/admin/sectors/CategoryDialog';
 import SubCategoryDialog from '@/components/admin/sectors/SubCategoryDialog';
 import Image from 'next/image';
 
+// --- Type Definitions ---
+export interface SubCategory {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  subCategories: SubCategory[];
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  categories: Category[];
+}
+
+type Item = Sector | Category | SubCategory;
+
+interface ItemCardProps {
+  item: Item;
+  onSelect: () => void;
+  onEdit: (item: Item) => void;
+  onDelete: (item: Item) => void;
+  isSelected: boolean;
+}
+
+type DialogType = 'sector' | 'category' | 'subCategory';
+
+type DialogState = {
+  type: DialogType | null;
+  isOpen: boolean;
+  data: Item | null;
+};
+
+
 // --- Mock Data ---
-const initialSectors = [
+const initialSectors: Sector[] = [
   {
     id: 'sec-1',
     name: 'Food & Dining',
@@ -73,7 +116,7 @@ const initialSectors = [
 ];
 
 // --- Reusable Item Card ---
-const ItemCard = ({ item, onSelect, onEdit, onDelete, isSelected }) => (
+const ItemCard: React.FC<ItemCardProps> = ({ item, onSelect, onEdit, onDelete, isSelected }) => (
   <Card
     className={`mb-2 cursor-pointer transition-all ${isSelected ? 'border-primary shadow-lg' : 'hover:shadow-md'}`}
     onClick={onSelect}
@@ -81,12 +124,12 @@ const ItemCard = ({ item, onSelect, onEdit, onDelete, isSelected }) => (
     <CardContent className="p-3 flex items-center justify-between">
       <div className="flex items-center">
         <GripVertical className="h-5 w-5 text-muted-foreground mr-2" />
-        {item.icon && item.icon.startsWith('http') ? (
+        {'icon' in item && item.icon && (item.icon.startsWith('http') || item.icon.startsWith('blob:')) ? (
             <div className="relative h-8 w-8 mr-2 rounded-md overflow-hidden">
                 <Image src={item.icon} alt={item.name} layout="fill" objectFit="cover" />
             </div>
         ) : (
-            <span className="mr-2">{item.icon}</span>
+            'icon' in item && <span className="mr-2">{item.icon}</span>
         )}
         <span className="font-semibold">{item.name}</span>
       </div>
@@ -104,17 +147,20 @@ const ItemCard = ({ item, onSelect, onEdit, onDelete, isSelected }) => (
 
 // --- Main Page Component ---
 export default function SectorsPage() {
-  const [sectors, setSectors] = useState(initialSectors);
-  const [selectedSector, setSelectedSector] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [sectors, setSectors] = useState<Sector[]>(initialSectors);
+  const [selectedSector, setSelectedSector] = useState<Sector | null>(sectors[0] || null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    (sectors[0] && sectors[0].categories[0]) || null
+  );
 
-  const [dialogState, setDialogState] = useState({
-    type: null, // 'sector', 'category', 'subCategory'
+
+  const [dialogState, setDialogState] = useState<DialogState>({
+    type: null,
     isOpen: false,
-    data: null, // data for editing
+    data: null,
   });
 
-  const openDialog = (type, data = null) => {
+  const openDialog = (type: DialogType, data: Item | null = null) => {
     setDialogState({ type, isOpen: true, data });
   };
 
@@ -122,16 +168,16 @@ export default function SectorsPage() {
     setDialogState({ type: null, isOpen: false, data: null });
   };
 
-  const handleSelectSector = (sector) => {
+  const handleSelectSector = (sector: Sector) => {
     setSelectedSector(sector);
     setSelectedCategory(null);
   };
 
-  const handleSelectCategory = (category) => {
+  const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category);
   };
 
-  const handleDelete = (type, id) => {
+  const handleDelete = (type: DialogType, id: string) => {
     if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
 
     if (type === 'sector') {
@@ -140,7 +186,7 @@ export default function SectorsPage() {
         setSelectedSector(null);
         setSelectedCategory(null);
       }
-    } else if (type === 'category') {
+    } else if (type === 'category' && selectedSector) {
       const newSectors = sectors.map(s => {
         if (s.id === selectedSector.id) {
           return { ...s, categories: s.categories.filter(c => c.id !== id) };
@@ -148,11 +194,12 @@ export default function SectorsPage() {
         return s;
       });
       setSectors(newSectors);
-      setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
+      const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+      setSelectedSector(updatedSector || null);
       if (selectedCategory?.id === id) {
         setSelectedCategory(null);
       }
-    } else if (type === 'subCategory') {
+    } else if (type === 'subCategory' && selectedSector && selectedCategory) {
         const newSectors = sectors.map(s => {
             if (s.id === selectedSector.id) {
                 const newCategories = s.categories.map(c => {
@@ -166,34 +213,45 @@ export default function SectorsPage() {
             return s;
         });
         setSectors(newSectors);
-        setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
-        setSelectedCategory(newSectors.find(s => s.id === selectedSector.id).categories.find(c => c.id === selectedCategory.id));
+        const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+        setSelectedSector(updatedSector || null);
+        if (updatedSector) {
+            const updatedCategory = updatedSector.categories.find(c => c.id === selectedCategory.id);
+            setSelectedCategory(updatedCategory || null);
+        }
     }
   };
 
-  const handleSubmit = (type, data) => {
+  const handleSubmit = (type: DialogType, data: Partial<Item> & { name: string }) => {
     if (data.id) { // Editing
       if (type === 'sector') {
-        const newSectors = sectors.map(s => s.id === data.id ? { ...s, ...data } : s);
+        const newSectors = sectors.map(s => s.id === data.id ? { ...s, ...data } as Sector : s);
         setSectors(newSectors);
-        if(selectedSector?.id === data.id) setSelectedSector(newSectors.find(s => s.id === data.id));
-      } else if (type === 'category') {
+        if(selectedSector?.id === data.id) {
+            const updatedSector = newSectors.find(s => s.id === data.id);
+            setSelectedSector(updatedSector || null);
+        }
+      } else if (type === 'category' && selectedSector) {
         const newSectors = sectors.map(s => {
             if (s.id === selectedSector.id) {
-                const newCategories = s.categories.map(c => c.id === data.id ? { ...c, ...data } : c);
+                const newCategories = s.categories.map(c => c.id === data.id ? { ...c, ...data } as Category : c);
                 return { ...s, categories: newCategories };
             }
             return s;
         });
         setSectors(newSectors);
-        setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
-        if(selectedCategory?.id === data.id) setSelectedCategory(newSectors.find(s => s.id === selectedSector.id).categories.find(c => c.id === data.id));
-      } else if (type === 'subCategory') {
+        const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+        setSelectedSector(updatedSector || null);
+        if(selectedCategory?.id === data.id && updatedSector) {
+            const updatedCategory = updatedSector.categories.find(c => c.id === data.id);
+            setSelectedCategory(updatedCategory || null);
+        }
+      } else if (type === 'subCategory' && selectedSector && selectedCategory) {
         const newSectors = sectors.map(s => {
             if (s.id === selectedSector.id) {
                 const newCategories = s.categories.map(c => {
                     if (c.id === selectedCategory.id) {
-                        const newSubCategories = c.subCategories.map(sc => sc.id === data.id ? { ...sc, ...data } : sc);
+                        const newSubCategories = c.subCategories.map(sc => sc.id === data.id ? { ...sc, ...data } as SubCategory : sc);
                         return { ...c, subCategories: newSubCategories };
                     }
                     return c;
@@ -203,28 +261,33 @@ export default function SectorsPage() {
             return s;
         });
         setSectors(newSectors);
-        setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
-        setSelectedCategory(newSectors.find(s => s.id === selectedSector.id).categories.find(c => c.id === selectedCategory.id));
+        const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+        setSelectedSector(updatedSector || null);
+        if (updatedSector) {
+            const updatedCategory = updatedSector.categories.find(c => c.id === selectedCategory.id);
+            setSelectedCategory(updatedCategory || null);
+        }
       }
     } else { // Creating
         const newItem = { ...data, id: `${type}-${Date.now()}` };
         if (type === 'sector') {
-            setSectors([...sectors, { ...newItem, categories: [] }]);
-        } else if (type === 'category') {
+            setSectors([...sectors, { ...newItem, categories: [] } as Sector]);
+        } else if (type === 'category' && selectedSector) {
             const newSectors = sectors.map(s => {
                 if (s.id === selectedSector.id) {
-                    return { ...s, categories: [...s.categories, { ...newItem, subCategories: [] }] };
+                    return { ...s, categories: [...s.categories, { ...newItem, subCategories: [] } as Category] };
                 }
                 return s;
             });
             setSectors(newSectors);
-            setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
-        } else if (type === 'subCategory') {
+            const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+            setSelectedSector(updatedSector || null);
+        } else if (type === 'subCategory' && selectedSector && selectedCategory) {
             const newSectors = sectors.map(s => {
                 if (s.id === selectedSector.id) {
                     const newCategories = s.categories.map(c => {
                         if (c.id === selectedCategory.id) {
-                            return { ...c, subCategories: [...c.subCategories, newItem] };
+                            return { ...c, subCategories: [...c.subCategories, newItem as SubCategory] };
                         }
                         return c;
                     });
@@ -233,8 +296,12 @@ export default function SectorsPage() {
                 return s;
             });
             setSectors(newSectors);
-            setSelectedSector(newSectors.find(s => s.id === selectedSector.id));
-            setSelectedCategory(newSectors.find(s => s.id === selectedSector.id).categories.find(c => c.id === selectedCategory.id));
+            const updatedSector = newSectors.find(s => s.id === selectedSector.id);
+            setSelectedSector(updatedSector || null);
+            if (updatedSector) {
+                const updatedCategory = updatedSector.categories.find(c => c.id === selectedCategory.id);
+                setSelectedCategory(updatedCategory || null);
+            }
         }
     }
     closeDialog();
@@ -268,8 +335,8 @@ export default function SectorsPage() {
                 key={sector.id}
                 item={sector}
                 onSelect={() => handleSelectSector(sector)}
-                onEdit={() => openDialog('sector', sector)}
-                onDelete={() => handleDelete('sector', sector.id)}
+                onEdit={(item) => openDialog('sector', item as Sector)}
+                onDelete={(item) => handleDelete('sector', item.id)}
                 isSelected={selectedSector?.id === sector.id}
               />
             ))}
@@ -296,8 +363,8 @@ export default function SectorsPage() {
                     key={cat.id}
                     item={cat}
                     onSelect={() => handleSelectCategory(cat)}
-                    onEdit={() => openDialog('category', cat)}
-                    onDelete={() => handleDelete('category', cat.id)}
+                    onEdit={(item) => openDialog('category', item as Category)}
+                    onDelete={(item) => handleDelete('category', item.id)}
                     isSelected={selectedCategory?.id === cat.id}
                   />
                 ))
@@ -330,8 +397,8 @@ export default function SectorsPage() {
                     key={sub.id}
                     item={sub}
                     onSelect={() => {}}
-                    onEdit={() => openDialog('subCategory', sub)}
-                    onDelete={() => handleDelete('subCategory', sub.id)}
+                    onEdit={(item) => openDialog('subCategory', item as SubCategory)}
+                    onDelete={(item) => handleDelete('subCategory', item.id)}
                     isSelected={false}
                   />
                 ))
@@ -345,25 +412,25 @@ export default function SectorsPage() {
         </Card>
       </div>
 
-      {/* Dialogs */}
+      {/* Dialogs */} 
       <SectorDialog
         isOpen={dialogState.type === 'sector' && dialogState.isOpen}
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('sector', data)}
-        sector={dialogState.data}
+        sector={dialogState.data as Sector | null}
       />
       <CategoryDialog
         isOpen={dialogState.type === 'category' && dialogState.isOpen}
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('category', data)}
-        category={dialogState.data}
+        category={dialogState.data as Category | null}
         sectorName={selectedSector?.name}
       />
       <SubCategoryDialog
         isOpen={dialogState.type === 'subCategory' && dialogState.isOpen}
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('subCategory', data)}
-        subCategory={dialogState.data}
+        subCategory={dialogState.data as SubCategory | null}
         categoryName={selectedCategory?.name}
       />
     </div>

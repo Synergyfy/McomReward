@@ -1,4 +1,3 @@
-
 'use client';
 
 
@@ -9,7 +8,7 @@ import Link from 'next/link';
 
 import { usePathname } from 'next/navigation';
 
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users } from 'lucide-react';
 
 
 
@@ -93,6 +92,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
 
                   </Link>
 
+                </li>
+                <li> {/* New User Management Link */}
+                  <Link href="/admin/users" className={linkClasses("/admin/users")}>
+                    <Users className="mr-3" />
+                    User Management
+                  </Link>
                 </li>
 
         <li>

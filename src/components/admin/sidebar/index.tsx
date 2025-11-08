@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react'; // Import useState
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown } from 'lucide-react'; // Import ChevronDown
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal } from 'lucide-react'; // Import SlidersHorizontal
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false); // State for dropdown
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
 
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
@@ -90,6 +90,13 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/points-log" className={linkClasses("/admin/points-log")}>
             <History className="mr-3" />
             Points Log
+          </Link>
+        </li>
+        {/* New Matching Points Settings Link */}
+        <li>
+          <Link href="/admin/matching-points" className={linkClasses("/admin/matching-points")}>
+            <SlidersHorizontal className="mr-3" />
+            Matching Points Settings
           </Link>
         </li>
         <li>

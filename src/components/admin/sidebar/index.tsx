@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, Landmark, Shield } from 'lucide-react'; // Import Shield for Security
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, Landmark, Shield, BookOpen } from 'lucide-react'; // Import BookOpen for Resources
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -134,11 +134,17 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Financials
           </Link>
         </li>
-        {/* New Security Link */}
         <li>
           <Link href="/admin/security" className={linkClasses("/admin/security")}>
             <Shield className="mr-3" />
             Security
+          </Link>
+        </li>
+        {/* New Resources Link */}
+        <li>
+          <Link href="/admin/resources" className={linkClasses("/admin/resources")}>
+            <BookOpen className="mr-3" />
+            Resources
           </Link>
         </li>
         <li>

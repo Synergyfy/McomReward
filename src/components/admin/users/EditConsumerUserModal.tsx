@@ -56,7 +56,7 @@ export function EditConsumerUserModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Consumer User: {editedUser.name}</DialogTitle>
+          <DialogTitle>Edit Consumer User&#58; {editedUser.name}</DialogTitle>
           <DialogDescription>
             Make changes to the consumer user profile here. Click save when you're done.
           </DialogDescription>

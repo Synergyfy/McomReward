@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import DealCard from '@/components/deals/DealCard';
 import SearchBar from '@/components/deals/filters/SearchBar';
 import CategoryFilter from '@/components/deals/filters/CategoryFilter';
-import { dealsData, DealCategory } from '@/lib/mock-data/deals';
+import { mockDeals, DealCategory } from '@/lib/mock-data/deals';
 
 export default function DealsPage() {
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -12,12 +12,12 @@ export default function DealsPage() {
 
   const uniqueCategories = useMemo(() => {
     const categories = new Set<DealCategory>();
-    dealsData.forEach(deal => categories.add(deal.category));
+    mockDeals.forEach(deal => categories.add(deal.category));
     return Array.from(categories);
   }, []);
 
   const filteredDeals = useMemo(() => {
-    const activeDeals = dealsData.filter(deal => deal.status === 'Active' || deal.status === 'Scheduled');
+    const activeDeals = mockDeals.filter(deal => deal.status === 'Active' || deal.status === 'Scheduled');
 
     return activeDeals.filter(deal => {
       const matchesSearch = deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -20,7 +20,8 @@ import * as XLSX from 'xlsx';
 export default function ReportingAnalyticsPage() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  const handleDownload = (reportName: string, data: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDownload = (reportName: string, data: Record<string, any> | Record<string, any>[]) => {
     const ws = XLSX.utils.json_to_sheet(Array.isArray(data) ? data : [data]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, reportName);

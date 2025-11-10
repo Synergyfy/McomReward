@@ -56,7 +56,7 @@ export function EditBusinessUserModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Business User: {editedUser.name}</DialogTitle>
+          <DialogTitle>Edit Business User&#58; {editedUser.name}</DialogTitle>
           <DialogDescription>
             Make changes to the business user profile here. Click save when you're done.
           </DialogDescription>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { dealsData } from '@/lib/mock-data/deals';
+import { mockDeals } from '@/lib/mock-data/deals';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ interface DealDetailPageProps {
 }
 
 export default function DealDetailPage({ params }: DealDetailPageProps) {
-  const deal = dealsData.find(d => d.id === params.dealId);
+  const deal = mockDeals.find(d => d.id === params.dealId);
 
   if (!deal) {
     notFound();

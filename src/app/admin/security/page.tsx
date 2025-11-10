@@ -20,6 +20,12 @@ import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditRoleModal } from '@/components/admin/security/AddEditRoleModal'; // Will create this
 
+interface FeedbackDialogProps {
+  title: string;
+  description: React.ReactNode;
+  actionText?: string;
+}
+
 export default function SecurityPage() {
   const [roles, setRoles] = useState<Role[]>(mockRoles);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(mockAuditLogs);
@@ -28,7 +34,7 @@ export default function SecurityPage() {
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState({
+  const [feedbackDialogProps, setFeedbackDialogProps] = useState<FeedbackDialogProps>({
     title: '',
     description: '',
     actionText: 'OK',

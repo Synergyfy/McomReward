@@ -11,13 +11,19 @@ import { AddEditTierBadgeModal } from '@/components/admin/tier-badge-control/Add
 import { ManualOverrideModal } from '@/components/admin/tier-badge-control/ManualOverrideModal'; // New import
 import { mockBusinessUsers, mockConsumerUsers } from '@/lib/mock-data/users'; // Import mock users for override
 
+interface FeedbackDialogProps {
+  title: string;
+  description: React.ReactNode;
+  actionText?: string;
+}
+
 export default function TierBadgeControlPage() {
   const [businessTiers, setBusinessTiers] = useState<BusinessTier[]>(mockBusinessTiers);
   const [consumerBadges, setConsumerBadges] = useState<ConsumerBadge[]>(mockConsumerBadges);
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState({
+  const [feedbackDialogProps, setFeedbackDialogProps] = useState<FeedbackDialogProps>({
     title: '',
     description: '',
     actionText: 'OK',
@@ -183,7 +189,7 @@ export default function TierBadgeControlPage() {
           <CardTitle>Manual User Override</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <p className="text-muted-foreground">Manually promote or demote any user's tier or badge level.</p>
+          <p className="text-muted-foreground">Manually promote or demote any user&apos;s tier or badge level.</p>
           <Button onClick={() => setShowManualOverrideModal(true)}><User className="mr-2 h-4 w-4" /> Open Override Tool</Button>
         </CardContent>
       </Card>

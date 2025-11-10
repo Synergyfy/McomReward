@@ -24,7 +24,7 @@ export default function DealsManagementPage() {
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackDialogProps, setFeedbackDialogProps] = useState({
     title: '',
-    description: '',
+    description: '' as React.ReactNode,
     actionText: 'OK',
   });
 
@@ -190,7 +190,7 @@ export default function DealsManagementPage() {
                         <Button variant="outline" size="sm" onClick={() => handleAddEditDeal(deal)}><Edit className="h-4 w-4" /></Button>
                         {deal.status === 'pending_approval' && (
                           <>
-                            <Button variant="success" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'active')}><CheckCircle className="h-4 w-4" /></Button>
+                            <Button variant="default" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'active')}><CheckCircle className="h-4 w-4" /></Button>
                             <Button variant="destructive" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'rejected')}><XCircle className="h-4 w-4" /></Button>
                           </>
                         )}

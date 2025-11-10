@@ -39,7 +39,7 @@ export function ViewUserDetailsModal({
             Details for {user.name}
           </DialogTitle>
           <DialogDescription>
-            Comprehensive overview of {user.name}'s profile and activities.
+            Comprehensive overview of {user.name}&apos;s profile and activities.
           </DialogDescription>
         </DialogHeader>
 

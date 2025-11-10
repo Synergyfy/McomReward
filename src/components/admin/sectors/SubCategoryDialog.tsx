@@ -13,11 +13,17 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
+interface SubCategory {
+  id?: string;
+  name: string;
+  description: string;
+}
+
 interface SubCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (subCategoryData: any) => void;
-  subCategory?: any | null;
+  onSubmit: (subCategoryData: SubCategory) => void;
+  subCategory?: SubCategory | null;
   categoryName?: string;
 }
 

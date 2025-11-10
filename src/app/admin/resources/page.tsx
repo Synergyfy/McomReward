@@ -31,7 +31,7 @@ export default function ResourcesPage() {
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackDialogProps, setFeedbackDialogProps] = useState({
     title: '',
-    description: '',
+    description: '' as React.ReactNode,
     actionText: 'OK',
   });
 

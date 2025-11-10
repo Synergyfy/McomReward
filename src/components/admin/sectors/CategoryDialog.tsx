@@ -15,11 +15,18 @@ import {
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
 
+interface Category {
+  id?: string;
+  name: string;
+  description: string;
+  icon: string;
+}
+
 interface CategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (categoryData: any) => void;
-  category?: any | null;
+  onSubmit: (categoryData: Category) => void;
+  category?: Category | null;
   sectorName?: string;
 }
 

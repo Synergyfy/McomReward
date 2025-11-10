@@ -18,11 +18,19 @@ import Image from 'next/image';
 
 // Note: You might need to install react-color: npm install react-color @types/react-color
 
+interface Sector {
+  id?: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
 interface SectorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (sectorData: any) => void;
-  sector?: any | null; // Pass sector data for editing
+  onSubmit: (sectorData: Sector) => void;
+  sector?: Sector | null; // Pass sector data for editing
 }
 
 export default function SectorDialog({ isOpen, onClose, onSubmit, sector }: SectorDialogProps) {

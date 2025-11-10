@@ -115,7 +115,7 @@ Admin Can:
  Add or modify badge design and name.
  Assign custom privileges per level.
  Generate reports of user movement across levels.
-
+ 
 9. DEALS, B2B EXCHANGE & MARKETPLACE MANAGEMENT
 Purpose: Control visibility and performance of business deals and exchanges.
 Admin Can:

@@ -34,7 +34,9 @@ import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { Deal } from '@/lib/mock-data/deals';
 
 // Omitting id, businessId, businessName, and status for the form
-type DealFormData = Omit<Deal, 'id' | 'businessId' | 'businessName' | 'status'>;
+type DealFormData = Omit<Deal, 'id' | 'businessId' | 'businessName' | 'status' | 'stats'> & {
+  imageUrl?: string;
+};
 
 export default function DealForm() {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<DealFormData>();
@@ -112,18 +114,19 @@ export default function DealForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                  <Label htmlFor="type">Deal Type</Label>
+                  <Label htmlFor="category">Deal Category</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Select onValueChange={(value) => setValue("type", value as Deal['type'], { shouldValidate: true })}>
-                          <SelectTrigger id="type">
-                              <SelectValue placeholder="Select a type" />
+                      <Select onValueChange={(value) => setValue("category", value as Deal['category'], { shouldValidate: true })}>
+                          <SelectTrigger id="category">
+                              <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                           <SelectContent>
-                              <SelectItem value="Discount">Discount</SelectItem>
-                              <SelectItem value="Package">Package</SelectItem>
-                              <SelectItem value="Gig Reward">Gig Reward</SelectItem>
-                              <SelectItem value="Special Offer">Special Offer</SelectItem>
+                              <SelectItem value="Food & Drink">Food & Drink</SelectItem>
+                              <SelectItem value="Retail">Retail</SelectItem>
+                              <SelectItem value="Services">Services</SelectItem>
+                              <SelectItem value="Entertainment">Entertainment</SelectItem>
+                              <SelectItem value="Travel">Travel</SelectItem>
                           </SelectContent>
                       </Select>
                     </TooltipTrigger>
@@ -131,7 +134,7 @@ export default function DealForm() {
                       <p>Choose the category that best describes your deal.</p>
                     </TooltipContent>
                   </Tooltip>
-                  {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
+                  {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">Value (£)</Label>
@@ -172,27 +175,6 @@ export default function DealForm() {
                 </Tooltip>
                 {errors.endDate && <p className="text-red-500 text-sm">{errors.endDate.message}</p>}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="audience">Audience</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Select onValueChange={(value) => setValue("audience", value as Deal['audience'], { shouldValidate: true })}>
-                      <SelectTrigger id="audience">
-                          <SelectValue placeholder="Select audience" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="Local">Local</SelectItem>
-                          <SelectItem value="National">National</SelectItem>
-                      </SelectContent>
-                  </Select>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Choose whether your deal is for local or national customers.</p>
-                </TooltipContent>
-              </Tooltip>
-              {errors.audience && <p className="text-red-500 text-sm">{errors.audience.message}</p>}
             </div>
 
             <div className="space-y-2">

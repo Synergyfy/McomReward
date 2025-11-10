@@ -1,0 +1,7 @@
+[
+  { "month": "Jan", "newRegistrations": 50, "activityCount": 200 },
+  { "month": "Feb", "newRegistrations": 60, "activityCount": 220 },
+  { "month": "Mar", "newRegistrations": 75, "activityCount": 250 },
+  { "month": "Apr", "newRegistrations": 80, "activityCount": 280 },
+  { "month": "May", "newRegistrations": 90, "activityCount": 300 }
+]

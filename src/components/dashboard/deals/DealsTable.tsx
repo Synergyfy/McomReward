@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Deal, DealCategory, dealsData } from '@/lib/mock-data/deals';
+import { Deal, DealCategory, mockDeals } from '@/lib/mock-data/deals';
 import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,8 +30,8 @@ interface DealsTableProps {
   deals: Deal[];
 }
 
-const categories = ['Food & Drink', 'Retail', 'Services', 'Entertainment', 'Travel'];
-const statuses = ['Active', 'Scheduled', 'Expired'];
+const categories = ['Food & Drink', 'Retail', 'Health & Wellness', 'Electronics', 'Services', 'Travel'];
+const statuses = ['active', 'pending_approval', 'rejected', 'draft'];
 
 export default function DealsTable({ deals }: DealsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,25 +47,27 @@ export default function DealsTable({ deals }: DealsTableProps) {
 
   const getStatusVariant = (status: Deal['status']) => {
     switch (status) {
-      case 'Active':
+      case 'active':
         return 'default';
-      case 'Scheduled':
-        return 'outline';
-      case 'Expired':
+      case 'pending_approval':
+        return 'secondary';
+      case 'rejected':
         return 'destructive';
+      case 'draft':
+        return 'outline';
       default:
         return 'default';
     }
   };
 
   const filteredDeals = useMemo(() => {
-    return deals.filter(deal => {
+    return mockDeals.filter(deal => {
       const matchesSearch = deal.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || deal.status === statusFilter;
       const matchesCategory = categoryFilter === 'all' || deal.category === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [deals, searchTerm, statusFilter, categoryFilter]);
+  }, [searchTerm, statusFilter, categoryFilter]);
 
   return (
     <>
@@ -108,7 +110,7 @@ export default function DealsTable({ deals }: DealsTableProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -118,13 +120,13 @@ export default function DealsTable({ deals }: DealsTableProps) {
               {filteredDeals.map((deal) => (
                 <TableRow key={deal.id}>
                   <TableCell className="font-medium">{deal.title}</TableCell>
-                  <TableCell>{deal.type}</TableCell>
+                  <TableCell>{deal.category}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(deal.status)}>
                       {deal.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{deal.endDate}</TableCell>
+                  <TableCell>{deal.endDate.toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

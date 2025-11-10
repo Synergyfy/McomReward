@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -133,67 +134,94 @@ export function AddEditPartnerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] lg:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">Type</Label>
-            <Select value={type} onValueChange={(value: Partner['type']) => setType(value)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select partner type" />
-              </SelectTrigger>
-              <SelectContent className="z-[10000]">
-                <SelectItem value="Co-Brand">Co-Brand</SelectItem>
-                <SelectItem value="White-Label">White-Label</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">Status</Label>
-            <Select value={status} onValueChange={(value: Partner['status']) => setStatus(value)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent className="z-[10000]">
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-6 py-4">
+          {/* General Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>General Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Partner Name</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={type} onValueChange={(value: Partner['type']) => setType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select partner type" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[10000]">
+                      <SelectItem value="Co-Brand">Co-Brand</SelectItem>
+                      <SelectItem value="White-Label">White-Label</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={(value: Partner['status']) => setStatus(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[10000]">
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="col-span-4 text-lg font-semibold mt-4">Branding Permissions</div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="logoPermission" className="text-right">Logo</Label>
-            <Switch id="logoPermission" checked={logoPermission} onCheckedChange={setLogoPermission} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="colorsPermission" className="text-right">Colors</Label>
-            <Switch id="colorsPermission" checked={colorsPermission} onCheckedChange={setColorsPermission} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="textLockPermission" className="text-right">Text Lock</Label>
-            <Switch id="textLockPermission" checked={textLockPermission} onCheckedChange={setTextLockPermission} className="col-span-3" />
-          </div>
+          {/* Branding Permissions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Branding Permissions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                <Label htmlFor="logoPermission">Logo</Label>
+                <Switch id="logoPermission" checked={logoPermission} onCheckedChange={setLogoPermission} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                <Label htmlFor="colorsPermission">Colors</Label>
+                <Switch id="colorsPermission" checked={colorsPermission} onCheckedChange={setColorsPermission} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                <Label htmlFor="textLockPermission">Text Lock</Label>
+                <Switch id="textLockPermission" checked={textLockPermission} onCheckedChange={setTextLockPermission} />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subdomain" className="text-right">Subdomain</Label>
-            <Input id="subdomain" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="e.g., partnername" className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="domainRouting" className="text-right">Domain Routing (Optional)</Label>
-            <Input id="domainRouting" value={domainRouting} onChange={(e) => setDomainRouting(e.target.value)} placeholder="e.g., customdomain.com" className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="revenueSharing" className="text-right">Revenue Sharing</Label>
-            <Input id="revenueSharing" value={revenueSharing} onChange={(e) => setRevenueSharing(e.target.value)} placeholder="e.g., 10% Commission" className="col-span-3" />
-          </div>
+          {/* Domain & Revenue Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Domain & Revenue</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="subdomain">Subdomain</Label>
+                  <Input id="subdomain" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="e.g., partnername" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="domainRouting">Domain Routing (Optional)</Label>
+                  <Input id="domainRouting" value={domainRouting} onChange={(e) => setDomainRouting(e.target.value)} placeholder="e.g., customdomain.com" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="revenueSharing">Revenue Sharing</Label>
+                <Input id="revenueSharing" value={revenueSharing} onChange={(e) => setRevenueSharing(e.target.value)} placeholder="e.g., 10% Commission" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>

@@ -14,13 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Announcement } from '@/lib/mock-data/notifications';
-import { FeedbackDialog } from '@/components/ui/feedback-dialog';
+import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 
 interface AddEditAnnouncementModalProps {
   isOpen: boolean;
@@ -43,19 +38,6 @@ export function AddEditAnnouncementModal({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [status, setStatus] = useState<Announcement['status']>('draft');
-
-  // State for Feedback Dialog (local to modal for validation errors)
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState({
-    title: '',
-    description: '',
-    actionText: 'OK',
-  });
-
-  const handleShowLocalFeedback = (title: string, description: React.ReactNode, actionText?: string) => {
-    setFeedbackDialogProps({ title, description, actionText: actionText || 'OK' });
-    setShowFeedbackDialog(true);
-  };
 
   useEffect(() => {
     if (initialData) {
@@ -99,7 +81,7 @@ export function AddEditAnnouncementModal({
     }
 
     if (errors.length > 0) {
-      handleShowLocalFeedback(
+      onShowFeedback(
         "Validation Error",
         <ul className="list-disc pl-5">
           {errors.map((error, index) => (
@@ -147,59 +129,32 @@ export function AddEditAnnouncementModal({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="targetAudience" className="text-right">Target Audience</Label>
-            <Input id="targetAudience" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g., All Users, Sector: Food" className="col-span-3" />
+            <Select value={targetAudience} onValueChange={setTargetAudience}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select audience" />
+              </SelectTrigger>
+              <SelectContent className="z-[10000]">
+                <SelectItem value="All Users">All Users</SelectItem>
+                <SelectItem value="All Businesses">All Businesses</SelectItem>
+                <SelectItem value="All Consumers">All Consumers</SelectItem>
+                <SelectItem value="Sector: Food & Dining">Sector: Food & Dining</SelectItem>
+                <SelectItem value="Tier: Gold">Tier: Gold</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="startDate" className="text-right">Start Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "col-span-3 justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[10000]">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="col-span-3">
+              <DateTimePicker date={startDate} setDate={setStartDate} />
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="endDate" className="text-right">End Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "col-span-3 justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[10000]">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="col-span-3">
+              <DateTimePicker date={endDate} setDate={setEndDate} />
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
@@ -222,12 +177,6 @@ export function AddEditAnnouncementModal({
           <Button onClick={handleSave}>Save Announcement</Button>
         </DialogFooter>
       </DialogContent>
-
-      <FeedbackDialog
-        isOpen={showFeedbackDialog}
-        onClose={() => setShowFeedbackDialog(false)}
-        {...feedbackDialogProps}
-      />
     </Dialog>
   );
 }

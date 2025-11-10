@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, Landmark, Shield, BookOpen } from 'lucide-react'; // Import BookOpen for Resources
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, ListChecks, Landmark, Book } from 'lucide-react'; // Import Book for Resources
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -122,12 +122,7 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Notifications Control
           </Link>
         </li>
-        <li>
-          <Link href="/admin/reporting-analytics" className={linkClasses("/admin/reporting-analytics")}>
-            <BarChart className="mr-3" />
-            Reporting & Analytics
-          </Link>
-        </li>
+        {/* New Financials Link */}
         <li>
           <Link href="/admin/financials" className={linkClasses("/admin/financials")}>
             <Landmark className="mr-3" />
@@ -135,22 +130,28 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           </Link>
         </li>
         <li>
-          <Link href="/admin/security" className={linkClasses("/admin/security")}>
-            <Shield className="mr-3" />
-            Security
-          </Link>
-        </li>
-        {/* New Resources Link */}
-        <li>
-          <Link href="/admin/resources" className={linkClasses("/admin/resources")}>
-            <BookOpen className="mr-3" />
-            Resources
+          <Link href="/admin/reporting-analytics" className={linkClasses("/admin/reporting-analytics")}>
+            <BarChart className="mr-3" />
+            Reporting & Analytics
           </Link>
         </li>
         <li>
           <Link href="/admin/wishlist-insights" className={linkClasses("/admin/wishlist-insights")}>
             <Lightbulb className="mr-3" />
             Wishlist Insights
+          </Link>
+        </li>
+        {/* New Resources Link */}
+        <li>
+          <Link href="/admin/resources" className={linkClasses("/admin/resources")}>
+            <Book className="mr-3" />
+            Resources
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/summary" className={linkClasses("/admin/summary")}>
+            <ListChecks className="mr-3" />
+            Control Summary
           </Link>
         </li>
       </ul>

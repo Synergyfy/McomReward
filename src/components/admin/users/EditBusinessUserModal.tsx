@@ -82,7 +82,7 @@ export function EditBusinessUserModal({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select Tier" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10000]">
                 {['Starter', 'Active', 'Trusted', 'Partner'].map((tier) => (
                   <SelectItem key={tier} value={tier}>{tier}</SelectItem>
                 ))}
@@ -103,7 +103,7 @@ export function EditBusinessUserModal({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10000]">
                 {['Active', 'Suspended', 'Inactive'].map((status) => (
                   <SelectItem key={status} value={status}>{status}</SelectItem>
                 ))}

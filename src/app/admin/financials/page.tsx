@@ -170,7 +170,7 @@ export default function FinancialsPage() {
                       <TableCell>{txn.id}</TableCell>
                       <TableCell>{txn.businessName}</TableCell>
                       <TableCell>{txn.type}</TableCell>
-                      <TableCell>${txn.amount.toFixed(2)}</TableCell>
+                      <TableCell>£{txn.amount.toFixed(2)}</TableCell>
                       <TableCell><Badge variant={getStatusBadgeVariant(txn.status)}>{txn.status}</Badge></TableCell>
                       <TableCell>{txn.date.toLocaleDateString()}</TableCell>
                     </TableRow>
@@ -204,7 +204,7 @@ export default function FinancialsPage() {
                     <TableRow key={escrow.id}>
                       <TableCell>{escrow.campaignName}</TableCell>
                       <TableCell>{escrow.businessName}</TableCell>
-                      <TableCell>${escrow.amount.toFixed(2)}</TableCell>
+                      <TableCell>£{escrow.amount.toFixed(2)}</TableCell>
                       <TableCell><Badge variant={getStatusBadgeVariant(escrow.status)}>{escrow.status}</Badge></TableCell>
                       <TableCell>{escrow.createdAt.toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
@@ -232,7 +232,7 @@ export default function FinancialsPage() {
                 <Button onClick={() => handleAddEditPlan()}><PlusCircle className="mr-2 h-4 w-4" /> Create New Plan</Button>
               </div>
             </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-3">
+            <CardContent className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {plans.map((plan) => (
                 <Card key={plan.id} className={plan.isPopular ? 'border-orange-500' : ''}>
                   <CardHeader>
@@ -240,7 +240,7 @@ export default function FinancialsPage() {
                       {plan.name}
                       {plan.isPopular && <Badge><Star className="mr-1 h-3 w-3" /> Popular</Badge>}
                     </CardTitle>
-                    <div className="text-3xl font-bold">${plan.price}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+                    <div className="text-3xl font-bold">£{plan.price}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <ul className="space-y-2">
@@ -251,9 +251,9 @@ export default function FinancialsPage() {
                         </li>
                       ))}
                     </ul>
-                    <div className="flex gap-2">
-                      <Button className="w-full" onClick={() => handleAddEditPlan(plan)}>Edit</Button>
-                      <Button className="w-full" variant="destructive" onClick={() => handleDeletePlan(plan.id)}>Delete</Button>
+                    <div className="flex gap-2 mt-4">
+                      <Button className="flex-1" onClick={() => handleAddEditPlan(plan)}>Edit</Button>
+                      <Button className="flex-1" variant="destructive" onClick={() => handleDeletePlan(plan.id)}>Delete</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -283,7 +283,7 @@ export default function FinancialsPage() {
                   {payouts.map((payout) => (
                     <TableRow key={payout.id}>
                       <TableCell>{payout.businessName}</TableCell>
-                      <TableCell>${payout.amount.toFixed(2)}</TableCell>
+                      <TableCell>£{payout.amount.toFixed(2)}</TableCell>
                       <TableCell><Badge variant={getStatusBadgeVariant(payout.status)}>{payout.status}</Badge></TableCell>
                       <TableCell>{payout.requestedAt.toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">

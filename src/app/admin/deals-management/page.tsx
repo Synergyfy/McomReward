@@ -178,7 +178,7 @@ export default function DealsManagementPage() {
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(deal.status)}>{deal.status.replace('_', ' ')}</Badge>
                     </TableCell>
-                    <TableCell>${deal.price.toFixed(2)}</TableCell>
+                    <TableCell>£{deal.price.toFixed(2)}</TableCell>
                     <TableCell>{initialSectors.find(s => s.id === deal.sectorId)?.name || 'N/A'}</TableCell>
                     <TableCell>
                       {deal.isFeatured ? <Star className="h-4 w-4 text-yellow-500" /> : '-'}

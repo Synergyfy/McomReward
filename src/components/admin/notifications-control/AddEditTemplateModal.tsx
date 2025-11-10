@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NotificationTemplate } from '@/lib/mock-data/notifications';
-import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 
 interface AddEditTemplateModalProps {
   isOpen: boolean;
@@ -38,19 +37,6 @@ export function AddEditTemplateModal({
   const [body, setBody] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
   const [status, setStatus] = useState<NotificationTemplate['status']>('draft');
-
-  // State for Feedback Dialog (local to modal for validation errors)
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState({
-    title: '',
-    description: '',
-    actionText: 'OK',
-  });
-
-  const handleShowLocalFeedback = (title: string, description: React.ReactNode, actionText?: string) => {
-    setFeedbackDialogProps({ title, description, actionText: actionText || 'OK' });
-    setShowFeedbackDialog(true);
-  };
 
   useEffect(() => {
     if (initialData) {
@@ -88,7 +74,7 @@ export function AddEditTemplateModal({
     }
 
     if (errors.length > 0) {
-      handleShowLocalFeedback(
+      onShowFeedback(
         "Validation Error",
         <ul className="list-disc pl-5">
           {errors.map((error, index) => (
@@ -174,12 +160,6 @@ export function AddEditTemplateModal({
           <Button onClick={handleSave}>Save Template</Button>
         </DialogFooter>
       </DialogContent>
-
-      <FeedbackDialog
-        isOpen={showFeedbackDialog}
-        onClose={() => setShowFeedbackDialog(false)}
-        {...feedbackDialogProps}
-      />
     </Dialog>
   );
 }

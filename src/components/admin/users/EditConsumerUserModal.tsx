@@ -82,7 +82,7 @@ export function EditConsumerUserModal({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select Badge Level" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10000]">
                 {['None', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map((level) => (
                   <SelectItem key={level} value={level}>{level}</SelectItem>
                 ))}
@@ -103,7 +103,7 @@ export function EditConsumerUserModal({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select Activity" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10000]">
                 {['Low', 'Medium', 'High'].map((activity) => (
                   <SelectItem key={activity} value={activity}>{activity}</SelectItem>
                 ))}

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Wallet, Megaphone, Heart, Settings,  HandCoins, HelpCircle, Shield } from 'lucide-react';
+import { Home, Wallet, Megaphone, Heart, Settings,  HandCoins } from 'lucide-react';
 
 interface CustomerSidebarProps {
   isOpen: boolean;
@@ -29,21 +29,15 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
       <h2 className="text-2xl font-bold mb-6 text-orange-600">Menu</h2>
       <ul className="space-y-2">
         <li>
-          <Link href="/overview" className={linkClasses("/overview")}>
+          <Link href="/" className={linkClasses("/")}>
             <Home className="mr-3" />
-          Overview
+            Home
           </Link>
         </li>
         <li className="mb-2">
           <Link href="/my-campaigns" className={linkClasses("/my-campaigns")}>
             <Megaphone className="mr-3" />
             My Campaigns
-          </Link>
-        </li>
-           <li className="mb-2">
-          <Link href="/available-campaigns" className={linkClasses("/available-campaigns")}>
-            <Megaphone className="mr-3" />
-            Available Campaigns
           </Link>
         </li>
         <li className="mb-2">
@@ -53,21 +47,9 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
           </Link>
         </li>
         <li className="mb-2">
-          <Link href="/rewards" className={linkClasses("/rewards")}>
-            <HandCoins className="mr-3" />
-            My Rewards
-          </Link>
-        </li>
-        <li className="mb-2">
           <Link href="/wallet" className={linkClasses("/wallet")}>
             <Wallet className="mr-3" />
             Wallet
-          </Link>
-        </li>
-        <li className="mb-2">
-          <Link href="/points" className={linkClasses("/points")}>
-            <Wallet className="mr-3" />
-            Point
           </Link>
         </li>
         <li className="mb-2">
@@ -76,20 +58,12 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
             Redemption
           </Link>
         </li>
-          <li>
-            <Link
-              href="/support"
-              className={linkClasses("/support")}
-            >
-              <HelpCircle className="mr-3" /> Support
-            </Link>
-        </li>
-        <li>
-          <Link href="/account-security" className={linkClasses("/account-security")}>
-            <Shield className="mr-3" /> Account & Security
+        <li className="mt-8">
+          <Link href="/settings" className={linkClasses("/settings")}>
+            <Settings className="mr-3" />
+            Settings
           </Link>
         </li>
-
       </ul>
     </div>
   );

@@ -60,7 +60,7 @@ export default function ConfigurePlaqueModal({ isOpen, onClose, onSave, plaque }
               <SelectTrigger id="linkedOffer">
                 <SelectValue placeholder="Select an offer" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10000]">
                 <SelectItem value="none">None</SelectItem>
                 {mockOffers.map(offer => (
                   <SelectItem key={offer.id} value={offer.name}>{offer.name}</SelectItem>

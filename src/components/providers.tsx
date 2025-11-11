@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <CampaignMembershipProvider>
         {children}
       </CampaignMembershipProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       <Toaster position="bottom-right" />
     </QueryClientProvider>
   );

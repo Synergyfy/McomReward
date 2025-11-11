@@ -64,12 +64,12 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
             Wallet
           </Link>
         </li>
-        <li className="mb-2">
+        {/* <li className="mb-2">
           <Link href="/points" className={linkClasses("/points")}>
             <Wallet className="mr-3" />
             Point
           </Link>
-        </li>
+        </li> */}
         <li className="mb-2">
           <Link href="/redemption" className={linkClasses("/redemption")}>
             <HandCoins className="mr-3" />

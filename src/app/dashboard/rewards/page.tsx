@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
+import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
+import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRewardModal';
+import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -127,7 +130,7 @@ const typeLabels: { [key: string]: string } = {
 
 // Mock user data
 const currentUser = {
-  plan: 'white-label', // 'starter', 'co-branded', 'white-label'
+  plan: 'starter', // 'starter', 'co-branded', 'white-label'
 };
 
 export default function BusinessRewardsPage() {
@@ -136,16 +139,41 @@ export default function BusinessRewardsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isEditClaimedModalOpen, setIsEditClaimedModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Reward | null>(null);
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
   const [showDeleted, setShowDeleted] = useState(false);
 
-  const handleOpenModal = useCallback((reward: Reward | null = null) => {
+  const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
     setEditingReward(reward);
-    setIsModalOpen(true);
+    setIsCreateModalOpen(true);
   }, []);
+
+  const handleOpenClaimModal = useCallback(() => {
+    setIsClaimModalOpen(true);
+  }, []);
+
+  const handleSelectReward = useCallback((reward: Reward) => {
+    setSelectedTemplate(reward);
+    setIsClaimModalOpen(false);
+    setIsEditClaimedModalOpen(true);
+  }, []);
+
+  const handleCreateFromScratch = useCallback(() => {
+    setIsClaimModalOpen(false);
+    if (currentUser.plan === 'white-label') {
+      handleOpenCreateModal();
+    } else {
+      setIsUpgradeModalOpen(true);
+    }
+  }, [handleOpenCreateModal]);
 
   const handleDelete = useCallback((rewardId: string) => {
     setRewardToDelete(rewardId);
@@ -170,6 +198,9 @@ export default function BusinessRewardsPage() {
       }
       return [rewardData, ...prev];
     });
+    // Close all modals on save
+    setIsCreateModalOpen(false);
+    setIsEditClaimedModalOpen(false);
   }, []);
 
   const filteredRewards = useMemo(() => {
@@ -198,7 +229,7 @@ export default function BusinessRewardsPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Rewards</h1>
             <p className="text-gray-600">Manage and create rewards for your business campaigns.</p>
           </div>
-          <Button onClick={() => handleOpenModal()}> Add Reward</Button>
+          <Button onClick={handleOpenClaimModal}> Add Reward</Button>
         </div>
 
         {/* Search and Filter */}
@@ -303,7 +334,7 @@ export default function BusinessRewardsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleOpenModal(reward)}
+                      onClick={() => handleOpenCreateModal(reward)}
                       disabled={currentUser.plan === 'starter'}
                       title={currentUser.plan === 'starter' ? 'Upgrade to edit rewards' : 'Edit'}
                     >
@@ -323,10 +354,30 @@ export default function BusinessRewardsPage() {
           </div>
         )}
 
-        {/* Modal */}
+        {/* Modals */}
+        <ClaimRewardModal
+          isOpen={isClaimModalOpen}
+          onClose={() => setIsClaimModalOpen(false)}
+          onSelectReward={handleSelectReward}
+          onCreateFromScratch={handleCreateFromScratch}
+        />
+
+        <EditClaimedRewardModal
+          isOpen={isEditClaimedModalOpen}
+          onClose={() => setIsEditClaimedModalOpen(false)}
+          rewardTemplate={selectedTemplate}
+          onSave={handleSaveReward}
+          userPlan={currentUser.plan as 'starter' | 'co-branded' | 'white-label'}
+        />
+
+        <UpgradePlanModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+        />
+
         <CreateRewardWizardModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
           reward={editingReward}
           onSave={handleSaveReward}
         />

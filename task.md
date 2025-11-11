@@ -1,206 +1,186 @@
-*MCOM Rewards (LoyaltyCardX) — Admin Full Feature Checklist* (src/app/admin)
+*MCOM Rewards (LoyaltyCardX) — Business Owner Full Feature Checklist*
 
-1. ADMIN DASHBOARD OVERVIEW
-Purpose: Central control hub for managing sectors, categories, rewards, campaigns, users, permissions, and analytics.
-Main Dashboard Sections:
- Top Summary Cards:
-Total Businesses, Active Campaigns, Total Consumers, Total Rewards Claimed.
-Total Matching Points Issued.
-Business Tier Breakdown (Starter, Active, Trusted, Partner).
- Quick Actions:
-Create New Reward, Create Campaign, Add Sector, Add Business.
- Notifications: Admin announcements, flagged activities, and pending approvals.
- Search & Filter: Search by business, user, or campaign.
+1. SIGN-UP & LOGIN PROCESS
+Purpose: Simple onboarding for business owners with proper data capture and automatic dashboard setup.
+Features to Include:
+ Sign-Up Page
+Fields: Business Name, Owner Name, Email, Phone, Password.
+Dropdown: Sector → Category → Sub-category (auto-populated list).
+Optional fields: Website URL, Social Media Links.
+Checkbox: “I agree to Terms & Conditions.”
+CTA Button: “Create My Business Account.”
+ Email Verification Flow (OTP or link verification).
+ Auto-sector branding: Assign default logo and theme color based on sector (e.g., Café = Food/Dining theme).
+ Welcome Tour/Tooltip Walkthrough when dashboard first loads.
 
-2. SECTORS, CATEGORIES & SUB-CATEGORIES MANAGEMENT
-Purpose: Define and organize business sectors that shape all campaigns, rewards, and listings.
-Admin Can:
- Create New Sector
-Fields: Sector Name, Description, Default Icon, Default Color, Auto-branding Theme.
-Example: “Food & Dining,” “Fashion & Beauty,” “Health & Wellness.”
- Create Category Inside Sector
-Fields: Category Name, Description, Image/Icon.
-Example (Under Food & Dining): “Restaurants,” “Cafes,” “Bakeries.”
- Create Sub-Category Inside Category
-Fields: Sub-Category Name, Description, Image/Icon.
-Example (Under Restaurants): “Fine Dining,” “Fast Food,” “Buffet.”
- Edit / Delete / Reorder Sectors, Categories, Sub-Categories.
- Auto-linking:
-When a business selects a Sector → Category → Sub-Category, it inherits the default branding from Admin setup.
- Display Controls:
-Toggle visibility (Show/Hide) of sectors or categories on front-end campaign lists.
+2. BUSINESS OWNER DASHBOARD (Main View)
+Purpose: Central hub for all business actions, analytics, and campaign management.
+Dashboard Layout:
+Left-hand menu + central analytics area.
+Top bar: Notifications, Points Balance, Badge Status (Starter → Partner).
+Menu Tabs & Functions:
+a. Overview / Analytics Tab
+ Display KPIs: total campaigns, redemptions, customer signups, top deals.
+ Points summary (Earned / Spent / Matching Points Available).
+ Monthly performance chart (points and redemptions).
+ Business tier level progress bar.
+b. Rewards Tab
+ Add new reward button (“+ Add Reward”).
+View all Rewards with Filter Active, Expired, (Deleted history for 30days) 
+ List of existing rewards with edit/delete options. (Edit certain features for Co-branded and full edit for White-label).
+Delete Rewards should have confirmation process before deleting and (deleting rewards should show on Admin dashboard)
+ Reward data columns: Title, Type (Voucher, Gift Card, Coupon), Points Required, Expiry, Status.
+ Option to Create New Reward from Scratch (Pop to Upgrade for those that are not White-label).
+ Reward Preview (image + claim page preview).
+c. Campaigns Tab
+“Create Campaign” button triggers Campaign Builder.
+ View all campaigns with filters (Active / Scheduled / Completed).
+ Show performance: total claims, referrals, social shares.
+ Edit campaign option (for MCOM White-Label & Co-Branded only).
+ White-label businesses can fully edit design and text.
+d. Deals Tab
+ Create new deal (product or service-based offer).
+ List of deals with filters by category, expiry, active status.
+ Connect deals to campaigns.
+ Manage visibility: Local / National / Group-only.
+ Dashboard shows sales metrics per deal.
+e. Business Details Tab
+ Business profile edit form (Name, Address, Description, Logo, Banner, Contact Info).
+ Links: Website, WhatsApp, Instagram, etc.
+ Upload branding pack (co-branded and white-label members only).
+ View Membership Status and Tier.
+f. Wishlist Insights Tab
+ View customer wishlists related to business products.
+ Data columns: Item Name, Category, Occasion, Count, Target Date.
+ “Create Campaign from Wishlist” button (prefills audience).
+ Export report.
+g. Customer Activities Tab
+ List of customers who redeemed, referred, or wishlisted your items.
+ Activity timeline: purchase, referral, redemption.
+ Search/filter by customer name, activity type, date.
+ View individual customer badges and history.
+h. Affiliate Tab
+ Show referral link and affiliate code.
+ Analytics: total referrals, sign-ups, commission earned.
+ Option to copy/share referral links.
+ Leaderboard view for top affiliates.
+i. Membership / Subscription Tab
+ Show current plan (Starter / Co-Brand / White Label).
+ Billing & Payment History.
+ Upgrade / Downgrade buttons.
+ Payment integration (Stripe, PayPal).
+ Auto-renew toggle and reminder system.
+j. Tier & Badges Tab
+ Show current tier level (Starter / Active / Trusted / Partner).
+ Requirements to move to next tier.
+ Progress bar with percentage complete.
+ Summary of benefits unlocked.
+k. Matching Points Tab
+ Overview: Matching Points vs Regular Points.
+ How matching points are earned.
+ Redemption rules.
+ History log of matching points activity.
+ Admin notices or restrictions.
+l. Support / Help Tab
+ FAQs section (auto-pulled from knowledge base).
+ Live chat or ticket form.
+ Training videos (“How to create a campaign”, “Understanding badges”).
+m. Logout / Account Tab
+ Account info: email, password reset.
+ Logout and deactivate account options.
 
-3. ADMIN REWARD MANAGEMENT
-Purpose: Allow Admin to create, assign, and control all reward assets visible across the platform.
-Admin Can:
- Create New Reward
-Fields: Title, Description, Reward Type (Gift Card, Coupon, Voucher, Product, Service).
-Points Required, Expiry Date, Sector, Category, Sub-Category.
-Upload Image or Select Template.
-Attach Reward Source: MCOM Reward Vault or Partner Businesses.
-Select Audience: All Businesses / Specific Sectors / Specific Tiers.
- Edit or Duplicate Rewards.
- Auto-group rewards into categories for easier display.
- Filter rewards by sector, category, status, expiry, or partner.
- Reward Status: Draft, Live, Expired.
- Assign Reward Ownership:
-System Rewards (created by Admin).
-Partner Rewards (submitted by white-label partners).
- Reward Preview Page (how it looks to consumers and businesses).
+3. REWARD & CAMPAIGN MANAGEMENT
+For MCOM Starter & Co-branded Businesses:
+ Can claim, edit, and schedule campaigns using templates.
+ Campaign Builder auto-launch prompt after saving reward.
+ Choose campaign type: QR, Referral, Social, Event.
+ Add campaign details (name, dates, caption, image, CTA, reward attached).
+ Add distribution channels: QR, Share Link, Embed, Email.
+ Set auto rules: start/stop date, claim limits, auto-switch to matching points.
+For White-label Businesses:
+ Full creative control over campaign visuals, text, and rules.
+ Can customize campaign page design and CTA wording.
+ Access to white-label analytics dashboard.
+ Custom branding (logos, color palette, domain branding).
 
-4. ADMIN CAMPAIGN MANAGEMENT
-Purpose: Enable Admin to create and oversee global campaigns, manage business-specific campaigns, and automate distribution.
-Admin Can:
- Create New Campaign
-Link to Reward (choose from Reward list).
-Add Campaign Name, Caption, CTA, Banner Image.
-Select Campaign Type: QR, Referral, Social, Event.
-Set Start/End Date, Claim Limit, Matching Points Option.
-Attach Sector, Category, Sub-Category (for targeted visibility).
-Select Audience Type: All / Businesses / Consumers / Specific Badge Level.
-Enable Smart Auto Rules:
-Auto-stop when rewards run out.
-Auto-switch to matching points.
-Auto-refresh campaign after period ends.
- Edit or Pause Active Campaigns.
- Approve / Reject Business-Created Campaigns (moderation layer).
- Assign Campaign Ownership:
-Admin-Owned (MCOM HQ).
-Co-Brand Partner.
-White-Label Business.
- View Campaign Performance:
-Total Claims, Referrals, Engagements.
-Points Distributed, Matching Points Given.
+4. BUSINESS WISHLIST CREATION
+ Businesses can add products or services they wish to receive or promote in B2B exchanges.
+ Field inputs: Item, Quantity, Priority, Notes.
+ Option to make wishlist public to B2B groups.
+ Can convert wishlist items into campaigns.
 
-5. AUTO-GROUPING & DISPLAY RULES
-Purpose: Maintain order and clarity for all rewards and campaigns.
-Admin Can Configure:
- Auto-group rewards under their parent sectors/categories.
- Group Campaigns by Sector for homepage display.
- Define display order or highlight top-performing campaigns.
- Set rules for homepage: “Show top 5 active campaigns per sector.”
- Tag featured rewards for banner display.
+5. DEALS & B2B EXCHANGE SYSTEM
+ Join or create deal groups.
+ Access member stock or capacity from others (first-come basis).
+ “Add to Group Listing” button for each product/service.
+ View available capacity (e.g., 100 meals left from Café X).
+ Trade products/services within credit/point balance.
 
-6. USER MANAGEMENT (BUSINESS & CONSUMER)
-Purpose: Allow Admin to control and monitor all users on the platform.
-Business Owners:
- View all businesses with filters: Tier, Sector, Activity Status.
- Edit business profile and tier level.
- Suspend, Activate, or Downgrade account.
- See campaigns created and rewards attached.
- Access audit logs for business actions.
- Manually add or adjust business points balance.
- Reset login or send verification email.
-Consumers:
- View all registered consumers with filters: Badge Level, Location, Activity.
- Edit or reset consumer account.
- See campaigns joined and rewards redeemed.
- Manually add or adjust points/matching points.
- Suspend or delete accounts for violations.
+6. POINTS & MATCHING SYSTEM
+ Display points earned by customers through business campaigns.
+ Matching points appear automatically when business runs out of standard rewards.
+ Admin control to modify matching point values.
+ Businesses can view which campaigns issued matching points vs standard rewards.
 
-7. MATCHING POINTS CONTROL PANEL
-Purpose: Manage global matching point settings and apply logic across all campaigns.
-Admin Can:
- Define base matching point ratio (e.g., 1:1 or 1:0.5).
- Set default matching point range per sector (100–1000 points).
- Enable or disable matching points for specific campaigns.
- Monitor total matching points distributed.
- Adjust or deduct matching points manually for any account.
+7. TIER LEVEL SYSTEM (Business)
+ 4 Levels: Starter → Active → Trusted → Partner.
+ Triggered by activity (campaigns run, customers redeemed, B2B trades, training attendance).
+ Auto-upgrade when thresholds met.
+ Auto-downgrade after inactivity.
+ Notifications: “You’ve been upgraded to Trusted!” or “You’re at risk of downgrade.”
+ Benefits by tier:
+Starter: Basic dashboard access
+Active: Advanced campaign analytics
+Trusted: B2B exchange access + co-brand eligibility
+Partner: White-label eligibility + commission tier
 
-8. TIER & BADGE CONTROL (BUSINESS + CONSUMER)
-Purpose: Manage the logic and progression of badges and tiers.
-Admin Can:
- Define criteria for each level (points, redemptions, or activities).
- Override and manually promote or demote any user.
- Add or modify badge design and name.
- Assign custom privileges per level.
- Generate reports of user movement across levels.
- 
-9. DEALS, B2B EXCHANGE & MARKETPLACE MANAGEMENT
-Purpose: Control visibility and performance of business deals and exchanges.
-Admin Can:
- Create or approve deals submitted by businesses.
- Attach deals to sectors or groups.
- Moderate pricing and visibility rules.
- Monitor B2B exchange activities.
- Highlight featured deals on homepage or campaign pages.
+8. AFFILIATE & REFERRAL STRUCTURE
+ Each business owner gets a referral code.
+ Can earn commission from new signups they refer.
+ 2-tier referral logic: Agent → Business → Consumer.
+ Passive income tracking (supervisors earn from sub-affiliates).
 
-10. CO-BRANDED & WHITE-LABEL PARTNER MANAGEMENT
-Purpose: Oversee branded and partner-specific platforms connected to MCOM Rewards.
-Admin Can:
- Create and manage Co-Brand partner accounts.
- Assign permissions for branding edits (logo, colors, text lock).
- Create White-Label partners with full independent dashboards.
- Manage subdomains and domain routing.
- Track performance metrics for each partner system.
- Define revenue-sharing or commission settings.
+9. SUBSCRIPTION & BILLING
+ Auto-billing and manual payment options.
+ Plan comparison and feature list.
+ Payment receipts and invoices downloadable.
+ Subscription expiry reminders.
 
-11. REPORTING & ANALYTICS
-Purpose: Monitor the platform’s performance and ensure business owners achieve goals.
-Reports Include:
-Total Campaigns Created, Joined, Claimed.
-Top Performing Businesses.
-Most Popular Rewards.
-Points Distributed (Standard vs Matching).
-Consumer Growth and Activity.
-Business Tier Distribution.
-Conversion and Retention Reports.
-Downloadable (CSV, PDF, XLS).
+10. TRAINING & SUPPORT
+ Built-in training modules and onboarding videos.
+ Resource library (PDFs, video tutorials, FAQs).
+ Option to book 1:1 call with Account Manager.
+ Progress tracker for training completion.
 
-12. NOTIFICATIONS & COMMUNICATION CONTROL
-Purpose: Manage how alerts, announcements, and emails are delivered to users.
-Admin Can:
- Create platform-wide announcements.
- Send targeted messages (by sector, tier, or location).
- Configure automated notifications (campaign start, expiry, etc.).
- Email Templates Manager (customize headers, body, and signatures).
- Push Notifications and In-App Alerts control.
+11. NOTIFICATIONS & ALERTS SYSTEM
+ Push notifications for campaign performance, tier changes, or low balance.
+ Email + in-app messages for renewal, deals, updates.
+ Admin broadcast announcements.
 
-13. FRONT-END CONTENT MANAGEMENT
-Purpose: Let Admin control visible content and static pages of the MCOM Rewards site.
-Pages Admin Can Edit:
-Homepage, About Us, Deals Page, Campaign List Page.
-Pricing Page, Terms & Conditions, Privacy Policy.
-Banners, Carousel images, Featured Rewards.
-CMS Features:
- WYSIWYG editor for content pages.
- Upload images and videos.
- Schedule when new content goes live.
- Assign visibility by user type (public, business, consumer).
+12. ADMIN CONTROLS (Backlink Features)
+ Admin can view all business owner data and campaign activity.
+ Admin can edit matching points or suspend campaigns.
+ Admin sees business tier levels and can adjust manually.
+ Audit log of all business actions.
 
-14. ESCROW, PAYMENTS & SUBSCRIPTIONS
-Purpose: Manage financial logic of reward redemption and subscriptions.
-Admin Can:
- View payment history for all businesses.
- Manage escrow system (hold funds until campaign completion).
- Control subscription plans and pricing.
- Adjust commission structures for agents and affiliates.
- Approve payout requests.
- View financial analytics (revenue, pending payouts, refunds).
+13. WHITE-LABEL & CO-BRAND CONTROL PANEL
+ White-label partners get access to brand styling and domain management.
+ Co-brand partners get access to editable visuals (logo, color theme) but core text locked.
+ Both have analytics dashboard filtered for their users.
 
-15. SECURITY, PERMISSIONS & AUDIT TRAILS
-Purpose: Protect platform integrity and ensure accountability.
-Admin Can:
- Assign roles: Super Admin, Moderator, Finance, Support.
- Define role-based access controls (RBAC).
- View complete audit trails (who did what and when).
- Data export/download logs.
- GDPR and compliance controls (data consent and anonymization).
+14. SECURITY, COMPLIANCE, & DATA MANAGEMENT
+ Multi-factor authentication for all business logins.
+ GDPR-compliant consent and privacy control.
+ Activity logs for audits.
+ Escrow control for reward payments and refunds.
 
-16. TRAINING, SUPPORT & RESOURCE MANAGEMENT
-Purpose: Manage help materials for users and business owners.
-Admin Can:
- Upload training videos and tutorials.
- Manage help center articles.
- Assign learning modules by tier level.
- Monitor completion progress for businesses.
-
-17. ADMIN CONTROL SUMMARY
-Create and manage sectors, categories, and sub-categories.
-Build and attach rewards/campaigns by sector.
-Manage users (business + consumers) and their tiers.
-Control co-branded and white-label partners.
-Monitor matching points, campaigns, and deals.
-Manage notifications, content, payments, and training.
-Ensure platform compliance, security, and audit readiness.
-End of Admin Full Feature Checklist — MCOM Rewards (LoyaltyCardX)
+15. SUMMARY OF KEY DELIVERABLES FOR DEVELOPERS
+Build full sign-up flow with sector/category assignment and branding logic.
+Create modular dashboard with all tab sections listed.
+Implement tier logic, matching points, and affiliate connections.
+Integrate B2B exchange and deals management.
+Add wishlist insights + campaign auto-suggestion.
+Add notifications, subscriptions, analytics, and support modules.
+Ensure co-branded/white-label permissions are enforced correctly.
+Connect all features to backend APIs (Rewards, Perkzilla, Expo, Listio).
+End of Business Owner Full Feature Checklist — MCOM Rewards (LoyaltyCardX)

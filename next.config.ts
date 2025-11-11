@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Added placehold.co to remotePatterns to resolve next/image error
     remotePatterns: [
       {
         protocol: 'https',
@@ -18,6 +19,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'example.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
         port: '',
         pathname: '/**',
       },

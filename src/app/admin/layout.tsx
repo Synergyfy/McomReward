@@ -17,7 +17,7 @@ export default function AdminLayout({
   return (
     <html lang="en">
       <body>
-        <div className="relative min-h-screen md:flex">
+        <div className="min-h-screen md:flex">
           {/* Mobile overlay */}
           {isSidebarOpen && (
             <div

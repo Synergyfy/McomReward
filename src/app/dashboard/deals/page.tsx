@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import DealsTable from '@/components/dashboard/deals/DealsTable';
-import { dealsData } from '@/lib/mock-data/deals';
+import { mockDeals } from '@/lib/mock-data/deals';
 
 export default function DealsPage() {
   return (
@@ -17,7 +17,7 @@ export default function DealsPage() {
           </Button>
         </Link>
       </div>
-      <DealsTable deals={dealsData} />
+      <DealsTable deals={mockDeals} />
     </div>
   );
 }

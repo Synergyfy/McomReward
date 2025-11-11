@@ -187,7 +187,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <SelectTrigger id="badge">
                     <SelectValue placeholder="Select a badge level" />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[100]">
+                  <SelectContent position="popper" className="z-[10000]">
                     <SelectItem value="NONE">
                       <em>None</em>
                     </SelectItem>

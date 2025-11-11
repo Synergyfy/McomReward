@@ -17,7 +17,7 @@ export default function DealCard({ deal }: DealCardProps) {
             <CardHeader className="p-0">
                 <div className="relative h-48 w-full">
                     <Image
-                        src={deal.imageUrl}
+                        src={deal.imageUrl || '/placeholder-qr.svg'}
                         alt={deal.title}
                         layout="fill"
                         objectFit="cover"

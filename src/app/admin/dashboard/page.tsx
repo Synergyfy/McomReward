@@ -1,110 +1,197 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, DollarSign, Activity, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Users,
+  Activity,
+  Award,
+  Gift,
+  PlusCircle,
+  Search,
+  Bell,
+  Building,
+  BarChart,
+  DollarSign,
+  Megaphone,
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  summaryCardData,
+  businessTierBreakdownData,
+  notificationsData,
+  mainChartData,
+  secondaryTableData,
+} from '@/lib/mock-data/dashboard';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Mock data for recent transactions (reusing from points-log for consistency)
-const mockRecentTransactions = [
-  { id: '1', timestamp: '2025-10-26T10:00:00Z', description: 'Joined Summer Bonanza', type: 'earned', points: 100, customer: { name: 'Alice Johnson', email: 'alice@example.com' } },
-  { id: '2', timestamp: '2025-10-25T14:30:00Z', description: 'Redeemed: Free Coffee', type: 'spent', points: 50, customer: { name: 'Bob Williams', email: 'bob@example.com' } },
-  { id: '7', timestamp: '2025-10-25T11:00:00Z', description: 'Purchase at Burger Queen', type: 'purchase', points: 75, customer: { name: 'Alice Johnson', email: 'alice@example.com' } },
-  { id: '3', timestamp: '2025-10-24T09:00:00Z', description: 'Joined Winter Wonderland', type: 'earned', points: 150, customer: { name: 'Charlie Brown', email: 'charlie@example.com' } },
-  { id: '8', timestamp: '2025-10-23T20:00:00Z', description: 'Referral bonus', type: 'referral_bonus', points: 100, customer: { name: 'David Davis', email: 'david@example.com' } },
-];
-
-export default function Dashboard() {
+export default function AdminDashboard() {
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">An overview of your platform&apos;s activity.</p>
+        <div className="flex items-center space-x-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search by business, user, or campaign..." className="pl-8" />
+          </div>
+          <Button>Download Report</Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Top Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-600">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Businesses</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryCardData.totalBusinesses}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
+            <Megaphone className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryCardData.activeCampaigns}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Consumers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-green-500">+20.1% from last month</p>
+            <div className="text-2xl font-bold">{summaryCardData.totalConsumers.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-600">Total Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Rewards Claimed</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summaryCardData.totalRewardsClaimed.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Matching Points Issued</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£56,789</div>
-            <p className="text-xs text-green-500">+12.5% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-600">Recent Activities</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">582</div>
-            <p className="text-xs text-green-500">+19% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-600">Point Velocity (24h)</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center text-green-500">
-                <ArrowUpCircle className="h-5 w-5 mr-2"/>
-                <span className="text-xl font-bold">+1,250</span>
-            </div>
-            <div className="flex items-center text-red-500 mt-2">
-                <ArrowDownCircle className="h-5 w-5 mr-2"/>
-                <span className="text-xl font-bold">-350</span>
-            </div>
-            <div className="mt-4 space-y-2">
-                <h3 className="text-sm font-semibold">Recent Transactions:</h3>
-                <ul className="text-xs text-muted-foreground">
-                    {mockRecentTransactions.slice(0, 5).map(tx => (
-                        <li key={tx.id} className="flex justify-between items-center">
-                            <span>{tx.description}</span>
-                            <span className={tx.type === 'spent' ? 'text-red-500' : 'text-green-500'}>
-                                {tx.type === 'spent' ? '-' : '+'}{tx.points}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-                <Link href="/admin/points-log" className="text-sm text-orange-600 hover:underline block mt-2">
-                    View all transactions
-                </Link>
-            </div>
+            <div className="text-2xl font-bold">{summaryCardData.totalMatchingPointsIssued.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Placeholder for more advanced charts or tables */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="col-span-1 lg:col-span-1">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Main Chart */}
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent Sign-ups</CardTitle>
+            <CardTitle>Consumer Growth and Activity</CardTitle>
           </CardHeader>
-          <CardContent>
-            {/* You can add a table of recent users here */}
-            <p className="text-sm text-muted-foreground">A table of recent user sign-ups will be displayed here.</p>
+          <CardContent className="pl-2">
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={mainChartData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="newRegistrations" stroke="#ea580c" name="New Registrations" />
+                <Line type="monotone" dataKey="activityCount" stroke="#64748b" strokeDasharray="3 3" name="Activity Count" />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-        <Card>
+
+        {/* Side Cards */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Reward</Button>
+              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Campaign</Button>
+              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Sector</Button>
+              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Business</Button>
+            </CardContent>
+          </Card>
+
+          {/* Notifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {notificationsData.map((notification) => (
+                <div key={notification.id} className="flex items-start space-x-3">
+                  <Bell className="h-5 w-5 text-muted-foreground mt-1" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{notification.message}</p>
+                    <p className="text-xs text-muted-foreground">{notification.time}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Top Performing Businesses */}
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Sales Over Time</CardTitle>
+            <CardTitle>Top Performing Businesses</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* You can add a chart here */}
-            <p className="text-sm text-muted-foreground">A chart showing sales trends will be displayed here.</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Business Name</TableHead>
+                  <TableHead>Redemptions</TableHead>
+                  <TableHead>Points Issued</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {secondaryTableData.map((business) => (
+                  <TableRow key={business.name}>
+                    <TableCell>{business.name}</TableCell>
+                    <TableCell>{business.redemptions.toLocaleString()}</TableCell>
+                    <TableCell>{business.pointsIssued.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Business Tier Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Tier Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(businessTierBreakdownData).map(([tier, count]) => (
+              <div key={tier} className="flex justify-between items-center">
+                <span className="font-medium capitalize">{tier}</span>
+                <Badge variant={tier === 'partner' ? 'default' : 'secondary'}>{count}</Badge>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

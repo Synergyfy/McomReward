@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useBusinessOnboard, useGetSectors } from "@/services/business/hook";
+import { useBusinessOnboard, useGetSectors, useGetCategories, useGetSubCategories } from "@/services/business/hook";
 import { CreateBusinessDto } from "@/services/business/types";
 import { createBusinessSchema } from "@/lib/validators/signupSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,49 +30,6 @@ import { useRouter } from "next/navigation";
 const LoadingSpinner: React.FC = () => (
   <Loader2 className="animate-spin h-4 w-4 mr-2 inline-block" />
 );
-
-const DEMO_SECTORS = [
-  { id: 1, name: "Hospitality" },
-  { id: 2, name: "Retail" },
-  { id: 3, name: "Service" },
-];
-
-const DEMO_CATEGORIES: Record<string, { id: string; name: string }[]> = {
-  "1": [
-    { id: "11", name: "Restaurant" },
-    { id: "12", name: "Café" },
-    { id: "13", name: "Bar" },
-  ],
-  "2": [
-    { id: "21", name: "Fashion" },
-    { id: "22", name: "Electronics" },
-    { id: "23", name: "Bookstore" },
-  ],
-  "3": [
-    { id: "31", name: "Salon" },
-    { id: "32", name: "Consulting" },
-    { id: "33", name: "Cleaning" },
-  ],
-};
-
-const DEMO_SUBCATEGORIES: Record<string, { id: string; name: string }[]> = {
-  "11": [
-    { id: "111", name: "Fast Food" },
-    { id: "112", name: "Fine Dining" },
-  ],
-  "12": [
-    { id: "121", name: "Coffee Shop" },
-    { id: "122", name: "Tea House" },
-  ],
-  "21": [
-    { id: "211", name: "Apparel" },
-    { id: "212", name: "Footwear" },
-  ],
-  "31": [
-    { id: "311", name: "Hair Salon" },
-    { id: "312", name: "Nail Salon" },
-  ],
-};
 
 const socialOptions = {
   facebook: {
@@ -90,16 +47,13 @@ const socialOptions = {
 };
 
 type SocialPlatform = keyof typeof socialOptions;
-type OnboardingFormInputs = CreateBusinessDto & { subCategoryId?: string };
+type OnboardingFormInputs = CreateBusinessDto;
 
 export default function BusinessOnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [socialInputs, setSocialInputs] = useState<SocialPlatform[]>([]);
-
-  const { data: sectors } = useGetSectors();
-  const { mutateAsync: onboardBusiness, isPending } = useBusinessOnboard();
 
   const {
     register,
@@ -109,13 +63,19 @@ export default function BusinessOnboardingWizard() {
     watch,
   } = useForm<OnboardingFormInputs>({
     mode: "onTouched",
-    // Note: Zod schema doesn't include subCategoryId yet.
-    // Validation for it is handled via trigger but not on final submit.
     resolver: zodResolver(createBusinessSchema),
   });
 
+  const selectedSector = watch("sectorId");
+  const selectedCategory = watch("categoryId");
+
+  const { data: sectors } = useGetSectors();
+  const { data: categories } = useGetCategories(selectedSector);
+  const { data: subCategories } = useGetSubCategories(selectedCategory);
+  const { mutateAsync: onboardBusiness, isPending } = useBusinessOnboard();
+
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
-    1: ["sectorId", "subsectorId", "subCategoryId"],
+    1: ["sectorId", "categoryId", "subCategoryId"],
     2: ["phone", "address", "website"],
     3: ["referralCapacity"],
   };
@@ -137,7 +97,6 @@ export default function BusinessOnboardingWizard() {
 
   const onSubmit = async (data: OnboardingFormInputs) => {
     try {
-      // Note: 'data' includes 'subCategoryId' which may not be in the backend DTO.
       await onboardBusiness(data);
       toast.success("Business account created successfully!");
       router.push("/dashboard");
@@ -150,8 +109,6 @@ export default function BusinessOnboardingWizard() {
   const availableSocials = (
     Object.keys(socialOptions) as SocialPlatform[]
   ).filter((s) => !socialInputs.includes(s));
-  const selectedSector = watch("sectorId");
-  const selectedCategory = watch("subsectorId");
 
   return (
     <div className="min-h-screen flex bg-gray-50 overflow-hidden">
@@ -202,8 +159,8 @@ export default function BusinessOnboardingWizard() {
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1"
                       >
                         <option value="">Select a sector</option>
-                        {DEMO_SECTORS.map((sector) => (
-                          <option key={sector.id} value={String(sector.id)}>
+                        {sectors?.map((sector) => (
+                          <option key={sector.id} value={sector.id}>
                             {sector.name}
                           </option>
                         ))}
@@ -215,23 +172,23 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="subsectorId">Category</Label>
+                      <Label htmlFor="categoryId">Category</Label>
                       <select
-                        id="subsectorId"
-                        {...register("subsectorId")}
+                        id="categoryId"
+                        {...register("categoryId")}
                         disabled={!selectedSector}
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
                       >
                         <option value="">Select a category</option>
-                        {(DEMO_CATEGORIES[selectedSector] || []).map((cat) => (
+                        {categories?.map((cat) => (
                           <option key={cat.id} value={cat.id}>
                             {cat.name}
                           </option>
                         ))}
                       </select>
-                      {errors.subsectorId && (
+                      {errors.categoryId && (
                         <p className="text-red-500 text-sm mt-1">
-                          {errors.subsectorId.message}
+                          {errors.categoryId.message}
                         </p>
                       )}
                     </div>
@@ -244,7 +201,7 @@ export default function BusinessOnboardingWizard() {
                         className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
                       >
                         <option value="">Select a sub-category</option>
-                        {(DEMO_SUBCATEGORIES[selectedCategory] || []).map(
+                        {subCategories?.map(
                           (subcat) => (
                             <option key={subcat.id} value={subcat.id}>
                               {subcat.name}
@@ -461,7 +418,7 @@ export default function BusinessOnboardingWizard() {
                         className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 w-full"
                       >
                         {isPending && <LoadingSpinner />}
-                        Submit
+                        Submit  
                       </Button>
                     </div>
                   </motion.div>

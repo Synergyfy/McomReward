@@ -58,3 +58,15 @@ export interface Sector {
   updatedAt: string;
   deletedAt: string | null;
 }
+
+export interface Category {
+    id: string;
+    name: string;
+    sectorId: string;
+}
+
+export interface SubCategory {
+    id: string;
+    name: string;
+    categoryId: string;
+}

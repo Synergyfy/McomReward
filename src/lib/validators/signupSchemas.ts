@@ -12,7 +12,8 @@ const socialMediaSchema = z
 
 export const createBusinessSchema = z.object({
   sectorId: z.string(),
-  subsectorId: z.string().optional().nullable(),
+  categoryId: z.string(),
+  subCategoryId: z.string().optional().nullable(),
   phone: z.string().min(7, "Valid phone number is required"),
   address: z.string(),
   website: z.url().nullish().or(z.literal("")).optional(),
@@ -28,6 +29,7 @@ export const businessSignUpSchema = z.object({
   email: z.email("Valid email is required"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
   confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters long"),
+  inviteCode: z.string().optional(),
 });
 
 export const staffSchema = z.object({

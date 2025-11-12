@@ -114,6 +114,16 @@ const onSubmit = async (data: BusinessSignUpDto) => {
           </div>
 
           <div>
+            <Label htmlFor="inviteCode">Invite Code (Optional)</Label>
+            <Input
+              id="inviteCode"
+              type="text"
+              placeholder="Enter invite code"
+              {...register("inviteCode")}
+            />
+          </div>
+
+          <div>
             <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Input

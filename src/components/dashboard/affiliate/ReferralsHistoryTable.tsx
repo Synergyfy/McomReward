@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { Referral } from '@/lib/mock-data/affiliate';
+import { ReferredBusiness } from '@/services/affiliate/types';
 
 interface ReferralsHistoryTableProps {
-  referrals: Referral[];
+  referrals: ReferredBusiness[];
 }
 
 export default function ReferralsHistoryTable({ referrals }: ReferralsHistoryTableProps) {
@@ -26,22 +26,20 @@ export default function ReferralsHistoryTable({ referrals }: ReferralsHistoryTab
           <TableHeader>
             <TableRow>
               <TableHead>Business Name</TableHead>
-              <TableHead>Date Joined</TableHead>
+              <TableHead>Date Referred</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Reward</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {referrals.map((referral) => (
-              <TableRow key={referral.id}>
-                <TableCell className="font-medium">{referral.businessName}</TableCell>
-                <TableCell>{referral.joinDate}</TableCell>
+            {referrals.map((referral, index) => (
+              <TableRow key={index}> {/* Using index as key, consider a unique ID if available */}
+                <TableCell className="font-medium">{referral.name}</TableCell>
+                <TableCell>{new Date(referral.referredAt).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Badge variant={referral.status === 'Completed' ? 'default' : 'outline'}>
+                  <Badge variant={referral.status === 'completed' ? 'default' : 'outline'}>
                     {referral.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">{referral.reward > 0 ? `${referral.reward} pts` : '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

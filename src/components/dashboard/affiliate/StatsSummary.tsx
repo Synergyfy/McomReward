@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, Star } from 'lucide-react';
-import { AffiliateStats } from '@/lib/mock-data/affiliate';
+import { AffiliateStats } from '@/services/affiliate/types';
 
 interface StatsSummaryProps {
   stats: AffiliateStats;
@@ -30,12 +30,12 @@ export default function StatsSummary({ stats }: StatsSummaryProps) {
         />
         <StatCard 
             title="Successful Referrals" 
-            value={stats.successfulReferrals} 
+            value={stats.totalSuccessfulReferrals} 
             icon={<UserCheck className="h-4 w-4 text-muted-foreground" />} 
         />
         <StatCard 
             title="Points Earned" 
-            value={stats.pointsEarned.toLocaleString()} 
+            value={stats.totalPointsEarned.toLocaleString()} 
             icon={<Star className="h-4 w-4 text-muted-foreground" />} 
         />
     </div>

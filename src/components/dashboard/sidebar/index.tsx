@@ -23,7 +23,7 @@ import {
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
 import { motion } from 'framer-motion';
-import {mockBusinessData as data} from '../../../app/data';
+import { seasonalMockData as data } from '../../../app/mock-data';
 
 
 interface BusinessSidebarProps {
@@ -40,7 +40,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
   return (
     <div
       className={`
-        fixed top-0 left-0 h-full w-64 bg-white text-gray-800 p-4 z-50 shadow-2xl
+        fixed top-0 left-0 h-full w-64 bg-white text-gray-800 p-4 z-50 shadow-2xl overflow-y-auto
         transform transition-transform duration-300 ease-in-out
         md:translate-x-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}

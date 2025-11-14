@@ -4,11 +4,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend} from "recharts";
 import { Users, Gift, Trophy, Percent, Megaphone, Flame, Star, ArrowDown, ArrowUp } from "lucide-react";
-import { mockBusinessData } from "../data";
+import { seasonalMockData } from "../mock-data";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
+type Season = "Summer" | "Winter" | "Autumn" | "Spring";
 
 const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "7d", label: "Last 7 Days" },
@@ -18,15 +19,45 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "1y", label: "Last Year" },
 ];
 
-export default function BusinessDashboard() {
-  const [data] = useState(mockBusinessData);
-  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+const seasonOptions: { value: Season; label: string }[] = [
+    { value: "Summer", label: "Summer" },
+    { value: "Winter", label: "Winter" },
+    { value: "Autumn", label: "Autumn" },
+    { value: "Spring", label: "Spring" },
+];
 
+const getCurrentSeason = (): Season => {
+    const month = new Date().getMonth();
+    if (month >= 5 && month <= 7) return "Summer";
+    if (month >= 8 && month <= 10) return "Autumn";
+    if (month >= 11 || month <= 1) return "Winter";
+    return "Spring";
+};
+
+export default function BusinessDashboard() {
+  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+  const [selectedSeason, setSelectedSeason] = useState<Season>(getCurrentSeason());
+
+  const data = seasonalMockData[selectedSeason];
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
   return (
     <div className="min-h-screen bg-white p-8">
-     
+     <div className="flex justify-between items-center mb-8">
+        <div></div>
+        <Select value={selectedSeason} onValueChange={(value) => setSelectedSeason(value as Season)}>
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select season" />
+            </SelectTrigger>
+            <SelectContent>
+                {seasonOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+      </div>
 
       {/* === Overview Stats === */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">

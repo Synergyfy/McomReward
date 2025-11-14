@@ -31,17 +31,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
-import { Deal } from '@/lib/mock-data/deals';
-
-// Omitting id, businessId, businessName, and status for the form
-type DealFormData = Omit<Deal, 'id' | 'businessId' | 'businessName' | 'status' | 'stats'> & {
-  imageUrl?: string;
-};
+import { useCreateDeal } from '@/services/deals/hook';
+import { CreateDealDto } from '@/services/deals/types';
+import { useGetCategories } from '@/services/business/hook';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function DealForm() {
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<DealFormData>();
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CreateDealDto>();
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const router = useRouter();
+
+  const { mutateAsync: createDeal, isPending } = useCreateDeal();
+  const { data: categories } = useGetCategories();
 
   const currentImageUrl = watch("imageUrl");
 
@@ -56,10 +59,15 @@ export default function DealForm() {
     setValue("imageUrl", previewUrl || '', { shouldValidate: true });
   };
 
-  const onSubmit = (data: DealFormData) => {
-    console.log(data);
-    // Here you would typically handle form submission, e.g., API call
-    setIsSuccessModalOpen(true);
+  const onSubmit = async (data: CreateDealDto) => {
+    try {
+      await createDeal(data);
+      toast.success('Deal created successfully!');
+      router.push('/dashboard/deals');
+    } catch (error) {
+      toast.error('Failed to create deal. Please try again.');
+      console.error('Create deal error:', error);
+    }
   };
 
   return (
@@ -114,19 +122,19 @@ export default function DealForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                  <Label htmlFor="category">Deal Category</Label>
+                  <Label htmlFor="categoryId">Deal Category</Label>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Select onValueChange={(value) => setValue("category", value as Deal['category'], { shouldValidate: true })}>
-                          <SelectTrigger id="category">
+                      <Select onValueChange={(value) => setValue("categoryId", value, { shouldValidate: true })}>
+                          <SelectTrigger id="categoryId">
                               <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                           <SelectContent>
-                              <SelectItem value="Food & Drink">Food & Drink</SelectItem>
-                              <SelectItem value="Retail">Retail</SelectItem>
-                              <SelectItem value="Services">Services</SelectItem>
-                              <SelectItem value="Entertainment">Entertainment</SelectItem>
-                              <SelectItem value="Travel">Travel</SelectItem>
+                            {categories?.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                       </Select>
                     </TooltipTrigger>
@@ -134,13 +142,13 @@ export default function DealForm() {
                       <p>Choose the category that best describes your deal.</p>
                     </TooltipContent>
                   </Tooltip>
-                  {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
+                  {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">Value (£)</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Input id="value" placeholder="e.g., 20, 10.50" {...register("value", { required: "Value is required" })} />
+                    <Input id="value" type="number" placeholder="e.g., 20" {...register("value", { required: "Value is required", valueAsNumber: true })} />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Enter the monetary value or percentage of the deal (e.g., &quot;20&quot;, &quot;10.50&quot;).</p>
@@ -177,35 +185,13 @@ export default function DealForm() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Select onValueChange={(value) => setValue("category", value as Deal['category'], { shouldValidate: true })}>
-                      <SelectTrigger id="category">
-                          <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="Food & Drink">Food & Drink</SelectItem>
-                          <SelectItem value="Retail">Retail</SelectItem>
-                          <SelectItem value="Services">Services</SelectItem>
-                          <SelectItem value="Entertainment">Entertainment</SelectItem>
-                          <SelectItem value="Travel">Travel</SelectItem>
-                      </SelectContent>
-                  </Select>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Select the category that best fits your deal.</p>
-                </TooltipContent>
-              </Tooltip>
-              {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
-            </div>
+           
 
             <div className="space-y-2">
-              <Label htmlFor="terms">Terms & Conditions</Label>
+              <Label htmlFor="termsAndConditions">Terms & Conditions</Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Textarea id="terms" {...register("terms")} />
+                  <Textarea id="termsAndConditions" {...register("termsAndConditions")} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Outline any specific terms and conditions for this deal.</p>
@@ -214,7 +200,9 @@ export default function DealForm() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit">Save Deal</Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Saving...' : 'Save Deal'}
+              </Button>
             </div>
           </form>
         </CardContent>

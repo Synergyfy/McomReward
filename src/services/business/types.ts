@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { businessSignUpSchema, createBusinessSchema} from "@/lib/validators/signupSchemas";
+import { Sector, Category, SubCategory } from '@/services/sectors/types'; // Import from unified types
 
 export type CreateBusinessDto = z.infer<typeof createBusinessSchema>;
 export type BusinessSignUpDto = z.infer<typeof businessSignUpSchema>;
@@ -48,13 +49,4 @@ export interface BusinessLoginResponse {
   user: {
     role: string;
   };
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
 }

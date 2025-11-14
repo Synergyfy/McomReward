@@ -6,9 +6,10 @@ import { Upload } from 'lucide-react';
 
 interface CloudinaryUploadProps {
   onFileSelect: (file: File | null, previewUrl: string | null) => void;
+  disabled?: boolean;
 }
 
-export function CloudinaryUpload({ onFileSelect }: CloudinaryUploadProps) {
+export function CloudinaryUpload({ onFileSelect, disabled }: CloudinaryUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,10 +30,12 @@ export function CloudinaryUpload({ onFileSelect }: CloudinaryUploadProps) {
         onChange={handleFileChange}
         className="hidden"
         accept="image/*"
+        disabled={disabled}
       />
-      <Button 
-        type="button" 
+      <Button
+        type="button"
         onClick={() => inputRef.current?.click()}
+        disabled={disabled}
       >
         <Upload className="mr-2 h-4 w-4" />
         Upload Image

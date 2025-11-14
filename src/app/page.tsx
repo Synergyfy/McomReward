@@ -56,22 +56,22 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
           <Link href="/">
             <span className={`text-2xl font-bold text-orange-500 ${scrolled ? "" : "text-white"}`}>
-              Loyalty CardX
+              Mcom Reward
             </span>
           </Link>
-          <div className="hidden md:flex gap-8 text-black font-medium">
+          <div className="hidden md:flex gap-8 text-white font-medium">
             <Link href="/features">Features</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/deals">Deals</Link>
             <Link href="/campaigns">Campaigns</Link>
           </div>
           <div className="hidden md:flex gap-3">
-            <Link href="/login">
+            <Link href="/signin">
               <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled ? "" : "bg-white"}`}>
                 Login
               </span>
             </Link>
-            <Link href="/signup">
+            <Link href="/onboarding/choose-role">
               <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
                 Get Started
               </span>

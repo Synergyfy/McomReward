@@ -62,13 +62,13 @@ export default function QRPlaquesPage() {
 
     const handleMarkForSale = (price: string) => {
         if (!selectedPlaque) return;
-        setPlaques(plaques.map(p => p.id === selectedPlaque.id ? { ...p, status: 'For Sale', price } : p));
+        setPlaques(plaques.map(p => p.id === selectedPlaque.id ? { ...p, status: 'For Sale', price, linkedOffer: null } : p));
         setSaleModalOpen(false);
     };
 
     const handleConfigure = (config: { linkedOffer: string }) => {
         if (!selectedPlaque) return;
-        setPlaques(plaques.map(p => p.id === selectedPlaque.id ? { ...p, linkedOffer: config.linkedOffer } : p));
+        setPlaques(plaques.map(p => p.id === selectedPlaque.id ? { ...p, linkedOffer: config.linkedOffer, price: null, status: 'Active' } : p));
         setConfigureModalOpen(false);
     };
 

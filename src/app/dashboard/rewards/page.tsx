@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-interface Reward {
+export interface Reward {
   id: string;
   name: string;
   type: string;

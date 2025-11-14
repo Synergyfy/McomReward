@@ -14,8 +14,9 @@ interface CustomerSignUpForm {
   email: string;
   phone?: string;
 }
+ 
 
-export default function CampaignCustomerSignUp() {
+  export default function CampaignCustomerSignUp({ onSuccess }: { onSuccess?: () => void }) {
   const {
     register,
     handleSubmit,
@@ -23,6 +24,9 @@ export default function CampaignCustomerSignUp() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<CustomerSignUpForm>();
+
+
+
 
   const [step, setStep] = useState<"email" | "full">("email");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -60,6 +64,7 @@ export default function CampaignCustomerSignUp() {
 
       setIsSuccess(true);
       reset();
+      onSuccess?.(); // ✅ notify parent modal
     } catch (error) {
       console.error("Customer creation failed:", error);
       toast.error("Failed to sign up customer.");

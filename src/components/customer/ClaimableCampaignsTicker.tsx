@@ -2,47 +2,13 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ClaimConfirmationDialog } from './ClaimConfirmationDialog';
 import { Award, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const mockClaimableCampaigns = [
-  {
-    id: '4',
-    title: "Coffee Lover's Dream",
-    business: 'The Daily Grind',
-    pointsCost: 100,
-  },
-  {
-    id: '5',
-    title: 'Bookworm Rewards',
-    business: 'The Reading Nook',
-    pointsCost: 150,
-  },
-  {
-    id: '6',
-    title: 'Tech Gadget Expo',
-    business: 'Tech World',
-    pointsCost: 200,
-  },
-  {
-    id: '7',
-    title: 'Free Movie Ticket',
-    business: 'Cineplex',
-    pointsCost: 50,
-  },
-];
+import { mockClaimableCampaigns } from '@/app/mock-data';
+import Link from 'next/link';
 
 export const ClaimableCampaignsTicker = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState('');
-  const [selectedPointsCost, setSelectedPointsCost] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  const handleClaimClick = (campaignTitle: string, pointsCost: number) => {
-    setSelectedCampaign(campaignTitle);
-    setSelectedPointsCost(pointsCost);
-    setIsDialogOpen(true);
-  };
+  const [claimedCampaigns, setClaimedCampaigns] = useState<string[]>([]);
 
   const handleNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % mockClaimableCampaigns.length);
@@ -79,10 +45,13 @@ export const ClaimableCampaignsTicker = () => {
                                             </div>
                                             <Button
                                                 size="sm"
-                                                onClick={() => handleClaimClick(campaign.title, campaign.pointsCost)}
+                                                asChild
+                                                disabled={claimedCampaigns.includes(campaign.id)}
                                                 className="bg-orange-600 hover:bg-orange-700 text-white ml-4 flex-shrink-0"
                                             >
-                                                Claim
+                                                <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>
+                                                    {claimedCampaigns.includes(campaign.id) ? 'Claimed' : 'Claim'}
+                                                </Link>
                                             </Button>
                                         </div>
                                     </div>
@@ -110,12 +79,6 @@ export const ClaimableCampaignsTicker = () => {
             </div>
         </div>
       </div>
-      <ClaimConfirmationDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        campaignName={selectedCampaign}
-        pointsCost={selectedPointsCost}
-      />
     </>
   );
 };

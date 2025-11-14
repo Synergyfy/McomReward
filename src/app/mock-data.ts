@@ -248,3 +248,42 @@ export const seasonalMockData = {
     ]
   },
 };
+
+export const mockClaimableCampaigns = [
+  {
+    id: '4',
+    title: "Coffee Lover's Dream",
+    business: 'The Daily Grind',
+    pointsCost: 100,
+    description: 'Get a free coffee of your choice!',
+    heroImageUrl: 'https://images.unsplash.com/photo-1511920183359-b1b5f55c6d4b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    termsAndConditions: ['Offer valid for one-time use.', 'Cannot be combined with other offers.'],
+  },
+  {
+    id: '5',
+    title: 'Bookworm Rewards',
+    business: 'The Reading Nook',
+    pointsCost: 150,
+    description: 'Get a 20% discount on your next book purchase.',
+    heroImageUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    termsAndConditions: ['Discount applies to books only.', 'Valid for in-store purchases.'],
+  },
+  {
+    id: '6',
+    title: 'Tech Gadget Expo',
+    business: 'Tech World',
+    pointsCost: 200,
+    description: 'Get a free entry pass to the Tech Gadget Expo.',
+    heroImageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    termsAndConditions: ['Pass is valid for one person.', 'Event dates are subject to change.'],
+  },
+  {
+    id: '7',
+    title: 'Free Movie Ticket',
+    business: 'Cineplex',
+    pointsCost: 50,
+    description: 'Enjoy a movie on us!',
+    heroImageUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    termsAndConditions: ['Valid for standard screenings only.', 'Not valid on holidays.'],
+  },
+];

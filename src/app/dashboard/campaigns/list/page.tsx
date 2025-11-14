@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Pencil } from 'lucide-react';
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { CampaignTemplate } from '@/lib/mock-data/template-campaigns';
@@ -218,6 +218,16 @@ export default function CampaignsListPage() {
                         className="flex-grow py-2 text-md font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200"
                       >
                         <Link href={`/dashboard/campaigns/${campaign.id}`}>View Campaign</Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="icon"
+                        className="border-orange-600 text-orange-600 hover:bg-orange-50 transition-colors duration-200"
+                      >
+                        <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <Button
                         variant="outline"

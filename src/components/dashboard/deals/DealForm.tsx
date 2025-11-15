@@ -33,7 +33,7 @@ import {
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { useCreateDeal } from '@/services/deals/hook';
 import { CreateDealDto } from '@/services/deals/types';
-import { useGetCategories } from '@/services/business/hook';
+
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -44,7 +44,6 @@ export default function DealForm() {
   const router = useRouter();
 
   const { mutateAsync: createDeal, isPending } = useCreateDeal();
-  const { data: categories } = useGetCategories();
 
   const currentImageUrl = watch("imageUrl");
 
@@ -121,29 +120,7 @@ export default function DealForm() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                  <Label htmlFor="categoryId">Deal Category</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Select onValueChange={(value) => setValue("categoryId", value, { shouldValidate: true })}>
-                          <SelectTrigger id="categoryId">
-                              <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories?.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                      </Select>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Choose the category that best describes your deal.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
-              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="value">Value (£)</Label>
                 <Tooltip>

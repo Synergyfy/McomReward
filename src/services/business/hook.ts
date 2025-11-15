@@ -1,5 +1,6 @@
 import api, { setBearerToken } from '../api';
-import {  Business,  BusinessLoginDto,  BusinessLoginResponse,  Sector, BusinessSignUpDto, CreateBusinessDto, Category, SubCategory} from './types';
+import {  Business,  BusinessLoginDto,  BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto} from './types';
+import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -49,8 +50,8 @@ export const useBusinessOnboard = () => {
 }
 
 // Get Sectors
-const getSectors = async (): Promise<Sector[]> => {
-  const { data } = await api.get<Sector[]>('/sectors');
+const getSectors = async (): Promise<SectorResponse[]> => {
+  const { data } = await api.get<SectorResponse[]>('/sectors');
   return data;
 };
 
@@ -61,35 +62,7 @@ export const useGetSectors = () => {
   });
 };
 
-// Get Categories
-const getCategories = async (sectorId?: string): Promise<Category[]> => {
-    const endpoint = sectorId ? `/categories?sectorId=${sectorId}` : '/categories';
-    const { data } = await api.get<Category[]>(endpoint);
-    return data;
-};
 
-export const useGetCategories = (sectorId?: string) => {
-    return useQuery({
-        queryKey: ['categories', sectorId],
-        queryFn: () => getCategories(sectorId),
-        enabled: !!sectorId, // Only fetch if sectorId is provided
-    });
-};
-
-// Get SubCategories
-const getSubCategories = async (categoryId?: string): Promise<SubCategory[]> => {
-    const endpoint = categoryId ? `/subcategories?categoryId=${categoryId}` : '/subcategories';
-    const { data } = await api.get<SubCategory[]>(endpoint);
-    return data;
-};
-
-export const useGetSubCategories = (categoryId?: string) => {
-    return useQuery({
-        queryKey: ['subcategories', categoryId],
-        queryFn: () => getSubCategories(categoryId),
-        enabled: !!categoryId, // Only fetch if categoryId is provided
-    });
-};
 
 
 // Business Login

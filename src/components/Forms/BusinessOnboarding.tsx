@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useBusinessOnboard, useGetSectors, useGetCategories, useGetSubCategories } from "@/services/business/hook";
+import { useBusinessOnboard, useGetSectors } from "@/services/business/hook";
 import { CreateBusinessDto } from "@/services/business/types";
 import { createBusinessSchema } from "@/lib/validators/signupSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,11 +67,8 @@ export default function BusinessOnboardingWizard() {
   });
 
   const selectedSector = watch("sectorId");
-  const selectedCategory = watch("categoryId");
 
   const { data: sectors } = useGetSectors();
-  const { data: categories } = useGetCategories(selectedSector);
-  const { data: subCategories } = useGetSubCategories(selectedCategory);
   const { mutateAsync: onboardBusiness, isPending } = useBusinessOnboard();
 
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
@@ -171,50 +168,7 @@ export default function BusinessOnboardingWizard() {
                         </p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="categoryId">Category</Label>
-                      <select
-                        id="categoryId"
-                        {...register("categoryId")}
-                        disabled={!selectedSector}
-                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
-                      >
-                        <option value="">Select a category</option>
-                        {categories?.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.categoryId && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.categoryId.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="subCategoryId">Sub-Category</Label>
-                      <select
-                        id="subCategoryId"
-                        {...register("subCategoryId")}
-                        disabled={!selectedCategory}
-                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
-                      >
-                        <option value="">Select a sub-category</option>
-                        {subCategories?.map(
-                          (subcat) => (
-                            <option key={subcat.id} value={subcat.id}>
-                              {subcat.name}
-                            </option>
-                          )
-                        )}
-                      </select>
-                      {errors.subCategoryId && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.subCategoryId.message}
-                        </p>
-                      )}
-                    </div>
+
                     <div className="flex justify-end pt-4">
                       <Button
                         type="button"

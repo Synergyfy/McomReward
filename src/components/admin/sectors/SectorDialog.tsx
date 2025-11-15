@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -12,18 +11,14 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ChromePicker } from 'react-color';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
-
-// Note: You might need to install react-color: npm install react-color @types/react-color
+import toast from 'react-hot-toast';
 
 interface Sector {
   id?: string;
   name: string;
-  description: string;
-  icon: string;
-  color: string;
+  imageUrl: string;
 }
 
 interface SectorDialogProps {
@@ -35,32 +30,69 @@ interface SectorDialogProps {
 
 export default function SectorDialog({ isOpen, onClose, onSubmit, sector }: SectorDialogProps) {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState('');
-  const [color, setColor] = useState('#ffffff');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (sector) {
       setName(sector.name || '');
-      setDescription(sector.description || '');
-      setIcon(sector.icon || '');
-      setColor(sector.color || '#ffffff');
+      setImageUrl(sector.imageUrl || '');
+      setImageFile(null); // Clear file when editing existing
     } else {
       // Reset for new sector
       setName('');
-      setDescription('');
-      setIcon('');
-      setColor('#ffffff');
+      setImageUrl('');
+      setImageFile(null);
     }
   }, [sector, isOpen]);
 
-  const handleSubmit = () => {
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload/sectors', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload image');
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+
+    let finalImageUrl = imageUrl;
+
+    // If we have a new file (blob URL), upload it to Cloudinary
+    if (imageFile && imageUrl.startsWith('blob:')) {
+      setIsUploading(true);
+      try {
+        finalImageUrl = await uploadImageToCloudinary(imageFile);
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to upload image');
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    } else if (!imageUrl.trim()) {
+      toast.error('Image is required');
+      return;
+    }
+
     onSubmit({
       id: sector?.id, // Include id if editing
-      name,
-      description,
-      icon,
-      color,
+      name: name.trim(),
+      imageUrl: finalImageUrl,
     });
     onClose();
   };
@@ -82,30 +114,27 @@ export default function SectorDialog({ isOpen, onClose, onSubmit, sector }: Sect
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="col-span-3"
-              placeholder="e.g., Food & Dining"
+              placeholder="e.g., Fashion"
+              required
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="description" className="text-right">Description</label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="col-span-3"
-              placeholder="A short description of the sector."
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="icon" className="text-right">Icon</label>
+            <label htmlFor="imageUrl" className="text-right">Image</label>
             <div className="col-span-3">
-              <CloudinaryUpload onFileSelect={(file, previewUrl) => setIcon(previewUrl || '')} />
-              {icon && (
+              <CloudinaryUpload 
+                onFileSelect={(file, previewUrl) => {
+                  setImageFile(file);
+                  setImageUrl(previewUrl || '');
+                }}
+                disabled={isUploading}
+              />
+              {imageUrl && (
                 <div className="mt-4">
                   <p className="text-sm font-medium">Image Preview:</p>
                   <div className="relative h-24 w-24 rounded-md overflow-hidden">
                     <Image
-                      src={icon}
-                      alt="Uploaded sector icon"
+                      src={imageUrl}
+                      alt="Uploaded sector image"
                       layout="fill"
                       objectFit="cover"
                     />
@@ -114,21 +143,11 @@ export default function SectorDialog({ isOpen, onClose, onSubmit, sector }: Sect
               )}
             </div>
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <label className="text-right pt-2">Color</label>
-            <div className="col-span-3">
-              <ChromePicker
-                color={color}
-                onChangeComplete={(color) => setColor(color.hex)}
-                disableAlpha={true}
-              />
-            </div>
-          </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>
-            {sector ? 'Save Changes' : 'Create Sector'}
+          <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name.trim() || !imageUrl.trim() || isUploading}>
+            {isUploading ? 'Uploading...' : (sector ? 'Save Changes' : 'Create Sector')}
           </Button>
         </DialogFooter>
       </DialogContent>

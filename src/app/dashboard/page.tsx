@@ -98,14 +98,18 @@ export default function BusinessDashboard() {
           <CardTitle>Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-3">
-            {analyticsData?.activeCampaigns.map((c, i) => (
-              <li key={i} className="flex justify-between items-center border-b pb-2">
-                <span className="font-medium text-gray-800">{c.campaignName}</span>
-                <span className="text-sm text-orange-600">{c.customerCount} customers</span>
-              </li>
-            ))}
-          </ul>
+          {analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
+            <ul className="space-y-3">
+              {analyticsData.activeCampaigns.map((c, i) => (
+                <li key={i} className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium text-gray-800">{c.name}</span>
+                  <span className="text-sm text-orange-600">{c.customerCount} customers</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No active campaigns.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -115,14 +119,18 @@ export default function BusinessDashboard() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-3">
-            {analyticsData?.lastTenActivities.map((a, i) => (
-              <li key={i} className="flex justify-between text-sm text-gray-700">
-                <span>{a.activity}</span>
-                <span className="text-gray-500">{new Date(a.timestamp).toLocaleDateString()}</span>
-              </li>
-            ))}
-          </ul>
+          {analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
+            <ul className="space-y-3">
+              {analyticsData.lastTenActivities.map((a, i) => (
+                <li key={i} className="flex justify-between text-sm text-gray-700">
+                  <span>{a.activity}</span>
+                  <span className="text-gray-500">{new Date(a.timestamp).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No recent activity.</p>
+          )}
         </CardContent>
       </Card>
     </div>

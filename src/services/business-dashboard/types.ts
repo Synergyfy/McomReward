@@ -6,7 +6,7 @@ export interface GeneralAnalyticsDto {
   totalPointsEarned: number;
   totalPointsRedeemed: number;
   activeCampaigns: {
-    campaignName: string;
+    name: string;
     customerCount: number;
   }[];
   lastTenActivities: {

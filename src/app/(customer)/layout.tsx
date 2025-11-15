@@ -4,8 +4,7 @@ import CustomerSidebar from '@/components/customer/sidebar';
 import CustomerHeader from '@/components/customer/header';
 import React, { useState, useEffect } from 'react';
 import { WelcomeWishlistModal } from '@/components/customer/WelcomeWishlistModal';
-import DashboardNavbar from '@/app/(customer)/components/Navbar';
-import ChatbotWidget from '@/app/(customer)/components/ChatbotWidget';
+import DashboardNavbar from '@/components/Navbar';
 
 export default function CustomerLayout({
   children,
@@ -49,8 +48,8 @@ export default function CustomerLayout({
           {/* Main content */}
           <div className="flex-1 md:ml-64">
             {/* Header for mobile */}
-            {/* <CustomerHeader onMenuClick={toggleSidebar} /> */}
-            <main className="p-4 pt-20 sm:p-6 md:p-10 md:pt-24">
+            <CustomerHeader onMenuClick={toggleSidebar} />
+            <main className="p-4 sm:p-6 md:p-10">
               {children}
             </main>
           </div>
@@ -60,12 +59,6 @@ export default function CustomerLayout({
           isOpen={isWelcomeWishlistModalOpen}
           onClose={handleWelcomeWishlistModalClose}
         />
-
-
-        
-            {/* 💬 Live Chat Assistant */}
-            <ChatbotWidget />
-
       </body>
     </html>
   );

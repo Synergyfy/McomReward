@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Providers } from '@/components/providers';
+import Link from "next/link";
+import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
 
 

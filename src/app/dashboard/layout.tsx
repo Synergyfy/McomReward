@@ -3,7 +3,7 @@
 import BusinessSidebar from '@/components/dashboard/sidebar/index';
 import BusinessHeader from '@/components/dashboard/header';
 import React, { useState } from 'react';
-
+import Navbar from '@/components/Navbar';
 
 export default function DashboardLayout({
   children,

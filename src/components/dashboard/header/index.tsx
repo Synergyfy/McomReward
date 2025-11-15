@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Coins, Menu, Shield, UserIcon } from 'lucide-react';
+import { Bell, Coins, Menu, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
@@ -84,12 +83,13 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder-user.jpg" alt="User avatar" />
-                <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-              </Avatar>
-            </Button>
+           <button
+            className="flex items-center  justify-centergap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
+            aria-label="User menu"
+          >
+            <User size={18} />
+            {userData.initials}
+          </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>

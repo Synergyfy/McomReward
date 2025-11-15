@@ -22,7 +22,7 @@ export default function About() {
               Empowering Local Loyalty 💎
             </h1>
             <p className="text-lg text-orange-50 max-w-2xl mx-auto">
-              Loyalty CardX helps businesses create rewarding customer
+              Mcom Reward helps businesses create rewarding customer
               experiences through easy-to-use campaigns, QR codes, and digital
               loyalty systems.
             </p>
@@ -77,7 +77,7 @@ export default function About() {
                 {
                   year: "2023",
                   title: "Idea Sparked",
-                  desc: "Loyalty CardX began as a passion project to help small cafes in Accra retain their regular customers with QR-based points.",
+                  desc: "Mcom Reward began as a passion project to help small cafes in Accra retain their regular customers with QR-based points.",
                 },
                 {
                   year: "2024",
@@ -87,7 +87,7 @@ export default function About() {
                 {
                   year: "2025",
                   title: "Growing Community",
-                  desc: "Now serving 500+ businesses and over 50,000 customers, Loyalty CardX continues to help communities thrive through digital loyalty.",
+                  desc: "Now serving 500+ businesses and over 50,000 customers, Mcom Reward continues to help communities thrive through digital loyalty.",
                 },
               ].map((item, idx) => (
                 <div key={idx} className="ml-6 relative">

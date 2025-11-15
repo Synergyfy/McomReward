@@ -1,6 +1,7 @@
 import React from 'react';
 import Footer from '@/components/Footer';
 import type { Metadata } from "next";
+import FrontPageNavbar from '@/components/frontPageNavbar';
 
 
 
@@ -16,6 +17,7 @@ const OthersLayout = ({ children }: { children: React.ReactNode }) => {
         <html lang="en">
             <body>
                 <div className="min-h-screen flex flex-col">
+                    <FrontPageNavbar />
                     <main className="min-h-screen bg-white text-gray-800">
                         {children}
                     </main>

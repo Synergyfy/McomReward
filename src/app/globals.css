@@ -121,6 +121,13 @@
     @apply bg-background text-foreground;
   }
 }
+@layer utilities {
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
@@ -128,4 +135,60 @@
 }
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+/* 🔸 Custom orange scrollbar for modal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #fff;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #f97316; /* Tailwind orange-500 */
+  border-radius: 10px;
+  border: 2px solid #fff;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #ea580c; /* Tailwind orange-600 */
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #f97316 #fff;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #f97316;
+  border-radius: 10px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.5);
+}
+
+.flip-card {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
 }

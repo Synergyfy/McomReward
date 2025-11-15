@@ -1,34 +1,34 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Edit, Trash2, CheckCircle, XCircle, Landmark, TrendingUp, Banknote, Star } from 'lucide-react';
+import { PlusCircle, CheckCircle, Landmark, TrendingUp, Star } from 'lucide-react';
 import {
   mockTransactions,
   mockEscrows,
-  mockSubscriptionPlans,
   mockPayoutRequests,
   mockFinancialAnalytics,
   Transaction,
   Escrow,
-  SubscriptionPlan,
   PayoutRequest,
 } from '@/lib/mock-data/financials';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal'; // Will create this
+import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { useGetTiers, useDeleteTier } from '@/services/financials';
+import { Tier } from '@/services/financials/types';
 
 export default function FinancialsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [escrows, setEscrows] = useState<Escrow[]>(mockEscrows);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(mockSubscriptionPlans);
   const [payouts, setPayouts] = useState<PayoutRequest[]>(mockPayoutRequests);
+
+  const { data: plans, isLoading: isLoadingPlans, error: plansError } = useGetTiers();
+  const deleteTierMutation = useDeleteTier();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -49,29 +49,28 @@ export default function FinancialsPage() {
 
   // State for Add/Edit Plan Modal
   const [showAddEditPlanModal, setShowAddEditPlanModal] = useState(false);
-  const [currentEditPlan, setCurrentEditPlan] = useState<SubscriptionPlan | undefined>(undefined);
+  const [currentEditPlan, setCurrentEditPlan] = useState<Tier | undefined>(undefined);
 
-  const handleAddEditPlan = (plan?: SubscriptionPlan) => {
+  const handleAddEditPlan = (plan?: Tier) => {
     setCurrentEditPlan(plan);
     setShowAddEditPlanModal(true);
   };
 
-  const handleSavePlan = (savedPlan: SubscriptionPlan) => {
+  const handleSavePlan = (savedPlan: Tier) => {
     setShowAddEditPlanModal(false);
-    setTimeout(() => {
-      if (savedPlan.id.startsWith('new-')) {
-        setPlans(prev => [...prev, { ...savedPlan, id: `plan-${Date.now()}` }]);
-        handleShowFeedback("Plan Added", `Subscription Plan "${savedPlan.name}" has been added.`);
-      } else {
-        setPlans(prev => prev.map(plan => (plan.id === savedPlan.id ? savedPlan : plan)));
-        handleShowFeedback("Plan Updated", `Subscription Plan "${savedPlan.name}" has been updated.`);
-      }
-    }, 300);
+    handleShowFeedback(
+      currentEditPlan ? "Plan Updated" : "Plan Added",
+      `Subscription Plan "${savedPlan.name}" has been successfully ${currentEditPlan ? 'updated' : 'added'}.`
+    );
   };
 
-  const handleDeletePlan = (planId: string) => {
-    setPlans(prev => prev.filter(plan => plan.id !== planId));
-    handleShowFeedback("Plan Deleted", `Subscription Plan ${planId} has been deleted.`);
+  const handleDeletePlan = async (planId: string) => {
+    try {
+      await deleteTierMutation.mutateAsync(planId);
+      handleShowFeedback("Plan Deleted", `Subscription Plan ${planId} has been deleted.`);
+    } catch (error) {
+      handleShowFeedback("Error", `There was an error deleting plan ${planId}.`, 'OK');
+    }
   };
 
   const handleEscrowAction = (escrowId: string, action: 'released' | 'refunded') => {
@@ -237,14 +236,15 @@ export default function FinancialsPage() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <Card key={plan.id} className={plan.isPopular ? 'border-orange-500' : ''}>
+              {isLoadingPlans && <p>Loading plans...</p>}
+              {plansError && <p>Error loading plans.</p>}
+              {plans?.map((plan) => (
+                <Card key={plan.id}>
                   <CardHeader>
                     <CardTitle className="flex justify-between items-center">
                       {plan.name}
-                      {plan.isPopular && <Badge><Star className="mr-1 h-3 w-3" /> Popular</Badge>}
                     </CardTitle>
-                    <div className="text-3xl font-bold">£{plan.price}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+                    <div className="text-3xl font-bold">£{plan.monthlyPrice}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <ul className="space-y-2">

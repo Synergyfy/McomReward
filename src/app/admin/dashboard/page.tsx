@@ -21,6 +21,7 @@ import {
   BarChart,
   DollarSign,
   Megaphone,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,12 +30,14 @@ import {
   businessTierBreakdownData,
   notificationsData,
   mainChartData,
-  secondaryTableData,
 } from '@/lib/mock-data/dashboard';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useTopBusinesses } from '@/services/analytics/hook';
 
 export default function AdminDashboard() {
+  const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -159,24 +162,38 @@ export default function AdminDashboard() {
             <CardTitle>Top Performing Businesses</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Business Name</TableHead>
-                  <TableHead>Redemptions</TableHead>
-                  <TableHead>Points Issued</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {secondaryTableData.map((business) => (
-                  <TableRow key={business.name}>
-                    <TableCell>{business.name}</TableCell>
-                    <TableCell>{business.redemptions.toLocaleString()}</TableCell>
-                    <TableCell>{business.pointsIssued.toLocaleString()}</TableCell>
+            {isLoadingTopBusinesses ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : topBusinessesError ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-destructive">Failed to load top businesses</p>
+              </div>
+            ) : topBusinesses && topBusinesses.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Business Name</TableHead>
+                    <TableHead>Redemptions</TableHead>
+                    <TableHead>Points Issued</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {topBusinesses.map((business) => (
+                    <TableRow key={business.id}>
+                      <TableCell className="font-medium">{business.name}</TableCell>
+                      <TableCell>{business.totalPointsRedeemed.toLocaleString()}</TableCell>
+                      <TableCell>{business.totalPointsEarned.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">No businesses found</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

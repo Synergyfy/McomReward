@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { type Reward } from '@/app/admin/rewards/page';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 // Using mock data for prototype purposes
 import { initialSectors, type Sector } from '@/lib/mock-data/sectors';
 
@@ -46,7 +47,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
-  const [badgeLevel, setBadgeLevel] = useState('');
+  const [badgeLevel, setBadgeLevel] = useState<string[]>([]);
   const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
     setDescription('');
     setValue(0);
     setPointsRequired(0);
-    setBadgeLevel('');
+    setBadgeLevel([]);
     setExpiry(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
     setSelectedFile(null);
     setImagePreviewUrl(null);
@@ -101,6 +102,13 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
         setExpiry(new Date(reward.expiry));
         setImagePreviewUrl(reward.image);
         setStatus(reward.status);
+        // Handle badgeLevel - convert string to array if needed
+        if (reward.badgeLevel) {
+          // If badgeLevel is a string, convert to array; if already array, use as is
+          setBadgeLevel(Array.isArray(reward.badgeLevel) ? reward.badgeLevel : [reward.badgeLevel]);
+        } else {
+          setBadgeLevel([]);
+        }
         // Note: Sector/Category and other new fields are not in the mock reward object, so we can't pre-fill them.
       } else {
         resetForm();
@@ -121,7 +129,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0 && !badgeLevel) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
+    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
     if (!imagePreviewUrl) newErrors.image = 'Image is required.';
     setErrors(newErrors);
   }, [rewardType, name, description, value, pointsRequired, badgeLevel, imagePreviewUrl]);
@@ -259,14 +267,39 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
               {/* Badge Level and Status */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="badge" className="block text-sm font-medium mb-1">Badge Level (Optional)</label>
-                  <Select value={badgeLevel} onValueChange={(value) => setBadgeLevel(value === 'NONE' ? '' : value)}>
-                    <SelectTrigger id="badge"><SelectValue placeholder="Select a badge level" /></SelectTrigger>
-                    <SelectContent position="popper" className="z-[10000]">
-                      <SelectItem value="NONE"><em>None</em></SelectItem>
-                      {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <label className="block text-sm font-medium mb-2">Badge Level (Optional)</label>
+                  <div className="space-y-2 border rounded-md p-3">
+                    {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map((level) => (
+                      <div key={level} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`badge-${level}`}
+                          checked={badgeLevel.includes(level)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setBadgeLevel([...badgeLevel, level]);
+                            } else {
+                              setBadgeLevel(badgeLevel.filter((l) => l !== level));
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`badge-${level}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {level}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {badgeLevel.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {badgeLevel.map((level) => (
+                        <Badge key={level} variant="secondary" className="text-xs">
+                          {level}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
@@ -351,7 +384,12 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
                     <div className="flex justify-between"><span className="font-medium">Type:</span><span>{rewardTypes.find(t => t.value === rewardType)?.label}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Value:</span><span>£{value}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Points:</span><span>{pointsRequired}</span></div>
-                    {badgeLevel && <div className="flex justify-between"><span className="font-medium">Badge Level:</span><span>{badgeLevel}</span></div>}
+                    {badgeLevel.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Badge Level:</span>
+                        <span>{badgeLevel.join(', ')}</span>
+                      </div>
+                    )}
                     {selectedSector && <div className="flex justify-between"><span className="font-medium">Sector:</span><span>{initialSectors.find(s => s.id === selectedSector)?.name}</span></div>}
                     {selectedCategory && <div className="flex justify-between"><span className="font-medium">Category:</span><span>{availableCategories.find(c => c.id === selectedCategory)?.name}</span></div>}
                     <div className="flex justify-between"><span className="font-medium">Audience:</span><span>{audience.replace('_', ' ')}</span></div>

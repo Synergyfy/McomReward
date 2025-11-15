@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Users, Gift, Trophy, Percent, Megaphone, Flame, Star, ArrowDown, ArrowUp } from "lucide-react";
-import { mockBusinessData } from "../data";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGetAnalytics, useGetChartData } from "@/services/analytics/hook";
+import Loader from "@/components/ui/Loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ChartPeriod } from "@/services/analytics/types";
 
-type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
+type TimeRange = ChartPeriod;
 
 const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "7d", label: "Last 7 Days" },
@@ -19,27 +22,53 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
 ];
 
 export default function BusinessDashboard() {
-  const [data] = useState(mockBusinessData);
+  const { data: analyticsData, isLoading: analyticsLoading, isError: analyticsError, error: analyticsErrorData } = useGetAnalytics();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+  const { data: chartData, isLoading: chartLoading, isError: chartError, error: chartErrorData } = useGetChartData(timeRange);
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
+  if (analyticsLoading) {
+    return (
+      <div className="min-h-screen bg-white p-8 flex justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (analyticsError) {
+    return (
+      <div className="min-h-screen bg-white p-8">
+        <Alert variant="destructive">
+          <AlertDescription>{analyticsErrorData?.message || "An error occurred while fetching analytics data."}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className="min-h-screen bg-white p-8 flex justify-center items-center">
+        <p>No analytics data available.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white p-8">
-     
-
       {/* === Overview Stats === */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        <StatCard title="Total Customers" value={data.totalCustomers} icon={<Users className="text-orange-500" />} />
-        <StatCard title="Rewards Redeemed" value={data.totalRewardsRedeemed} icon={<Gift className="text-orange-500" />} />
-        <StatCard title="Total Campaigns" value={data.totalCampaigns} icon={<Megaphone className="text-orange-500" />} />
-        <StatCard title="Top Deal" value={data.topDeal} icon={<Flame className="text-orange-500" />} />
-        <StatCard title="Redemption Rate" value={`${data.redemptionRate}%`} icon={<Percent className="text-orange-500" />} />
+        <StatCard title="Total Customers" value={analyticsData.totalCustomers} icon={<Users className="text-orange-500" />} />
+        <StatCard title="Rewards Redeemed" value={analyticsData.totalRewardsRedeemed} icon={<Gift className="text-orange-500" />} />
+        <StatCard title="Total Campaigns" value={analyticsData.totalCampaigns} icon={<Megaphone className="text-orange-500" />} />
+        <StatCard title="Points Earned" value={analyticsData.totalPointsEarned} icon={<Flame className="text-orange-500" />} />
+        <StatCard title="Points Redeemed" value={analyticsData.totalPointsRedeemed} icon={<Percent className="text-orange-500" />} />
       </div>
 
+      {/* The TierProgress and PointsSummary components are left with dummy data as per the instructions. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <TierProgress tier={data.tier} />
-        <PointsSummary summary={data.pointsSummary} />
+        <TierProgress tier={{ name: 'Gold', progress: 75 }} />
+        <PointsSummary summary={{ earned: analyticsData.totalPointsEarned, spent: analyticsData.totalPointsRedeemed, matchingAvailable: 5000 }} />
       </div>
 
       {/* === Chart Section === */}
@@ -60,23 +89,33 @@ export default function BusinessDashboard() {
           </Select>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.performanceData[timeRange]}>
-              <XAxis dataKey="name" stroke="#888" />
-              <YAxis stroke="#888" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "white",
-                  borderRadius: "8px",
-                  border: "1px solid #f97316",
-                }}
-                cursor={{ fill: "#fff7ed" }}
-              />
-              <Legend />
-              <Bar dataKey="earned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="redeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {chartLoading ? (
+            <div className="flex justify-center items-center h-[300px]">
+              <Loader />
+            </div>
+          ) : chartError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{chartErrorData?.message || "An error occurred while fetching chart data."}</AlertDescription>
+            </Alert>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData?.data}>
+                <XAxis dataKey="date" stroke="#888" />
+                <YAxis stroke="#888" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    border: "1px solid #f97316",
+                  }}
+                  cursor={{ fill: "#fff7ed" }}
+                />
+                <Legend />
+                <Bar dataKey="pointsEarned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="pointsRedeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
@@ -86,14 +125,18 @@ export default function BusinessDashboard() {
           <CardTitle>Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-3">
-            {data.activeCampaigns.map((c) => (
-              <li key={c.id} className="flex justify-between items-center border-b pb-2">
-                <span className="font-medium text-gray-800">{c.name}</span>
-                <span className="text-sm text-orange-600">{c.customers} customers</span>
-              </li>
-            ))}
-          </ul>
+          {analyticsData.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
+            <ul className="space-y-3">
+              {analyticsData.activeCampaigns.map((c, index) => (
+                <li key={index} className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium text-gray-800">{c.campaignName}</span>
+                  <span className="text-sm text-orange-600">{c.customerCount} customers</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No active campaigns.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -103,14 +146,18 @@ export default function BusinessDashboard() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-3">
-            {data.recentActivity.map((a) => (
-              <li key={a.id} className="flex justify-between text-sm text-gray-700">
-                <span>{a.type} — <b>{a.customer}</b></span>
-                <span className="text-orange-600">+{a.points} pts</span>
-              </li>
-            ))}
-          </ul>
+          {analyticsData.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
+            <ul className="space-y-3">
+              {analyticsData.lastTenActivities.map((a, index) => (
+                <li key={index} className="flex justify-between text-sm text-gray-700">
+                  <span>{a.activity}</span>
+                  <span className="text-gray-500">{new Date(a.timestamp).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No recent activity.</p>
+          )}
         </CardContent>
       </Card>
     </div>

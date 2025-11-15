@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart } from 'lucide-react'; // Import QrCode for Plaque Management, DollarSign and ShoppingCart for Sales Management
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign } from 'lucide-react'; // Import QrCode for Plaque Management, DollarSign and ShoppingCart for Sales Management
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -196,6 +196,30 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/wishlist-insights" className={linkClasses("/admin/wishlist-insights")}>
             <Lightbulb className="mr-3" />
             Wishlist Insights
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/financials" className={linkClasses("/admin/financials")}>
+            <CircleDollarSign className="mr-3" />
+            Financials
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/resources" className={linkClasses("/admin/resources")}>
+            <BookCopy className="mr-3" />
+            Resources
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/security" className={linkClasses("/admin/security")}>
+            <ShieldHalf className="mr-3" />
+            Security
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/summary" className={linkClasses("/admin/summary")}>
+            <PieChart className="mr-3" />
+            Summary
           </Link>
         </li>
       </ul>

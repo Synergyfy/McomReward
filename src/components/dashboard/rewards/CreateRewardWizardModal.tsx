@@ -5,28 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
-import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface Reward {
-  id: string;
-  name: string;
-  description: string;
-  type: string;
-  value: number | string;
-  pointsRequired: number | string;
-  badgeLevel?: string;
-  expiry: Date;
-  image?: string | null;
-  status: 'active' | 'expired';
-}
+import { Reward } from '@/services/business-reward/types';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -35,44 +20,31 @@ interface CreateRewardWizardModalProps {
   onSave: (rewardData: Reward) => void;
 }
 
-const rewardTypes = [
-  { value: 'voucher', label: 'Voucher', icon: '🎟️' },
-  { value: 'gift_card', label: 'Gift Card', icon: '🎁' },
-  { value: 'coupon', label: 'Coupon', icon: '🏷️' },
-  { value: 'points_offer', label: 'Points Offer', icon: '⭐' },
-  { value: 'physical_product', label: 'Physical Product', icon: '📦' },
-];
-
 export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSave }: CreateRewardWizardModalProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const totalSteps = 2;
 
   // Step 1: Details
-  const [rewardType, setRewardType] = useState(reward?.type || 'points_offer');
-  const [name, setName] = useState(reward?.name || '');
+  const [name, setName] = useState(reward?.title || '');
   const [description, setDescription] = useState(reward?.description || '');
   const [value, setValue] = useState<number | string>(reward?.value || 0);
-  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
-  const [badgeLevel, setBadgeLevel] = useState(reward?.badgeLevel || '');
-  const [expiry, setExpiry] = useState(reward?.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.points_required || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
+  const [quantity, setQuantity] = useState<number>(reward?.quantity || 0);
+  const [disabled, setDisabled] = useState<boolean>(reward?.disabled || false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
 
   const isEditMode = useMemo(() => !!reward, [reward]);
 
   const resetForm = () => {
     setStep(1);
-    setRewardType(reward?.type || 'points_offer');
-    setName(reward?.name || '');
+    setName(reward?.title || '');
     setDescription(reward?.description || '');
     setValue(reward?.value || 0);
-    setPointsRequired(reward?.pointsRequired || 0);
-    setBadgeLevel(reward?.badgeLevel || '');
-    setExpiry(reward?.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    setPointsRequired(reward?.points_required || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
     setErrors({});
@@ -91,14 +63,13 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
   useEffect(() => {
     const newErrors: Record<string, string> = {};
-    if (!rewardType) newErrors.rewardType = 'Reward type is required.';
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0 && !badgeLevel) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
+    if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [rewardType, name, description, value, pointsRequired, badgeLevel, selectedFile, isEditMode]);
+  }, [name, description, value, pointsRequired, selectedFile, isEditMode]);
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -114,20 +85,20 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
   const handleSubmit = () => {
     const rewardData: Reward = {
-      id: reward?.id || new Date().toISOString(), // Create new ID for new rewards
-      name,
+      id: reward?.id || new Date().toISOString(),
+      title: name,
       description,
-      type: rewardType,
       value: Number(value),
-      pointsRequired: Number(pointsRequired),
-      badgeLevel,
-      expiry,
-      image: imagePreviewUrl,
-      status: 'active', // Default status
+      points_required: Number(pointsRequired),
+      image: imagePreviewUrl || '',
+      quantity,
+      disabled,
+      created_at: reward?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     onSave(rewardData);
-    onClose(); // Close the modal after saving
+    onClose();
   };
 
   const progressValue = (step / totalSteps) * 100;
@@ -143,23 +114,6 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
           {step === 1 && (
             <div className="grid gap-4 py-4">
-              {/* Form fields remain largely the same, but are now controlled by state that is pre-filled in edit mode */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Reward Type</label>
-                <Select value={rewardType} onValueChange={setRewardType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select reward type" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="z-[10000]">
-                    {rewardTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.icon} {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
                 <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -179,28 +133,6 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
                   <Input id="points" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="badge" className="block text-sm font-medium mb-1">Badge Level (Optional)</label>
-                <Select value={badgeLevel} onValueChange={(value) => setBadgeLevel(value === 'NONE' ? '' : value)}>
-                  <SelectTrigger id="badge">
-                    <SelectValue placeholder="Select a badge level" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="z-[10000]">
-                    <SelectItem value="NONE">
-                      <em>None</em>
-                    </SelectItem>
-                    {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map(level => (
-                      <SelectItem key={level} value={level}>{level}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Expiry Date</label>
-                <DateTimePicker date={expiry} setDate={setExpiry} />
               </div>
 
               <div>
@@ -246,26 +178,12 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <p className="text-sm text-gray-600 mb-3">{description}</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="font-medium">Type:</span>
-                      <span>{rewardTypes.find(t => t.value === rewardType)?.label}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="font-medium">Value:</span>
                       <span>£{value}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Points:</span>
                       <span>{pointsRequired}</span>
-                    </div>
-                    {badgeLevel && (
-                      <div className="flex justify-between">
-                        <span className="font-medium">Badge Level:</span>
-                        <span>{badgeLevel}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="font-medium">Expires:</span>
-                      <span>{expiry.toLocaleDateString()}</span>
                     </div>
                   </div>
                 </CardContent>

@@ -2,15 +2,14 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend} from "recharts";
+import { Users, Gift, Trophy, Percent, Megaphone, Flame, Star, ArrowDown, ArrowUp } from "lucide-react";
+import { seasonalMockData } from "../mock-data";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
-import Loader from "@/components/ui/loader";
-import { ChartQueryDto } from "@/services/business-dashboard/types";
 
 type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
+type Season = "Summer" | "Winter" | "Autumn" | "Spring";
 
 const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "7d", label: "Last 7 Days" },
@@ -20,36 +19,58 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "1y", label: "Last Year" },
 ];
 
+const seasonOptions: { value: Season; label: string }[] = [
+    { value: "Summer", label: "Summer" },
+    { value: "Winter", label: "Winter" },
+    { value: "Autumn", label: "Autumn" },
+    { value: "Spring", label: "Spring" },
+];
+
+const getCurrentSeason = (): Season => {
+    const month = new Date().getMonth();
+    if (month >= 5 && month <= 7) return "Summer";
+    if (month >= 8 && month <= 10) return "Autumn";
+    if (month >= 11 || month <= 1) return "Winter";
+    return "Spring";
+};
+
 export default function BusinessDashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+  const [selectedSeason, setSelectedSeason] = useState<Season>(getCurrentSeason());
 
-  const { data: analyticsData, isLoading: isAnalyticsLoading, isError: isAnalyticsError } = useGetGeneralAnalytics();
-  const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
-
+  const data = seasonalMockData[selectedSeason];
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
-
-  if (isAnalyticsLoading) {
-    return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
-  }
-
-  if (isAnalyticsError) {
-    return <div className="min-h-screen bg-white flex items-center justify-center text-red-500">Error loading analytics data.</div>;
-  }
 
   return (
     <div className="min-h-screen bg-white p-8">
+     <div className="flex justify-between items-center mb-8">
+        <div></div>
+        <Select value={selectedSeason} onValueChange={(value) => setSelectedSeason(value as Season)}>
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select season" />
+            </SelectTrigger>
+            <SelectContent>
+                {seasonOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+      </div>
+
       {/* === Overview Stats === */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        <StatCard title="Total Customers" value={analyticsData?.totalCustomers ?? 0} icon={<Users className="text-orange-500" />} />
-        <StatCard title="Rewards Redeemed" value={analyticsData?.totalRewardsRedeemed ?? 0} icon={<Gift className="text-orange-500" />} />
-        <StatCard title="Total Campaigns" value={analyticsData?.totalCampaigns ?? 0} icon={<Megaphone className="text-orange-500" />} />
-        <StatCard title="Total Active Campaigns" value={analyticsData?.totalActiveCampaigns ?? 0} icon={<Flame className="text-orange-500" />} />
-        <StatCard title="Points Redeemed" value={analyticsData?.totalPointsRedeemed ?? 0} icon={<Percent className="text-orange-500" />} />
+        <StatCard title="Total Customers" value={data.totalCustomers} icon={<Users className="text-orange-500" />} />
+        <StatCard title="Rewards Redeemed" value={data.totalRewardsRedeemed} icon={<Gift className="text-orange-500" />} />
+        <StatCard title="Total Campaigns" value={data.totalCampaigns} icon={<Megaphone className="text-orange-500" />} />
+        <StatCard title="Top Deal" value={data.topDeal} icon={<Flame className="text-orange-500" />} />
+        <StatCard title="Redemption Rate" value={`${data.redemptionRate}%`} icon={<Percent className="text-orange-500" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <TierProgress tier={{ name: "Gold", progress: 75 }} />
-        <PointsSummary summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }} />
+        <TierProgress tier={data.tier} />
+        <PointsSummary summary={data.pointsSummary} />
       </div>
 
       {/* === Chart Section === */}
@@ -70,25 +91,23 @@ export default function BusinessDashboard() {
           </Select>
         </CardHeader>
         <CardContent>
-          {isChartLoading ? <Loader /> : isChartError ? <p className="text-red-500">Error loading chart data.</p> : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData?.data}>
-                <XAxis dataKey="date" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    border: "1px solid #f97316",
-                  }}
-                  cursor={{ fill: "#fff7ed" }}
-                />
-                <Legend />
-                <Bar dataKey="pointsEarned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="pointsRedeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data.performanceData[timeRange]}>
+              <XAxis dataKey="name" stroke="#888" />
+              <YAxis stroke="#888" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  border: "1px solid #f97316",
+                }}
+                cursor={{ fill: "#fff7ed" }}
+              />
+              <Legend />
+              <Bar dataKey="earned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="redeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
@@ -98,18 +117,14 @@ export default function BusinessDashboard() {
           <CardTitle>Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
-            <ul className="space-y-3">
-              {analyticsData.activeCampaigns.map((c, i) => (
-                <li key={i} className="flex justify-between items-center border-b pb-2">
-                  <span className="font-medium text-gray-800">{c.name}</span>
-                  <span className="text-sm text-orange-600">{c.customerCount} customers</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No active campaigns.</p>
-          )}
+          <ul className="space-y-3">
+            {data.activeCampaigns.map((c) => (
+              <li key={c.id} className="flex justify-between items-center border-b pb-2">
+                <span className="font-medium text-gray-800">{c.name}</span>
+                <span className="text-sm text-orange-600">{c.customers} customers</span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
 
@@ -119,18 +134,14 @@ export default function BusinessDashboard() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
-            <ul className="space-y-3">
-              {analyticsData.lastTenActivities.map((a, i) => (
-                <li key={i} className="flex justify-between text-sm text-gray-700">
-                  <span>{a.activity}</span>
-                  <span className="text-gray-500">{new Date(a.timestamp).toLocaleDateString()}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No recent activity.</p>
-          )}
+          <ul className="space-y-3">
+            {data.recentActivity.map((a) => (
+              <li key={a.id} className="flex justify-between text-sm text-gray-700">
+                <span>{a.type} — <b>{a.customer}</b></span>
+                <span className="text-orange-600">+{a.points} pts</span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

@@ -1,28 +1,50 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { templateRewards } from '@/lib/mock-data/template-rewards';
-import { Reward } from '@/services/business-reward/types';
+import { useGetUnaddedRewards, useAddBusinessReward } from '@/services/business-reward/hooks';
+import LoadingSpinner from '@/components/ui/Loading';
+import { toast } from 'sonner';
 
 interface ClaimRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectReward: (reward: Reward) => void;
   onCreateFromScratch: () => void;
 }
 
 export default function ClaimRewardModal({
   isOpen,
   onClose,
-  onSelectReward,
   onCreateFromScratch,
 }: ClaimRewardModalProps) {
+  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(1, 100);
+  const addRewardMutation = useAddBusinessReward();
+
+  useEffect(() => {
+    if (isOpen) {
+      refetch();
+    }
+  }, [isOpen, refetch]);
+
+  const handleAddReward = (rewardId: string) => {
+    addRewardMutation.mutate(
+      { rewardId, payload: {} },
+      {
+        onSuccess: () => {
+          toast.success('Reward added successfully!');
+          onClose();
+        },
+        onError: () => {
+          toast.error('Failed to add reward.');
+        },
+      }
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
@@ -34,8 +56,10 @@ export default function ClaimRewardModal({
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto p-1">
+          {isLoading && <LoadingSpinner />}
+          {isError && <p className="text-red-500">Error fetching rewards.</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templateRewards.map((reward) => (
+            {unaddedRewards?.data.map((reward) => (
               <Card key={reward.id} className="flex flex-col">
                 <CardHeader>
                   <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gray-200 mb-4">
@@ -66,9 +90,10 @@ export default function ClaimRewardModal({
                 <CardFooter>
                   <Button
                     className="w-full"
-                    onClick={() => onSelectReward(reward)}
+                    onClick={() => handleAddReward(reward.id)}
+                    disabled={addRewardMutation.isPending}
                   >
-                    Select & Edit
+                    {addRewardMutation.isPending ? 'Adding...' : 'Add Reward'}
                   </Button>
                 </CardFooter>
               </Card>

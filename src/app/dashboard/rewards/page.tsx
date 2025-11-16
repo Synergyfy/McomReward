@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,23 @@ import {
 } from '@/services/business-reward/hooks';
 import { BusinessReward, Reward } from '@/services/business-reward/types';
 import LoadingSpinner from '@/components/ui/Loading';
+import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
+import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRewardModal';
+import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
+import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
+
+const currentUser = {
+  plan: 'starter', // 'starter', 'co-branded', 'white-label'
+};
 
 export default function BusinessRewardsPage() {
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isEditClaimedModalOpen, setIsEditClaimedModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Reward | null>(null);
+  const [editingReward, setEditingReward] = useState<Reward | null>(null);
+
   const {
     data: businessRewardsData,
     isLoading: isLoadingBusinessRewards,
@@ -24,6 +39,38 @@ export default function BusinessRewardsPage() {
     isLoading: isLoadingAllRewards,
     isError: isErrorAllRewards,
   } = useGetAllRewards(1, 10);
+
+  const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
+    setEditingReward(reward);
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleOpenClaimModal = useCallback(() => {
+    setIsClaimModalOpen(true);
+  }, []);
+
+  const handleSelectReward = useCallback((reward: Reward) => {
+    setSelectedTemplate(reward);
+    setIsClaimModalOpen(false);
+    setIsEditClaimedModalOpen(true);
+  }, []);
+
+  const handleCreateFromScratch = useCallback(() => {
+    setIsClaimModalOpen(false);
+    if (currentUser.plan === 'white-label') {
+      handleOpenCreateModal();
+    } else {
+      setIsUpgradeModalOpen(true);
+    }
+  }, [handleOpenCreateModal]);
+
+  const handleSaveReward = useCallback((rewardData: Reward) => {
+    // This is a mock implementation.
+    // In a real application, you would handle the save logic here.
+    console.log('Saving reward:', rewardData);
+    setIsCreateModalOpen(false);
+    setIsEditClaimedModalOpen(false);
+  }, []);
 
   if (isLoadingBusinessRewards || isLoadingAllRewards) {
     return <LoadingSpinner />;
@@ -45,7 +92,7 @@ export default function BusinessRewardsPage() {
               Browse all available rewards and add them to your business.
             </p>
           </div>
-          <Button> Add Reward</Button>
+          <Button onClick={handleOpenClaimModal}> Add Reward</Button>
         </div>
 
         {allRewardsData?.data.length === 0 ? (
@@ -176,6 +223,33 @@ export default function BusinessRewardsPage() {
             </div>
           )}
         </div>
+
+        {/* Modals */}
+        <ClaimRewardModal
+          isOpen={isClaimModalOpen}
+          onClose={() => setIsClaimModalOpen(false)}
+          onCreateFromScratch={handleCreateFromScratch}
+        />
+
+        <EditClaimedRewardModal
+          isOpen={isEditClaimedModalOpen}
+          onClose={() => setIsEditClaimedModalOpen(false)}
+          rewardTemplate={selectedTemplate}
+          onSave={handleSaveReward}
+          userPlan={currentUser.plan as 'starter' | 'co-branded' | 'white-label'}
+        />
+
+        <UpgradePlanModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+        />
+
+        <CreateRewardWizardModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          reward={editingReward}
+          onSave={handleSaveReward}
+        />
       </div>
     </div>
   );

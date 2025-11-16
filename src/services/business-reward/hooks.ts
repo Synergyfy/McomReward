@@ -35,6 +35,21 @@ export const useGetAllRewards = (page: number, limit: number) => {
   });
 };
 
+const fetchUnaddedRewards = async (page: number, limit: number) => {
+  const { data } = await api.get<GetRewardsResponse>(
+    `/rewards/business/unadded-rewards?page=${page}&limit=${limit}`
+  );
+  return data;
+};
+
+export const useGetUnaddedRewards = (page: number, limit: number) => {
+  return useQuery({
+    queryKey: ['unaddedRewards', page, limit],
+    queryFn: () => fetchUnaddedRewards(page, limit),
+    enabled: false, // Initially disabled, will be enabled in the modal
+  });
+};
+
 const addBusinessReward = async (
   rewardId: string,
   payload: CreateBusinessRewardDto
@@ -58,6 +73,7 @@ export const useAddBusinessReward = () => {
     }) => addBusinessReward(rewardId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
+      queryClient.invalidateQueries({ queryKey: ['unaddedRewards'] });
     },
   });
 };

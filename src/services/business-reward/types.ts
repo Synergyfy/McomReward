@@ -1,14 +1,14 @@
 export interface Reward {
   id: string;
   title: string;
-  points_required: number;
+  pointsRequired: number;
   value: number;
   description: string;
   image: string;
   quantity: number;
   disabled: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GetRewardsResponse {
@@ -17,12 +17,12 @@ export interface GetRewardsResponse {
 }
 
 export interface BusinessReward {
-    id: string;
-    point_cost: number;
-    stock: number;
-    created_at: string;
-    updated_at: string;
-    reward: Reward;
+  id: string;
+  quantity: number | null;
+  pointRequired: number;
+  reward: Reward;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GetBusinessRewardsResponse {
@@ -32,5 +32,5 @@ export interface GetBusinessRewardsResponse {
 
 export interface CreateBusinessRewardDto {
   quantity?: number;
-  point_required: number;
+  pointRequired: number;
 }

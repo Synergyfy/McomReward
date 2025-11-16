@@ -29,7 +29,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [name, setName] = useState(reward?.title || '');
   const [description, setDescription] = useState(reward?.description || '');
   const [value, setValue] = useState<number | string>(reward?.value || 0);
-  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.points_required || 0);
+  const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
   const [quantity, setQuantity] = useState<number>(reward?.quantity || 0);
@@ -44,7 +44,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setName(reward?.title || '');
     setDescription(reward?.description || '');
     setValue(reward?.value || 0);
-    setPointsRequired(reward?.points_required || 0);
+    setPointsRequired(reward?.pointsRequired || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
     setErrors({});
@@ -89,12 +89,12 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
       title: name,
       description,
       value: Number(value),
-      points_required: Number(pointsRequired),
+      pointsRequired: Number(pointsRequired),
       image: imagePreviewUrl || '',
       quantity,
       disabled,
-      created_at: reward?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      createdAt: reward?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     onSave(rewardData);

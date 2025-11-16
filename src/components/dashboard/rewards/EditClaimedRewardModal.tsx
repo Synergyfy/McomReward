@@ -49,7 +49,7 @@ export default function EditClaimedRewardModal({
       setName(rewardTemplate.title);
       setDescription(rewardTemplate.description);
       setValue(rewardTemplate.value);
-      setPointsRequired(rewardTemplate.points_required);
+      setPointsRequired(rewardTemplate.pointsRequired);
       setImagePreviewUrl(rewardTemplate.image || null);
     }
   }, [rewardTemplate]);
@@ -68,7 +68,7 @@ export default function EditClaimedRewardModal({
       title: name,
       description,
       value: Number(value),
-      points_required: Number(pointsRequired),
+      pointsRequired: Number(pointsRequired),
       image: imagePreviewUrl || '',
     };
 

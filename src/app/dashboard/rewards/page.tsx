@@ -141,7 +141,7 @@ export default function BusinessRewardsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Points:</span>
-                      <span>{reward.points_required}</span>
+                      <span>{reward.pointsRequired}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -214,7 +214,7 @@ export default function BusinessRewardsPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Points:</span>
-                        <span>{businessReward.point_cost}</span>
+                        <span>{businessReward.pointRequired || businessReward.reward.pointsRequired}</span>
                       </div>
                     </div>
                   </CardContent>

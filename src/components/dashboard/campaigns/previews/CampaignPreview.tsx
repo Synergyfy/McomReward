@@ -23,7 +23,7 @@ export interface Campaign {
         id: string;
         title: string;
         description: string;
-        points_required: number;
+        pointsRequired: number;
         image: string;
     }[];
     howToEarn?: string[];

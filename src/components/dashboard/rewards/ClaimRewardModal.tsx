@@ -35,7 +35,7 @@ export default function ClaimRewardModal({
   useEffect(() => {
     if (unaddedRewards) {
       const initialPoints = unaddedRewards.data.reduce((acc, reward) => {
-        acc[reward.id] = reward.points_required;
+        acc[reward.id] = reward.pointsRequired;
         return acc;
       }, {} as { [key: string]: number });
       setPoints(initialPoints);
@@ -43,9 +43,9 @@ export default function ClaimRewardModal({
   }, [unaddedRewards]);
 
   const handleAddReward = (rewardId: string) => {
-    const point_required = points[rewardId];
+    const pointRequired = points[rewardId];
     addRewardMutation.mutate(
-      { rewardId, point_required },
+      { rewardId, pointRequired },
       {
         onSuccess: () => {
           toast.success('Reward added successfully!');
@@ -100,7 +100,7 @@ export default function ClaimRewardModal({
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-xs">Recommended Points:</span>
-                      <span className='text-xs'>{reward.points_required}</span>
+                      <span className='text-xs'>{reward.pointsRequired}</span>
                     </div>
                     <div>
                       <label htmlFor={`points-${reward.id}`} className="font-medium text-xs">

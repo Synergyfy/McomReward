@@ -30,6 +30,7 @@ export interface GetBusinessRewardsResponse {
   total: number;
 }
 
-export class CreateBusinessRewardDto {
+export interface CreateBusinessRewardDto {
   quantity?: number;
+  point_required: number;
 }

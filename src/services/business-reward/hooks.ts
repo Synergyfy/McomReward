@@ -66,11 +66,13 @@ export const useAddBusinessReward = () => {
   return useMutation({
     mutationFn: ({
       rewardId,
-      payload,
+      point_required,
+      quantity,
     }: {
       rewardId: string;
-      payload: CreateBusinessRewardDto;
-    }) => addBusinessReward(rewardId, payload),
+      point_required: number;
+      quantity?: number;
+    }) => addBusinessReward(rewardId, { point_required, quantity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
       queryClient.invalidateQueries({ queryKey: ['unaddedRewards'] });

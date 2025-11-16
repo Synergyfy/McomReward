@@ -37,7 +37,7 @@ const mockCampaign = {
       id: 'reward-summer-getaway',
       title: 'Luxury Weekend Getaway for Two!',
       description: 'Win an all-expenses-paid luxury weekend getaway to a destination of your choice. Includes flights, 5-star accommodation, and exclusive experiences. A truly unforgettable reward for our top earners!',
-      points_required: 10000,
+      pointsRequired: 10000,
       value: '£2,500',
       image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80',
       quantity: 5,
@@ -46,7 +46,7 @@ const mockCampaign = {
       id: 'reward-double-points',
       title: 'Double Points on All Purchases',
       description: 'Earn twice the loyalty points on every purchase you make throughout the campaign period. Accelerate your way to exclusive rewards and benefits!',
-      points_required: 0,
+      pointsRequired: 0,
       value: 'N/A',
       image: 'https://images.unsplash.com/photo-1593642532400-2682810df593?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       quantity: 0,
@@ -55,7 +55,7 @@ const mockCampaign = {
       id: 'reward-flash-sale-access',
       title: 'Exclusive Flash Sale Access',
       description: 'Get early and exclusive access to our special flash sales, featuring deep discounts on popular products. Be the first to grab the best deals!',
-      points_required: 0,
+      pointsRequired: 0,
       value: 'N/A',
       image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       quantity: 0,
@@ -241,7 +241,7 @@ export default function CampaignDetailPage({}: PageProps) {
                           <h3 className="text-xl font-bold text-gray-800 mb-2">{rewardItem.title}</h3>
                           <p className="text-gray-600 text-sm mb-3 line-clamp-3">{rewardItem.description}</p>
                           <div className="flex justify-between items-center text-md font-semibold text-gray-700">
-                            <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {rewardItem.points_required > 0 ? `${rewardItem.points_required} Points` : 'No Points Req.'}</p>
+                            <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {rewardItem.pointsRequired > 0 ? `${rewardItem.pointsRequired} Points` : 'No Points Req.'}</p>
                             {rewardItem.value && <p>{rewardItem.value}</p>}
                           </div>
                           {rewardItem.quantity > 0 && (

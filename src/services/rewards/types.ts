@@ -1,6 +1,6 @@
 export interface CreateRewardRequest {
     title: string;
-    points_required: number;
+    pointsRequired: number;
     value: number;
     description: string;
     image: string;
@@ -10,7 +10,7 @@ export interface CreateRewardRequest {
 
 export interface UpdateRewardRequest {
   title?: string;
-  points_required?: number;
+  pointsRequired?: number;
   value?: number;
   description?: string;
   image?: string;

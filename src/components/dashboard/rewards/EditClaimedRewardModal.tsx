@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
-import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
-import { Reward } from '@/app/dashboard/rewards/page';
+import { Reward } from '@/services/business-reward/types';
 
 interface EditClaimedRewardModalProps {
   isOpen: boolean;
@@ -39,7 +38,6 @@ export default function EditClaimedRewardModal({
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
-  const [expiry, setExpiry] = useState(new Date());
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -48,11 +46,10 @@ export default function EditClaimedRewardModal({
 
   useEffect(() => {
     if (rewardTemplate) {
-      setName(rewardTemplate.name);
+      setName(rewardTemplate.title);
       setDescription(rewardTemplate.description);
       setValue(rewardTemplate.value);
       setPointsRequired(rewardTemplate.pointsRequired);
-      setExpiry(new Date(rewardTemplate.expiry));
       setImagePreviewUrl(rewardTemplate.image || null);
     }
   }, [rewardTemplate]);
@@ -68,13 +65,11 @@ export default function EditClaimedRewardModal({
     const newReward: Reward = {
       ...rewardTemplate,
       id: new Date().toISOString(), // New ID for the claimed reward
-      name,
+      title: name,
       description,
       value: Number(value),
       pointsRequired: Number(pointsRequired),
-      expiry,
-      image: imagePreviewUrl,
-      status: 'active',
+      image: imagePreviewUrl || '',
     };
 
     onSave(newReward);
@@ -95,22 +90,6 @@ export default function EditClaimedRewardModal({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Reward Type</label>
-            <Select value={rewardTemplate.type} disabled>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {rewardTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.icon} {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
             <Input
@@ -156,12 +135,6 @@ export default function EditClaimedRewardModal({
               />
               {!isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to White-Label to edit.</p>}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Expiry Date</label>
-            <DateTimePicker date={expiry} setDate={setExpiry} disabled={!isWhiteLabel} />
-            {!isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to White-Label to edit.</p>}
           </div>
 
           <div>

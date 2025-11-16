@@ -109,7 +109,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
 
     const rewardData: CreateRewardRequest = {
       title,
-      points_required: pointsRequired,
+      pointsRequired: pointsRequired,
       value,
       description,
       image: imageUrlToSubmit,

@@ -30,7 +30,7 @@ export default function EditRewardDialog({ reward, isOpen, onClose }: EditReward
   const handleSubmit = () => {
     const rewardData: Partial<CreateRewardRequest> = {
       title,
-      points_required: pointsRequired,
+      pointsRequired: pointsRequired,
       value,
       description,
       image,

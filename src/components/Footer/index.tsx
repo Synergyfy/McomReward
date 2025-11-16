@@ -4,13 +4,13 @@ import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="relative bg-white border-t border-gray-200 py-16 px-8 lg:h-[90vh] flex items-center overflow-hidden">
-      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 text-center md:text-left">
+      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 text-center md:text-left">
         
         {/* 1️⃣ Branding & Description */}
         <div>
-          <h3 className="text-3xl font-bold text-orange-500 mb-4">Loyalty CardX</h3>
+          <h3 className="text-3xl font-bold text-orange-500 mb-4">Mcom Reward</h3>
           <p className="text-gray-600 leading-relaxed mb-6">
-            LoyaltyCardX helps local businesses grow through digital rewards,
+            Mcom Reward helps local businesses grow through digital rewards,
             tiered loyalty programs, and engaging customer experiences.
           </p>
 
@@ -59,7 +59,7 @@ export default function Footer() {
           <p className="text-gray-600 text-sm mb-4">
             Join our newsletter for the latest loyalty marketing tips and updates.
           </p>
-          <form className="flex flex-col sm:flex-row gap-3">
+          <form className="flex flex-col  gap-3">
             <input
               type="email"
               placeholder="Enter your email"
@@ -77,7 +77,7 @@ export default function Footer() {
 
       {/* Footer Bottom */}
       <div className="absolute bottom-6 left-0 right-0 text-center text-gray-400 text-sm">
-        © {new Date().getFullYear()} <span className="text-orange-500 font-semibold">Loyalty CardX</span>. All rights reserved.
+        © {new Date().getFullYear()} <span className="text-orange-500 font-semibold">Mcom Reward</span>. All rights reserved.
       </div>
     </footer>
   );

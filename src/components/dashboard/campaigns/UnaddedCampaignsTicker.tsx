@@ -2,13 +2,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Award, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useGetUnaddedAdminCampaigns } from '@/services/campaigns/hook';
+import { useGetUnaddedAdminCampaigns, useAddAdminCampaign } from '@/services/campaigns/hook';
 import { Campaign } from '@/services/campaigns/types';
+import toast from 'react-hot-toast';
 
 export const UnaddedCampaignsTicker = () => {
   const { data: unaddedCampaignsData, isLoading } = useGetUnaddedAdminCampaigns();
+  const addCampaignMutation = useAddAdminCampaign();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const availableCampaigns = useMemo(() => {
@@ -23,6 +25,17 @@ export const UnaddedCampaignsTicker = () => {
     setCurrentIndex(
       (prevIndex) => (prevIndex - 1 + availableCampaigns.length) % availableCampaigns.length
     );
+  };
+
+  const handleAddCampaign = (campaignId: string) => {
+    addCampaignMutation.mutate(campaignId, {
+      onSuccess: () => {
+        toast.success('Campaign added successfully!');
+      },
+      onError: () => {
+        toast.error('Failed to add campaign.');
+      },
+    });
   };
 
   if (isLoading) {
@@ -61,13 +74,25 @@ export const UnaddedCampaignsTicker = () => {
                           <p className="font-bold text-gray-800 truncate">{campaign.name}</p>
                           <p className="text-sm text-gray-500">{campaign.campaign_message}</p>
                         </div>
-                        <Button
-                          size="sm"
-                          asChild
-                          className="bg-orange-600 hover:bg-orange-700 text-white ml-4 flex-shrink-0"
-                        >
-                          <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>Claim</Link>
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            asChild
+                            variant="outline"
+                            className="border-orange-600 text-orange-600 hover:bg-orange-50 transition-colors duration-200"
+                          >
+                            <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>View</Link>
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-orange-600 hover:bg-orange-700 text-white ml-4 flex-shrink-0"
+                            onClick={() => handleAddCampaign(campaign.id)}
+                            disabled={addCampaignMutation.isPending}
+                          >
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

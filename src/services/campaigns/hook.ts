@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { PaginatedCampaignResponse } from './types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { PaginatedCampaignResponse, BusinessCampaign } from './types';
 import api from '../api';
 
 export const useGetUnaddedAdminCampaigns = (page: number = 1, limit: number = 10) => {
@@ -34,6 +34,21 @@ export const useGetMyCampaigns = (page: number = 1, limit: number = 10) => {
         params: { page, limit },
       });
       return response.data;
+    },
+  });
+};
+
+export const useAddAdminCampaign = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<BusinessCampaign, Error, string>({
+    mutationFn: async (campaignId: string) => {
+      const response = await api.post(`/business/campaigns/${campaignId}/add`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unaddedAdminCampaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['addedAdminCampaigns'] });
     },
   });
 };

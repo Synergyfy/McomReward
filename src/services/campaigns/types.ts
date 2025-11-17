@@ -38,3 +38,19 @@ export interface PaginatedCampaignResponse {
   limit: number;
   next_page: number | null;
 }
+
+// Minimal Business interface to satisfy the reference
+export interface Business {
+  id: string;
+  name: string;
+  // ... other business properties
+}
+
+
+export interface BusinessCampaign {
+  id: string;
+  created_at: string; // ISO 8601 date string
+  updated_at: string; // ISO 8601 date string
+  business: Business; // The business object
+  campaign: Campaign; // The campaign object that was added
+}

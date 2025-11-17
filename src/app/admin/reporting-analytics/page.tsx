@@ -3,11 +3,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
+import { useSystemOverview, useTopBusinesses, useTopRewards } from '@/services/analytics/hook';
 import {
-  campaignSummaryData,
-  topBusinessesData,
-  popularRewardsData,
   pointsDistributionData,
   consumerGrowthData,
   businessTierData,
@@ -18,6 +16,9 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 
 export default function ReportingAnalyticsPage() {
+  const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
+  const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
+  const { data: topRewards, isLoading: isLoadingTopRewards, error: topRewardsError } = useTopRewards();
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +49,13 @@ export default function ReportingAnalyticsPage() {
             <CardTitle className="text-sm font-medium">Total Campaigns Created</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaignSummaryData.totalCreated}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalCampaigns}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -56,7 +63,13 @@ export default function ReportingAnalyticsPage() {
             <CardTitle className="text-sm font-medium">Total Campaigns Joined</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaignSummaryData.totalJoined}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalParticipants}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -64,7 +77,13 @@ export default function ReportingAnalyticsPage() {
             <CardTitle className="text-sm font-medium">Total Rewards Claimed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaignSummaryData.totalClaimed}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalRedemptions}</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -129,7 +148,7 @@ export default function ReportingAnalyticsPage() {
           <CardHeader>
             <CardTitle>Top Performing Businesses</CardTitle>
             <div className="flex gap-2 ml-auto">
-              <Button size="sm" onClick={() => handleDownload('Top_Businesses', topBusinessesData)}>
+              <Button size="sm" onClick={() => handleDownload('Top_Businesses', topBusinesses || [])}>
                 <Download className="mr-2 h-4 w-4" /> Download XLS
               </Button>
               <Button size="sm" variant="outline" onClick={() => handleDownloadPdf('Top_Businesses')}>
@@ -138,16 +157,26 @@ export default function ReportingAnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topBusinessesData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="redemptions" fill="#8884d8" name="Redemptions" />
-                <Bar dataKey="pointsIssued" fill="#82ca9d" name="Points Issued" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoadingTopBusinesses ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : topBusinessesError ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <p className="text-sm text-destructive">Failed to load data</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topBusinesses}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="totalPointsRedeemed" fill="#8884d8" name="Redemptions" />
+                  <Bar dataKey="totalPointsEarned" fill="#82ca9d" name="Points Issued" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -155,7 +184,7 @@ export default function ReportingAnalyticsPage() {
           <CardHeader>
             <CardTitle>Most Popular Rewards</CardTitle>
             <div className="flex gap-2 ml-auto">
-              <Button size="sm" onClick={() => handleDownload('Popular_Rewards', popularRewardsData)}>
+              <Button size="sm" onClick={() => handleDownload('Popular_Rewards', topRewards || [])}>
                 <Download className="mr-2 h-4 w-4" /> Download XLS
               </Button>
               <Button size="sm" variant="outline" onClick={() => handleDownloadPdf('Popular_Rewards')}>
@@ -164,15 +193,25 @@ export default function ReportingAnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={popularRewardsData} layout="vertical">
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="title" width={150} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="redemptionCount" fill="#ffc658" name="Redemption Count" />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoadingTopRewards ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : topRewardsError ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <p className="text-sm text-destructive">Failed to load data</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topRewards} layout="vertical">
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={150} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="totalRedemptions" fill="#ffc658" name="Redemption Count" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>

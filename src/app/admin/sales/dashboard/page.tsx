@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockSaleRecords, SaleRecord } from '@/lib/mock-data/sales';
 import { mockBusinessUsers } from '@/lib/mock-data/users';
-import { DollarSign, CheckCircle, XCircle, Search, Filter, Eye } from 'lucide-react';
+import { PoundSterling, CheckCircle, XCircle, Search, Filter, Eye } from 'lucide-react';
 import FeedbackDialog from '@/components/FeedbackDialog';
 import { format } from 'date-fns';
 
@@ -40,15 +40,15 @@ export default function SalesDashboardPage() {
       );
     }
 
-    if (filterSeller) {
+    if (filterSeller && filterSeller !== 'all') {
       filtered = filtered.filter(sale => sale.sellerId === filterSeller);
     }
 
-    if (filterBuyer) {
+    if (filterBuyer && filterBuyer !== 'all') {
       filtered = filtered.filter(sale => sale.buyerId === filterBuyer);
     }
 
-    if (filterPayoutStatus) {
+    if (filterPayoutStatus && filterPayoutStatus !== 'all') {
       filtered = filtered.filter(sale => sale.payoutStatus === filterPayoutStatus);
     }
 
@@ -91,8 +91,8 @@ export default function SalesDashboardPage() {
           <p><strong>Seller:</strong> {sale.sellerName} ({sale.sellerId})</p>
           <p><strong>Buyer:</strong> {sale.buyerName} ({sale.buyerId})</p>
           <p><strong>Sale Date:</strong> {format(new Date(sale.saleDate), 'PPP p')}</p>
-          <p><strong>Sale Price:</strong> ${sale.salePrice.toFixed(2)}</p>
-          <p><strong>Commission:</strong> ${sale.commissionAmount.toFixed(2)}</p>
+          <p><strong>Sale Price:</strong> £{sale.salePrice.toFixed(2)}</p>
+          <p><strong>Commission:</strong> £{sale.commissionAmount.toFixed(2)}</p>
           <p><strong>Payout Status:</strong> {sale.payoutStatus}</p>
           <p><strong>Sale Status:</strong> {sale.status}</p>
         </div>
@@ -110,7 +110,7 @@ export default function SalesDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Plaques Sold</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalPlaquesSold}</div>
@@ -119,19 +119,19 @@ export default function SalesDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Commission Earned</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalCommissionEarned.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{totalCommissionEarned.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${pendingPayouts.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{pendingPayouts.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -157,7 +157,7 @@ export default function SalesDashboardPage() {
                 <SelectValue placeholder="Filter by Seller" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sellers</SelectItem>
+                <SelectItem value="all">All Sellers</SelectItem>
                 {sellers.map(seller => (
                   <SelectItem key={seller.id} value={seller.id}>
                     {seller.name}
@@ -171,7 +171,7 @@ export default function SalesDashboardPage() {
                 <SelectValue placeholder="Filter by Buyer" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Buyers</SelectItem>
+                <SelectItem value="all">All Buyers</SelectItem>
                 {buyers.map(buyer => (
                   <SelectItem key={buyer.id} value={buyer.id}>
                     {buyer.name}
@@ -185,7 +185,7 @@ export default function SalesDashboardPage() {
                 <SelectValue placeholder="Filter by Payout Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="Paid">Paid</SelectItem>
                 <SelectItem value="Cancelled">Cancelled</SelectItem>
@@ -223,8 +223,8 @@ export default function SalesDashboardPage() {
                       <TableCell>{sale.sellerName}</TableCell>
                       <TableCell>{sale.buyerName}</TableCell>
                       <TableCell>{format(new Date(sale.saleDate), 'PPP')}</TableCell>
-                      <TableCell>${sale.salePrice.toFixed(2)}</TableCell>
-                      <TableCell>${sale.commissionAmount.toFixed(2)}</TableCell>
+                      <TableCell>£{sale.salePrice.toFixed(2)}</TableCell>
+                      <TableCell>£{sale.commissionAmount.toFixed(2)}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           sale.payoutStatus === 'Paid' ? 'bg-green-100 text-green-800' :

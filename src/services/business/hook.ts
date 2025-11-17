@@ -1,5 +1,5 @@
 import api, { setBearerToken } from '../api';
-import {  Business,  BusinessLoginDto,  BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto} from './types';
+import {  Business,  BusinessLoginDto,  BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto, PaginatedResponse, Category, Subcategory} from './types';
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -59,6 +59,38 @@ export const useGetSectors = () => {
   return useQuery({
     queryKey: ['sectors'],
     queryFn: getSectors,
+  });
+};
+
+// Get Categories for a Sector
+const getCategories = async (sectorId: string, page = 1, limit = 10): Promise<PaginatedResponse<Category>> => {
+  const { data } = await api.get<PaginatedResponse<Category>>(`/sectors/${sectorId}/categories`, {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetCategories = (sectorId: string, page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ['categories', sectorId, page, limit],
+    queryFn: () => getCategories(sectorId, page, limit),
+    enabled: !!sectorId, // Only fetch if sectorId is available
+  });
+};
+
+// Get Subcategories for a Category
+const getSubcategories = async (categoryId: string, page = 1, limit = 10): Promise<PaginatedResponse<Subcategory>> => {
+  const { data } = await api.get<PaginatedResponse<Subcategory>>(`/categories/${categoryId}/subcategories`, {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetSubcategories = (categoryId: string, page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ['subcategories', categoryId, page, limit],
+    queryFn: () => getSubcategories(categoryId, page, limit),
+    enabled: !!categoryId, // Only fetch if categoryId is available
   });
 };
 

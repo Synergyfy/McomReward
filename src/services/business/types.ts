@@ -50,3 +50,29 @@ export interface BusinessLoginResponse {
     role: string;
   };
 }
+
+export interface Category {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  name: string;
+  imageUrl: string;
+}
+
+export interface Subcategory {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  name: string;
+  imageUrl: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  nextPage?: number;
+}

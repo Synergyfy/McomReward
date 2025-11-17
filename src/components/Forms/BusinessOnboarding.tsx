@@ -1,26 +1,19 @@
 "use client";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useForm } from "react-hook-form";
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  PlusCircle,
-  Loader2,
-} from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useBusinessOnboard, useGetSectors } from "@/services/business/hook";
+  useBusinessOnboard,
+  useGetSectors,
+  useGetCategories,
+  useGetSubcategories,
+} from "@/services/business/hook";
 import { CreateBusinessDto } from "@/services/business/types";
 import { createBusinessSchema } from "@/lib/validators/signupSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,29 +24,12 @@ const LoadingSpinner: React.FC = () => (
   <Loader2 className="animate-spin h-4 w-4 mr-2 inline-block" />
 );
 
-const socialOptions = {
-  facebook: {
-    icon: <Facebook className="h-4 w-4" />,
-    placeholder: "e.g., yourbusiness",
-  },
-  twitter: {
-    icon: <Twitter className="h-4 w-4" />,
-    placeholder: "e.g., @yourbusiness",
-  },
-  instagram: {
-    icon: <Instagram className="h-4 w-4" />,
-    placeholder: "e.g., @yourbusiness",
-  },
-};
-
-type SocialPlatform = keyof typeof socialOptions;
 type OnboardingFormInputs = CreateBusinessDto;
 
 export default function BusinessOnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [socialInputs, setSocialInputs] = useState<SocialPlatform[]>([]);
 
   const {
     register,
@@ -61,19 +37,31 @@ export default function BusinessOnboardingWizard() {
     formState: { errors },
     trigger,
     watch,
+    control,
   } = useForm<OnboardingFormInputs>({
     mode: "onTouched",
     resolver: zodResolver(createBusinessSchema),
+    defaultValues: {
+      socialMedia: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "socialMedia",
   });
 
   const selectedSector = watch("sectorId");
+  const selectedCategory = watch("categoryId");
 
   const { data: sectors } = useGetSectors();
+  const { data: categories } = useGetCategories(selectedSector || "");
+  const { data: subcategories } = useGetSubcategories(selectedCategory || "");
   const { mutateAsync: onboardBusiness, isPending } = useBusinessOnboard();
 
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
     1: ["sectorId", "categoryId", "subCategoryId"],
-    2: ["phone", "address", "website"],
+    2: ["phone", "address", "website", "socialMedia"],
     3: ["referralCapacity"],
   };
 
@@ -86,12 +74,6 @@ export default function BusinessOnboardingWizard() {
 
   const goBack = () => setStep((prev) => prev - 1);
 
-  const addSocialInput = (platform: SocialPlatform) => {
-    if (!socialInputs.includes(platform)) {
-      setSocialInputs([...socialInputs, platform]);
-    }
-  };
-
   const onSubmit = async (data: OnboardingFormInputs) => {
     try {
       await onboardBusiness(data);
@@ -102,10 +84,6 @@ export default function BusinessOnboardingWizard() {
       console.error("Onboarding error:", error);
     }
   };
-
-  const availableSocials = (
-    Object.keys(socialOptions) as SocialPlatform[]
-  ).filter((s) => !socialInputs.includes(s));
 
   return (
     <div className="min-h-screen flex bg-gray-50 overflow-hidden">
@@ -165,6 +143,50 @@ export default function BusinessOnboardingWizard() {
                       {errors.sectorId && (
                         <p className="text-red-500 text-sm mt-1">
                           {errors.sectorId.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="categoryId">Category</Label>
+                      <select
+                        id="categoryId"
+                        {...register("categoryId")}
+                        disabled={!selectedSector}
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
+                      >
+                        <option value="">Select a category</option>
+                        {categories?.data.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.categoryId && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.categoryId.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="subCategoryId">Subcategory</Label>
+                      <select
+                        id="subCategoryId"
+                        {...register("subCategoryId")}
+                        disabled={!selectedCategory}
+                        className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mt-1 disabled:bg-gray-100"
+                      >
+                        <option value="">Select a subcategory</option>
+                        {subcategories?.data.map((subcategory) => (
+                          <option key={subcategory.id} value={subcategory.id}>
+                            {subcategory.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.subCategoryId && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.subCategoryId.message}
                         </p>
                       )}
                     </div>
@@ -238,45 +260,36 @@ export default function BusinessOnboardingWizard() {
                     <div>
                       <Label className="mb-2">Social Media Profiles</Label>
                       <div className="space-y-3">
-                        {socialInputs.map((social) => (
-                          <div key={social} className="flex items-center gap-2">
-                            <div className="text-gray-500">
-                              {socialOptions[social].icon}
-                            </div>
+                        {fields.map((field, index) => (
+                          <div key={field.id} className="flex items-center gap-2">
                             <Input
-                              placeholder={socialOptions[social].placeholder}
-                              {...register(`socialMedia.${social}`)}
+                              placeholder="e.g., Facebook"
+                              {...register(`socialMedia.${index}.name`)}
                               className="flex-1"
                             />
+                            <Input
+                              placeholder="https://facebook.com/yourbusiness"
+                              {...register(`socialMedia.${index}.link`)}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => remove(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
                           </div>
                         ))}
-                        {availableSocials.length > 0 && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full"
-                              >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Social Profile
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {availableSocials.map((social) => (
-                                <DropdownMenuItem
-                                  key={social}
-                                  onSelect={() => addSocialInput(social)}
-                                >
-                                  {socialOptions[social].icon}
-                                  <span className="ml-2 capitalize">
-                                    {social}
-                                  </span>
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => append({ name: "", link: "" })}
+                        >
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Add Social Profile
+                        </Button>
                       </div>
                     </div>
                     <div className="flex justify-between pt-4">
@@ -372,7 +385,7 @@ export default function BusinessOnboardingWizard() {
                         className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
                       >
                         {isPending && <LoadingSpinner />}
-                        Submit  
+                        Submit
                       </Button>
                     </div>
                   </motion.div>

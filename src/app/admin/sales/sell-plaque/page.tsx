@@ -113,6 +113,7 @@ export default function SellPlaquePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
+            <p className="text-sm text-gray-500 mb-2">Choose the plaque that is being sold from the available active plaques.</p>
             <Label htmlFor="plaque">Select Plaque</Label>
             <Select onValueChange={setSelectedPlaqueId} value={selectedPlaqueId}>
               <SelectTrigger>
@@ -129,6 +130,7 @@ export default function SellPlaquePage() {
           </div>
 
           <div>
+            <p className="text-sm text-gray-500 mb-2">Choose the business user who is selling the plaque.</p>
             <Label htmlFor="seller">Select Seller</Label>
             <Select onValueChange={setSelectedSellerId} value={selectedSellerId}>
               <SelectTrigger>
@@ -145,6 +147,7 @@ export default function SellPlaquePage() {
           </div>
 
           <div>
+            <p className="text-sm text-gray-500 mb-2">Choose the business user who is buying the plaque.</p>
             <Label htmlFor="buyer">Select Buyer</Label>
             <Select onValueChange={setSelectedBuyerId} value={selectedBuyerId}>
               <SelectTrigger>
@@ -161,6 +164,7 @@ export default function SellPlaquePage() {
           </div>
 
           <div>
+            <p className="text-sm text-gray-500 mb-2">Enter the agreed-upon sale price for the plaque.</p>
             <Label htmlFor="salePrice">Sale Price</Label>
             <Input
               id="salePrice"
@@ -172,6 +176,7 @@ export default function SellPlaquePage() {
           </div>
 
           <div>
+            <p className="text-sm text-gray-500 mb-2">Specify the commission percentage for this sale.</p>
             <Label htmlFor="commissionPercentage">Commission Percentage (%)</Label>
             <Input
               id="commissionPercentage"

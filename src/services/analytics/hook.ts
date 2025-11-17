@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { TopBusiness } from './types';
+import { TopBusiness, SystemOverview, TopReward } from './types';
 
 const ANALYTICS_QUERY_KEY = 'analytics';
 
@@ -15,5 +15,31 @@ export const useTopBusinesses = () => {
     queryKey: [ANALYTICS_QUERY_KEY, 'top-businesses'],
     queryFn: getTopBusinesses,
   });
+};
+
+// Get System Overview
+const getSystemOverview = async (): Promise<SystemOverview> => {
+  const { data } = await api.get<SystemOverview>('/admin/analytics/system-overview');
+  return data;
+};
+
+export const useSystemOverview = () => {
+  return useQuery({
+    queryKey: [ANALYTICS_QUERY_KEY, 'system-overview'],
+    queryFn: getSystemOverview,
+  });
+};
+
+// Get Top Rewards
+const getTopRewards = async (): Promise<TopReward[]> => {
+    const { data } = await api.get<TopReward[]>('/admin/analytics/top-rewards');
+    return data;
+};
+
+export const useTopRewards = () => {
+    return useQuery({
+        queryKey: [ANALYTICS_QUERY_KEY, 'top-rewards'],
+        queryFn: getTopRewards,
+    });
 };
 

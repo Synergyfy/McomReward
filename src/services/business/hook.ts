@@ -97,29 +97,27 @@ export const useGetSubcategories = (categoryId: string, page = 1, limit = 10) =>
 
 
 
-// Business Login
-const businessSignIn = async (loginData: BusinessLoginDto): Promise<BusinessLoginResponse> => {
+// Auth Hook
+const login = async (loginData: BusinessLoginDto): Promise<BusinessLoginResponse> => {
   const { data } = await api.post<BusinessLoginResponse>('/auth/login', loginData);
   return data;
 };
 
-export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
+export const useAuth = () => {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: businessSignIn,
+    mutationFn: login,
     onSuccess: (data) => {
       Cookies.set('access', data.accessToken);
       Cookies.set('refresh', data.refreshToken);
       setBearerToken(data.accessToken);
 
-      if (!options?.skipRedirect) {
-        if (data.user.role === 'Admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/dashboard');
-        }
-      };
+      if (data.user.role === 'Admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     },
   });
 };

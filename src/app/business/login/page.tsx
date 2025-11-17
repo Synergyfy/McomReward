@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
-import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
-import { useBusinessSignIn } from "@/services/business/hook";
+import { toast } from "sonner";
+import { useAuth } from "@/services/business/hook";
 import { useRouter } from "next/navigation";
 
 type LoginFormData = {
@@ -25,22 +25,13 @@ export default function BusinessLoginPage() {
   } = useForm<LoginFormData>({
     defaultValues: { rememberMe: false },
   });
-  const { mutate: businessSignin } = useBusinessSignIn();
+  const { mutate: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
-  const onboard = false
 
   const onSubmit = async (data: LoginFormData) => {
-
     try {
-      console.log("Logging in:", data);
-      businessSignin(data);
+      await login(data);
       toast.success("Login successful! Redirecting...");
-      if (!onboard) {
-        router.push("/business/onboard");
-      } else {
-        router.push("/business/dashboard");
-      }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed. Please try again.");
@@ -49,7 +40,6 @@ export default function BusinessLoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      // Example: await signIn("google");
       toast.info("Redirecting to Google...");
     } catch {
       toast.error("Failed to sign in with Google.");
@@ -60,13 +50,12 @@ export default function BusinessLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
-          Welcome Back 
+          Welcome Back
         </h2>
         <p className="text-center text-gray-500 text-sm">
           Log in to manage your vouchers and rewards
         </p>
 
-        {/* Google Login */}
         <Button
           type="button"
           onClick={handleGoogleLogin}
@@ -83,7 +72,6 @@ export default function BusinessLoginPage() {
           <div className="flex-1 h-px bg-gray-300" />
         </div>
 
-        {/* Email Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <Label htmlFor="email">Email Address</Label>
@@ -124,7 +112,6 @@ export default function BusinessLoginPage() {
             )}
           </div>
 
-          {/* Remember me */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Switch id="rememberMe" />

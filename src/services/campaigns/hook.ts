@@ -1,53 +1,39 @@
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { PaginatedCampaignResponse } from './types';
 import api from '../api';
-import {
-  CreateCampaignRequest,
-  CampaignResponse,
-  PaginatedCampaignsResponse,
-} from './types';
 
-const CAMPAIGNS_QUERY_KEY = 'campaigns';
-
-// Create Campaign
-const createCampaign = async (campaignData: CreateCampaignRequest): Promise<CampaignResponse> => {
-  const { data } = await api.post<CampaignResponse>('/campaigns/business/campaigns', campaignData);
-  return data;
-};
-
-export const useCreateCampaign = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createCampaign,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+export const useGetUnaddedAdminCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCampaignResponse, Error>({
+    queryKey: ['unaddedAdminCampaigns', page, limit],
+    queryFn: async () => {
+      const response = await api.get('/business/campaigns/unadded', {
+        params: { page, limit },
+      });
+      return response.data;
     },
   });
 };
 
-// Get All Campaigns By Business
-const getAllCampaignsByBusiness = async (
-  businessId: string,
-  page: number,
-  limit: number,
-): Promise<PaginatedCampaignsResponse> => {
-  const { data } = await api.get<PaginatedCampaignsResponse>(
-    `/campaigns/business/${businessId}`,
-    {
-      params: { page, limit },
+export const useGetAddedAdminCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCampaignResponse, Error>({
+    queryKey: ['addedAdminCampaigns', page, limit],
+    queryFn: async () => {
+      const response = await api.get('/business/campaigns/added', {
+        params: { page, limit },
+      });
+      return response.data;
     },
-  );
-  return data;
+  });
 };
 
-export const useGetAllCampaignsByBusiness = (
-  businessId: string,
-  page: number,
-  limit: number,
-) => {
-  return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'business', businessId, { page, limit }],
-    queryFn: () => getAllCampaignsByBusiness(businessId, page, limit),
-    enabled: !!businessId,
+export const useGetMyCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCampaignResponse, Error>({
+    queryKey: ['myCampaigns', page, limit],
+    queryFn: async () => {
+      const response = await api.get('/business/campaigns/my-campaigns', {
+        params: { page, limit },
+      });
+      return response.data;
+    },
   });
 };

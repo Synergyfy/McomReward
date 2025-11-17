@@ -1,43 +1,64 @@
 "use client";
 
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
+import { useAuth } from "@/services/business/hook";
 import { useRouter } from "next/navigation";
 
-type LoginData = {
+type LoginFormData = {
   email: string;
   password: string;
+  rememberMe: boolean;
 };
 
-export default function CustomerLoginPage() {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginData>();
-  const router = useRouter();
+export default function LoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    defaultValues: { rememberMe: false },
+  });
+  const { mutateAsync: login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const onSubmit = async (data: LoginData) => {
-    console.log("Logging in:", data);
-    toast.success("Welcome back!");
-    router.push("/redemption");
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      const { rememberMe, ...loginData } = data;
+      await login(loginData)
+        .then(() => {
+          toast.success("Login successful! Redirecting...");
+        });
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
+    }
   };
 
-  const handleGoogleLogin = () => {
-    toast.info("Redirecting to Google...");
+  const handleGoogleLogin = async () => {
+    try {
+      toast.info("Redirecting to Google...");
+    } catch {
+      toast.error("Failed to sign in with Google.");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
-          Welcome Back to <span className="text-orange-500">MCOM Rewards</span>
+          Welcome Back
         </h2>
         <p className="text-center text-gray-500 text-sm">
-          Log in to manage your rewards and favorite campaigns
+          Log in to manage your account
         </p>
 
-        {/* Google Login */}
         <Button
           type="button"
           onClick={handleGoogleLogin}
@@ -54,30 +75,57 @@ export default function CustomerLoginPage() {
           <div className="flex-1 h-px bg-gray-300" />
         </div>
 
-        {/* Email Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <Label>Email</Label>
+            <Label htmlFor="email">Email Address</Label>
             <Input
+              id="email"
               type="email"
               placeholder="you@example.com"
               {...register("email", { required: "Email is required" })}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           <div>
-            <Label>Password</Label>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              {...register("password", { required: "Password is required" })}
-            />
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                {...register("password", { required: "Password is required" })}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-3 text-sm text-gray-500"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Switch id="rememberMe" {...register("rememberMe")} />
+              <Label htmlFor="rememberMe">Remember me</Label>
+            </div>
+            <a
+              href="/forgot-password"
+              className="text-gray-500 hover:underline text-sm"
+            >
+              Forgot password?
+            </a>
           </div>
 
           <Button
@@ -85,14 +133,14 @@ export default function CustomerLoginPage() {
             className="w-full bg-orange-500 text-white"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Logging in..." : "Log In"}
+            {isSubmitting ? "Signing in..." : "Log In"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href="/customer/signup" className="text-orange-500 hover:underline font-medium">
-            Join now
+          <a href="/signup" className="text-orange-400 hover:underline font-medium">
+            Sign up
           </a>
         </p>
       </div>

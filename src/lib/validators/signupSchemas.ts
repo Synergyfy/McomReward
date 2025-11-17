@@ -2,13 +2,12 @@
 import z from "zod";
 
 
-const socialMediaSchema = z
-  .object({
-    facebook: z.string().url().nullish().or(z.literal("")).optional(),
-    twitter: z.string().url().nullish().or(z.literal("")).optional(),
-    instagram: z.string().url().nullish().or(z.literal("")).optional(),
+const socialMediaSchema = z.array(
+  z.object({
+    name: z.string().min(1, "Social media platform name is required"),
+    link: z.string().url("Please enter a valid URL"),
   })
-  .optional();
+).optional();
 
 export const createBusinessSchema = z.object({
   sectorId: z.string(),

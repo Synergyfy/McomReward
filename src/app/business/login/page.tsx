@@ -60,7 +60,7 @@ export default function BusinessLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
-          Welcome Back 
+          Welcome Back
         </h2>
         <p className="text-center text-gray-500 text-sm">
           Log in to manage your vouchers and rewards

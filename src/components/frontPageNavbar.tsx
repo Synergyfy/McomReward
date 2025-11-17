@@ -39,12 +39,12 @@ const FrontPageNavbar = () => {
             <Link href="/campaigns">Campaigns</Link>
           </div>
           <div className="hidden md:flex gap-3">
-            <Link href="/signin">
+            <Link href="/login">
               <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled ? "" : "bg-white"}`}>
                 Login
               </span>
             </Link>
-            <Link href="/business/signup">
+            <Link href="/signup">
               <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
                 Get Started
               </span>

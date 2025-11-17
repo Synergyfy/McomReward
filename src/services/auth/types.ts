@@ -5,6 +5,7 @@ export interface AdminLoginDto {
 
 export interface AdminLoginResponse {
   accessToken: string;
+  refreshToken: string;
 }
 
 export interface LoginResponse {

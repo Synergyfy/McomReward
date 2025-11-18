@@ -88,6 +88,8 @@ export default function DealsTable({ deals }: DealsTableProps) {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>Deactivate</DropdownMenuItem>
+                      <DropdownMenuItem>View Stats</DropdownMenuItem>
+                      <DropdownMenuItem>Connect to Campaign</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

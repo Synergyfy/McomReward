@@ -43,6 +43,7 @@ const FrontPageNavbar = () => {
             <Link href="/">Home</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/deals">Deals</Link>
+            <Link href="/reward">Rewards</Link>
             <Link href="/campaigns">Campaigns</Link>
           </div>
           <div className="hidden md:flex gap-3">
@@ -75,6 +76,7 @@ const FrontPageNavbar = () => {
             <Link href="/">Home</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/deals">Deals</Link>
+            <Link href="/reward">Rewards</Link>
             <Link href="/campaigns">Campaigns</Link>
             <div className="border-t my-3"></div>
             {!isAuthenticated && (

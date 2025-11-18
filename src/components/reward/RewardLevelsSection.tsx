@@ -16,9 +16,8 @@ const RewardLevelCard: React.FC<RewardLevelCardProps> = ({ icon: Icon, title, de
       </div>
       <h3 className="text-xl font-semibold text-gray-800 mb-2">{title}</h3>
       <p className="text-gray-600 mb-4">{description}</p>
-      <a href="#" className="text-orange-500 hover:text-orange-600 font-medium flex items-center">
-        See examples <span className="ml-1">→</span>
-      </a>
+      
+      
     </div>
   );
 };

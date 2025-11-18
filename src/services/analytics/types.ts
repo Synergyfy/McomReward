@@ -1,3 +1,5 @@
+import { Campaign } from '../campaigns/types';
+
 export interface TopBusiness {
   id: string;
   name: string;
@@ -19,3 +21,17 @@ export interface TopReward {
   totalRedemptions: number;
 }
 
+export interface CampaignPerformanceData {
+  campaign: Campaign;
+  totalParticipants: number;
+  totalPointsAwarded: number;
+  totalRewardsRedeemed: number;
+  redemptionRate: number;
+}
+
+export interface PaginatedCampaignPerformanceResponse {
+  data: CampaignPerformanceData[];
+  total: number;
+  page: number;
+  limit: number;
+}

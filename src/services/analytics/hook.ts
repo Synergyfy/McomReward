@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { TopBusiness, SystemOverview, TopReward } from './types';
+import {
+  TopBusiness,
+  SystemOverview,
+  TopReward,
+  PaginatedCampaignPerformanceResponse,
+} from './types';
 
 const ANALYTICS_QUERY_KEY = 'analytics';
 
@@ -32,14 +37,26 @@ export const useSystemOverview = () => {
 
 // Get Top Rewards
 const getTopRewards = async (): Promise<TopReward[]> => {
-    const { data } = await api.get<TopReward[]>('/admin/analytics/top-rewards');
-    return data;
+  const { data } = await api.get<TopReward[]>('/admin/analytics/top-rewards');
+  return data;
 };
 
 export const useTopRewards = () => {
-    return useQuery({
-        queryKey: [ANALYTICS_QUERY_KEY, 'top-rewards'],
-        queryFn: getTopRewards,
-    });
+  return useQuery({
+    queryKey: [ANALYTICS_QUERY_KEY, 'top-rewards'],
+    queryFn: getTopRewards,
+  });
 };
 
+// Get Campaign Performance
+export const useGetCampaignPerformance = (page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCampaignPerformanceResponse, Error>({
+    queryKey: [ANALYTICS_QUERY_KEY, 'campaign-performance', page, limit],
+    queryFn: async () => {
+      const response = await api.get('/business/campaigns/performance', {
+        params: { page, limit },
+      });
+      return response.data;
+    },
+  });
+};

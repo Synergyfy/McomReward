@@ -16,7 +16,7 @@ const PerformanceCard = ({
   analytics: CampaignAnalyticsDto;
 }) => {
   const router = useRouter();
-  const { name, sector, status, total_participants, total_reward_redeemed, total_point_awarded, redemption_rate } = analytics;
+  const { name, sector, status, totalParticipants, totalRewardRedeemed, totalPointAwarded, redemptionRate } = analytics;
 
   return (
     <motion.div whileHover={{ scale: 1.02 }} className="transition">
@@ -38,22 +38,22 @@ const PerformanceCard = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center text-sm text-gray-600 gap-2">
-            <Users size={16} /> <span>{total_participants} customers</span>
+            <Users size={16} /> <span>{totalParticipants} customers</span>
           </div>
           <div className="flex items-center text-sm text-gray-600 gap-2">
             <Trophy size={16} />{" "}
-            <span>{total_reward_redeemed} rewards redeemed</span>
+            <span>{totalRewardRedeemed} rewards redeemed</span>
           </div>
           <div className="flex items-center text-sm text-gray-600 gap-2">
             <BarChart3 size={16} />{" "}
-            <span>{total_point_awarded.toLocaleString()} points awarded</span>
+            <span>{totalPointAwarded.toLocaleString()} points awarded</span>
           </div>
           <div className="flex items-center text-sm text-gray-600 gap-2">
             <Percent size={16} />{" "}
-            <span>Redemption Rate: {redemption_rate.toFixed(2)}%</span>
+            <span>Redemption Rate: {redemptionRate.toFixed(2)}%</span>
           </div>
 
-          <Progress value={redemption_rate} className="h-2 mt-2" />
+          <Progress value={redemptionRate} className="h-2 mt-2" />
 
           <Button
             onClick={() =>
@@ -112,7 +112,7 @@ export default function CampaignsPage() {
               </span>
               <Button
                 onClick={() => setPage(page + 1)}
-                disabled={!analyticsData.next_page}
+                disabled={!analyticsData.nextPage}
                 variant="outline"
               >
                 Next

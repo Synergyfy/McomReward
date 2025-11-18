@@ -25,10 +25,10 @@ export interface CampaignAnalyticsDto {
   name: string;
   sector: string;
   status: 'Active' | 'Ended' | 'Upcoming' | 'Disabled';
-  total_participants: number;
-  total_reward_redeemed: number;
-  total_point_awarded: number;
-  redemption_rate: number;
+  totalParticipants: number;
+  totalRewardRedeemed: number;
+  totalPointAwarded: number;
+  redemptionRate: number;
 }
 
 export interface PaginatedAnalyticsResponse {
@@ -36,5 +36,5 @@ export interface PaginatedAnalyticsResponse {
   total: number;
   page: number;
   limit: number;
-  next_page: number | null;
+  nextPage: number | null;
 }

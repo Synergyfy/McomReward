@@ -31,7 +31,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     if (initialData) {
       setName(initialData.name);
       setMonthlyPrice(initialData.monthlyPrice);
-      setQuaterlyPrice((initialData as any).quaterlyPrice ?? '');
+      setQuaterlyPrice(initialData.quaterlyPrice ?? '');
       setAnnualPrice(initialData.annualPrice);
       setFeatures(initialData.features.length > 0 ? initialData.features : ['']);
     } else {

@@ -44,7 +44,7 @@ export interface Reward {
   disabled: boolean;
 }
 
-export interface Campaign {
+export interface PublicCampaignResponse {
   id: string;
   name: string;
   campaign_type: string; // API returns string, but we can map to enum if needed
@@ -74,11 +74,11 @@ export interface BusinessCampaign {
   id: string;
   uniqueCode: string;
   business: Business;
-  campaign: Campaign;
+  campaign: PublicCampaignResponse;
 }
 
 export interface PaginatedCampaignsResponse {
-  data: Campaign[];
+  data: PublicCampaignResponse[];
   total: number;
   page: number;
   limit: number;

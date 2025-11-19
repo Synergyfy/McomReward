@@ -115,6 +115,10 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
       image: imageUrlToSubmit,
       quantity,
       disabled: false,
+      type: 'voucher',
+      status: 'active',
+      expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      badgeLevel: [],
     };
 
     createReward(rewardData, {

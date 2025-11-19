@@ -14,7 +14,7 @@ import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns } from '@/services/c
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { CampaignTemplate } from '@/lib/mock-data/template-campaigns';
-import { Campaign } from '@/services/campaigns/types';
+import { PublicCampaignResponse } from '@/services/campaigns/types';
 
 // Mock user data to simulate tier
 const currentUser = {
@@ -59,7 +59,7 @@ export default function CampaignsListPage() {
     // TODO: Handle campaign creation from template
   }, []);
 
-  const filterCampaigns = (campaigns: Campaign[] | undefined) => {
+  const filterCampaigns = (campaigns: PublicCampaignResponse[] | undefined) => {
     if (!campaigns) return [];
     return campaigns.filter(campaign => {
       const matchesSearch =
@@ -74,7 +74,7 @@ export default function CampaignsListPage() {
   const filteredCreatedCampaigns = useMemo(() => filterCampaigns(createdCampaignsData?.data), [searchTerm, createdCampaignsData]);
   const filteredClaimedCampaigns = useMemo(() => filterCampaigns(claimedCampaignsData?.data), [searchTerm, claimedCampaignsData]);
 
-  const renderCampaigns = (campaigns: Campaign[], isLoading: boolean) => {
+  const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
     if (isLoading) {
       return (
         <div className="text-center py-12">

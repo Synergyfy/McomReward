@@ -2,15 +2,22 @@
 
 import Link from "next/link";
 import { useState, useEffect} from "react";
+import Cookies from 'js-cookie';
 import { Menu, X, Home } from 'lucide-react';
 
 const FrontPageNavbar = () => {
       const [menuOpen, setMenuOpen] = useState(false);
       const [scrolled, setScrolled] = useState(false);
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+
         useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 40);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    useEffect(() => {
+      setIsAuthenticated(!!Cookies.get('access'));
     }, []);
 
 
@@ -36,19 +43,28 @@ const FrontPageNavbar = () => {
             <Link href="/">Home</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/deals">Deals</Link>
+            <Link href="/reward">Rewards</Link>
             <Link href="/campaigns">Campaigns</Link>
           </div>
           <div className="hidden md:flex gap-3">
-            <Link href="/login">
-              <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled ? "" : "bg-white"}`}>
-                Login
-              </span>
-            </Link>
-            <Link href="/signup">
-              <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
-                Get Started
-              </span>
-            </Link>
+            {isAuthenticated ? (
+              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold">
+                A
+              </div>
+            ) : (
+              <>
+                <Link href="/login">
+                  <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled ? "" : "bg-white"}`}>
+                    Login
+                  </span>
+                </Link>
+                <Link href="/signup">
+                  <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
+                    Get Started
+                  </span>
+                </Link>
+              </>
+            )}
           </div>
           <button className="md:hidden text-orange-500" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -60,11 +76,14 @@ const FrontPageNavbar = () => {
             <Link href="/">Home</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/deals">Deals</Link>
+            <Link href="/reward">Rewards</Link>
             <Link href="/campaigns">Campaigns</Link>
             <div className="border-t my-3"></div>
-            <Link href="/business/signup">
-              <span className="text-orange-500 font-semibold">Get Started</span>
-            </Link>
+            {!isAuthenticated && (
+              <Link href="/business/signup">
+                <span className="text-orange-500 font-semibold">Get Started</span>
+              </Link>
+            )}
           </div>
         )}
       </nav>

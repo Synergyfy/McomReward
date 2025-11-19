@@ -8,11 +8,11 @@ import Image from "next/image";
 import { Tag, Trophy } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Campaign } from '@/services/campaigns/types';
+import { PublicCampaignResponse } from '@/services/campaigns/types';
 import { useClaimCampaign } from '@/services/campaigns/hook';
 
 interface CampaignPreviewProps {
-  campaign: Campaign;
+  campaign: PublicCampaignResponse;
 }
 
 export default function CampaignPreview({ campaign }: CampaignPreviewProps) {

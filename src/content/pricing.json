@@ -1,0 +1,91 @@
+{
+  "tiers": [
+    {
+      "name": "Trial",
+      "description": "Test features before committing",
+      "quarterlyPrice": 0,
+      "annualPrice": 0,
+      "includesNfc": false,
+      "features": [
+        "All core features",
+        "Limited QR codes",
+        "Email support"
+      ]
+    },
+    {
+      "name": "Bronze",
+      "description": "Starter tools to get you visible and selling.",
+      "quarterlyPrice": 135,
+      "annualPrice": null,
+      "includesNfc": false,
+      "features": [
+        "Done-For-You Setup",
+        "10 QR codes",
+        "Email support"
+      ]
+    },
+    {
+      "name": "Silver",
+      "description": "More reach, more rewards, more customers.",
+      "quarterlyPrice": 291,
+      "annualPrice": null,
+      "includesNfc": false,
+      "features": [
+        "Everything in Bronze",
+        "20 QR codes",
+        "Priority email support"
+      ]
+    },
+    {
+      "name": "Gold",
+      "description": "Priority support and premium assets.",
+      "quarterlyPrice": 435,
+      "annualPrice": null,
+      "includesNfc": true,
+      "features": [
+        "Everything in Silver",
+        "NFC business card included",
+        "Advanced marketing pack"
+      ]
+    },
+    {
+      "name": "Platinum",
+      "description": "Full service, maximum exposure, and total support.",
+      "quarterlyPrice": 585,
+      "annualPrice": null,
+      "includesNfc": true,
+      "features": [
+        "Everything in Gold",
+        "Dedicated account manager",
+        "Largest marketing pack"
+      ]
+    }
+  ],
+  "featuresForComparison": [
+    "Done-For-You Setup",
+    "QR Codes",
+    "NFC Business Card",
+    "Priority Support",
+    "Marketing Pack",
+    "Dedicated Manager",
+    "Annual Commitment"
+  ],
+  "comparisonMatrix": {
+    "Trial": [false, false, false, false, false, false, false],
+    "Bronze": [true, true, false, false, false, false, true],
+    "Silver": [true, true, false, true, false, false, true],
+    "Gold": [true, true, true, true, true, false, true],
+    "Platinum": [true, true, true, true, true, true, true]
+  },
+  "trial": {
+    "durationDays": 7,
+    "creditCardRequired": true
+  },
+  "coupons": [
+    {
+      "code": "WELCOME10",
+      "discountPercent": 10,
+      "expiresAt": "2099-12-31"
+    }
+  ]
+}

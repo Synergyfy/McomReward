@@ -15,6 +15,11 @@ const mockRewards: RewardResponse[] = [
     quantity: 50,
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
+    disabled: false,
+    type: 'voucher',
+    status: 'active',
+    expiry: '2025-12-31T00:00:00Z',
+    badgeLevel: [],
   },
   {
     id: 'reward-2',
@@ -26,6 +31,11 @@ const mockRewards: RewardResponse[] = [
     quantity: 100,
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
+    disabled: false,
+    type: 'voucher',
+    status: 'active',
+    expiry: '2025-12-31T00:00:00Z',
+    badgeLevel: [],
   },
   {
     id: 'reward-3',
@@ -37,6 +47,11 @@ const mockRewards: RewardResponse[] = [
     quantity: 30,
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
+    disabled: false,
+    type: 'voucher',
+    status: 'active',
+    expiry: '2025-12-31T00:00:00Z',
+    badgeLevel: [],
   },
 ];
 

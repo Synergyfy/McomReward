@@ -131,7 +131,7 @@ api.interceptors.response.use(
 
         // Redirect to login page if in browser
         if (typeof window !== 'undefined') {
-          window.location.href = '/signin';
+          window.location.href = '/login';
         }
 
         return Promise.reject(refreshError);

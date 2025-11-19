@@ -21,6 +21,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   const [name, setName] = useState('');
   const [monthlyPrice, setMonthlyPrice] = useState('');
   const [annualPrice, setAnnualPrice] = useState('');
+  const [quaterlyPrice, setQuaterlyPrice] = useState('');
   const [features, setFeatures] = useState<string[]>(['']);
 
   const createTierMutation = useCreateTier();
@@ -30,11 +31,13 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     if (initialData) {
       setName(initialData.name);
       setMonthlyPrice(initialData.monthlyPrice);
+      setQuaterlyPrice((initialData as any).quaterlyPrice ?? '');
       setAnnualPrice(initialData.annualPrice);
       setFeatures(initialData.features.length > 0 ? initialData.features : ['']);
     } else {
       setName('');
       setMonthlyPrice('');
+      setQuaterlyPrice('');
       setAnnualPrice('');
       setFeatures(['']);
     }
@@ -60,6 +63,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     const planData = {
       name,
       monthly_price: parseFloat(monthlyPrice),
+      quaterly_price: parseFloat(quaterlyPrice),
       annual_price: parseFloat(annualPrice),
       features: features.filter(f => f.trim() !== ''),
     };
@@ -89,10 +93,14 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
             <Label htmlFor="name">Plan Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="monthlyPrice">Monthly Price</Label>
               <Input id="monthlyPrice" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="quaterlyPrice">Quarterly Price</Label>
+              <Input id="quaterlyPrice" type="number" value={quaterlyPrice} onChange={(e) => setQuaterlyPrice(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="annualPrice">Annual Price</Label>

@@ -6,6 +6,10 @@ import { CampaignFormProvider } from '@/context/CampaignFormContext';
 
 import StepChooseCampaignType from '@/components/admin/campaigns/StepChooseCampaignType';
 import StepSetCampaignDetails from '@/components/admin/campaigns/StepSetCampaignDetails';
+import StepConfigureEarnPoints from '@/components/admin/campaigns/StepConfigureEarnPoints';
+import StepConfigureRedeemPoints from '@/components/admin/campaigns/StepConfigureRedeemPoints';
+import StepConfigureContactUs from '@/components/admin/campaigns/StepConfigureContactUs';
+import StepConfigureFooter from '@/components/admin/campaigns/StepConfigureFooter';
 import StepAddDistributionChannels from '@/components/admin/campaigns/StepAddDistributionChannels';
 import StepCampaignScheduling from '@/components/admin/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/admin/campaigns/StepReviewAndCreate';
@@ -14,7 +18,7 @@ import StepReviewAndCreate from '@/components/admin/campaigns/StepReviewAndCreat
 export default function AdminCreateCampaignPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
-  const totalSteps = 5; // Adjust based on actual steps
+  const totalSteps = 9; // Adjust based on actual steps
 
   const handleNext = () => {
     setCurrentStep((prev) => prev + 1);
@@ -31,10 +35,18 @@ export default function AdminCreateCampaignPage() {
       case 2:
         return <StepSetCampaignDetails onNext={handleNext} onBack={handleBack} />;
       case 3:
-        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureEarnPoints onNext={handleNext} onBack={handleBack} />;
       case 4:
-        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureRedeemPoints onNext={handleNext} onBack={handleBack} />;
       case 5:
+        return <StepConfigureContactUs onNext={handleNext} onBack={handleBack} />;
+      case 6:
+        return <StepConfigureFooter onNext={handleNext} onBack={handleBack} />;
+      case 7:
+        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
+      case 8:
+        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
+      case 9:
         return <StepReviewAndCreate onBack={handleBack} />;
       default:
         return null;

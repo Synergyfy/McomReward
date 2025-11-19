@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -159,10 +160,18 @@ export default function AdminDashboard() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Reward</Button>
-              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Campaign</Button>
-              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Sector</Button>
-              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Business</Button>
+              <Link href="/admin/rewards">
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Reward</Button>
+              </Link>
+              <Link href="/admin/campaigns/list">
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Campaign</Button>
+              </Link>
+              <Link href="/admin/sectors">
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Sector</Button>
+              </Link>
+              <Link href="/admin/users/business">
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Add Business</Button>
+              </Link>
             </CardContent>
           </Card>
 

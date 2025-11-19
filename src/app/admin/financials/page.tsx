@@ -7,11 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, CheckCircle, Landmark, TrendingUp, Star } from 'lucide-react';
 import {
-  mockTransactions,
   mockEscrows,
   mockPayoutRequests,
   mockFinancialAnalytics,
-  Transaction,
   Escrow,
   PayoutRequest,
 } from '@/lib/mock-data/financials';
@@ -19,11 +17,12 @@ import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
-import { useGetTiers, useDeleteTier } from '@/services/financials';
+import { useGetTiers, useDeleteTier, useGetPaymentHistory } from '@/services/financials';
+import { PaymentHistoryItem } from '@/services/financials/types';
 import { Tier } from '@/services/financials/types';
 
 export default function FinancialsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { data: paymentHistory, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory();
   const [escrows, setEscrows] = useState<Escrow[]>(mockEscrows);
   const [payouts, setPayouts] = useState<PayoutRequest[]>(mockPayoutRequests);
 
@@ -160,22 +159,34 @@ export default function FinancialsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Transaction ID</TableHead>
-                    <TableHead>Business</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Tier</TableHead>
+                    <TableHead>Payment Provider</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((txn) => (
+                  {isLoadingPayments && (
+                    <TableRow>
+                      <TableCell colSpan={6}>Loading payment history...</TableCell>
+                    </TableRow>
+                  )}
+
+                  {paymentsError && (
+                    <TableRow>
+                      <TableCell colSpan={6}>Error loading payment history.</TableCell>
+                    </TableRow>
+                  )}
+
+                  {paymentHistory && paymentHistory.map((txn: PaymentHistoryItem) => (
                     <TableRow key={txn.id}>
-                      <TableCell>{txn.id}</TableCell>
-                      <TableCell>{txn.businessName}</TableCell>
-                      <TableCell>{txn.type}</TableCell>
-                      <TableCell>£{txn.amount.toFixed(2)}</TableCell>
+                      <TableCell>{txn.transactionId}</TableCell>
+                      <TableCell>{txn.membership?.tier?.name ?? txn.userId}</TableCell>
+                      <TableCell>{txn.paymentProvider}</TableCell>
+                      <TableCell>£{parseFloat(txn.amount).toFixed(2)}</TableCell>
                       <TableCell><Badge variant={getStatusBadgeVariant(txn.status)}>{txn.status}</Badge></TableCell>
-                      <TableCell>{txn.date.toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(txn.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

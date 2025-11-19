@@ -1,0 +1,65 @@
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Phone, Mail, ArrowUpRight } from "lucide-react";
+import { CampaignFormData } from "@/context/CampaignFormContext";
+
+interface ContactUsPagePreviewProps {
+  campaignData: CampaignFormData;
+}
+
+export default function ContactUsPagePreview({ campaignData }: ContactUsPagePreviewProps) {
+  const contactMethods = [
+    {
+      icon: Phone,
+      title: 'Call Us',
+      contact: campaignData.contactPhone || '+1 (555) 123-4567',
+      link: `tel:${campaignData.contactPhone}`,
+    },
+    {
+      icon: Mail,
+      title: 'Email Us',
+      contact: campaignData.contactEmail || 'support@mcomloyalty.com',
+      link: `mailto:${campaignData.contactEmail}`,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+            {campaignData.contactTitle || 'Contact Us'}
+          </h1>
+          <p className="mt-4 text-xl text-gray-600">
+            {campaignData.contactText || 'We\'re here to help. Reach out to us with any questions.'}
+          </p>
+        </div>
+
+        {/* Contact Methods */}
+        <div className="space-y-8">
+          {contactMethods.map((method, index) => (
+            <a href={method.link} key={index} className="block group">
+              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 hover:border-orange-600 border-2 border-transparent">
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className="bg-orange-600 text-white p-4 rounded-full">
+                      <method.icon className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-800">{method.title}</CardTitle>
+                      <p className="text-lg text-gray-600">{method.contact}</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="h-8 w-8 text-gray-400 group-hover:text-orange-600 transition-colors duration-300" />
+                </CardContent>
+              </Card>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

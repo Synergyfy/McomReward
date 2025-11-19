@@ -1,14 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
-import { Menu, X, Home } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const FrontPageNavbar = () => {
-      const [menuOpen, setMenuOpen] = useState(false);
-      const [scrolled, setScrolled] = useState(false);
-      const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
         useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -20,6 +29,11 @@ const FrontPageNavbar = () => {
       setIsAuthenticated(!!Cookies.get('access'));
     }, []);
 
+    const handleLogout = () => {
+      Cookies.remove('access');
+      Cookies.remove('refresh');
+      router.push('/login');
+    };
 
     return (
       <nav
@@ -48,9 +62,25 @@ const FrontPageNavbar = () => {
           </div>
           <div className="hidden md:flex gap-3">
             {isAuthenticated ? (
-              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold">
-                A
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold cursor-pointer">
+                    A
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Link href="/login">

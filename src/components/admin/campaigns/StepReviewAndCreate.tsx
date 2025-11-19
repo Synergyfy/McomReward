@@ -14,8 +14,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCampaignForm } from '@/context/CampaignFormContext';
-import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import CampaignDetailPagePreview from './previews/CampaignDetailPagePreview';
+import EarnPointsPagePreview from './previews/EarnPointsPagePreview';
+import RedeemPointsPagePreview from './previews/RedeemPointsPagePreview';
+import ContactUsPagePreview from './previews/ContactUsPagePreview';
+
+import FooterPreview from './previews/FooterPreview';
 
 interface StepProps {
   onBack: () => void;
@@ -24,7 +31,7 @@ interface StepProps {
 // Mock rewards data (should be fetched from API)
 const mockRewards = [
   { id: '1', title: 'Summer Voucher ($50)', image: 'https://via.placeholder.com/150' },
-  { id: '2', title: 'Gift Card (00)', image: 'https://via.placeholder.com/150' },
+  { id: '2', title: 'Gift Card ($100)', image: 'https://via.placeholder.com/150' },
   { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
 ];
 
@@ -32,6 +39,7 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail'); // State for managing active preview tab
 
   const handleCreateCampaign = () => {
     // Here you would typically send the formData to your API
@@ -42,7 +50,7 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
-    router.push('/admin/campaigns');
+    router.push('/dashboard/campaigns');
   };
 
   const selectedRewards = mockRewards.filter(r => formData.rewardIds.includes(r.id));
@@ -51,74 +59,41 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Step 5: Review and Create Campaign</CardTitle>
+          <CardTitle>Step 9: Review and Create Campaign</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* New Comprehensive Preview Section */}
           <div className="mt-6 p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-xl border border-gray-300">
-              <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Campaign Preview</h4>
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-                  <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                      {formData.imageUrl && (
-                          <Image src={formData.imageUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />
-                      )}
-                  </div>
-                  <div className="relative px-5">
-                      <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                          <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
-                              {formData.logoUrl ? (
-                                  <Image src={formData.logoUrl} alt="Logo Preview" layout="fill" objectFit="cover" />
-                              ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-gray-500">
-                                      <span className="text-xs">Logo</span>
-                                  </div>
-                              )}
-                          </div>
-                      </div>
-                  </div>
-                <div className="pt-16 p-5 text-center">
-                  <h5 className="font-extrabold text-2xl text-gray-900 mb-2">{formData.campaignName || '[Campaign Name]'}</h5>
-                  <p className="text-gray-700 text-base mb-4">{formData.campaignMessage || '[Campaign Message]'}</p>
-
-                  <div className="space-y-3 text-sm text-gray-800 mb-5 border-t pt-4">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center font-medium text-gray-600"><Gift className="h-4 w-4 mr-2 text-blue-500" />Rewards:</span>
-                      <span className="text-right">
-                        {selectedRewards.map(r => r.title).join(', ') || '[Select Rewards]'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center font-medium text-gray-600"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
-                      <span className="text-right">{Number(formData.rewardsAvailable) > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
-                      <span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center font-medium text-gray-600"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span>
-                      <span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center font-medium text-gray-600"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span>
-                      <span className="text-right">
-                        {formData.audienceType.map(type => {
-                          if (type === 'badge_level') {
-                            return `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}`;
-                          }
-                          if (type === 'wishlist_target') {
-                            return `Wishlist: ${formData.wishlistItemIds?.join(', ') || '[Item]'}`;
-                          }
-                          return type.charAt(0).toUpperCase() + type.slice(1);
-                        }).join(', ')}
-                      </span>
-                    </div>
-                  </div>
-                  <Button className="w-full py-3 text-lg font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
-                    {formData.ctaButtonText}
-                  </Button>
+            <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Interactive Campaign Preview</h4>
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+              <Tabs value={activePreviewTab} onValueChange={setActivePreviewTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-5 h-auto p-0">
+                  <TabsTrigger value="campaignDetail">Main Page</TabsTrigger>
+                  <TabsTrigger value="earnPoints">Earn Points</TabsTrigger>
+                  <TabsTrigger value="redeemPoints">Redeem Points</TabsTrigger>
+                  <TabsTrigger value="contactUs">Contact Us</TabsTrigger>
+                  <TabsTrigger value="footer">Footer</TabsTrigger>
+                </TabsList>
+                <div className="h-[600px] overflow-y-auto relative p-4">
+                  <TabsContent value="campaignDetail">
+                    <CampaignDetailPagePreview campaignData={formData} />
+                  </TabsContent>
+                  <TabsContent value="earnPoints">
+                    <EarnPointsPagePreview campaignData={formData} />
+                  </TabsContent>
+                  <TabsContent value="redeemPoints">
+                    <RedeemPointsPagePreview campaignData={formData} />
+                  </TabsContent>
+                  <TabsContent value="contactUs">
+                    <ContactUsPagePreview campaignData={formData} />
+                  </TabsContent>
+                  <TabsContent value="footer">
+                    <FooterPreview campaignData={formData} />
+                  </TabsContent>
                 </div>
-              </div>
+              </Tabs>
             </div>
+          </div>
 
           <h4 className="text-lg font-semibold mb-3 mt-6">Distribution Channels</h4>
           <div className="grid gap-2 mb-6 text-sm">

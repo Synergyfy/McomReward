@@ -156,17 +156,18 @@ export default function SectorsPage() {
       id: sector.id,
       name: sector.name,
       imageUrl: sector.imageUrl,
-      categories: sector.categories.map(cat => {
+      // Defensive: ensure categories is an array before mapping
+      categories: (sector.categories || []).map(cat => {
         const categoryWithSubs = categoryMap.get(cat.id);
         return {
           id: cat.id,
           name: cat.name,
           imageUrl: cat.imageUrl,
-          subCategories: categoryWithSubs?.subCategories.map(sub => ({
+          subCategories: (categoryWithSubs?.subCategories || []).map(sub => ({
             id: sub.id,
             name: sub.name,
             imageUrl: sub.imageUrl,
-          })) || [],
+          })),
         };
       }),
     }));
@@ -180,7 +181,7 @@ export default function SectorsPage() {
   useEffect(() => {
     if (sectors.length > 0 && !selectedSector) {
       setSelectedSector(sectors[0]);
-      if (sectors[0].categories.length > 0) {
+      if (sectors[0].categories?.length > 0) {
         setSelectedCategory(sectors[0].categories[0]);
       }
     }

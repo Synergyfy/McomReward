@@ -118,6 +118,21 @@ export const useGetMyClaimedCampaigns = (page: number = 1, limit: number = 10) =
   });
 };
 
+// Get All Public Campaigns for Admin
+const getAllPublicCampaigns = async (page: number, limit: number): Promise<PaginatedCampaignsResponse> => {
+  const { data } = await api.get<PaginatedCampaignsResponse>('/campaigns/all/public', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetAllPublicCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'all-public', { page, limit }],
+    queryFn: () => getAllPublicCampaigns(page, limit),
+  });
+};
+
 // Get Campaign Analytics
 const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
   const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {

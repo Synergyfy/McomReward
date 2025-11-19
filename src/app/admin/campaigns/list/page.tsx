@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useGetClaimableCampaigns } from '@/services/campaigns/hook';
+import { useGetAllPublicCampaigns } from '@/services/campaigns/hook';
 import { PublicCampaignResponse } from '@/services/campaigns/types';
 import LoadingSpinner from '@/components/ui/Loading';
 
@@ -16,7 +16,7 @@ export default function AdminCampaignsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10); // You can adjust the limit as needed
 
-  const { data, isLoading, isError } = useGetClaimableCampaigns(page, limit);
+  const { data, isLoading, isError } = useGetAllPublicCampaigns(page, limit);
   const campaigns = data?.data || [];
 
   const filteredCampaigns = useMemo(() => {

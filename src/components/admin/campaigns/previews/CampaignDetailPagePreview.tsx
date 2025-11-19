@@ -154,8 +154,7 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
                   {(Number(campaign.rewardsAvailable) === 0 && Number(campaign.schedulingRules?.stopAfterClaims) === 0) && <p>Unlimited Rewards/Claims</p>}
                 </CardContent>
               </Card>
-            </div>
-          </section>
+            </section>
 
           {/* Multiple Rewards Display */}
           {campaign.rewardIds && campaign.rewardIds.length > 0 && (

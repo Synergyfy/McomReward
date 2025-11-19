@@ -1,7 +1,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { Tier, TierCreateInput, TierUpdateInput } from './types';
+import { Tier, TierCreateInput, TierUpdateInput, PaymentHistoryItem } from './types';
 
 
 const TIER_QUERY_KEY = 'tiers';
@@ -16,6 +16,21 @@ export const useGetTiers = () => {
   return useQuery<Tier[], Error>({
     queryKey: [TIER_QUERY_KEY],
     queryFn: getTiers,
+  });
+};
+
+// Payment history
+const PAYMENT_HISTORY_QUERY_KEY = 'payment-history';
+
+const getPaymentHistory = async (): Promise<PaymentHistoryItem[]> => {
+  const { data } = await api.get('/payment-history');
+  return data;
+};
+
+export const useGetPaymentHistory = () => {
+  return useQuery<PaymentHistoryItem[], Error>({
+    queryKey: [PAYMENT_HISTORY_QUERY_KEY],
+    queryFn: getPaymentHistory,
   });
 };
 

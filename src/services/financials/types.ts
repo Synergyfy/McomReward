@@ -26,3 +26,33 @@ export interface TierUpdateInput {
   annual_price?: number;
   features?: string[];
 }
+
+// Membership and Payment history types returned by `/payment-history` endpoint
+export interface Membership {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  userId: string;
+  userType: string;
+  status: string;
+  planType: string;
+  startsAt: string;
+  expiresAt: string;
+  isTrial: boolean;
+  tier: Tier;
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  userId: string;
+  userType: string;
+  amount: string;
+  paymentProvider: string;
+  transactionId: string;
+  status: string;
+  membership: Membership;
+}

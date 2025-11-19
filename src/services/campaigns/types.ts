@@ -114,16 +114,16 @@ export interface WeeklyChartData {
 
 export interface RankedParticipant {
   id: string;
-  name: string;
-  email: string;
+  pName: string;
+  pEmail: string;
   totalPointsEarned: string;
   totalRedemptions: string;
 }
 
 export interface TopReward {
   id: string;
-  title: string;
-  pointsRequired: number;
+  rTitle: string;
+  rPointsRequired: number;
   totalRedemptions: string;
 }
 
@@ -145,10 +145,12 @@ export enum PointHistoryType {
 
 export interface CustomerActivityResponseDto {
   participantName: string;
+  participantId?: string;
   activityType: PointHistoryType;
   details: string;
-  date: Date;
   campaignName: string;
+  date: Date;
+
 }
 
 export interface PaginatedCustomerActivityResponseDto {

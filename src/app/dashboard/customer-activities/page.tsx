@@ -111,7 +111,7 @@ export default function CustomerActivitiesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewDetails((activity as any).participantId || 'c7a8b9c0-d1e2-f3a4-b5c6-d7e8f9a0b1c2')} // Fallback ID for demo if missing
+                            onClick={() => handleViewDetails(activity.participantId ?? 'c7a8b9c0-d1e2-f3a4-b5c6-d7e8f9a0b1c2')} // Fallback ID for demo if missing
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Details

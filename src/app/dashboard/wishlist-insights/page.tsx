@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Download, PlusCircle } from 'lucide-react';
 import WishlistTable from '@/components/dashboard/wishlist-insights/WishlistTable';
 import { wishlistData } from '@/lib/mock-data/wishlist';
-import { exportToCsv } from '@/lib/utils';
+import { exportToCsv } from '@/lib/export';
 
 export default function WishlistInsightsPage() {
   const handleExport = () => {

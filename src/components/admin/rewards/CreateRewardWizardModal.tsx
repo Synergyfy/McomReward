@@ -14,7 +14,7 @@ import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { type Reward } from '@/app/admin/rewards/page';
+import { RewardResponse } from '@/services/rewards/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,7 +25,7 @@ interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode?: 'create' | 'edit' | 'duplicate';
-  reward?: Reward | null;
+  reward?: RewardResponse | null;
 }
 
 const rewardTypes = [
@@ -51,7 +51,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<Reward['status']>('draft');
+  const [status, setStatus] = useState<RewardResponse['status']>('draft');
   const [selectedSector, setSelectedSector] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubCategory, setSelectedSubCategory] = useState('');
@@ -94,7 +94,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   useEffect(() => {
     if (isOpen) {
       if ((mode === 'edit' || mode === 'duplicate') && reward) {
-        setName(mode === 'duplicate' ? `Copy of ${reward.name}` : reward.name);
+        setName(mode === 'duplicate' ? `Copy of ${reward.title}` : reward.title);
         setDescription(reward.description);
         setRewardType(reward.type);
         setValue(reward.value);
@@ -303,7 +303,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as Reward['status'])}>
+                  <Select value={status} onValueChange={(v) => setStatus(v as RewardResponse['status'])}>
                     <SelectTrigger><SelectValue placeholder="Set status" /></SelectTrigger>
                     <SelectContent position="popper" className="z-[10000]">
                       <SelectItem value="draft">Draft</SelectItem>

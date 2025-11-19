@@ -47,6 +47,8 @@ export const useAuth = () => {
 
       if (data.user.role === 'Admin') {
         router.push('/admin/dashboard');
+      } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
+        router.push('/business/onboard');
       } else {
         router.push('/dashboard');
       }

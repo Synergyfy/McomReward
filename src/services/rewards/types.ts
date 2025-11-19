@@ -6,6 +6,10 @@ export interface CreateRewardRequest {
     image: string;
     quantity: number;
     disabled: boolean;
+    type: string;
+    status: string;
+    expiry: string;
+    badgeLevel: string[];
 }
 
 export interface UpdateRewardRequest {
@@ -15,6 +19,11 @@ export interface UpdateRewardRequest {
   description?: string;
   image?: string;
   quantity?: number;
+  disabled?: boolean;
+  type?: string;
+  status?: string;
+  expiry?: string;
+  badgeLevel?: string[];
 }
 
 export interface RewardResponse {
@@ -27,6 +36,11 @@ export interface RewardResponse {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  disabled: boolean;
+  type: string;
+  status: string;
+  expiry: string;
+  badgeLevel: string[];
 }
 
 export interface GetRewardsResponse {

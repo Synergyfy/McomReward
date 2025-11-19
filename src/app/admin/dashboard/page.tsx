@@ -26,17 +26,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  summaryCardData,
   businessTierBreakdownData,
   notificationsData,
   mainChartData,
 } from '@/lib/mock-data/dashboard';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useTopBusinesses } from '@/services/analytics/hook';
+import { useSystemOverview, useTopBusinesses } from '@/services/analytics/hook';
 
 export default function AdminDashboard() {
   const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
+  const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
+
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
@@ -59,7 +60,13 @@ export default function AdminDashboard() {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryCardData.totalBusinesses}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalBusiness}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -68,7 +75,13 @@ export default function AdminDashboard() {
             <Megaphone className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryCardData.activeCampaigns}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalCampaigns}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -77,7 +90,13 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryCardData.totalConsumers.toLocaleString()}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalParticipants.toLocaleString()}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -86,7 +105,13 @@ export default function AdminDashboard() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryCardData.totalRewardsClaimed.toLocaleString()}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalRedemptions.toLocaleString()}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -95,7 +120,13 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryCardData.totalMatchingPointsIssued.toLocaleString()}</div>
+            {isLoadingSystemOverview ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : systemOverviewError ? (
+              <p className="text-xs text-destructive">Failed to load</p>
+            ) : (
+              <div className="text-2xl font-bold">{systemOverview?.totalMatchingPoints.toLocaleString()}</div>
+            )}
           </CardContent>
         </Card>
       </div>

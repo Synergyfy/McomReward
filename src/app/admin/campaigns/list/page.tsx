@@ -7,54 +7,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-
-// Mock data for prototype - consistent with campaign builder preview
-const mockCampaigns = [
-  {
-    id: '1',
-    campaignName: 'Summer Sale Spectacular',
-    campaignMessage: 'Get ready for our biggest sale of the season! Earn double points on all purchases.',
-    reward: { id: '1', title: 'Summer Voucher ($50)' },
-    rewardsAvailable: 100,
-    ctaButtonText: 'Claim Reward',
-    imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    logoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2564&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    status: 'active',
-  },
-  {
-    id: '2',
-    campaignName: 'Refer a Friend, Get $100',
-    campaignMessage: 'Invite your friends to join and you both get a $100 gift card on us!',
-    reward: { id: '2', title: 'Gift Card ($100)' },
-    rewardsAvailable: 50,
-    ctaButtonText: 'Refer & Earn',
-    imageUrl: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    logoUrl: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    status: 'active',
-  },
-  {
-    id: '3',
-    campaignName: 'Holiday Joy Campaign',
-    campaignMessage: 'Spread the holiday cheer with 20% off your next purchase.',
-    reward: { id: '3', title: 'Discount Coupon (20% off)' },
-    rewardsAvailable: 200,
-    ctaButtonText: 'Join Now',
-    imageUrl: 'https://images.unsplash.com/photo-1577985051167-5d8571a29a2e?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    logoUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    status: 'expired',
-  },
-];
+import { useGetClaimableCampaigns } from '@/services/campaigns/hook';
+import { PublicCampaignResponse } from '@/services/campaigns/types';
+import LoadingSpinner from '@/components/ui/Loading';
 
 export default function AdminCampaignsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10); // You can adjust the limit as needed
+
+  const { data, isLoading, isError } = useGetClaimableCampaigns(page, limit);
+  const campaigns = data?.data || [];
 
   const filteredCampaigns = useMemo(() => {
-    return mockCampaigns.filter((campaign) => {
-      const matchesSearch = campaign.campaignName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            campaign.campaignMessage.toLowerCase().includes(searchTerm.toLowerCase());
+    return campaigns.filter((campaign: PublicCampaignResponse) => {
+      const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            campaign.campaign_message.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
-  }, [searchTerm]);
+  }, [searchTerm, campaigns]);
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isError) {
+    return <div>Error fetching campaigns.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -84,21 +63,21 @@ export default function AdminCampaignsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCampaigns.map((campaign) => (
+            {filteredCampaigns.map((campaign: PublicCampaignResponse) => (
               <Card key={campaign.id} className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transform hover:-translate-y-1 transition-transform duration-300">
                 <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                    {campaign.imageUrl && (
-                        <Image src={campaign.imageUrl} alt={campaign.campaignName} layout="fill" objectFit="cover" />
+                    {campaign.banner_url && (
+                        <Image src={campaign.banner_url} alt={campaign.name} layout="fill" objectFit="cover" />
                     )}
-                    <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'} className="absolute top-3 right-3 text-sm px-3 py-1">
-                        {campaign.status === 'active' ? 'Active' : 'Expired'}
+                    <Badge variant={!campaign.disabled ? 'default' : 'secondary'} className="absolute top-3 right-3 text-sm px-3 py-1">
+                        {!campaign.disabled ? 'Active' : 'Disabled'}
                     </Badge>
                 </div>
                 <div className="relative px-5">
                     <div className="absolute -top-12 left-1/2 -translate-x-1/2">
                         <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
-                            {campaign.logoUrl ? (
-                                <Image src={campaign.logoUrl} alt={`${campaign.campaignName} Logo`} layout="fill" objectFit="cover" />
+                            {campaign.logo_url ? (
+                                <Image src={campaign.logo_url} alt={`${campaign.name} Logo`} layout="fill" objectFit="cover" />
                             ) : (
                                 <div className="h-full w-full flex items-center justify-center text-gray-500">
                                     <span className="text-xs">Logo</span>
@@ -108,17 +87,37 @@ export default function AdminCampaignsPage() {
                     </div>
                 </div>
                 <CardContent className="pt-16 p-5 text-center">
-                  <h5 className="font-extrabold text-xl text-gray-900 mb-2 truncate">{campaign.campaignName}</h5>
-                  <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden text-ellipsis">{campaign.campaignMessage}</p>
+                  <h5 className="font-extrabold text-xl text-gray-900 mb-2 truncate">{campaign.name}</h5>
+                  <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden text-ellipsis">{campaign.campaign_message}</p>
                   
                   <div className="space-y-2 text-sm text-gray-800 my-5 border-t pt-4">
                       <div className="flex justify-between">
                           <span className="font-medium text-gray-600">Reward:</span>
-                          <span className="font-semibold text-right">{campaign.reward.title}</span>
+                          <span className="font-semibold text-right">
+                            {campaign.rewards && campaign.rewards.length > 0
+                              ? campaign.rewards[0].title
+                              : 'N/A'}
+                          </span>
                       </div>
                       <div className="flex justify-between">
-                          <span className="font-medium text-gray-600">Available:</span>
-                          <span className="font-semibold text-right">{campaign.rewardsAvailable}</span>
+                          <span className="font-medium text-gray-600">Type:</span>
+                          <span className="font-semibold text-right">{campaign.campaign_type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="font-medium text-gray-600">Audience:</span>
+                          <span className="font-semibold text-right">{campaign.audience_type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="font-medium text-gray-600">Quantity:</span>
+                          <span className="font-semibold text-right">{campaign.quantity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="font-medium text-gray-600">Start Date:</span>
+                          <span className="font-semibold text-right">{new Date(campaign.start_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="font-medium text-gray-600">End Date:</span>
+                          <span className="font-semibold text-right">{new Date(campaign.end_date).toLocaleDateString()}</span>
                       </div>
                   </div>
 

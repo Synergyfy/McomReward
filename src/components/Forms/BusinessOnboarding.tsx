@@ -78,7 +78,7 @@ export default function BusinessOnboardingWizard() {
     try {
       await onboardBusiness(data);
       toast.success("Business account created successfully!");
-      router.push("/dashboard");
+      router.push("/pricing");
     } catch (error) {
       toast.error("Failed to create business account. Please try again.");
       console.error("Onboarding error:", error);

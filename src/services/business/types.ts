@@ -24,7 +24,7 @@ export type BusinessSignUpDto = z.infer<typeof businessSignUpSchema>;
 // }
 
 export interface Business {
-  id: string;
+  id:string;
   name: string;
   email: string;
   phone: string;
@@ -36,6 +36,7 @@ export interface Business {
   uniqueCode: string;
   createdAt: string;
   updatedAt: string;
+  isOnboarded: boolean;
 }
 
 export interface BusinessLoginDto {
@@ -48,6 +49,7 @@ export interface BusinessLoginResponse {
   refreshToken: string;
   user: {
     role: string;
+    isOnboarded: boolean;
   };
 }
 

@@ -20,7 +20,7 @@ export function Reveal({
   ...rest
 }: RevealProps) {
   const { ref, inView } = useInView<HTMLDivElement>()
-  const Comp: any = as
+  const Comp: React.ElementType = as
 
   return (
     <Comp

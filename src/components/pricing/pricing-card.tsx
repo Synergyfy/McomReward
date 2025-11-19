@@ -5,7 +5,7 @@ interface PricingCardProps {
   tier: {
     name: string
     description: string
-    monthlyPrice: number
+    quarterlyPrice: number
     icon: LucideIcon
     includesNfc?: boolean
     features: string[]

@@ -68,7 +68,7 @@ export default function CampaignsListPage() {
     return campaignsData.data.filter(campaign => {
       const matchesSearch =
         campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.campaign_message
+        campaign.campaignMessage
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
       return matchesSearch;
@@ -119,9 +119,9 @@ export default function CampaignsListPage() {
                   className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transform hover:-translate-y-1 transition-transform duration-300"
                 >
                   <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                    {campaign.banner_url && (
+                    {campaign.bannerUrl && (
                       <Image
-                        src={campaign.banner_url}
+                        src={campaign.bannerUrl}
                         alt={campaign.name}
                         layout="fill"
                         objectFit="cover"
@@ -157,7 +157,7 @@ export default function CampaignsListPage() {
                       {campaign.name}
                     </h5>
                     <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden text-ellipsis">
-                      {campaign.campaign_message}
+                      {campaign.campaignMessage}
                     </p>
 
                     <div className="space-y-2 text-sm text-gray-800 my-5 border-t pt-4">

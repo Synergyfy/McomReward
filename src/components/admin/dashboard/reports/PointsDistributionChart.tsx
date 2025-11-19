@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
-import { exportToCsv } from "@/lib/utils";
+import { exportToCsv } from "@/lib/export";
 
 interface PointsDistribution {
   standardPoints: number;

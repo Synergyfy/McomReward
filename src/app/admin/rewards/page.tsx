@@ -58,18 +58,14 @@ export default function AdminRewardsPage() {
     const filtered = rewards.filter((reward) => {
       const matchesSearch = reward.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             reward.description.toLowerCase().includes(searchTerm.toLowerCase());
-      // Assuming 'type' and 'status' fields exist in RewardResponse or can be derived
-      // For now, we'll filter based on available fields.
-      // If type/status are not directly in RewardResponse, this logic needs adjustment.
-      const matchesType = filterType === 'all' || (reward as any).type === filterType; // Cast to any for now
-      const matchesStatus = filterStatus === 'all' || (reward as any).status === filterStatus; // Cast to any for now
+      const matchesType = filterType === 'all' || reward.type === filterType;
+      const matchesStatus = filterStatus === 'all' || reward.status === filterStatus;
       return matchesSearch && matchesType && matchesStatus;
     });
 
     // Group by type
     return filtered.reduce((acc, reward) => {
-      // Assuming 'type' field exists in RewardResponse
-      const group = typeLabels[(reward as any).type] || 'Other'; // Cast to any for now
+      const group = typeLabels[reward.type] || 'Other';
       if (!acc[group]) {
         acc[group] = [];
       }

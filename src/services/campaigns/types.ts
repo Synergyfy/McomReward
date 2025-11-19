@@ -60,6 +60,12 @@ export interface PublicCampaignResponse {
   matchingPointsThreshold: number | null;
   totalMatchingPointsEarned: number;
   matchingPointsDisabledByAdmin: boolean;
+  business: {
+    logoUrl: string;
+  };
+  rewards: {
+    name: string;
+  }[];
 }
 
 // The structure of the paginated response

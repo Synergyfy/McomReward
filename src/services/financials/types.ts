@@ -3,6 +3,7 @@ export interface Tier {
   id: string;
   name: string;
   monthlyPrice: string;
+  quaterlyPrice: string;
   annualPrice: string;
   features: string[];
   createdAt: string;
@@ -13,6 +14,7 @@ export interface Tier {
 export interface TierCreateInput {
   name: string;
   monthly_price: number;
+  quaterly_price: number;
   annual_price: number;
   features: string[];
 }
@@ -20,6 +22,7 @@ export interface TierCreateInput {
 export interface TierUpdateInput {
   name?: string;
   monthly_price?: number;
+  quaterly_price?: number;
   annual_price?: number;
   features?: string[];
 }

@@ -8,17 +8,76 @@ export interface CreateCampaignRequest {
   subImageUrls: string[];
 }
 
+export interface CreateCampaignPayload {
+  name: string;
+  campaign_type: string;
+  campaign_message: string;
+  start_date: string;
+  end_date: string;
+  quantity: number;
+  audience_type: string;
+  signUpPoint: number;
+  banner_url: string;
+  logo_url: string;
+  cta_text: string;
+  cta_background_color: string;
+  cta_text_color: string;
+  text_color: string;
+  background_color: string;
+  reward_type: string;
+  regular_points_threshold: number;
+  matching_points_threshold: number;
+  earn_point_page_title: string;
+  earn_point_page_description: string;
+  redeem_reward_page_title: string;
+  redeem_reward_page_description: string;
+  contact_us_page_title: string;
+  contact_us_page_description: string;
+  contact_email: string;
+  contact_phone_number: string;
+  footer_text: string;
+  business_reward_ids: string[];
+}
+
 export interface CampaignResponse {
   id: string;
-  title: string;
-  description: string;
+  name: string;
+  campaignType: string;
+  campaignMessage: string;
   startDate: string;
   endDate: string;
-  rewardId: string;
-  thumbnailUrl: string;
-  subImageUrls: string[];
+  quantity: number;
+  audienceType: string;
+  bannerUrl: string;
+  logoUrl: string;
+  ctaText: string;
+  ctaBackgroundColor: string;
+  ctaTextColor: string;
+  textColor: string;
+  backgroundColor: string;
+  signUpPoint: number;
+  rewardType: string;
+  regularPointsThreshold: number;
+  matchingPointsThreshold: number;
+  earnPointPageTitle: string;
+  earnPointPageDescription: string;
+  redeemRewardPageTitle: string;
+  redeemRewardPageDescription: string;
+  contactUsPageTitle: string;
+  contactUsPageDescription: string;
+  contactEmail: string;
+  contactPhoneNumber: string;
+  footerText: string;
+  rewards: any[];
+  uniqueCode: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  disabled: boolean;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  totalMatchingPointsEarned: number;
+  matchingPointsDisabledByAdmin: boolean;
 }
 
 export enum CampaignType {

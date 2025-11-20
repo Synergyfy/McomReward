@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api from '../api';
 import {
   CreateCampaignRequest,
+  CreateCampaignPayload,
   CampaignResponse,
   PaginatedCampaignsResponse,
   BusinessCampaign,
@@ -13,8 +14,8 @@ const CAMPAIGNS_QUERY_KEY = 'campaigns';
 const ANALYTICS_QUERY_KEY = 'campaign-analytics';
 
 // Create Campaign
-const createCampaign = async (campaignData: CreateCampaignRequest): Promise<CampaignResponse> => {
-  const { data } = await api.post<CampaignResponse>('/campaigns/business/campaigns', campaignData);
+const createCampaign = async (campaignData: CreateCampaignPayload): Promise<CampaignResponse> => {
+  const { data } = await api.post<CampaignResponse>('/campaigns', campaignData);
   return data;
 };
 

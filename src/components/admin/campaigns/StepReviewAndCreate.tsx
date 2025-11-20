@@ -35,22 +35,75 @@ const mockRewards = [
   { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
 ];
 
+import { useCreateCampaign } from '@/services/campaigns/hook';
+import { CreateCampaignPayload } from '@/services/campaigns/types';
+import { toast } from 'sonner'; // Assuming sonner is used, or use standard alert if not available. Reverting to console/alert if unsure, but keeping it simple.
+
+// ... imports
+
 export default function StepReviewAndCreate({ onBack }: StepProps) {
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail'); // State for managing active preview tab
+  const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail');
+
+  const { mutate: createCampaign, isPending } = useCreateCampaign();
 
   const handleCreateCampaign = () => {
-    // Here you would typically send the formData to your API
-    console.log('Creating campaign with data:', formData);
-    setShowSuccessDialog(true);
+    if (!formData.startDate || !formData.endDate) {
+      alert("Start date and end date are required.");
+      return;
+    }
+
+    const payload: CreateCampaignPayload = {
+      name: formData.campaignName,
+      campaign_type: formData.campaignType || 'qr_code',
+      campaign_message: formData.campaignMessage,
+      start_date: formData.startDate.toISOString(),
+      end_date: formData.endDate.toISOString(),
+      quantity: Number(formData.rewardsAvailable) || 0,
+      audience_type: formData.audienceType[0] || 'members', // Taking first element or default
+      signUpPoint: 0, // Default as not in form
+      banner_url: formData.imageUrl,
+      logo_url: formData.logoUrl,
+      cta_text: formData.ctaButtonText,
+      cta_background_color: formData.ctaBgColor,
+      cta_text_color: formData.ctaTextColor,
+      text_color: formData.bgColorTextColor,
+      background_color: formData.bgColor,
+      reward_type: 'regular', // Default
+      regular_points_threshold: 0, // Default
+      matching_points_threshold: 0, // Default
+      earn_point_page_title: formData.earnTitle || '',
+      earn_point_page_description: formData.earnText || '',
+      redeem_reward_page_title: formData.redeemTitle || '',
+      redeem_reward_page_description: formData.redeemText || '',
+      contact_us_page_title: formData.contactTitle || '',
+      contact_us_page_description: formData.contactText || '',
+      contact_email: formData.contactEmail || '',
+      contact_phone_number: formData.contactPhone || '',
+      footer_text: formData.footerText || '',
+      business_reward_ids: formData.rewardIds,
+    };
+
+    console.log('Creating campaign with payload:', payload);
+
+    createCampaign(payload, {
+      onSuccess: (data) => {
+        console.log('Campaign created successfully:', data);
+        setShowSuccessDialog(true);
+      },
+      onError: (error) => {
+        console.error('Failed to create campaign:', error);
+        alert('Failed to create campaign. Please try again.');
+      }
+    });
   };
 
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
-    router.push('/dashboard/campaigns');
+    router.push('/admin/campaigns/list'); // Updated path to likely correct one based on file structure
   };
 
   const selectedRewards = mockRewards.filter(r => formData.rewardIds.includes(r.id));
@@ -111,8 +164,10 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
           </div>
 
           <div className="flex justify-between mt-6">
-            <Button variant="outline" onClick={onBack}>Back</Button>
-            <Button onClick={handleCreateCampaign}>Create Campaign</Button>
+            <Button variant="outline" onClick={onBack} disabled={isPending}>Back</Button>
+            <Button onClick={handleCreateCampaign} disabled={isPending}>
+              {isPending ? 'Creating...' : 'Create Campaign'}
+            </Button>
           </div>
         </CardContent>
       </Card>

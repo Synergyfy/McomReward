@@ -15,20 +15,21 @@ import CategoryDialog from '@/components/admin/sectors/CategoryDialog';
 import SubCategoryDialog from '@/components/admin/sectors/SubCategoryDialog';
 import { DeleteConfirmationDialog } from '@/components/admin/sectors/DeleteConfirmationDialog';
 import Image from 'next/image';
-import { 
-  useCreateSector, 
-  useCreateCategory, 
-  useCreateSubCategory, 
+import {
+  useCreateSector,
+  useCreateCategory,
+  useCreateSubCategory,
   useUpdateSector,
   useUpdateCategory,
   useUpdateSubCategory,
   useDeleteSector,
   useDeleteCategory,
   useDeleteSubCategory,
-  useGetSectors, 
-  useGetCategories 
+  useGetSectors,
+  useGetCategoriesBySector,
+  useGetSubCategoriesByCategory
 } from '@/services/sectors/hook';
-import { SectorResponse, CategoryResponse } from '@/services/sectors/types';
+import { SectorResponse, CategoryResponse, SubCategoryResponse } from '@/services/sectors/types';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 
@@ -36,30 +37,8 @@ function isAxiosError(error: unknown): error is AxiosError {
   return (error as AxiosError).isAxiosError !== undefined;
 }
 
-
-// Transform API types to match page structure
-type Sector = {
-  id: string;
-  name: string;
-  imageUrl: string | null;
-  categories: Category[];
-};
-
-type Category = {
-  id: string;
-  name: string;
-  imageUrl: string | null;
-  subCategories: SubCategory[];
-};
-
-type SubCategory = {
-  id: string;
-  name: string;
-  imageUrl: string | null;
-};
-
 // --- Type Definitions ---
-type Item = Sector | Category | SubCategory;
+type Item = SectorResponse | CategoryResponse | SubCategoryResponse;
 
 interface ItemCardProps {
   item: Item;
@@ -86,12 +65,12 @@ type DeleteTarget = {
 // --- Reusable Item Card ---
 const ItemCard: React.FC<ItemCardProps> = ({ item, onSelect, onEdit, onDelete, isSelected }) => {
   // Check for imageUrl or icon (for backward compatibility with mock data)
-  const imageUrl = 
+  const imageUrl =
     ('imageUrl' in item && item.imageUrl && typeof item.imageUrl === 'string' ? item.imageUrl : null) ||
-    ('icon' in item && typeof item.icon === 'string' ? item.icon : null) ||
+    ('icon' in item && typeof (item as any).icon === 'string' ? (item as any).icon : null) ||
     null;
   const displayImage = imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('blob:') || imageUrl.startsWith('data:'));
-  
+
   return (
     <Card
       className={`mb-2 cursor-pointer transition-all ${isSelected ? 'border-primary shadow-lg' : 'hover:shadow-md'}`}
@@ -122,10 +101,6 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onSelect, onEdit, onDelete, i
 
 // --- Main Page Component ---
 export default function SectorsPage() {
-  // Fetch data from API
-  const { data: sectorsData, isLoading: isLoadingSectors, error: sectorsError } = useGetSectors();
-  const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategories();
-
   // Hooks for creating sectors, categories, and subcategories
   const createSectorMutation = useCreateSector();
   const createCategoryMutation = useCreateCategory();
@@ -141,51 +116,28 @@ export default function SectorsPage() {
   const deleteCategoryMutation = useDeleteCategory();
   const deleteSubCategoryMutation = useDeleteSubCategory();
 
-  // Merge sectors and categories data to include subcategories
-  const sectors = useMemo(() => {
-    if (!sectorsData || !categoriesData) return [];
-
-    // Create a map of category ID to category with subcategories
-    const categoryMap = new Map<string, CategoryResponse>();
-    categoriesData.forEach(cat => {
-      categoryMap.set(cat.id, cat);
-    });
-
-    // Merge sectors with their categories' subcategories
-    return sectorsData.map(sector => ({
-      id: sector.id,
-      name: sector.name,
-      imageUrl: sector.imageUrl,
-      // Defensive: ensure categories is an array before mapping
-      categories: (sector.categories || []).map(cat => {
-        const categoryWithSubs = categoryMap.get(cat.id);
-        return {
-          id: cat.id,
-          name: cat.name,
-          imageUrl: cat.imageUrl,
-          subCategories: (categoryWithSubs?.subCategories || []).map(sub => ({
-            id: sub.id,
-            name: sub.name,
-            imageUrl: sub.imageUrl,
-          })),
-        };
-      }),
-    }));
-  }, [sectorsData, categoriesData]);
-
-  const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSector, setSelectedSector] = useState<SectorResponse | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+
+  // Fetch data from API
+  const { data: sectorsData = [], isLoading: isLoadingSectors, error: sectorsError } = useGetSectors();
+
+  // Fetch categories for selected sector
+  const { data: categoriesPaginated, isLoading: isLoadingCategories } = useGetCategoriesBySector(selectedSector?.id);
+  const categories = categoriesPaginated?.data || [];
+
+  // Fetch subcategories for selected category
+  const { data: subCategoriesPaginated, isLoading: isLoadingSubCategories } = useGetSubCategoriesByCategory(selectedCategory?.id);
+  const subCategories = subCategoriesPaginated?.data || [];
 
   // Set initial selections when data loads
   useEffect(() => {
-    if (sectors.length > 0 && !selectedSector) {
-      setSelectedSector(sectors[0]);
-      if (sectors[0].categories?.length > 0) {
-        setSelectedCategory(sectors[0].categories[0]);
-      }
+    if (sectorsData.length > 0 && !selectedSector) {
+      // Optional: Select first sector by default, or leave null
+      // setSelectedSector(sectorsData[0]); 
     }
-  }, [sectors, selectedSector]);
+  }, [sectorsData, selectedSector]);
 
   const [dialogState, setDialogState] = useState<DialogState>({
     type: null,
@@ -201,12 +153,12 @@ export default function SectorsPage() {
     setDialogState({ type: null, isOpen: false, data: null });
   };
 
-  const handleSelectSector = (sector: Sector) => {
+  const handleSelectSector = (sector: SectorResponse) => {
     setSelectedSector(sector);
     setSelectedCategory(null);
   };
 
-  const handleSelectCategory = (category: Category) => {
+  const handleSelectCategory = (category: CategoryResponse) => {
     setSelectedCategory(category);
   };
 
@@ -223,7 +175,7 @@ export default function SectorsPage() {
       if (type === 'sector') {
         await deleteSectorMutation.mutateAsync(id);
         toast.success('Sector deleted successfully');
-        
+
         // Clear selections if deleted sector was selected
         if (selectedSector?.id === id) {
           setSelectedSector(null);
@@ -232,7 +184,7 @@ export default function SectorsPage() {
       } else if (type === 'category') {
         await deleteCategoryMutation.mutateAsync(id);
         toast.success('Category deleted successfully');
-        
+
         // Clear category selection if deleted category was selected
         if (selectedCategory?.id === id) {
           setSelectedCategory(null);
@@ -345,7 +297,7 @@ export default function SectorsPage() {
   };
 
 
-  const isLoading = isLoadingSectors || isLoadingCategories;
+  const isLoading = isLoadingSectors;
 
   if (sectorsError) {
     return (
@@ -377,108 +329,112 @@ export default function SectorsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* --- Sectors Column --- */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Sectors</CardTitle>
-            <Button size="sm" onClick={() => openDialog('sector')}> 
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Sector
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {sectors.map((sector) => (
-              <ItemCard
-                key={sector.id}
-                item={sector}
-                onSelect={() => handleSelectSector(sector)}
-                onEdit={(item) => openDialog('sector', item as Sector)}
-                onDelete={(item) => handleDeleteRequest('sector', item)}
-                isSelected={selectedSector?.id === sector.id}
-              />
-            ))}
-          </CardContent>
-        </Card>
+          {/* --- Sectors Column --- */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Sectors</CardTitle>
+              <Button size="sm" onClick={() => openDialog('sector')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Sector
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {sectorsData.map((sector) => (
+                <ItemCard
+                  key={sector.id}
+                  item={sector}
+                  onSelect={() => handleSelectSector(sector)}
+                  onEdit={(item) => openDialog('sector', item as SectorResponse)}
+                  onDelete={(item) => handleDeleteRequest('sector', item)}
+                  isSelected={selectedSector?.id === sector.id}
+                />
+              ))}
+            </CardContent>
+          </Card>
 
-        {/* --- Categories Column --- */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Categories</CardTitle>
-              {selectedSector && <CardDescription>For {selectedSector.name}</CardDescription>}
-            </div>
-            <Button size="sm" disabled={!selectedSector} onClick={() => openDialog('category')}> 
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {selectedSector ? (
-              selectedSector.categories.length > 0 ? (
-                selectedSector.categories.map((cat) => (
-                  <ItemCard
-                    key={cat.id}
-                    item={cat}
-                    onSelect={() => handleSelectCategory(cat)}
-                    onEdit={(item) => openDialog('category', item as Category)}
-                    onDelete={(item) => handleDeleteRequest('category', item)}
-                    isSelected={selectedCategory?.id === cat.id}
-                  />
-                ))
+          {/* --- Categories Column --- */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Categories</CardTitle>
+                {selectedSector && <CardDescription>For {selectedSector.name}</CardDescription>}
+              </div>
+              <Button size="sm" disabled={!selectedSector} onClick={() => openDialog('category')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Category
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {selectedSector ? (
+                isLoadingCategories ? (
+                  <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <ItemCard
+                      key={cat.id}
+                      item={cat}
+                      onSelect={() => handleSelectCategory(cat)}
+                      onEdit={(item) => openDialog('category', item as CategoryResponse)}
+                      onDelete={(item) => handleDeleteRequest('category', item)}
+                      isSelected={selectedCategory?.id === cat.id}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No categories found for this sector.</p>
+                )
               ) : (
-                <p className="text-sm text-muted-foreground">No categories found for this sector.</p>
-              )
-            ) : (
-              <p className="text-sm text-muted-foreground">Select a sector to see its categories.</p>
-            )}
-          </CardContent>
-        </Card>
+                <p className="text-sm text-muted-foreground">Select a sector to see its categories.</p>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* --- Sub-Categories Column --- */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Sub-Categories</CardTitle>
-              {selectedCategory && <CardDescription>For {selectedCategory.name}</CardDescription>}
-            </div>
-            <Button size="sm" disabled={!selectedCategory} onClick={() => openDialog('subCategory')}> 
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Sub-Category
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {selectedCategory ? (
-              selectedCategory.subCategories.length > 0 ? (
-                selectedCategory.subCategories.map((sub) => (
-                  <ItemCard
-                    key={sub.id}
-                    item={sub}
-                    onSelect={() => {}}
-                    onEdit={(item) => openDialog('subCategory', item as SubCategory)}
-                    onDelete={(item) => handleDeleteRequest('subCategory', item)}
-                    isSelected={false}
-                  />
-                ))
+          {/* --- Sub-Categories Column --- */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Sub-Categories</CardTitle>
+                {selectedCategory && <CardDescription>For {selectedCategory.name}</CardDescription>}
+              </div>
+              <Button size="sm" disabled={!selectedCategory} onClick={() => openDialog('subCategory')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Sub-Category
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {selectedCategory ? (
+                isLoadingSubCategories ? (
+                  <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                ) : subCategories.length > 0 ? (
+                  subCategories.map((sub) => (
+                    <ItemCard
+                      key={sub.id}
+                      item={sub}
+                      onSelect={() => { }}
+                      onEdit={(item) => openDialog('subCategory', item as SubCategoryResponse)}
+                      onDelete={(item) => handleDeleteRequest('subCategory', item)}
+                      isSelected={false}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No sub-categories found.</p>
+                )
               ) : (
-                <p className="text-sm text-muted-foreground">No sub-categories found.</p>
-              )
-            ) : (
-              <p className="text-sm text-muted-foreground">Select a category to see its sub-categories.</p>
-            )}
-          </CardContent>
-        </Card>
+                <p className="text-sm text-muted-foreground">Select a category to see its sub-categories.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Dialogs */} 
+      {/* Dialogs */}
       <SectorDialog
         isOpen={dialogState.type === 'sector' && dialogState.isOpen}
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('sector', data)}
         sector={dialogState.data ? (() => {
-          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string') 
-            ? dialogState.data.imageUrl 
-            : (('icon' in dialogState.data && typeof dialogState.data.icon === 'string') ? dialogState.data.icon : '');
+          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string')
+            ? dialogState.data.imageUrl
+            : (('icon' in dialogState.data && typeof (dialogState.data as any).icon === 'string') ? (dialogState.data as any).icon : '');
           return {
             id: dialogState.data.id,
             name: dialogState.data.name,
@@ -491,23 +447,21 @@ export default function SectorsPage() {
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('category', data)}
         category={dialogState.data ? (() => {
-          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string') 
-            ? dialogState.data.imageUrl 
-            : (('icon' in dialogState.data && typeof dialogState.data.icon === 'string') ? dialogState.data.icon : '');
-          
+          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string')
+            ? dialogState.data.imageUrl
+            : (('icon' in dialogState.data && typeof (dialogState.data as any).icon === 'string') ? (dialogState.data as any).icon : '');
+
           // Find sectorId from sectors data if not in dialogState.data
-          let sectorId = ('sectorId' in dialogState.data && typeof dialogState.data.sectorId === 'string') 
-            ? dialogState.data.sectorId 
+          let sectorId = ('sectorId' in dialogState.data && typeof (dialogState.data as any).sectorId === 'string')
+            ? (dialogState.data as any).sectorId
             : undefined;
-          
+
           if (!sectorId && dialogState.data.id) {
-            // Find which sector contains this category
-            const foundSector = sectors.find(s => 
-              s.categories.some(c => c.id === dialogState.data?.id)
-            );
-            sectorId = foundSector?.id;
+            // With new structure, we might not easily find parent sector if not selected
+            // But usually we are in context of selectedSector
+            sectorId = selectedSector?.id;
           }
-          
+
           return {
             id: dialogState.data.id,
             name: dialogState.data.name,
@@ -516,40 +470,26 @@ export default function SectorsPage() {
           };
         })() : null}
         sectorName={selectedSector?.name}
-        sectorId={selectedSector?.id || (dialogState.data && dialogState.type === 'category' ? (() => {
-          const foundSector = sectors.find(s => 
-            s.categories.some(c => c.id === dialogState.data?.id)
-          );
-          return foundSector?.id;
-        })() : undefined)}
+        sectorId={selectedSector?.id}
       />
       <SubCategoryDialog
         isOpen={dialogState.type === 'subCategory' && dialogState.isOpen}
         onClose={closeDialog}
         onSubmit={(data) => handleSubmit('subCategory', data)}
         subCategory={dialogState.data ? (() => {
-          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string') 
-            ? dialogState.data.imageUrl 
+          const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string')
+            ? dialogState.data.imageUrl
             : '';
-          
+
           // Find categoryId from sectors data if not in dialogState.data
-          let categoryId = ('categoryId' in dialogState.data && typeof dialogState.data.categoryId === 'string') 
-            ? dialogState.data.categoryId 
+          let categoryId = ('categoryId' in dialogState.data && typeof (dialogState.data as any).categoryId === 'string')
+            ? (dialogState.data as any).categoryId
             : undefined;
-          
+
           if (!categoryId && dialogState.data.id) {
-            // Find which category contains this subcategory
-            for (const sector of sectors) {
-              const foundCategory = sector.categories.find(c => 
-                c.subCategories.some(sc => sc.id === dialogState.data?.id)
-              );
-              if (foundCategory) {
-                categoryId = foundCategory.id;
-                break;
-              }
-            }
+            categoryId = selectedCategory?.id;
           }
-          
+
           return {
             id: dialogState.data.id,
             name: dialogState.data.name,
@@ -558,17 +498,7 @@ export default function SectorsPage() {
           };
         })() : null}
         categoryName={selectedCategory?.name}
-        categoryId={selectedCategory?.id || (dialogState.data && dialogState.type === 'subCategory' ? (() => {
-          for (const sector of sectors) {
-            const foundCategory = sector.categories.find(c => 
-              c.subCategories.some(sc => sc.id === dialogState.data?.id)
-            );
-            if (foundCategory) {
-              return foundCategory.id;
-            }
-          }
-          return undefined;
-        })() : undefined)}
+        categoryId={selectedCategory?.id}
       />
       <DeleteConfirmationDialog
         isOpen={!!deleteTarget}

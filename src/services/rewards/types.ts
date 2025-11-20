@@ -1,15 +1,18 @@
 export interface CreateRewardRequest {
-    title: string;
-    pointsRequired: number;
-    value: number;
-    description: string;
-    image: string;
-    quantity: number;
-    disabled: boolean;
-    type: string;
-    status: string;
-    expiry: string;
-    badgeLevel: string[];
+  title: string;
+  points_required: number;
+  value: number;
+  description: string;
+  image: string;
+  quantity: number;
+  reward_type: string;
+  badge_level: string;
+  reward_source: string;
+  audience: string;
+  expiry_datetime: string;
+  status: string;
+  sector_ids: string[];
+  tier_ids: string[];
 }
 
 export interface UpdateRewardRequest {

@@ -14,18 +14,20 @@ import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RewardResponse } from '@/services/rewards/types';
+import { RewardResponse, CreateRewardRequest } from '@/services/rewards/types';
+import { useCreateReward } from '@/services/rewards/hook';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 // Using mock data for prototype purposes
-import { initialSectors, type Sector } from '@/lib/mock-data/sectors';
+import { useGetSectors, useGetCategoriesBySector, useGetSubCategoriesByCategory } from '@/services/sectors/hook';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode?: 'create' | 'edit' | 'duplicate';
   reward?: RewardResponse | null;
+  onSuccess?: () => void;
 }
 
 const rewardTypes = [
@@ -36,14 +38,20 @@ const rewardTypes = [
   { value: 'physical_product', label: 'Physical Product', icon: '📦' },
 ];
 
-export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'create', reward }: CreateRewardWizardModalProps) {
+export default function CreateRewardWizardModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  mode = 'create',
+  reward,
+}: CreateRewardWizardModalProps) {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const totalSteps = 2;
-
-  // Form State
-  const [rewardType, setRewardType] = useState('points_offer');
+  const { mutate: createReward, isPending: isCreating } = useCreateReward();
+  const { data: sectors = [] } = useGetSectors();
   const [name, setName] = useState('');
+  const [step, setStep] = useState(1);
+  const totalSteps = 3;
+  const [rewardType, setRewardType] = useState('voucher');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
@@ -55,6 +63,14 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   const [selectedSector, setSelectedSector] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubCategory, setSelectedSubCategory] = useState('');
+
+  // Fetch categories when sector is selected
+  const { data: categoriesPaginated } = useGetCategoriesBySector(selectedSector || undefined);
+  const availableCategories = categoriesPaginated?.data || [];
+
+  // Fetch subcategories when category is selected
+  const { data: subCategoriesPaginated } = useGetSubCategoriesByCategory(selectedCategory || undefined);
+  const availableSubCategories = subCategoriesPaginated?.data || [];
   const [rewardSource, setRewardSource] = useState('mcom');
   const [audience, setAudience] = useState('all_businesses');
 
@@ -70,15 +86,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
 
-  const availableCategories = useMemo(() => {
-    if (!selectedSector) return [];
-    return initialSectors.find(s => s.id === selectedSector)?.categories || [];
-  }, [selectedSector]);
-
-  const availableSubCategories = useMemo(() => {
-    if (!selectedCategory) return [];
-    return availableCategories.find(c => c.id === selectedCategory)?.subCategories || [];
-  }, [selectedCategory, availableCategories]);
+  // Removed useMemos for availableCategories/SubCategories as they are now direct hook results
 
   const resetForm = () => {
     setStep(1);
@@ -156,30 +164,37 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
   };
 
   const handleSubmit = () => {
-    console.log('Submitting reward:', {
-      id: mode === 'edit' ? reward?.id : undefined,
-      mode,
-      name,
+    const payload: CreateRewardRequest = {
+      title: name,
+      points_required: Number(pointsRequired),
+      value: Number(value),
       description,
-      rewardType,
-      value,
-      pointsRequired,
-      badgeLevel,
-      expiry,
-      image: imagePreviewUrl,
-      status,
-      sector: selectedSector,
-      category: selectedCategory,
-      subCategory: selectedSubCategory,
-      source: rewardSource,
+      image: imagePreviewUrl || '',
+      quantity: 100, // Default or add field if needed
+      reward_type: rewardType,
+      badge_level: badgeLevel.length > 0 ? badgeLevel[0] : '', // Backend expects string, taking first or empty
+      reward_source: rewardSource,
       audience,
+      expiry_datetime: expiry.toISOString(),
+      status,
+      sector_ids: selectedSector ? [selectedSector] : [],
+      tier_ids: [], // Add tier selection if needed, currently empty based on UI
+    };
+
+    createReward(payload, {
+      onSuccess: () => {
+        // First, close the main wizard dialog
+        onClose();
+        // Then, show the success prompt. A timeout ensures the first dialog has time to close.
+        setTimeout(() => {
+          setShowCampaignPrompt(true);
+        }, 150);
+      },
+      onError: (error: unknown) => {
+        console.error('Failed to create reward:', error);
+        // Toast is handled in the hook
+      }
     });
-    // First, close the main wizard dialog
-    onClose();
-    // Then, show the success prompt. A timeout ensures the first dialog has time to close.
-    setTimeout(() => {
-      setShowCampaignPrompt(true);
-    }, 150);
   };
 
   const handleCampaignYes = () => {
@@ -253,7 +268,9 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
                   >
                     <SelectTrigger><SelectValue placeholder="Select Sector" /></SelectTrigger>
                     <SelectContent position="popper" className="z-[10000]">
-                      {initialSectors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      <SelectContent position="popper" className="z-[10000]">
+                        {sectors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
                     </SelectContent>
                   </Select>
                 </div>
@@ -341,17 +358,17 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
               {/* Reward Source */}
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                    <label className="block text-sm font-medium mb-2">Reward Source</label>
-                    <RadioGroup value={rewardSource} onValueChange={setRewardSource} className="flex space-x-4">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="mcom" id="mcom" />
-                            <Label htmlFor="mcom">MCOM Vault</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="partner" id="partner" />
-                            <Label htmlFor="partner">Partner</Label>
-                        </div>
-                    </RadioGroup>
+                  <label className="block text-sm font-medium mb-2">Reward Source</label>
+                  <RadioGroup value={rewardSource} onValueChange={setRewardSource} className="flex space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="mcom" id="mcom" />
+                      <Label htmlFor="mcom">MCOM Vault</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="partner" id="partner" />
+                      <Label htmlFor="partner">Partner</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
 
@@ -404,7 +421,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
                         <span>{badgeLevel.join(', ')}</span>
                       </div>
                     )}
-                    {selectedSector && <div className="flex justify-between"><span className="font-medium">Sector:</span><span>{initialSectors.find(s => s.id === selectedSector)?.name}</span></div>}
+                    {selectedSector && <div className="flex justify-between"><span className="font-medium">Sector:</span><span>{sectors.find(s => s.id === selectedSector)?.name}</span></div>}
                     {selectedCategory && <div className="flex justify-between"><span className="font-medium">Category:</span><span>{availableCategories.find(c => c.id === selectedCategory)?.name}</span></div>}
                     <div className="flex justify-between"><span className="font-medium">Audience:</span><span>{audience.replace('_', ' ')}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Source:</span><span>{rewardSource === 'mcom' ? 'MCOM Vault' : 'Partner'}</span></div>
@@ -422,8 +439,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, mode = 'creat
             {step < totalSteps ? (
               <Button onClick={handleNext} disabled={!isStep1Valid}>Next</Button>
             ) : (
-              <Button onClick={handleSubmit}>
-                {mode === 'edit' ? 'Save Changes' : 'Create Reward'}
+              <Button onClick={handleSubmit} disabled={isCreating}>
+                {isCreating ? 'Creating...' : (mode === 'edit' ? 'Save Changes' : 'Create Reward')}
               </Button>
             )}
           </div>

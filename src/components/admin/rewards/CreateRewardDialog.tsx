@@ -25,7 +25,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
   const [value, setValue] = useState(0);
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState(0);
-  
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -59,7 +59,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
     setIsUploadingImage(true);
     try {
       const paramsToSign = {
-        timestamp: Math.round((new Date).getTime()/1000),
+        timestamp: Math.round((new Date).getTime() / 1000),
       };
 
       const signatureResponse = await fetch('/api/sign-cloudinary-params', {
@@ -109,16 +109,19 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
 
     const rewardData: CreateRewardRequest = {
       title,
-      pointsRequired: pointsRequired,
+      points_required: pointsRequired,
       value,
       description,
       image: imageUrlToSubmit,
       quantity,
-      disabled: false,
-      type: 'voucher',
+      reward_type: 'voucher',
       status: 'active',
-      expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      badgeLevel: [],
+      expiry_datetime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      badge_level: '',
+      reward_source: 'mcom',
+      audience: 'all_businesses',
+      sector_ids: [],
+      tier_ids: [],
     };
 
     createReward(rewardData, {
@@ -173,7 +176,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
             <Input id="quantity" placeholder="Quantity" type="number" value={quantity} onChange={(e) => { setQuantity(Number(e.target.value)); setErrors({ ...errors, quantity: '' }); }} className={errors.quantity ? 'border-red-500' : ''} />
             {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Reward Image</label>
             <CloudinaryUpload onFileSelect={handleFileSelect} />

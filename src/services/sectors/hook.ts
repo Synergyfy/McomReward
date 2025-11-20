@@ -7,11 +7,14 @@ import {
   CategoryResponse,
   CreateSubCategoryRequest,
   SubCategoryResponse,
+  PaginatedResponse,
 } from './types';
 
 const SECTORS_QUERY_KEY = 'sectors';
 const CATEGORIES_QUERY_KEY = 'categories';
 const SUBCATEGORIES_QUERY_KEY = 'subcategories';
+const SECTOR_CATEGORIES_QUERY_KEY = 'sector_categories';
+const CATEGORY_SUBCATEGORIES_QUERY_KEY = 'category_subcategories';
 
 // Create Sector
 const createSector = async (sectorData: CreateSectorRequest): Promise<SectorResponse> => {
@@ -43,29 +46,37 @@ export const useGetSectors = () => {
   });
 };
 
-// Get Categories (includes nested subcategories)
-const getCategories = async (): Promise<CategoryResponse[]> => {
-  const { data } = await api.get<CategoryResponse[]>('/categories');
+
+
+// Get Categories by Sector
+const getCategoriesBySector = async (sectorId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<CategoryResponse>> => {
+  const { data } = await api.get<PaginatedResponse<CategoryResponse>>(`/sectors/${sectorId}/categories`, {
+    params: { page, limit },
+  });
   return data;
 };
 
-export const useGetCategories = () => {
+export const useGetCategoriesBySector = (sectorId: string | undefined, page: number = 1, limit: number = 10) => {
   return useQuery({
-    queryKey: [CATEGORIES_QUERY_KEY],
-    queryFn: getCategories,
+    queryKey: [SECTOR_CATEGORIES_QUERY_KEY, sectorId, page, limit],
+    queryFn: () => getCategoriesBySector(sectorId!, page, limit),
+    enabled: !!sectorId,
   });
 };
 
-// Get SubCategories
-const getSubCategories = async (): Promise<SubCategoryResponse[]> => {
-  const { data } = await api.get<SubCategoryResponse[]>('/subcategories');
+// Get SubCategories by Category
+const getSubCategoriesByCategory = async (categoryId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<SubCategoryResponse>> => {
+  const { data } = await api.get<PaginatedResponse<SubCategoryResponse>>(`/categories/${categoryId}/subcategories`, {
+    params: { page, limit },
+  });
   return data;
 };
 
-export const useGetSubCategories = () => {
+export const useGetSubCategoriesByCategory = (categoryId: string | undefined, page: number = 1, limit: number = 10) => {
   return useQuery({
-    queryKey: [SUBCATEGORIES_QUERY_KEY],
-    queryFn: getSubCategories,
+    queryKey: [CATEGORY_SUBCATEGORIES_QUERY_KEY, categoryId, page, limit],
+    queryFn: () => getSubCategoriesByCategory(categoryId!, page, limit),
+    enabled: !!categoryId,
   });
 };
 

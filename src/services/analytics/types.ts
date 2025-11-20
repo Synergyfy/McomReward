@@ -1,21 +1,43 @@
-export interface TopBusiness {
-  id: string;
+export interface PointLog {
   name: string;
-  totalPointsEarned: number;
-  totalPointsRedeemed: number;
+  email: string;
+  points: number;
+  description: string;
+  type: string;
+  date: string;
+}
+
+export interface GetPointLogsResponse {
+  data: PointLog[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface SystemOverview {
   totalCampaigns: number;
   totalParticipants: number;
   totalRedemptions: number;
-  totalBusiness: number;
-  totalMatchingPoints: number;
+}
+
+export interface TopBusiness {
+  name: string;
+  totalPointsRedeemed: number;
+  totalPointsEarned: number;
 }
 
 export interface TopReward {
-  id: string;
   name: string;
   totalRedemptions: number;
 }
 
+export interface TierBreakdown {
+  id: string;
+  name: string;
+  businessCount: number;
+  monthlyPrice: string;
+  annualPrice: string;
+  quaterlyPrice: string;
+  features: string[];
+  status: string;
+}

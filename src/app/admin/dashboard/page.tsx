@@ -33,11 +33,12 @@ import {
 } from '@/lib/mock-data/dashboard';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSystemOverview, useTopBusinesses } from '@/services/analytics/hook';
+import { useSystemOverview, useTierBreakdown, useTopBusinesses } from '@/services/analytics/hook';
 
 export default function AdminDashboard() {
   const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
   const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
+  const { data: tierBreakdown, isLoading: isLoadingTierBreakdown, error: tierBreakdownError } = useTierBreakdown();
 
 
   return (
@@ -243,12 +244,28 @@ export default function AdminDashboard() {
             <CardTitle>Business Tier Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(businessTierBreakdownData).map(([tier, count]) => (
-              <div key={tier} className="flex justify-between items-center">
-                <span className="font-medium capitalize">{tier}</span>
-                <Badge variant={tier === 'partner' ? 'default' : 'secondary'}>{count}</Badge>
+            {isLoadingTierBreakdown ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ))}
+            ) : tierBreakdownError ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-destructive">Failed to load tier breakdown</p>
+              </div>
+            ) : tierBreakdown && tierBreakdown.length > 0 ? (
+              tierBreakdown.map((tier) => (
+                <div key={tier.id} className="flex justify-between items-center">
+                  <span className="font-medium capitalize">{tier.name}</span>
+                  <Badge variant={tier.name.toLowerCase() === 'partner' ? 'default' : 'secondary'}>
+                    {tier.businessCount}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">No tier data available</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

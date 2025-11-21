@@ -76,14 +76,15 @@ const mockCampaign = {
   ],
 };
 
-export default function CampaignDetailPage({}: PageProps) {
+export default function CampaignDetailPage({ }: PageProps) {
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
-  const { isMember, memberName } = useCampaignMembership();
+  const { isMember, memberName, joinCampaign } = useCampaignMembership();
 
   const campaign = mockCampaign;
   const isLoading = false;
 
   const handleJoinClick = () => {
+    joinCampaign(campaign.id);
     setIsSignUpDialogOpen(true);
   };
 
@@ -290,20 +291,20 @@ export default function CampaignDetailPage({}: PageProps) {
           {/* Sticky Join Button */}
           <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
             <div className="max-w-4xl mx-auto flex justify-center">
-                {isMember ? (
-                    <Link href="/campaigns/my-points" passHref>
-                        <Button className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-                            View My Points
-                        </Button>
-                    </Link>
-                ) : (
-                    <Button
-                        onClick={handleJoinClick}
-                        className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-                    >
-                        Join Campaign & Get Reward
-                    </Button>
-                )}
+              {isMember ? (
+                <Link href="/campaigns/my-points" passHref>
+                  <Button className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
+                    View My Points
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  onClick={handleJoinClick}
+                  className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+                >
+                  Join Campaign & Get Reward
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -25,44 +25,46 @@ import {
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
-
-const pointBalance = 1250;
+import { useGetParticipantBalance } from '@/services/customer-campaigns/hook';
 
 const transactionHistory = [
   {
     id: '1',
     action: 'Earned Points',
     details: 'Purchase at Mcom Store',
-    points: '+',
+    points: '+50',
     date: '2025-10-28',
   },
   {
     id: '2',
     action: 'Redeemed Reward',
     details: 'Free Coffee',
-    points: '-',
+    points: '-50',
     date: '2025-10-25',
   },
   {
     id: '3',
     action: 'Earned Points',
     details: 'Completed a survey',
-    points: '+',
+    points: '+20',
     date: '2025-10-22',
   },
   {
     id: '4',
     action: 'Earned Points',
     details: 'Referred a friend',
-    points: '+',
+    points: '+100',
     date: '2025-10-19',
   },
 ];
 
 export default function MyPointsPage() {
-  const { isMember } = useCampaignMembership();
+  const { isMember, campaignId } = useCampaignMembership();
+  const { data: balance } = useGetParticipantBalance(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();
+
+  const pointBalance = balance?.points || 0;
 
   useEffect(() => {
     if (!isMember) {

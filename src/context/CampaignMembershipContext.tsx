@@ -4,9 +4,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 interface CampaignMembershipContextType {
   isMember: boolean;
-  joinCampaign: () => void;
+  joinCampaign: (id?: string) => void;
   memberName: string;
   setMemberName: (name: string) => void;
+  campaignId: string;
 }
 
 const CampaignMembershipContext = createContext<CampaignMembershipContextType | undefined>(undefined);
@@ -14,19 +15,26 @@ const CampaignMembershipContext = createContext<CampaignMembershipContextType | 
 export const CampaignMembershipProvider = ({ children }: { children: ReactNode }) => {
   const [isMember, setIsMember] = useState(false);
   const [memberName, setMemberNameState] = useState('');
+  const [campaignId, setCampaignIdState] = useState('');
 
   useEffect(() => {
     const storedIsMember = localStorage.getItem('isCampaignMember');
     const storedMemberName = localStorage.getItem('campaignMemberName');
+    const storedCampaignId = localStorage.getItem('campaignId');
     if (storedIsMember === 'true') {
       setIsMember(true);
       setMemberNameState(storedMemberName || '');
+      setCampaignIdState(storedCampaignId || '');
     }
   }, []);
 
-  const joinCampaign = () => {
+  const joinCampaign = (id?: string) => {
     localStorage.setItem('isCampaignMember', 'true');
     setIsMember(true);
+    if (id) {
+      localStorage.setItem('campaignId', id);
+      setCampaignIdState(id);
+    }
   };
 
   const setMemberName = (name: string) => {
@@ -35,7 +43,7 @@ export const CampaignMembershipProvider = ({ children }: { children: ReactNode }
   };
 
   return (
-    <CampaignMembershipContext.Provider value={{ isMember, joinCampaign, memberName, setMemberName }}>
+    <CampaignMembershipContext.Provider value={{ isMember, joinCampaign, memberName, setMemberName, campaignId }}>
       {children}
     </CampaignMembershipContext.Provider>
   );

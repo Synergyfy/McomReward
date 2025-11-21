@@ -105,7 +105,7 @@ export default function CampaignDetailPage({}: PageProps) {
   const handleJoinClick = () => {
     if (!isLoggedIn) {
       // Redirect to signup with return URL
-      router.push(`/signup?returnUrl=/campaigns/${campaign.id}`);
+      router.push(`/signup?returnUrl=/campaigns/${campaign.id}&type=customer`);
     } else {
       // Already logged in, call join endpoint
       joinCampaign({ campaignId: campaign.id }, {

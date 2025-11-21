@@ -1,8 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
+declare module 'axios' {
+  export interface InternalAxiosRequestConfig {
+    _skipAuthRedirect?: boolean;
+  }
+}
+
 export const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3009';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mcom-loyalty-api.vercel.app/api/v1';
 
 const api = axios.create({
   baseURL,
@@ -42,7 +48,7 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
       prom.resolve(token);
     }
   });
-  
+
   failedQueue = [];
 };
 
@@ -76,18 +82,18 @@ api.interceptors.response.use(
       const refreshTokenValue = Cookies.get('refresh');
 
       if (!refreshTokenValue) {
-        // No refresh token, clear everything and redirect to login
+        // No refresh token, clear everything
         Cookies.remove('access');
         Cookies.remove('refresh');
         removeBearerToken();
         processQueue(error, null);
         isRefreshing = false;
-        
-        // Redirect to login page if in browser
-        if (typeof window !== 'undefined') {
+
+        // Redirect to login page if in browser AND not skipping auth redirect
+        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect) {
           window.location.href = '/login';
         }
-        
+
         return Promise.reject(error);
       }
 
@@ -108,7 +114,7 @@ api.interceptors.response.use(
         // Update tokens in cookies
         Cookies.set('access', access_token);
         Cookies.set('refresh', refresh_token);
-        
+
         // Update bearer token
         setBearerToken(access_token);
 
@@ -122,15 +128,15 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear everything and redirect to login
+        // Refresh failed, clear everything
         Cookies.remove('access');
         Cookies.remove('refresh');
         removeBearerToken();
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
 
-        // Redirect to login page if in browser
-        if (typeof window !== 'undefined') {
+        // Redirect to login page if in browser AND not skipping auth redirect
+        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect) {
           window.location.href = '/login';
         }
 

@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
+import { useParams } from 'next/navigation';
+
 import { Menu, X, User, Settings, LogOut } from "lucide-react";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,16 +16,18 @@ const mockBusiness = {
   logoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2564&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0wby1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
 };
 
-const navLinks = [
-  { href: '/campaigns/earn-points', label: 'EARN POINTS' },
-  { href: '/campaigns/redeem-points', label: 'REDEEM POINTS' },
-  { href: '/campaigns/contact-us', label: 'CONTACT US' },
-  { href: '/campaigns/my-points', label: 'MY POINTS' },
-];
-
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isMember, memberName } = useCampaignMembership();
+  const params = useParams();
+  const campaignId = params?.campaignId as string;
+
+  const navLinks = [
+    { href: `/campaigns/${campaignId}/earn-points`, label: 'EARN POINTS' },
+    { href: `/campaigns/${campaignId}/redeem-points`, label: 'REDEEM POINTS' },
+    { href: `/campaigns/${campaignId}/contact-us`, label: 'CONTACT US' },
+    { href: '/campaigns/my-points', label: 'MY POINTS' },
+  ];
 
   return (
     <header className="relative bg-white shadow-md z-50">
@@ -79,30 +83,30 @@ export default function Header() {
 
         {/* Mobile Menu Toggle */}
         <div className="md:hidden flex items-center space-x-2">
-            {isMember && (
-                <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Avatar className="cursor-pointer">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                    <AvatarFallback>{memberName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-                </DropdownMenu>
-            )}
+          {isMember && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarFallback>{memberName.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>

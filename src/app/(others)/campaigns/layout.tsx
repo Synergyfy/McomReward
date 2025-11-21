@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import Header from '@/components/campaigns/Header';
-import Footer from '@/components/campaigns/Footer';
+
 
 export default function CampaignsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,7 +15,6 @@ export default function CampaignsLayout({ children }: { children: React.ReactNod
       <main className="flex-grow">
         {children}
       </main>
-      {!hideHeaderFooter && <Footer />}
     </div>
   );
 }

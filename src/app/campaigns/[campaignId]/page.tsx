@@ -8,6 +8,7 @@ import { Calendar, Tag, Info, Gift, CheckCircle, Users, Trophy } from "lucide-re
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -78,13 +79,24 @@ const mockCampaign = {
 
 export default function CampaignDetailPage({}: PageProps) {
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
-  const { isMember, memberName } = useCampaignMembership();
+  const { isAuthenticated, user, isMemberOfCampaign, joinCampaign } = useCampaignMembership();
 
   const campaign = mockCampaign;
   const isLoading = false;
 
-  const handleJoinClick = () => {
-    setIsSignUpDialogOpen(true);
+  const isMember = isMemberOfCampaign(campaign.id);
+
+  const handleJoinClick = async () => {
+    if (!isAuthenticated) {
+        setIsSignUpDialogOpen(true);
+    } else {
+        // If already authenticated but not joined, just join
+        try {
+            await joinCampaign(campaign.id);
+        } catch (error) {
+            // Error handled in context
+        }
+    }
   };
 
   return (
@@ -108,15 +120,26 @@ export default function CampaignDetailPage({}: PageProps) {
                   {campaign.title}
                 </h1>
                 <p className="text-lg md:text-xl mb-8 opacity-90 drop-shadow-md">
-                  {isMember ? `Welcome, ${memberName}!` : campaign.tagline}
+                  {isAuthenticated ? `Welcome, ${user?.name}!` : campaign.tagline}
                 </p>
                 {!isMember && (
-                  <Button
-                    onClick={handleJoinClick}
-                    className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-                  >
-                    Join Campaign & Get Reward
-                  </Button>
+                  <div className="flex gap-4 justify-center">
+                    <Button
+                        onClick={handleJoinClick}
+                        className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+                    >
+                        {isAuthenticated ? "Join Campaign" : "Join Campaign & Get Reward"}
+                    </Button>
+                    {!isAuthenticated && (
+                        <Button
+                            onClick={() => setIsSignUpDialogOpen(true)}
+                            variant="outline"
+                            className="bg-white/20 hover:bg-white/30 text-white border-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300"
+                        >
+                            Login
+                        </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -132,7 +155,7 @@ export default function CampaignDetailPage({}: PageProps) {
                       <CheckCircle className="h-5 w-5 text-green-400" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-green-800">You have joined this campaign. Welcome, {memberName}!</p>
+                      <p className="text-sm font-medium text-green-800">You have joined this campaign. Welcome, {user?.name}!</p>
                     </div>
                   </div>
                 </div>
@@ -289,7 +312,7 @@ export default function CampaignDetailPage({}: PageProps) {
 
           {/* Sticky Join Button */}
           <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
-            <div className="max-w-4xl mx-auto flex justify-center">
+            <div className="max-w-4xl mx-auto flex justify-center gap-4">
                 {isMember ? (
                     <Link href="/campaigns/my-points" passHref>
                         <Button className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
@@ -297,12 +320,23 @@ export default function CampaignDetailPage({}: PageProps) {
                         </Button>
                     </Link>
                 ) : (
-                    <Button
-                        onClick={handleJoinClick}
-                        className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-                    >
-                        Join Campaign & Get Reward
-                    </Button>
+                    <>
+                        <Button
+                            onClick={handleJoinClick}
+                            className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+                        >
+                            {isAuthenticated ? "Join Campaign" : "Join Campaign & Get Reward"}
+                        </Button>
+                         {!isAuthenticated && (
+                            <Button
+                                onClick={() => setIsSignUpDialogOpen(true)}
+                                variant="outline"
+                                className="w-full md:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300"
+                            >
+                                Login
+                            </Button>
+                         )}
+                    </>
                 )}
             </div>
           </div>
@@ -314,6 +348,7 @@ export default function CampaignDetailPage({}: PageProps) {
         isOpen={isSignUpDialogOpen}
         onClose={() => setIsSignUpDialogOpen(false)}
         campaignTitle={campaign.title}
+        campaignId={campaign.id}
       />
     </div>
   );

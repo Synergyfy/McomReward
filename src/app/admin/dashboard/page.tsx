@@ -33,12 +33,22 @@ import {
 } from '@/lib/mock-data/dashboard';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSystemOverview, useTierBreakdown, useTopBusinesses } from '@/services/analytics/hook';
+import { useGrowthActivityChart, useSystemOverview, useTierBreakdown, useTopBusinesses } from '@/services/analytics/hook';
 
 export default function AdminDashboard() {
   const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
   const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
   const { data: tierBreakdown, isLoading: isLoadingTierBreakdown, error: tierBreakdownError } = useTierBreakdown();
+  const { data: growthData, isLoading: isLoadingGrowthData, error: growthDataError } = useGrowthActivityChart();
+
+  const chartData = React.useMemo(() => {
+    if (!growthData) return [];
+    return growthData.labels.map((label, index) => ({
+      month: label,
+      newRegistrations: growthData.registrations[index],
+      activityCount: growthData.activities[index],
+    }));
+  }, [growthData]);
 
 
   return (
@@ -140,16 +150,26 @@ export default function AdminDashboard() {
             <CardTitle>Consumer Growth and Activity</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={mainChartData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="newRegistrations" stroke="#ea580c" name="New Registrations" />
-                <Line type="monotone" dataKey="activityCount" stroke="#64748b" strokeDasharray="3 3" name="Activity Count" />
-              </LineChart>
-            </ResponsiveContainer>
+            {isLoadingGrowthData ? (
+              <div className="flex items-center justify-center h-[350px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : growthDataError ? (
+              <div className="flex items-center justify-center h-[350px]">
+                <p className="text-destructive">Failed to load chart data</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={chartData}>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="newRegistrations" stroke="#ea580c" name="New Registrations" />
+                  <Line type="monotone" dataKey="activityCount" stroke="#64748b" strokeDasharray="3 3" name="Activity Count" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 

@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { GetPointLogsResponse, SystemOverview, TierBreakdown, TopBusiness, TopReward } from './types';
+import { GetPointLogsResponse, GrowthActivityChartResponse, SystemOverview, TierBreakdown, TopBusiness, TopReward } from './types';
 
 const POINT_LOGS_QUERY_KEY = 'point_logs';
 const SYSTEM_OVERVIEW_QUERY_KEY = 'system_overview';
 const TOP_BUSINESSES_QUERY_KEY = 'top_businesses';
 const TOP_REWARDS_QUERY_KEY = 'top_rewards';
 const TIER_BREAKDOWN_QUERY_KEY = 'tier_breakdown';
+const GROWTH_ACTIVITY_CHART_QUERY_KEY = 'growth_activity_chart';
 
 // Get Point Logs
 const getPointLogs = async (page: number, limit: number): Promise<GetPointLogsResponse> => {
@@ -72,5 +73,20 @@ export const useTierBreakdown = () => {
   return useQuery({
     queryKey: [TIER_BREAKDOWN_QUERY_KEY],
     queryFn: getTierBreakdown,
+  });
+};
+
+// Growth Activity Chart
+const getGrowthActivityChart = async (startDate?: string, endDate?: string): Promise<GrowthActivityChartResponse> => {
+  const { data } = await api.get<GrowthActivityChartResponse>('/admin/analytics/growth-activity-chart', {
+    params: { startDate, endDate },
+  });
+  return data;
+};
+
+export const useGrowthActivityChart = (startDate?: string, endDate?: string) => {
+  return useQuery({
+    queryKey: [GROWTH_ACTIVITY_CHART_QUERY_KEY, startDate, endDate],
+    queryFn: () => getGrowthActivityChart(startDate, endDate),
   });
 };

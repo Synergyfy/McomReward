@@ -18,9 +18,12 @@ export interface SystemOverview {
   totalCampaigns: number;
   totalParticipants: number;
   totalRedemptions: number;
+  totalBusiness: number;
+  totalMatchingPoints: number;
 }
 
 export interface TopBusiness {
+  id: string;
   name: string;
   totalPointsRedeemed: number;
   totalPointsEarned: number;
@@ -40,4 +43,10 @@ export interface TierBreakdown {
   quaterlyPrice: string;
   features: string[];
   status: string;
+}
+
+export interface GrowthActivityChartResponse {
+  labels: string[];
+  registrations: number[];
+  activities: number[];
 }

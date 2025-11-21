@@ -103,7 +103,7 @@ export function ManualOverrideModal({
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               placeholder="Enter User ID or Email"
-              className="col-span-3"
+              className="col-span-3 relative z-[1000]"
             />
           </div>
 
@@ -115,10 +115,10 @@ export function ManualOverrideModal({
               setOverrideType(value);
               setSelectedLevelId('');
             }}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="col-span-3 relative z-[1000]">
                 <SelectValue placeholder="Select level type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[1000]">
                 <SelectItem value="tier">Business Tier</SelectItem>
                 <SelectItem value="badge">Consumer Badge</SelectItem>
               </SelectContent>
@@ -136,10 +136,10 @@ export function ManualOverrideModal({
                 </div>
               ) : (
                 <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="relative z-[1000]">
                     <SelectValue placeholder={`Select new ${overrideType}`} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[1000]">
                     {availableLevels?.map((level) => (
                       <SelectItem key={level.id} value={level.id}>
                         {level.name}

@@ -47,6 +47,8 @@ export const useAuth = () => {
 
       if (data.user.role === 'Admin') {
         router.push('/admin/dashboard');
+      } else if (data.user.role === 'Staff') {
+        router.push('/staff/dashboard');
       } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
         router.push('/business/onboard');
       } else {
@@ -143,6 +145,8 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
       if (!options?.skipRedirect) {
         if (data.user.role === 'Admin') {
           router.push('/admin/dashboard');
+        } else if (data.user.role === 'Staff') {
+          router.push('/staff/dashboard');
         } else {
           router.push('/dashboard');
         }

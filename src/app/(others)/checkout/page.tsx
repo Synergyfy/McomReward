@@ -3,10 +3,13 @@
 import { Suspense, useMemo, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Award, Medal, Trophy, Crown, Target, BadgePercent, type LucideIcon } from "lucide-react"
-import { applyCoupon, findCoupon, getPrice, getTierByName, type BillingCycle } from "@/lib/content"
+import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard } from "lucide-react"
+import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
+import { useGetTiers, useSubscribe } from "@/services/payment/hook"
+import { PlanType, PaymentProvider, Tier } from "@/services/payment/types"
+import { toast } from "sonner"
 
-const iconByTier: Record<string, LucideIcon> = {
+const iconByTier: Record<string, any> = {
   Trial: Target,
   Bronze: Award,
   Silver: Medal,
@@ -27,11 +30,26 @@ function CheckoutContent() {
   const [couponCode, setCouponCode] = useState(initialCoupon)
   const [appliedCoupon, setAppliedCoupon] = useState(() => findCoupon(initialCoupon))
   const [couponError, setCouponError] = useState<string | null>(null)
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>(PaymentProvider.STRIPE)
 
-  const tier = useMemo(() => getTierByName(plan), [plan])
-  const Icon = iconByTier[plan] ?? Target
+  // Fetch tiers from backend
+  const { data: tiers, isLoading: isLoadingTiers } = useGetTiers();
+  const { mutate: subscribe, isPending: isSubscribing } = useSubscribe();
 
-  const basePrice = useMemo(() => (tier ? getPrice(tier, billing) : 0), [tier, billing])
+  // Find the selected tier object from backend data
+  // We check both name and ID to be robust, as params might pass either
+  const tier = useMemo(() => {
+    if (!tiers) return null;
+    return tiers.find(t => t.name === plan || t.id === plan);
+  }, [tiers, plan]);
+
+  const Icon = tier ? (iconByTier[tier.name] ?? Target) : Target
+
+  const basePrice = useMemo(() => {
+    if (!tier) return 0;
+    return billing === "annual" ? tier.annual_price : tier.quaterly_price;
+  }, [tier, billing]);
+
   const { final, discount } = useMemo(() => applyCoupon(basePrice, appliedCoupon), [basePrice, appliedCoupon])
 
   useEffect(() => {
@@ -44,12 +62,20 @@ function CheckoutContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, billing, appliedCoupon])
 
+  if (isLoadingTiers) {
+    return (
+      <main className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </main>
+    )
+  }
+
   if (!tier) {
     return (
       <main className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg mb-4">Selected plan not found.</p>
-          <Link href="/" className="underline text-primary">Go back to pricing</Link>
+          <Link href="/pricing" className="underline text-primary">Go back to pricing</Link>
         </div>
       </main>
     )
@@ -65,6 +91,37 @@ function CheckoutContent() {
       setCouponError(null)
     }
   }
+
+  const handleConfirmPurchase = () => {
+    if (!tier) return;
+
+    const planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
+
+    // Mock payment token for Stripe for now as we don't have Stripe Elements integrated yet
+    const mockToken = "tok_visa";
+
+    subscribe({
+      tier_id: tier.id,
+      plan_type: planType,
+      provider: paymentProvider,
+      payment_token: paymentProvider === PaymentProvider.STRIPE ? mockToken : undefined,
+      return_url: `${window.location.origin}/checkout/confirmation?plan=${encodeURIComponent(tier.name)}&billing=${billing}`,
+      cancel_url: `${window.location.origin}/checkout?plan=${encodeURIComponent(tier.name)}&billing=${billing}`,
+    }, {
+      onSuccess: (data) => {
+        if (paymentProvider === PaymentProvider.PAYPAL && 'approveLink' in data) {
+          window.location.href = data.approveLink;
+        } else {
+          // Stripe success or other direct success
+          router.push(`/checkout/confirmation?plan=${encodeURIComponent(tier.name)}&billing=${billing}`);
+        }
+      },
+      onError: (error) => {
+        console.error("Subscription failed:", error);
+        toast.error("Subscription failed. Please try again.");
+      }
+    });
+  };
 
   return (
     <main className="min-h-screen px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-16">
@@ -124,6 +181,27 @@ function CheckoutContent() {
       </section>
 
       <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
+        <div className="flex items-center gap-3 mb-4">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <div className="font-semibold">Payment Method</div>
+        </div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setPaymentProvider(PaymentProvider.STRIPE)}
+            className={`flex-1 p-4 rounded-xl border-2 transition-all ${paymentProvider === PaymentProvider.STRIPE ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+          >
+            <div className="font-semibold">Credit Card (Stripe)</div>
+          </button>
+          <button
+            onClick={() => setPaymentProvider(PaymentProvider.PAYPAL)}
+            className={`flex-1 p-4 rounded-xl border-2 transition-all ${paymentProvider === PaymentProvider.PAYPAL ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+          >
+            <div className="font-semibold">PayPal</div>
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
         <div className="font-semibold mb-2">Summary</div>
         <div className="flex items-center justify-between py-2">
           <span>Base price</span>
@@ -144,12 +222,14 @@ function CheckoutContent() {
 
       <div className="flex items-center justify-between">
         <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
-        <Link
-          href={`/checkout/confirmation?plan=${encodeURIComponent(plan)}&billing=${billing}${appliedCoupon ? `&coupon=${appliedCoupon.code}` : ""}`}
-          className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold"
+        <button
+          onClick={handleConfirmPurchase}
+          disabled={isSubscribing}
+          className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Confirm Purchase
-        </Link>
+          {isSubscribing && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isSubscribing ? 'Processing...' : 'Confirm Purchase'}
+        </button>
       </div>
     </main>
   )

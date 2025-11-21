@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { Staff, CreateStaffDto, UpdateStaffDto } from './types';
+import { Staff, CreateStaffDto, UpdateStaffDto, PaginatedStaffResponse } from './types';
 import { LoginResponse } from '@/services/auth/types';
 
 const STAFF_QUERY_KEY = 'staff';
@@ -48,8 +48,8 @@ export const useCreateStaff = () => {
 };
 
 // Get All Staff
-const getAllStaff = async (): Promise<Staff[]> => {
-  const { data } = await api.get<Staff[]>('/staff');
+const getAllStaff = async (): Promise<PaginatedStaffResponse> => {
+  const { data } = await api.get<PaginatedStaffResponse>('/staff');
   return data;
 };
 
@@ -57,6 +57,7 @@ export const useGetAllStaff = () => {
   return useQuery({
     queryKey: [STAFF_QUERY_KEY],
     queryFn: getAllStaff,
+    select: (data) => data.data,
   });
 };
 

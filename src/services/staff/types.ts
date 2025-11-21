@@ -11,6 +11,7 @@ export interface CreateStaffDto {
   name: string;
   email: string;
   password: string;
+  confirmPassword?: string;
   avatar?: string;
 }
 
@@ -19,4 +20,11 @@ export interface UpdateStaffDto {
   email?: string;
   password?: string;
   avatar?: string;
+}
+
+export interface PaginatedStaffResponse {
+  data: Staff[];
+  total: number;
+  page: number;
+  limit: number;
 }

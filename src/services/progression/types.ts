@@ -60,7 +60,7 @@ export interface CreateBusinessLevelPayload {
     criteria?: string[];
 }
 
-export interface UpdateBusinessLevelPayload extends Partial<CreateBusinessLevelPayload> { }
+export type UpdateBusinessLevelPayload = Partial<CreateBusinessLevelPayload>;
 
 export interface CreateCustomerBadgePayload {
     name: string;
@@ -72,7 +72,7 @@ export interface CreateCustomerBadgePayload {
     criteria?: string[];
 }
 
-export interface UpdateCustomerBadgePayload extends Partial<CreateCustomerBadgePayload> { }
+export type UpdateCustomerBadgePayload = Partial<CreateCustomerBadgePayload>;
 
 export interface OverrideBusinessTierPayload {
     businessId: string;

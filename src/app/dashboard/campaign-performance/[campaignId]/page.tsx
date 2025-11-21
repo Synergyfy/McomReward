@@ -159,8 +159,8 @@ export default function CampaignDetailedPerformancePage() {
                                     {analytics.topRewards && analytics.topRewards.length > 0 ? (
                                         analytics.topRewards.map((reward) => (
                                             <TableRow key={reward.id}>
-                                                <TableCell className="font-medium">{reward.title}</TableCell>
-                                                <TableCell>{reward.pointsRequired}</TableCell>
+                                                <TableCell className="font-medium">{reward.rTitle}</TableCell>
+                                                <TableCell>{reward.rPointsRequired}</TableCell>
                                                 <TableCell className="text-right">{reward.totalRedemptions}</TableCell>
                                             </TableRow>
                                         ))
@@ -192,8 +192,8 @@ export default function CampaignDetailedPerformancePage() {
                                         analytics.rankedParticipants.map((participant) => (
                                             <TableRow key={participant.id}>
                                                 <TableCell className="font-medium">
-                                                    <div>{participant.name}</div>
-                                                    <div className="text-xs text-gray-500">{participant.email}</div>
+                                                    <div>{participant.pName}</div>
+                                                    <div className="text-xs text-gray-500">{participant.pEmail}</div>
                                                 </TableCell>
                                                 <TableCell>{participant.totalPointsEarned}</TableCell>
                                                 <TableCell className="text-right">{participant.totalRedemptions}</TableCell>

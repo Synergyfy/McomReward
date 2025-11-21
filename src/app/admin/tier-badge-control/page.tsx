@@ -20,7 +20,7 @@ import {
   useOverrideBusinessTier,
   useOverrideCustomerBadge
 } from '@/services/progression/hook';
-import { BusinessLevel, CustomerBadge } from '@/services/progression/types';
+import { BusinessLevel, CustomerBadge, CreateBusinessLevelPayload, CreateCustomerBadgePayload } from '@/services/progression/types';
 
 export default function TierBadgeControlPage() {
   // Queries
@@ -68,7 +68,7 @@ export default function TierBadgeControlPage() {
     setShowAddEditModal(true);
   };
 
-  const handleSaveTier = (data: any) => { // Type as any for now to handle the form data structure matching payload
+  const handleSaveTier = (data: CreateBusinessLevelPayload) => {
     if (currentEditData) {
       updateTier({ id: currentEditData.id, payload: data }, {
         onSuccess: () => {
@@ -102,7 +102,7 @@ export default function TierBadgeControlPage() {
     setShowAddEditModal(true);
   };
 
-  const handleSaveBadge = (data: any) => {
+  const handleSaveBadge = (data: CreateCustomerBadgePayload) => {
     if (currentEditData) {
       updateBadge({ id: currentEditData.id, payload: data }, {
         onSuccess: () => {
@@ -263,9 +263,9 @@ export default function TierBadgeControlPage() {
         initialData={currentEditData}
         onSave={(data) => {
           if (addEditModalType === 'tier') {
-            handleSaveTier(data);
+            handleSaveTier(data as CreateBusinessLevelPayload);
           } else {
-            handleSaveBadge(data);
+            handleSaveBadge(data as CreateCustomerBadgePayload);
           }
         }}
       />

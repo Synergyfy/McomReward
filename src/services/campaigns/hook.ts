@@ -9,10 +9,12 @@ import {
   PaginatedCampaignAnalyticsResponse,
   DetailedCampaignAnalytics,
   PaginatedAdminCampaignsResponse,
+  PaginatedCustomerActivityResponseDto,
 } from './types';
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
 const ANALYTICS_QUERY_KEY = 'campaign-analytics';
+const CUSTOMER_ACTIVITIES_QUERY_KEY = 'customer-activities';
 
 // Create Campaign
 const createCampaign = async (campaignData: CreateCampaignPayload): Promise<CampaignResponse> => {
@@ -22,7 +24,6 @@ const createCampaign = async (campaignData: CreateCampaignPayload): Promise<Camp
 
 export const useCreateCampaign = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: createCampaign,
     onSuccess: () => {
@@ -31,26 +32,19 @@ export const useCreateCampaign = () => {
   });
 };
 
-// Get All Campaigns By Business (Legacy/Admin?)
+// Get All Campaigns By Business
 const getAllCampaignsByBusiness = async (
   businessId: string,
   page: number,
   limit: number,
 ): Promise<PaginatedCampaignsResponse> => {
-  const { data } = await api.get<PaginatedCampaignsResponse>(
-    `/campaigns/business/${businessId}`,
-    {
-      params: { page, limit },
-    },
-  );
+  const { data } = await api.get<PaginatedCampaignsResponse>(`/campaigns/business/${businessId}`, {
+    params: { page, limit },
+  });
   return data;
 };
 
-export const useGetAllCampaignsByBusiness = (
-  businessId: string,
-  page: number,
-  limit: number,
-) => {
+export const useGetAllCampaignsByBusiness = (businessId: string, page: number, limit: number) => {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'business', businessId, { page, limit }],
     queryFn: () => getAllCampaignsByBusiness(businessId, page, limit),
@@ -81,7 +75,6 @@ const claimCampaign = async (campaignId: string): Promise<BusinessCampaign> => {
 
 export const useClaimCampaign = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: claimCampaign,
     onSuccess: () => {
@@ -152,6 +145,23 @@ export const useGetAdminCampaigns = (page: number = 1, limit: number = 10) => {
 
 // Get Campaign Analytics
 const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
+    const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
+        params: { page, limit },
+    });
+    return data;
+};
+
+export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) => {
+    return useQuery<PaginatedCampaignAnalyticsResponse>({
+        queryKey: [ANALYTICS_QUERY_KEY, { page, limit }],
+        queryFn: () => getCampaignAnalytics(page, limit),
+    });
+};
+
+// Get Detailed Campaign Analytics
+const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
+    const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/analytics/${campaignId}`);
+    return data;
 };
 
 export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
@@ -175,5 +185,40 @@ export const useDeleteCampaign = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
     },
+  });
+};
+
+// Get Customer Activities
+const getCustomerActivities = async (page: number, limit: number): Promise<PaginatedCustomerActivityResponseDto> => {
+  const { data } = await api.get<PaginatedCustomerActivityResponseDto>('/business/campaigns/activities', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetCustomerActivities = (page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCustomerActivityResponseDto>({
+    queryKey: [CUSTOMER_ACTIVITIES_QUERY_KEY, { page, limit }],
+    queryFn: () => getCustomerActivities(page, limit),
+  });
+};
+
+// Get Participant Activity Timeline
+const getParticipantActivity = async (
+  participantId: string,
+  page: number,
+  limit: number,
+): Promise<PaginatedCustomerActivityResponseDto> => {
+  const { data } = await api.get<PaginatedCustomerActivityResponseDto>(`/business/campaigns/activities/${participantId}`, {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetParticipantActivity = (participantId: string, page: number = 1, limit: number = 10) => {
+  return useQuery<PaginatedCustomerActivityResponseDto>({
+    queryKey: [CUSTOMER_ACTIVITIES_QUERY_KEY, 'participant', participantId, { page, limit }],
+    queryFn: () => getParticipantActivity(participantId, page, limit),
+    enabled: !!participantId,
   });
 };

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BusinessLevel, CustomerBadge } from '@/services/progression/types';
+import { BusinessLevel, CustomerBadge, CreateBusinessLevelPayload, CreateCustomerBadgePayload } from '@/services/progression/types';
 import { PlusCircle, MinusCircle } from 'lucide-react';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 
@@ -22,7 +22,7 @@ interface AddEditTierBadgeModalProps {
   onClose: () => void;
   type: 'tier' | 'badge';
   initialData?: BusinessLevel | CustomerBadge;
-  onSave: (data: any) => void; // Using any to accommodate both payload types easily here
+  onSave: (data: CreateBusinessLevelPayload | CreateCustomerBadgePayload) => void;
 }
 
 export function AddEditTierBadgeModal({

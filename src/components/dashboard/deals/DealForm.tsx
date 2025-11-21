@@ -33,7 +33,8 @@ import {
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { useCreateDeal } from '@/services/deals/hook';
 import { CreateDealDto } from '@/services/deals/types';
-import { useGetCategories } from '@/services/sectors/hook';
+import { useGetCategories, useGetSectors } from '@/services/business/hook';
+import { SectorSelect } from '@/components/SectorSelect';
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -49,9 +50,10 @@ export default function DealForm() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const router = useRouter();
+  const [selectedSector, setSelectedSector] = useState<string>('');
 
   const { data: categories, isLoading: isLoadingCategories } =
-    useGetCategories();
+    useGetCategories(selectedSector);
   const { mutateAsync: createDeal, isPending } = useCreateDeal();
 
   const currentImageUrl = watch('imageUrl');
@@ -158,11 +160,19 @@ export default function DealForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
+                <Label htmlFor="sectorId">Sector</Label>
+                <SectorSelect
+                  value={selectedSector}
+                  onChange={setSelectedSector}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="categoryId">Category</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Select
                       onValueChange={value => setValue('categoryId', value)}
+                      disabled={!selectedSector || isLoadingCategories}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
@@ -173,7 +183,7 @@ export default function DealForm() {
                             Loading...
                           </SelectItem>
                         ) : (
-                          categories?.map(category => (
+                          categories?.data?.map(category => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>

@@ -3,13 +3,13 @@
 import { Suspense, useMemo, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard } from "lucide-react"
+import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
 import { useGetTiers, useSubscribe } from "@/services/payment/hook"
 import { PlanType, PaymentProvider, Tier } from "@/services/payment/types"
 import { toast } from "sonner"
 
-const iconByTier: Record<string, any> = {
+const iconByTier: Record<string, LucideIcon> = {
   Trial: Target,
   Bronze: Award,
   Silver: Medal,

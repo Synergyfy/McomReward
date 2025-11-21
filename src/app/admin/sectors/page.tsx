@@ -67,7 +67,6 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onSelect, onEdit, onDelete, i
   // Check for imageUrl or icon (for backward compatibility with mock data)
   const imageUrl =
     ('imageUrl' in item && item.imageUrl && typeof item.imageUrl === 'string' ? item.imageUrl : null) ||
-    ('icon' in item && typeof (item as any).icon === 'string' ? (item as any).icon : null) ||
     null;
   const displayImage = imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('blob:') || imageUrl.startsWith('data:'));
 
@@ -434,7 +433,7 @@ export default function SectorsPage() {
         sector={dialogState.data ? (() => {
           const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string')
             ? dialogState.data.imageUrl
-            : (('icon' in dialogState.data && typeof (dialogState.data as any).icon === 'string') ? (dialogState.data as any).icon : '');
+            : '';
           return {
             id: dialogState.data.id,
             name: dialogState.data.name,
@@ -449,11 +448,11 @@ export default function SectorsPage() {
         category={dialogState.data ? (() => {
           const imgUrl = ('imageUrl' in dialogState.data && dialogState.data.imageUrl && typeof dialogState.data.imageUrl === 'string')
             ? dialogState.data.imageUrl
-            : (('icon' in dialogState.data && typeof (dialogState.data as any).icon === 'string') ? (dialogState.data as any).icon : '');
+            : '';
 
           // Find sectorId from sectors data if not in dialogState.data
-          let sectorId = ('sectorId' in dialogState.data && typeof (dialogState.data as any).sectorId === 'string')
-            ? (dialogState.data as any).sectorId
+          let sectorId = ('sectorId' in dialogState.data && typeof (dialogState.data as { sectorId?: string }).sectorId === 'string')
+            ? (dialogState.data as { sectorId?: string }).sectorId
             : undefined;
 
           if (!sectorId && dialogState.data.id) {
@@ -482,8 +481,8 @@ export default function SectorsPage() {
             : '';
 
           // Find categoryId from sectors data if not in dialogState.data
-          let categoryId = ('categoryId' in dialogState.data && typeof (dialogState.data as any).categoryId === 'string')
-            ? (dialogState.data as any).categoryId
+          let categoryId = ('categoryId' in dialogState.data && typeof (dialogState.data as { categoryId?: string }).categoryId === 'string')
+            ? (dialogState.data as { categoryId?: string }).categoryId
             : undefined;
 
           if (!categoryId && dialogState.data.id) {

@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockBusinessTiers, mockConsumerBadges } from '@/lib/mock-data/tiers-badges';
-import { FeedbackDialog } from '@/components/ui/feedback-dialog'; // Import FeedbackDialog
+import { FeedbackDialog } from '@/components/ui/feedback-dialog';
+import { useGetBusinessLevels, useGetCustomerBadges } from '@/services/progression/hook';
+import { Loader2 } from 'lucide-react';
 
 interface ManualOverrideModalProps {
   isOpen: boolean;
@@ -29,7 +30,11 @@ export function ManualOverrideModal({
 }: ManualOverrideModalProps) {
   const [userId, setUserId] = useState('');
   const [selectedLevelId, setSelectedLevelId] = useState('');
-  const [overrideType, setOverrideType] = useState<'tier' | 'badge'>('tier'); // Default to tier
+  const [overrideType, setOverrideType] = useState<'tier' | 'badge'>('tier');
+
+  // Fetch data
+  const { data: businessTiers, isLoading: isLoadingTiers } = useGetBusinessLevels();
+  const { data: consumerBadges, isLoading: isLoadingBadges } = useGetCustomerBadges();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -76,7 +81,8 @@ export function ManualOverrideModal({
     onClose();
   };
 
-  const availableLevels = overrideType === 'tier' ? mockBusinessTiers : mockConsumerBadges;
+  const isLoading = overrideType === 'tier' ? isLoadingTiers : isLoadingBadges;
+  const availableLevels = overrideType === 'tier' ? businessTiers : consumerBadges;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -84,7 +90,7 @@ export function ManualOverrideModal({
         <DialogHeader>
           <DialogTitle>Manually Override User Level</DialogTitle>
           <DialogDescription>
-            Promote or demote a user's business tier or consumer badge.
+            Promote or demote a user&apos;s business tier or consumer badge.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -107,7 +113,7 @@ export function ManualOverrideModal({
             </Label>
             <Select value={overrideType} onValueChange={(value: 'tier' | 'badge') => {
               setOverrideType(value);
-              setSelectedLevelId(''); // Reset selected level when type changes
+              setSelectedLevelId('');
             }}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select level type" />
@@ -123,18 +129,26 @@ export function ManualOverrideModal({
             <Label htmlFor="newLevel" className="text-right">
               New Level
             </Label>
-            <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder={`Select new ${overrideType}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableLevels.map((level) => (
-                  <SelectItem key={level.id} value={level.id}>
-                    {level.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="col-span-3">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-10 border rounded-md">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : (
+                <Select value={selectedLevelId} onValueChange={setSelectedLevelId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={`Select new ${overrideType}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLevels?.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </div>
         <DialogFooter>

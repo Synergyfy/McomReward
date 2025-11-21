@@ -7,16 +7,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useGetAdminCampaigns } from '@/services/campaigns/hook';
+import { useGetAdminCampaigns, useDeleteCampaign } from '@/services/campaigns/hook';
 import { CampaignResponse } from '@/services/campaigns/types';
 import LoadingSpinner from '@/components/ui/Loading';
+import { Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 export default function AdminCampaignsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10); // You can adjust the limit as needed
+  const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useGetAdminCampaigns(page, limit);
+  const { mutate: deleteCampaign, isPending: isDeleting } = useDeleteCampaign();
   const campaigns = data?.data || [];
 
   const filteredCampaigns = useMemo(() => {
@@ -30,6 +44,26 @@ export default function AdminCampaignsPage() {
   const isValidUrl = (url: string | null | undefined) => {
     if (!url) return false;
     return url.startsWith('http') || url.startsWith('/') || url.startsWith('blob:');
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteCampaignId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteCampaignId) {
+      deleteCampaign(deleteCampaignId, {
+        onSuccess: () => {
+          toast.success('Campaign deleted successfully');
+          setDeleteCampaignId(null);
+        },
+        onError: (error) => {
+          console.error('Failed to delete campaign:', error);
+          toast.error('Failed to delete campaign');
+          setDeleteCampaignId(null);
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -126,14 +160,41 @@ export default function AdminCampaignsPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full py-2 text-md font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
-                    View Campaign
-                  </Button>
+                  <div className="flex gap-2 mt-4">
+                    <Button className="flex-1 py-2 text-md font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200">
+                      View Campaign
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteClick(campaign.id)}
+                      title="Delete Campaign"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        <AlertDialog open={!!deleteCampaignId} onOpenChange={(open) => !open && setDeleteCampaignId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the campaign.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

@@ -152,23 +152,6 @@ export const useGetAdminCampaigns = (page: number = 1, limit: number = 10) => {
 
 // Get Campaign Analytics
 const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
-  const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
-    params: { page, limit },
-  });
-  return data;
-};
-
-export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) => {
-  return useQuery({
-    queryKey: [ANALYTICS_QUERY_KEY, 'list', { page, limit }],
-    queryFn: () => getCampaignAnalytics(page, limit),
-  });
-};
-
-// Get Detailed Campaign Analytics
-const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
-  const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/${campaignId}/analytics/detailed`);
-  return data;
 };
 
 export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
@@ -176,5 +159,21 @@ export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
     queryKey: [ANALYTICS_QUERY_KEY, 'detailed', campaignId],
     queryFn: () => getDetailedCampaignAnalytics(campaignId),
     enabled: !!campaignId,
+  });
+};
+
+// Delete Campaign
+const deleteCampaign = async (campaignId: string): Promise<void> => {
+  await api.delete(`/campaigns/${campaignId}`);
+};
+
+export const useDeleteCampaign = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
   });
 };

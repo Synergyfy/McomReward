@@ -4,22 +4,38 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Award as AwardIcon, Crown, User } from 'lucide-react';
-import { mockBusinessTiers, mockConsumerBadges, BusinessTier, ConsumerBadge } from '@/lib/mock-data/tiers-badges';
+import { PlusCircle, Award as AwardIcon, Crown, User, Loader2 } from 'lucide-react';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { AddEditTierBadgeModal } from '@/components/admin/tier-badge-control/AddEditTierBadgeModal';
-import { ManualOverrideModal } from '@/components/admin/tier-badge-control/ManualOverrideModal'; // New import
-import { mockBusinessUsers, mockConsumerUsers } from '@/lib/mock-data/users'; // Import mock users for override
-
-interface FeedbackDialogProps {
-  title: string;
-  description: React.ReactNode;
-  actionText?: string;
-}
+import { ManualOverrideModal } from '@/components/admin/tier-badge-control/ManualOverrideModal';
+import {
+  useGetBusinessLevels,
+  useGetCustomerBadges,
+  useDeleteBusinessLevel,
+  useDeleteCustomerBadge,
+  useCreateBusinessLevel,
+  useUpdateBusinessLevel,
+  useCreateCustomerBadge,
+  useUpdateCustomerBadge,
+  useOverrideBusinessTier,
+  useOverrideCustomerBadge
+} from '@/services/progression/hook';
+import { BusinessLevel, CustomerBadge } from '@/services/progression/types';
 
 export default function TierBadgeControlPage() {
-  const [businessTiers, setBusinessTiers] = useState<BusinessTier[]>(mockBusinessTiers);
-  const [consumerBadges, setConsumerBadges] = useState<ConsumerBadge[]>(mockConsumerBadges);
+  // Queries
+  const { data: businessTiers, isLoading: isLoadingTiers, error: tiersError } = useGetBusinessLevels();
+  const { data: consumerBadges, isLoading: isLoadingBadges, error: badgesError } = useGetCustomerBadges();
+
+  // Mutations
+  const { mutate: deleteTier } = useDeleteBusinessLevel();
+  const { mutate: deleteBadge } = useDeleteCustomerBadge();
+  const { mutate: createTier } = useCreateBusinessLevel();
+  const { mutate: updateTier } = useUpdateBusinessLevel();
+  const { mutate: createBadge } = useCreateCustomerBadge();
+  const { mutate: updateBadge } = useUpdateCustomerBadge();
+  const { mutate: overrideTier } = useOverrideBusinessTier();
+  const { mutate: overrideBadge } = useOverrideCustomerBadge();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -36,7 +52,7 @@ export default function TierBadgeControlPage() {
   // State for Add/Edit Modal
   const [showAddEditModal, setShowAddEditModal] = useState(false);
   const [addEditModalType, setAddEditModalType] = useState<'tier' | 'badge'>('tier');
-  const [currentEditData, setCurrentEditData] = useState<BusinessTier | ConsumerBadge | undefined>(undefined);
+  const [currentEditData, setCurrentEditData] = useState<BusinessLevel | CustomerBadge | undefined>(undefined);
 
   // State for Manual Override Modal
   const [showManualOverrideModal, setShowManualOverrideModal] = useState(false);
@@ -46,59 +62,99 @@ export default function TierBadgeControlPage() {
     setShowFeedbackDialog(true);
   };
 
-  const handleAddEditTier = (tier?: BusinessTier) => {
+  const handleAddEditTier = (tier?: BusinessLevel) => {
     setAddEditModalType('tier');
     setCurrentEditData(tier);
     setShowAddEditModal(true);
   };
 
-  const handleSaveTier = (data: BusinessTier) => {
-    if (data.id.startsWith('new-')) {
-      setBusinessTiers(prev => [...prev, data]);
-      handleShowFeedback("Tier Added", `Business Tier "${data.name}" has been added.`);
+  const handleSaveTier = (data: any) => { // Type as any for now to handle the form data structure matching payload
+    if (currentEditData) {
+      updateTier({ id: currentEditData.id, payload: data }, {
+        onSuccess: () => {
+          handleShowFeedback("Tier Updated", `Business Tier "${data.name}" has been updated.`);
+          setShowAddEditModal(false);
+        },
+        onError: () => handleShowFeedback("Error", "Failed to update tier.")
+      });
     } else {
-      setBusinessTiers(prev => prev.map(tier => (tier.id === data.id ? data : tier)));
-      handleShowFeedback("Tier Updated", `Business Tier "${data.name}" has been updated.`);
+      createTier(data, {
+        onSuccess: () => {
+          handleShowFeedback("Tier Added", `Business Tier "${data.name}" has been added.`);
+          setShowAddEditModal(false);
+        },
+        onError: () => handleShowFeedback("Error", "Failed to create tier.")
+      });
     }
   };
 
   const handleDeleteTier = (tierId: string) => {
-    // In a real app, this would trigger a confirmation dialog first
-    setBusinessTiers(prev => prev.filter(tier => tier.id !== tierId));
-    handleShowFeedback("Tier Deleted", `Business Tier ${tierId} has been deleted.`);
+    // In a real app, confirm first
+    deleteTier(tierId, {
+      onSuccess: () => handleShowFeedback("Tier Deleted", `Business Tier has been deleted.`),
+      onError: () => handleShowFeedback("Error", "Failed to delete tier.")
+    });
   };
 
-  const handleAddEditBadge = (badge?: ConsumerBadge) => {
+  const handleAddEditBadge = (badge?: CustomerBadge) => {
     setAddEditModalType('badge');
     setCurrentEditData(badge);
     setShowAddEditModal(true);
   };
 
-  const handleSaveBadge = (data: ConsumerBadge) => {
-    if (data.id.startsWith('new-')) {
-      setConsumerBadges(prev => [...prev, data]);
-      handleShowFeedback("Badge Added", `Consumer Badge "${data.name}" has been added.`);
+  const handleSaveBadge = (data: any) => {
+    if (currentEditData) {
+      updateBadge({ id: currentEditData.id, payload: data }, {
+        onSuccess: () => {
+          handleShowFeedback("Badge Updated", `Customer Badge "${data.name}" has been updated.`);
+          setShowAddEditModal(false);
+        },
+        onError: () => handleShowFeedback("Error", "Failed to update badge.")
+      });
     } else {
-      setConsumerBadges(prev => prev.map(badge => (badge.id === data.id ? data : badge)));
-      handleShowFeedback("Badge Updated", `Consumer Badge "${data.name}" has been updated.`);
+      createBadge(data, {
+        onSuccess: () => {
+          handleShowFeedback("Badge Added", `Customer Badge "${data.name}" has been added.`);
+          setShowAddEditModal(false);
+        },
+        onError: () => handleShowFeedback("Error", "Failed to create badge.")
+      });
     }
   };
 
   const handleDeleteBadge = (badgeId: string) => {
-    // In a real app, this would trigger a confirmation dialog first
-    setConsumerBadges(prev => prev.filter(badge => badge.id !== badgeId));
-    handleShowFeedback("Badge Deleted", `Consumer Badge ${badgeId} has been deleted.`);
+    deleteBadge(badgeId, {
+      onSuccess: () => handleShowFeedback("Badge Deleted", `Customer Badge has been deleted.`),
+      onError: () => handleShowFeedback("Error", "Failed to delete badge.")
+    });
   };
 
   const handleManualOverride = (userId: string, newLevelId: string, type: 'tier' | 'badge') => {
-    console.log(`Manual override for user ${userId}: setting ${type} to ${newLevelId}`);
-    // In a real application, this would update the user's actual data in the backend.
-    // For mock, we'll just show feedback.
-    handleShowFeedback(
-      "Override Applied",
-      `User ${userId}'s ${type} has been set to ${newLevelId}. (Simulated)`
-    );
+    // Assuming adminId is handled by backend session or context, otherwise we might need to pass it.
+    // The payload requires adminId. For now, let's assume a placeholder or fetch from auth context if available.
+    // Since I don't have auth context here, I'll use a placeholder "admin-id".
+    const adminId = "current-admin-id";
+
+    if (type === 'tier') {
+      overrideTier({ businessId: userId, levelId: newLevelId, adminId }, {
+        onSuccess: () => handleShowFeedback("Override Applied", `Business Tier updated for ${userId}.`),
+        onError: () => handleShowFeedback("Error", "Failed to override tier.")
+      });
+    } else {
+      overrideBadge({ participantId: userId, badgeId: newLevelId, adminId }, {
+        onSuccess: () => handleShowFeedback("Override Applied", `Customer Badge updated for ${userId}.`),
+        onError: () => handleShowFeedback("Error", "Failed to override badge.")
+      });
+    }
   };
+
+  if (isLoadingTiers || isLoadingBadges) {
+    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (tiersError || badgesError) {
+    return <div className="text-red-500">Error loading data. Please try again.</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -119,11 +175,11 @@ export default function TierBadgeControlPage() {
             <Button onClick={() => handleAddEditTier()}><PlusCircle className="mr-2 h-4 w-4" /> Add New Tier</Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {businessTiers.map((tier) => (
+            {businessTiers?.map((tier) => (
               <Card key={tier.id} className="shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <AwardIcon className="h-5 w-5" style={{ color: tier.color }} /> {tier.name}
+                    <AwardIcon className="h-5 w-5" style={{ color: tier.color || '#000' }} /> {tier.name}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleAddEditTier(tier)}>Edit</Button>
@@ -135,13 +191,14 @@ export default function TierBadgeControlPage() {
                   <div>
                     <h4 className="font-semibold">Criteria:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {tier.criteria.map((c, i) => <li key={i}>{c}</li>)}
+                      {tier.criteria?.map((c, i) => <li key={i}>{c}</li>)}
+                      {!tier.criteria && <li>Min Points: {tier.minPoints}</li>}
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold">Privileges:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {tier.privileges.map((p, i) => <li key={i}>{p}</li>)}
+                      {tier.privileges?.map((p, i) => <li key={i}>{p}</li>)}
                     </ul>
                   </div>
                 </CardContent>
@@ -156,11 +213,11 @@ export default function TierBadgeControlPage() {
             <Button onClick={() => handleAddEditBadge()}><PlusCircle className="mr-2 h-4 w-4" /> Add New Badge</Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {consumerBadges.map((badge) => (
+            {consumerBadges?.map((badge) => (
               <Card key={badge.id} className="shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Crown className="h-5 w-5" style={{ color: badge.color }} /> {badge.name}
+                    <Crown className="h-5 w-5" style={{ color: badge.color || '#000' }} /> {badge.name}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleAddEditBadge(badge)}>Edit</Button>
@@ -172,13 +229,14 @@ export default function TierBadgeControlPage() {
                   <div>
                     <h4 className="font-semibold">Criteria:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {badge.criteria.map((c, i) => <li key={i}>{c}</li>)}
+                      {badge.criteria?.map((c, i) => <li key={i}>{c}</li>)}
+                      {!badge.criteria && <li>Min Points: {badge.minPoints}</li>}
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold">Privileges:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {badge.privileges.map((p, i) => <li key={i}>{p}</li>)}
+                      {badge.privileges?.map((p, i) => <li key={i}>{p}</li>)}
                     </ul>
                   </div>
                 </CardContent>
@@ -205,9 +263,9 @@ export default function TierBadgeControlPage() {
         initialData={currentEditData}
         onSave={(data) => {
           if (addEditModalType === 'tier') {
-            handleSaveTier(data as BusinessTier);
+            handleSaveTier(data);
           } else {
-            handleSaveBadge(data as ConsumerBadge);
+            handleSaveBadge(data);
           }
         }}
       />

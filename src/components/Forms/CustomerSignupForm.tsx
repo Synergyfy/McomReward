@@ -37,7 +37,6 @@ export default function CustomerSignupPage() {
       const { agree, ...signupData } = data;
       await signup(signupData);
       toast.success("Account created successfully! 🎉");
-
       if (returnUrl) {
         router.push(returnUrl);
       } else {
@@ -130,23 +129,16 @@ export default function CustomerSignupPage() {
           </div>
 
           {/* Optional Fields */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Birthday</Label>
-              <Input type="date" {...register("birthday")} />
-            </div>
-            <div>
-              <Label>Gender</Label>
-              <select
-                {...register("gender")}
-                className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+           <div>
+            <Label>Confirm Password</Label>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              {...register("password", { required: "Password is required" })}
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm">{errors.password.message}</p>
+            )}
           </div>
 
           <div>

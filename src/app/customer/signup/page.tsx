@@ -15,8 +15,7 @@ type SignupData = {
   email: string;
   phone: string;
   password: string;
-  birthday?: string;
-  gender?: string;
+
   location?: string;
   agree: boolean;
 };
@@ -29,7 +28,7 @@ export default function CustomerSignupPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
-      register,
+    register,
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
@@ -111,7 +110,9 @@ export default function CustomerSignupPage() {
                 {...register("fullName", { required: "Full name is required" })}
               />
               {errors.fullName && (
-                <p className="text-red-500 text-sm">{errors.fullName.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.fullName.message}
+                </p>
               )}
             </div>
 
@@ -147,58 +148,45 @@ export default function CustomerSignupPage() {
                 {...register("password", { required: "Password is required" })}
               />
               {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
             {/* Optional Fields */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Birthday</Label>
-                <Input type="date" {...register("birthday")} />
-              </div>
-              <div>
-                <Label>Gender</Label>
-                <select
-                  {...register("gender")}
-                  className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
-
             <div>
-              <Label>Location</Label>
+              <Label>Confirm Password</Label>
               <Input
-                placeholder="e.g. Lagos, Nigeria"
-                {...register("location")}
+                type="password"
+                placeholder="••••••••"
+                {...register("password", { required: "Password is required" })}
               />
+              {errors.password && (
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
-
             <Controller
-            name="agree"
-            control={control}
-            render={({ field }) => (
-            <div className="flex items-center gap-2">
-            <Checkbox
-                id="agree"
-                checked={field.value}
-                onCheckedChange={(checked) => field.onChange(checked)}
+              name="agree"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="agree"
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(checked)}
+                  />
+                  <Label htmlFor="agree" className="text-sm">
+                    I agree to the{" "}
+                    <a href="/terms" className="text-orange-500 underline">
+                      Terms & Conditions
+                    </a>
+                  </Label>
+                </div>
+              )}
             />
-            <Label htmlFor="agree" className="text-sm">
-                I agree to the{" "}
-                <a href="/terms" className="text-orange-500 underline">
-                Terms & Conditions
-                </a>
-            </Label>
-            </div>
-        )}
-        />
-
             <Button
               type="submit"
               className="w-full bg-orange-500 hover:bg-orange-600 text-white"

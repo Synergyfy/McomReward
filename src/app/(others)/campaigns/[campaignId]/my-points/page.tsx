@@ -72,7 +72,7 @@ export default function MyPointsPage({ params }: PageProps) {
 
   const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
 
-  const pointBalance = balance?.points || 0;
+  const pointBalance = balance?.balance || 0;
 
   useEffect(() => {
     if (!isMember) {

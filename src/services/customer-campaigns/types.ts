@@ -84,8 +84,9 @@ export interface IsJoinedResponse {
 }
 
 export interface ParticipantBalance {
-  points: number;
-  uniqueCode: string;
+  campaignId: string;
+  campaignName: string;
+  balance: number;
 }
 
 export interface ClaimCodePayload {

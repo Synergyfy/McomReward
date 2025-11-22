@@ -120,7 +120,7 @@ export const useGetUniqueCode = () => {
 
 // Get Participant Balance
 const getParticipantBalance = async (campaignId: string): Promise<ParticipantBalance> => {
-  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/${campaignId}`);
+  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`);
   return data;
 };
 

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from 'next/image';
 
-import { useGetParticipantBalance, useClaimCode, useGetUniqueCode } from '@/services/customer-campaigns/hook';
+import { useClaimCode, useGetUniqueCode } from '@/services/customer-campaigns/hook';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -33,7 +33,6 @@ export default function EarnPointsPage({ params }: PageProps) {
   const [customerNumber, setCustomerNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+1'); // Default country code
 
-  const { data: balance } = useGetParticipantBalance(campaignId);
   const { data: uniqueCodeData } = useGetUniqueCode();
   const { mutate: claimCode } = useClaimCode();
 

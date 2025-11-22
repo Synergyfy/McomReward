@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { OngoingCampaignReward } from "@/services/campaigns/types";
 import { AwardPointsModal } from "@/components/staff/AwardPointsModal";
+import { RedeemRewardModal } from "@/components/staff/RedeemRewardModal";
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -160,6 +161,7 @@ export default function CampaignDetailsPage() {
                         <span className="capitalize">{reward.rewardType}</span>
                         <span>Qty: {reward.quantity}</span>
                       </div>
+                      <RedeemRewardModal campaignId={campaign.id} reward={reward} />
                     </CardContent>
                   </Card>
                 ))}

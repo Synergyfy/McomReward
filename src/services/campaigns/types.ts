@@ -143,6 +143,79 @@ export interface PaginatedCampaignsResponse {
   limit: number;
 }
 
+export interface OngoingCampaignReward {
+  id: string;
+  title: string;
+  pointsRequired: number;
+  value: number;
+  description: string;
+  image: string;
+  quantity: number;
+  disabled: boolean;
+  rewardType: string;
+  badgeLevel: string;
+  rewardSource: string;
+  audience: string;
+  expiryDatetime: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface OngoingCampaign {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  name: string;
+  campaignType: string;
+  campaignMessage: string;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+  audienceType: string;
+  bannerUrl: string;
+  logoUrl: string | null;
+  ctaText: string;
+  ctaBackgroundColor: string;
+  ctaTextColor: string;
+  disabled: boolean;
+  textColor: string;
+  backgroundColor: string;
+  signUpPoint: number | null;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  rewardType: string;
+  regularPointsThreshold: number | null;
+  matchingPointsThreshold: number | null;
+  totalMatchingPointsEarned: number;
+  matchingPointsDisabledByAdmin: boolean;
+  uniqueCode: string | null;
+  earnPointPageTitle: string | null;
+  earnPointPageDescription: string | null;
+  redeemRewardPageTitle: string | null;
+  redeemRewardPageDescription: string | null;
+  contactUsPageTitle: string | null;
+  contactUsPageDescription: string | null;
+  contactEmail: string | null;
+  contactPhoneNumber: string | null;
+  footerText: string | null;
+  business: {
+    id: string;
+    name: string;
+  };
+  rewards: OngoingCampaignReward[];
+  participantCount: number;
+}
+
+export interface PaginatedOngoingCampaignsResponse {
+  data: OngoingCampaign[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface PaginatedAdminCampaignsResponse {
   data: CampaignResponse[];
   total: number;

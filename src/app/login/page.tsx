@@ -12,6 +12,7 @@ import { useAuth } from "@/services/business/hook";
 import { useParticipantLogin } from "@/services/participant/hook";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Building2 } from "lucide-react";
+import Cookies from "js-cookie";
 
 type LoginFormData = {
   email: string;
@@ -52,12 +53,23 @@ export default function LoginPage() {
         if (returnUrl) {
           router.push(returnUrl);
         } else {
-          router.push("/dashboard"); // Or participant dashboard
+           // Check both sessionStorage (immediate) and cookies (fallback)
+          const storedCampaignId = sessionStorage.getItem('campaignId') || Cookies.get('campaignId');
+
+          if (storedCampaignId) {
+             // Clean up to avoid stale redirects later
+            sessionStorage.removeItem('campaignId');
+            Cookies.remove('campaignId');
+            router.push(`/campaigns/${storedCampaignId}`);
+          } else {
+            router.push("/dashboard"); // Or participant dashboard
+          }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed. Please try again.");
+      const message = error?.response?.data?.message || "Login failed. Please try again.";
+      toast.error(message);
     }
   };
 

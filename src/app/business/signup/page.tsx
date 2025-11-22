@@ -41,11 +41,10 @@ const onSubmit = async (data: BusinessSignUpDto) => {
     toast.success('Business account created successfully!');
     router.push('/business/onboard');
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup or login error:', error);
-    toast.error(
-      'Failed to create account. Please try again.'
-    );
+    const message = error?.response?.data?.message || 'Failed to create account. Please try again.';
+    toast.error(message);
   }
 };
 

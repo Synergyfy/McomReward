@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useParticipantSignup } from "@/services/participant/hook";
 import { ParticipantSignupDto } from "@/services/participant/types";
+import Cookies from "js-cookie";
 
 type SignupData = ParticipantSignupDto & {
   agree: boolean;
@@ -41,11 +42,23 @@ export default function CustomerSignupPage() {
       if (returnUrl) {
         router.push(returnUrl);
       } else {
-        router.push("/dashboard"); // Or a default participant dashboard
+        // Check both sessionStorage (immediate) and cookies (fallback)
+        const storedCampaignId = sessionStorage.getItem('campaignId') || Cookies.get('campaignId');
+
+        if (storedCampaignId) {
+          // Clean up to avoid stale redirects later
+          sessionStorage.removeItem('campaignId');
+          Cookies.remove('campaignId');
+          router.push(`/campaigns/${storedCampaignId}`);
+        } else {
+          router.push("/dashboard"); // Or a default participant dashboard
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to create account. Please try again.");
+      // specific backend error message or fallback
+      const message = error?.response?.data?.message || "Failed to create account. Please try again.";
+      toast.error(message);
     }
   };
 

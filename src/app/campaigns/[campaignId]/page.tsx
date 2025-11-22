@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Calendar, Tag, Info, CheckCircle, Users, Trophy } from "lucide-react";
 import Link from 'next/link';
 import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useJoinCampaign } from '@/services/participant/hook';
 import { toast } from 'sonner';
 
@@ -80,6 +80,8 @@ const mockCampaign = {
 
 export default function CampaignDetailPage({}: PageProps) {
   const router = useRouter();
+  const params = useParams();
+  const campaignId = params.campaignId as string;
   const { mutate: joinCampaign, isPending: isJoining } = useJoinCampaign();
 
   const [isMember, setIsMember] = useState(false);
@@ -90,17 +92,20 @@ export default function CampaignDetailPage({}: PageProps) {
   const isLoading = false;
 
   useEffect(() => {
+    if (campaignId) {
+      // Store in session storage for immediate use
+      sessionStorage.setItem('campaignId', campaignId);
+      // Store in cookies as fallback/persistence across tabs if needed, and for middleware checks if we had them
+      Cookies.set('campaignId', campaignId, { expires: 1 }); // Expires in 1 day
+    }
+
     const token = Cookies.get('access');
     if (token) {
       setIsLoggedIn(true);
       // In a real app, we would fetch user details and membership status for this campaign here
       // For now, we assume they are not a member until they click join, unless we have local state
-      // If we want to auto-join on visit if logged in (as per one interpretation):
-      // But user said "Send request to join... that's if they've not joined before".
-      // To avoid spamming join, we should probably check status first.
-      // For this task, I will assume the user needs to click "Join" or we trigger it if we know they aren't member.
     }
-  }, []);
+  }, [campaignId]);
 
   const handleJoinClick = () => {
     if (!isLoggedIn) {

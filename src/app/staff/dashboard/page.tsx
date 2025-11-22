@@ -6,6 +6,7 @@ import { Calendar, Users, Flame, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { useGetStaffOngoingCampaigns } from "@/services/campaigns/hook";
 import Loader from "@/components/ui/loader";
+import Link from "next/link";
 
 export default function StaffDashboard() {
   const { data, isLoading, isError } = useGetStaffOngoingCampaigns();
@@ -51,57 +52,59 @@ export default function StaffDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-orange-500 flex flex-col">
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xl font-bold text-gray-800 line-clamp-1" title={campaign.name}>
-                    {campaign.name}
-                  </CardTitle>
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 whitespace-nowrap ml-2">
-                    {campaign.disabled ? "Inactive" : "Active"}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-4 flex-1 flex flex-col">
-                  <p className="text-sm text-gray-600 line-clamp-2 min-h-[40px]" title={campaign.campaignMessage}>
-                    {campaign.campaignMessage}
-                  </p>
+              <Link href={`/staff/dashboard/campaigns/${campaign.id}`}>
+                <Card className="h-full hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-orange-500 flex flex-col cursor-pointer">
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                    <CardTitle className="text-xl font-bold text-gray-800 line-clamp-1" title={campaign.name}>
+                      {campaign.name}
+                    </CardTitle>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 whitespace-nowrap ml-2">
+                      {campaign.disabled ? "Inactive" : "Active"}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-4 flex-1 flex flex-col">
+                    <p className="text-sm text-gray-600 line-clamp-2 min-h-[40px]" title={campaign.campaignMessage}>
+                      {campaign.campaignMessage}
+                    </p>
 
-                  <div className="flex items-center text-sm text-gray-500 gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="font-medium capitalize">{campaign.campaignType.replace(/_/g, ' ')}</span>
-                  </div>
+                    <div className="flex items-center text-sm text-gray-500 gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium capitalize">{campaign.campaignType.replace(/_/g, ' ')}</span>
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Start Date
-                      </span>
-                      <span className="text-sm font-medium text-gray-700">
-                        {new Date(campaign.startDate).toLocaleDateString()}
-                      </span>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> Start Date
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {new Date(campaign.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> End Date
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
+                           {new Date(campaign.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> End Date
-                      </span>
-                      <span className="text-sm font-medium text-gray-700">
-                         {new Date(campaign.endDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users className="h-4 w-4 text-blue-500" />
-                      <span className="font-semibold">{campaign.participantCount.toLocaleString()}</span>
-                      <span>participants</span>
+                    <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Users className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold">{campaign.participantCount.toLocaleString()}</span>
+                        <span>participants</span>
+                      </div>
+                      {/* Placeholder for action button if needed later */}
+                      <div className="text-gray-400 cursor-pointer hover:text-orange-500">
+                         <Info className="h-5 w-5" />
+                      </div>
                     </div>
-                    {/* Placeholder for action button if needed later */}
-                    <div className="text-gray-400 cursor-pointer hover:text-orange-500">
-                       <Info className="h-5 w-5" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             </motion.div>
           ))}
         </div>

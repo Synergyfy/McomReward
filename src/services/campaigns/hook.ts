@@ -11,6 +11,7 @@ import {
   PaginatedAdminCampaignsResponse,
   PaginatedCustomerActivityResponseDto,
   PaginatedOngoingCampaignsResponse,
+  OngoingCampaign,
 } from './types';
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
@@ -250,5 +251,21 @@ export const useGetStaffOngoingCampaigns = (page: number = 1, limit: number = 10
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing', { page, limit }],
     queryFn: () => getStaffOngoingCampaigns(page, limit),
+  });
+};
+
+// Get Staff Campaign By ID (using the same endpoint but typed as OngoingCampaign if structure matches, otherwise we might need a specific endpoint)
+// Assuming /campaigns/:id returns the full campaign details. We'll cast it to OngoingCampaign for now.
+// If the structure differs significantly from the list view, we might need to adjust.
+const getStaffCampaignById = async (id: string): Promise<OngoingCampaign> => {
+  const { data } = await api.get<OngoingCampaign>(`/campaigns/${id}`);
+  return data;
+};
+
+export const useGetStaffCampaignById = (id: string) => {
+  return useQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', id],
+    queryFn: () => getStaffCampaignById(id),
+    enabled: !!id,
   });
 };

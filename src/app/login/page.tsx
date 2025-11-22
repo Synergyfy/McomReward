@@ -187,7 +187,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href="/signup" className="text-orange-400 hover:underline font-medium">
+          <a href={returnUrl ? `/signup?returnUrl=${encodeURIComponent(returnUrl)}` : "/signup"} className="text-orange-400 hover:underline font-medium">
             Sign up
           </a>
         </p>

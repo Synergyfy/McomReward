@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 function SignupContent() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
+  const returnUrl = searchParams.get("returnUrl");
 
   // Initialize state based on query param if valid
   const [selectedType, setSelectedType] = useState<"customer" | "business" | null>(
@@ -140,7 +141,7 @@ function SignupContent() {
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"}
             className="text-orange-500 hover:underline font-medium"
           >
             Log in

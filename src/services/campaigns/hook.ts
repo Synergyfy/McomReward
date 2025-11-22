@@ -12,6 +12,7 @@ import {
   PaginatedCustomerActivityResponseDto,
   PaginatedOngoingCampaignsResponse,
   OngoingCampaign,
+  ParticipantCampaignSearchResponse,
 } from './types';
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
@@ -285,5 +286,19 @@ export const useGetStaffCampaignById = (id: string) => {
     },
     // Set staleTime to avoid immediate refetch if initialData is found
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Search Participant Campaigns
+const searchParticipantCampaigns = async (query: string): Promise<ParticipantCampaignSearchResponse[]> => {
+  const { data } = await api.get<ParticipantCampaignSearchResponse[]>('/campaigns/participant/search', {
+    params: { query },
+  });
+  return data;
+};
+
+export const useSearchParticipantCampaigns = () => {
+  return useMutation({
+    mutationFn: searchParticipantCampaigns,
   });
 };

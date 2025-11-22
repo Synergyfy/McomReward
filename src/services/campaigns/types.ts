@@ -143,6 +143,24 @@ export interface PaginatedCampaignsResponse {
   limit: number;
 }
 
+export interface ParticipantCampaignSearchResponse {
+  id: string;
+  name: string;
+  campaign_type: string;
+  start_date: string;
+  end_date: string;
+  disabled: boolean;
+  business: {
+    id: string;
+    name: string;
+  };
+  rewards: {
+    id: string;
+    title: string;
+    points_required: number;
+  }[];
+}
+
 export interface OngoingCampaignReward {
   id: string;
   title: string;

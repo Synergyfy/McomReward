@@ -84,12 +84,14 @@ export interface IsJoinedResponse {
 }
 
 export interface ParticipantBalance {
-  points: number;
-  uniqueCode: string;
+  campaignId: string;
+  campaignName: string;
+  balance: number;
 }
 
 export interface ClaimCodePayload {
   code: string;
+  campaignId: string;
 }
 
 export interface ClaimCodeResponse {
@@ -160,4 +162,8 @@ export interface SignUpPayload {
 export interface SignUpResponse {
   message: string;
   participantId?: string;
+}
+
+export interface UniqueCodeResponse {
+  uniqueCode: string;
 }

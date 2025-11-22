@@ -24,7 +24,7 @@ export default function RedeemPointsPage({ params }: PageProps) {
     console.log('RedeemPointsPage data:', campaign, 'isLoading:', isLoading, 'error:', error);
     const { isMember } = useCampaignMembership();
 
-    const userPoints = balance?.points || 0;
+    const userPoints = balance?.balance || 0;
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<{ title: string } | null>(null);

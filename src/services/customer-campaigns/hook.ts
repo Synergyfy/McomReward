@@ -18,11 +18,13 @@ import {
   DualScanResponse,
   SignUpPayload,
   SignUpResponse,
-  IsJoinedResponse
+  IsJoinedResponse,
+  UniqueCodeResponse
 } from './types';
 
 const PUBLIC_CAMPAIGNS_QUERY_KEY = 'publicCampaigns';
 const PARTICIPANT_BALANCE_QUERY_KEY = 'participantBalance';
+const UNIQUE_CODE_QUERY_KEY = 'uniqueCode';
 
 // Get Public Campaigns
 const getPublicCampaigns = async (page: number, limit: number): Promise<PaginatedPublicCampaigns> => {
@@ -103,9 +105,22 @@ export const useSignUp = () => {
   });
 };
 
+// Get Unique Code
+const getUniqueCode = async (): Promise<UniqueCodeResponse> => {
+  const { data } = await api.get<UniqueCodeResponse>('/auth/unique-code');
+  return data;
+};
+
+export const useGetUniqueCode = () => {
+  return useQuery({
+    queryKey: [UNIQUE_CODE_QUERY_KEY],
+    queryFn: getUniqueCode,
+  });
+};
+
 // Get Participant Balance
 const getParticipantBalance = async (campaignId: string): Promise<ParticipantBalance> => {
-  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/${campaignId}`);
+  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`);
   return data;
 };
 

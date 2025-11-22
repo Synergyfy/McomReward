@@ -22,7 +22,7 @@ export default function RedeemPointsPage() {
   const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
 
   const rewards = campaign?.rewards || [];
-  const userPoints = balance?.points || 0;
+  const userPoints = balance?.balance || 0;
 
   const handleRedeemClick = (rewardId: string) => {
     const reward = rewards.find((r: RewardResponse) => r.id === rewardId);

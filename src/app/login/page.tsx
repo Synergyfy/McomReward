@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import { useAuth } from "@/services/business/hook";
-import { useRouter } from "next/navigation";
+import { useParticipantLogin } from "@/services/auth/hook";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useJoinCampaign } from "@/services/customer-campaigns/hook";
 
 type LoginFormData = {
   email: string;
@@ -17,7 +19,7 @@ type LoginFormData = {
   rememberMe: boolean;
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const {
     register,
     handleSubmit,
@@ -25,16 +27,44 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     defaultValues: { rememberMe: false },
   });
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId");
+  const redirectUrl = searchParams.get("redirect");
+
   const { mutateAsync: login } = useAuth();
+  const { mutateAsync: participantLogin } = useParticipantLogin();
+  const { mutate: joinCampaign } = useJoinCampaign();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       const { rememberMe, ...loginData } = data;
-      await login(loginData)
-        .then(() => {
-          toast.success("Login successful! Redirecting...");
-        });
+
+      if (campaignId) {
+        // Participant Login with Auto-Join
+        await participantLogin({ ...loginData, campaignId })
+          .then((response) => {
+            // Store user name for CampaignMembershipContext
+            if (response?.user?.name) {
+              localStorage.setItem('campaignMemberName', response.user.name);
+            }
+
+            toast.success("Login successful! Joining campaign...");
+            if (redirectUrl) {
+              router.push(redirectUrl);
+            } else {
+              router.push(`/campaigns/${campaignId}`);
+            }
+          });
+      } else {
+        // General Login
+        await login(loginData)
+          .then((response) => {
+            toast.success("Login successful! Redirecting...");
+          });
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed. Please try again.");
@@ -139,11 +169,19 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href="/signup" className="text-orange-400 hover:underline font-medium">
+          <a href={campaignId ? `/signup?campaignId=${campaignId}` : "/signup"} className="text-orange-400 hover:underline font-medium">
             Sign up
           </a>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

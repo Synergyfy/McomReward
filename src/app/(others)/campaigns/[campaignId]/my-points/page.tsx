@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import {
   Card,
   CardContent,
@@ -25,44 +25,54 @@ import {
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
-
-const pointBalance = 1250;
+import { useGetParticipantBalance, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
 
 const transactionHistory = [
   {
     id: '1',
     action: 'Earned Points',
     details: 'Purchase at Mcom Store',
-    points: '+',
+    points: '+50',
     date: '2025-10-28',
   },
   {
     id: '2',
     action: 'Redeemed Reward',
     details: 'Free Coffee',
-    points: '-',
+    points: '-50',
     date: '2025-10-25',
   },
   {
     id: '3',
     action: 'Earned Points',
     details: 'Completed a survey',
-    points: '+',
+    points: '+20',
     date: '2025-10-22',
   },
   {
     id: '4',
     action: 'Earned Points',
     details: 'Referred a friend',
-    points: '+',
+    points: '+100',
     date: '2025-10-19',
   },
 ];
 
-export default function MyPointsPage() {
-  const { isMember } = useCampaignMembership();
+interface PageProps {
+  params: Promise<{ campaignId: string }>;
+}
+
+export default function MyPointsPage({ params }: PageProps) {
+  const { campaignId } = use(params);
+  const { isCampaignJoined } = useCampaignMembership();
+  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
+  const { data: balance } = useGetParticipantBalance(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();
+
+  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
+
+  const pointBalance = balance?.points || 0;
 
   useEffect(() => {
     if (!isMember) {
@@ -88,6 +98,7 @@ export default function MyPointsPage() {
           isOpen={isSignUpDialogOpen}
           onClose={handleDialogClose}
           campaignTitle="the Campaign"
+          campaignId={campaignId}
         />
       </div>
     );

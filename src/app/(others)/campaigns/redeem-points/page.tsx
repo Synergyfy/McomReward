@@ -3,59 +3,46 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ticket, ShoppingBag } from "lucide-react";
+import { Gift } from "lucide-react";
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
 
-const initialRewards = [
-  {
-    id: '1',
-    title: 'Free Coffee',
-    description: 'Enjoy a complimentary cup of our finest brewed coffee.',
-    points: 50,
-    image: 'https://images.unsplash.com/photo-1511920183359-3b1d1b4a32d6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
-    redeemed: false,
-    progress: 100,
-  },
-  {
-    id: '2',
-    title: '10% Discount Voucher',
-    description: 'Get 10% off your next purchase in-store or online.',
-    points: 100,
-    image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Ticket,
-    redeemed: false,
-    progress: 100,
-  },
-  {
-    id: '3',
-    title: 'Exclusive Tote Bag',
-    description: 'A stylish and reusable tote bag, perfect for your shopping.',
-    points: 250,
-    image: 'https://images.unsplash.com/photo-1544441893-675d73b31985?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: ShoppingBag,
-    redeemed: false,
-    progress: 70,
-  },
-];
+import { useGetPublicCampaignDetails, useGetParticipantBalance, useRedeemReward } from '@/services/customer-campaigns/hook';
+import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import { RewardResponse } from '@/services/rewards/types';
 
 export default function RedeemPointsPage() {
-  const [userPoints, setUserPoints] = useState(200); // Mock user's current points
-  const [rewards, setRewards] = useState(initialRewards);
+  const { campaignId } = useCampaignMembership();
+  const { data: campaign } = useGetPublicCampaignDetails(campaignId);
+  const { data: balance } = useGetParticipantBalance(campaignId);
+  const { mutate: redeemReward } = useRedeemReward();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedReward, setSelectedReward] = useState(initialRewards[0]);
+  const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
+
+  const rewards = campaign?.rewards || [];
+  const userPoints = balance?.points || 0;
 
   const handleRedeemClick = (rewardId: string) => {
-    const newRewards = rewards.map(r => r.id === rewardId ? { ...r, redeemed: true } : r);
-    setRewards(newRewards);
-    const redeemedReward = rewards.find(r => r.id === rewardId);
-    if (redeemedReward) {
-        setSelectedReward(redeemedReward);
-        setUserPoints(prevPoints => prevPoints - redeemedReward.points); // Deduct points
-    }
-    setIsDialogOpen(true);
+    const reward = rewards.find((r: RewardResponse) => r.id === rewardId);
+    if (!reward) return;
+
+    redeemReward({
+      staffId: 'mock-staff-id', // Mocked as per instructions/context limitations
+      participantId: 'mock-participant-id', // Mocked
+      rewardId: rewardId,
+      redemptionCode: `RED-${Date.now()}` // Generated
+    }, {
+      onSuccess: () => {
+        setSelectedReward(reward);
+        setIsDialogOpen(true);
+      },
+      onError: (error: Error) => {
+        console.error(error);
+        alert('Failed to redeem reward. Please try again.');
+      }
+    });
   };
 
   return (
@@ -68,8 +55,8 @@ export default function RedeemPointsPage() {
 
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {rewards.map((reward) => {
-            const canRedeem = userPoints >= reward.points;
+          {rewards.map((reward: RewardResponse) => {
+            const canRedeem = userPoints >= reward.pointsRequired;
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
                 <div className="relative h-48 w-full">
@@ -89,17 +76,17 @@ export default function RedeemPointsPage() {
                       {reward.description}
                     </CardDescription>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xl font-bold text-orange-600">{reward.points} pts</span>
-                      <reward.icon className="h-8 w-8 text-gray-400" />
+                      <span className="text-xl font-bold text-orange-600">{reward.pointsRequired} pts</span>
+                      <Gift className="h-8 w-8 text-gray-400" />
                     </div>
-                    <Progress value={reward.progress} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500"/>
+                    <Progress value={Math.min((userPoints / reward.pointsRequired) * 100, 100)} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500" />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    disabled={!canRedeem || reward.redeemed}
+                    disabled={!canRedeem}
                     onClick={() => handleRedeemClick(reward.id)}
                   >
-                    {reward.redeemed ? 'Redeemed' : (canRedeem ? 'Redeem' : `Requires ${reward.points} points`)}
+                    {canRedeem ? 'Redeem' : `Requires ${reward.pointsRequired} points`}
                   </Button>
                 </CardContent>
               </Card>
@@ -107,10 +94,10 @@ export default function RedeemPointsPage() {
           })}
         </div>
       </div>
-      <RedemptionSuccessDialog 
-        isOpen={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)} 
-        rewardTitle={selectedReward.title} 
+      <RedemptionSuccessDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        rewardTitle={selectedReward?.title || ''}
       />
     </div>
   );

@@ -15,6 +15,23 @@ export interface LoginResponse {
     role: string;
   };
 }
+export interface AdminLoginDto {
+  email: string;
+  password: string;
+}
+
+export interface AdminLoginResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    role: string;
+  };
+}
 
 export interface RefreshTokenResponse {
   user: {
@@ -23,4 +40,21 @@ export interface RefreshTokenResponse {
   };
   access_token: string;
   refresh_token: string;
+}
+
+export interface ParticipantLoginDto {
+  email: string;
+  password: string;
+  campaignId?: string;
+}
+
+export interface ParticipantLoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, Hash, Hand, User } from "lucide-react";
@@ -17,7 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from 'next/image';
 
-export default function EarnPointsPage() {
+import { useGetParticipantBalance, useClaimCode } from '@/services/customer-campaigns/hook';
+
+interface PageProps {
+  params: Promise<{ campaignId: string }>;
+}
+
+export default function EarnPointsPage({ params }: PageProps) {
+  const { campaignId } = use(params);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isEnterCodeModalOpen, setIsEnterCodeModalOpen] = useState(false);
   const [isMerchantEnterCodeModalOpen, setIsMerchantEnterCodeModalOpen] = useState(false);
@@ -25,6 +32,9 @@ export default function EarnPointsPage() {
   const [enteredCode, setEnteredCode] = useState('');
   const [customerNumber, setCustomerNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+1'); // Default country code
+
+  const { data: balance } = useGetParticipantBalance(campaignId);
+  const { mutate: claimCode } = useClaimCode();
 
   const earnMethods = [
     {
@@ -54,10 +64,18 @@ export default function EarnPointsPage() {
   ];
 
   const handleCodeSubmit = () => {
-    console.log('Code Submitted:', enteredCode);
-    // Here you would typically send the code to your backend
-    setIsEnterCodeModalOpen(false);
-    setEnteredCode('');
+    if (!enteredCode) return;
+    claimCode({ code: enteredCode }, {
+      onSuccess: (data) => {
+        alert(`Success: ${data.message}. You earned ${data.pointsAwarded} points!`);
+        setIsEnterCodeModalOpen(false);
+        setEnteredCode('');
+      },
+      onError: (error) => {
+        console.error(error);
+        alert('Failed to claim code. Please try again.');
+      }
+    });
   };
 
   const handleCustomerNumberSubmit = () => {
@@ -86,8 +104,8 @@ export default function EarnPointsPage() {
                 <CardDescription className="text-lg text-gray-700 mb-6 h-20">
                   {method.description}
                 </CardDescription>
-                <Button 
-                  onClick={method.action} 
+                <Button
+                  onClick={method.action}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
                 >
                   Use {method.title}
@@ -107,14 +125,21 @@ export default function EarnPointsPage() {
               Show QR Code to merchant
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center p-4">
-            <Image 
-              src="/placeholder-qr.svg" 
-              alt="QR Code" 
-              width={200} 
-              height={200} 
-              className="w-48 h-48"
-            />
+          <div className="flex flex-col items-center justify-center p-4">
+            {balance?.uniqueCode ? (
+              <>
+                <Image
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${balance.uniqueCode}`}
+                  alt="QR Code"
+                  width={200}
+                  height={200}
+                  className="w-48 h-48 mb-4"
+                />
+                <p className="text-lg font-bold tracking-widest">{balance.uniqueCode}</p>
+              </>
+            ) : (
+              <p>Loading QR Code...</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

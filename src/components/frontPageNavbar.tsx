@@ -20,122 +20,121 @@ const FrontPageNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-        useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 40);
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-    useEffect(() => {
-      setIsAuthenticated(!!Cookies.get('access'));
-    }, []);
+  useEffect(() => {
+    setIsAuthenticated(!!Cookies.get('access'));
+  }, []);
 
-    const handleLogout = () => {
-      Cookies.remove('access');
-      Cookies.remove('refresh');
-      router.push('/login');
-    };
+  const handleLogout = () => {
+    Cookies.remove('access');
+    Cookies.remove('refresh');
+    router.push('/login');
+  };
 
-    const getLinkClass = (href: string) => {
-      const isSpecialPage = pathname === '/pricing' || pathname === '/reward';
-      const isActive = pathname === href;
+  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/campaigns';
 
-      if (isSpecialPage) {
-        return "text-orange-600 hover:text-orange-700 transition-colors";
-      } else {
-        return `hover:text-orange-600 transition-colors ${
-          isActive
-            ? "text-orange-600"
-            : scrolled
-              ? "text-orange-500"
-              : "text-white"
+  const getLinkClass = (href: string) => {
+    const isActive = pathname === href;
+
+    if (isSpecialPage) {
+      return "text-orange-600 hover:text-orange-700 transition-colors";
+    } else {
+      return `hover:text-orange-600 transition-colors ${isActive
+        ? "text-orange-600"
+        : scrolled
+          ? "text-orange-500"
+          : "text-white"
         }`;
-      }
-    };
+    }
+  };
 
-    return (
-      <nav
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled ? "bg-white/90 backdrop-blur-md shadow-sm" : "bg-transparent"
+  return (
+    <nav
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled || isSpecialPage ? "bg-white/90 backdrop-blur-md shadow-sm" : "bg-transparent"
         }`}
-      >
-        <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
-          <Link href="/">
-            <span className={`  justify-center items-center text-2xl font-bold text-orange-500 ${scrolled ? "" : "text-white"}`}>
-              <span className={`absolute top-4 h-8 w-8 rounded-2xl flex items-center justify-center  ${scrolled ? "bg-orange-500 text-white" : "bg-white text-orange-500"}`}>
-                <span className={` relative left-1.5 pt-0.5 pb-6  h-8 w-8 rounded-2xl text-xl  ${scrolled ? " text-white" : " text-orange-500"}`}>M
+    >
+      <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+        <Link href="/">
+          <span className={`  justify-center items-center text-2xl font-bold text-orange-500 ${scrolled || isSpecialPage ? "" : "text-white"}`}>
+            <span className={`absolute top-4 h-8 w-8 rounded-2xl flex items-center justify-center  ${scrolled || isSpecialPage ? "bg-orange-500 text-white" : "bg-white text-orange-500"}`}>
+              <span className={` relative left-1.5 pt-0.5 pb-6  h-8 w-8 rounded-2xl text-xl  ${scrolled || isSpecialPage ? " text-white" : " text-orange-500"}`}>M
 
-                </span>
               </span>
-              
-              <span className="relative left-10"> MCOM REWARD</span>
             </span>
-          </Link>
-          <div className="hidden md:flex gap-8 font-medium">
-            <Link href="/" className={getLinkClass("/")}>Home</Link>
-            <Link href="/pricing" className={getLinkClass("/pricing")}>Pricing</Link>
-            <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
-            <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
-            <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
-          </div>
-          <div className="hidden md:flex gap-3">
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold cursor-pointer">
-                    A
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
-                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/settings')}>
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Link href="/login">
-                  <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled ? "" : "bg-white"}`}>
-                    Login
-                  </span>
-                </Link>
-                <Link href="/signup">
-                  <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
-                    Get Started
-                  </span>
-                </Link>
-              </>
-            )}
-          </div>
-          <button className="md:hidden text-orange-500" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
 
-        {menuOpen && (
-          <div className="md:hidden bg-white border-t shadow-md px-6 py-4 flex flex-col gap-3 text-gray-700">
-            <Link href="/" className={getLinkClass("/")}>Home</Link>
-            <Link href="/pricing" className={getLinkClass("/pricing")}>Pricing</Link>
-            <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
-            <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
-            <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
-            <div className="border-t my-3"></div>
-            {!isAuthenticated && (
-              <Link href="/business/signup">
-                <span className="text-orange-500 font-semibold">Get Started</span>
+            <span className="relative left-10"> MCOM REWARD</span>
+          </span>
+        </Link>
+        <div className="hidden md:flex gap-8 font-medium">
+          <Link href="/" className={getLinkClass("/")}>Home</Link>
+          <Link href="/pricing" className={getLinkClass("/pricing")}>Pricing</Link>
+          <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
+          <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
+          <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
+        </div>
+        <div className="hidden md:flex gap-3">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold cursor-pointer">
+                  A
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link href="/login">
+                <span className={`px-5 py-2 border border-orange-500 text-orange-500 rounded-full hover:bg-orange-50 transition ${scrolled || isSpecialPage ? "" : "bg-white"}`}>
+                  Login
+                </span>
               </Link>
-            )}
-          </div>
-        )}
-      </nav>
-    );
+              <Link href="/signup">
+                <span className="px-5 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition">
+                  Get Started
+                </span>
+              </Link>
+            </>
+          )}
+        </div>
+        <button className="md:hidden text-orange-500" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </div>
+
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t shadow-md px-6 py-4 flex flex-col gap-3 text-gray-700">
+          <Link href="/" className={getLinkClass("/")}>Home</Link>
+          <Link href="/pricing" className={getLinkClass("/pricing")}>Pricing</Link>
+          <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
+          <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
+          <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
+          <div className="border-t my-3"></div>
+          {!isAuthenticated && (
+            <Link href="/business/signup">
+              <span className="text-orange-500 font-semibold">Get Started</span>
+            </Link>
+          )}
+        </div>
+      )}
+    </nav>
+  );
 };
 
 export default FrontPageNavbar;

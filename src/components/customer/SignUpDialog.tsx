@@ -13,10 +13,11 @@ interface SignUpDialogProps {
   isOpen: boolean;
   onClose: () => void;
   campaignTitle: string;
+  campaignId: string;
 }
 
-export function SignUpDialog({ isOpen, onClose, campaignTitle }: SignUpDialogProps) {
-  const { joinCampaign, setMemberName, campaignId } = useCampaignMembership();
+export function SignUpDialog({ isOpen, onClose, campaignTitle, campaignId }: SignUpDialogProps) {
+  const { joinCampaign, setMemberName } = useCampaignMembership();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

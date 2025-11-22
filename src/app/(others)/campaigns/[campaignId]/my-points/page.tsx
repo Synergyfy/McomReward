@@ -25,7 +25,7 @@ import {
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
-import { useGetParticipantBalance } from '@/services/customer-campaigns/hook';
+import { useGetParticipantBalance, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
 
 const transactionHistory = [
   {
@@ -64,10 +64,13 @@ interface PageProps {
 
 export default function MyPointsPage({ params }: PageProps) {
   const { campaignId } = use(params);
-  const { isMember } = useCampaignMembership();
+  const { isCampaignJoined } = useCampaignMembership();
+  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
   const { data: balance } = useGetParticipantBalance(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();
+
+  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
 
   const pointBalance = balance?.points || 0;
 
@@ -95,6 +98,7 @@ export default function MyPointsPage({ params }: PageProps) {
           isOpen={isSignUpDialogOpen}
           onClose={handleDialogClose}
           campaignTitle="the Campaign"
+          campaignId={campaignId}
         />
       </div>
     );

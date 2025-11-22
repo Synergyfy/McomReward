@@ -79,6 +79,10 @@ export interface JoinCampaignResponse {
   message: string;
 }
 
+export interface IsJoinedResponse {
+  isJoined: boolean;
+}
+
 export interface ParticipantBalance {
   points: number;
   uniqueCode: string;

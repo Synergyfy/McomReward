@@ -17,7 +17,8 @@ import {
   DualScanPayload,
   DualScanResponse,
   SignUpPayload,
-  SignUpResponse
+  SignUpResponse,
+  IsJoinedResponse
 } from './types';
 
 const PUBLIC_CAMPAIGNS_QUERY_KEY = 'publicCampaigns';
@@ -69,7 +70,24 @@ export const useJoinCampaign = () => {
     onSuccess: (data, campaignId) => {
       // Invalidate the specific campaign to refetch its data, which might have changed (e.g., user joined)
       queryClient.invalidateQueries({ queryKey: [PUBLIC_CAMPAIGNS_QUERY_KEY, campaignId] });
+      // Also invalidate the join status check
+      queryClient.invalidateQueries({ queryKey: ['isJoined', campaignId] });
     },
+  });
+};
+
+// Check Join Status
+const checkCampaignJoinStatus = async (campaignId: string): Promise<IsJoinedResponse> => {
+  const { data } = await api.get<IsJoinedResponse>(`/participant-campaign-balance/is-joined/${campaignId}`);
+  return data;
+};
+
+export const useCheckCampaignJoinStatus = (campaignId: string) => {
+  return useQuery({
+    queryKey: ['isJoined', campaignId],
+    queryFn: () => checkCampaignJoinStatus(campaignId),
+    enabled: !!campaignId,
+    retry: false, // Don't retry if it fails (e.g. 401 if not logged in, though we might want to handle that gracefully)
   });
 };
 

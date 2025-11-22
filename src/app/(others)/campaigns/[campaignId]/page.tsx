@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Calendar, Tag, Info, CheckCircle, Users, Trophy } from "lucide-react";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import Link from 'next/link';
-import { useGetPublicCampaignDetails, useJoinCampaign } from '@/services/customer-campaigns/hook';
+import { useGetPublicCampaignDetails, useJoinCampaign, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -17,10 +17,13 @@ interface PageProps {
 
 export default function CampaignDetailPage({ params }: PageProps) {
   const { campaignId } = use(params);
-  const { isMember, memberName, joinCampaign } = useCampaignMembership();
+  const { memberName, joinCampaign, isCampaignJoined } = useCampaignMembership();
 
   const { data: campaign, isLoading, error } = useGetPublicCampaignDetails(campaignId);
+  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
   const { mutate: joinCampaignMutation, isPending: isJoining } = useJoinCampaign();
+
+  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
 
   const handleJoinClick = () => {
     joinCampaignMutation(campaignId, {

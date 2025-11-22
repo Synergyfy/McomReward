@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import { isAxiosError } from 'axios';
+import React, { use, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
@@ -26,9 +27,9 @@ export default function CampaignDetailPage({ params }: PageProps) {
       onSuccess: () => {
         joinCampaign(campaignId);
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         console.error('Failed to join campaign:', error);
-        if (error.response?.status === 401) {
+        if (isAxiosError(error) && error.response?.status === 401) {
           // Redirect to login with campaignId
           window.location.href = `/login?campaignId=${campaignId}`;
         } else {

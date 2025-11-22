@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ticket, ShoppingBag } from "lucide-react";
+import { Gift } from "lucide-react";
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
 
 import { useGetPublicCampaignDetails, useGetParticipantBalance, useRedeemReward } from '@/services/customer-campaigns/hook';
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import { RewardResponse } from '@/services/rewards/types';
 
 export default function RedeemPointsPage() {
   const { campaignId } = useCampaignMembership();
@@ -18,13 +19,13 @@ export default function RedeemPointsPage() {
   const { mutate: redeemReward } = useRedeemReward();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedReward, setSelectedReward] = useState<any>(null);
+  const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
 
   const rewards = campaign?.rewards || [];
   const userPoints = balance?.points || 0;
 
   const handleRedeemClick = (rewardId: string) => {
-    const reward = rewards.find((r: any) => r.id === rewardId);
+    const reward = rewards.find((r: RewardResponse) => r.id === rewardId);
     if (!reward) return;
 
     redeemReward({
@@ -37,7 +38,7 @@ export default function RedeemPointsPage() {
         setSelectedReward(reward);
         setIsDialogOpen(true);
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         console.error(error);
         alert('Failed to redeem reward. Please try again.');
       }
@@ -54,7 +55,7 @@ export default function RedeemPointsPage() {
 
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {rewards.map((reward: any) => {
+          {rewards.map((reward: RewardResponse) => {
             const canRedeem = userPoints >= reward.pointsRequired;
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -96,7 +97,7 @@ export default function RedeemPointsPage() {
       <RedemptionSuccessDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        rewardTitle={selectedReward.title}
+        rewardTitle={selectedReward?.title || ''}
       />
     </div>
   );

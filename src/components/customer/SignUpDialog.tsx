@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { useSignUp } from '@/services/customer-campaigns/hook';
+import { isAxiosError } from 'axios';
 
 interface SignUpDialogProps {
   isOpen: boolean;
@@ -47,9 +48,12 @@ export function SignUpDialog({ isOpen, onClose, campaignTitle }: SignUpDialogPro
         alert('Sign up successful!');
         onClose();
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         console.error('Sign up failed:', error);
-        const errorMessage = error.response?.data?.message || 'Failed to sign up. Please try again.';
+        let errorMessage = 'Failed to sign up. Please try again.';
+        if (isAxiosError(error)) {
+          errorMessage = (error.response?.data as { message: string })?.message || errorMessage;
+        }
         alert(errorMessage);
       }
     });

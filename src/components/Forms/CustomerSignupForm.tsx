@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@/services/customer-campaigns/hook";
 import { useParticipantLogin } from "@/services/auth/hook";
+import { isAxiosError } from "axios";
 
 type SignupData = {
   name: string;
@@ -45,37 +45,35 @@ export default function CustomerSignupPage() {
         email: data.email,
         password: data.password,
         confirmPassword: data.confirmPassword,
-        campaignId: campaignId || '', // Pass campaignId if available, though backend might not require it for signup itself if we login right after
-      })
-        .then(async () => {
-          toast.success("Account created successfully! Logging in...");
+        campaignId: campaignId || '',
+      });
 
-          // 2. Auto Login & Join
-          if (campaignId) {
-            await participantLogin({
-              email: data.email,
-              password: data.password,
-              campaignId
-            }).then((response) => {
-              // Store user name for CampaignMembershipContext
-              if (response?.user?.name) {
-                localStorage.setItem('campaignMemberName', response.user.name);
-              }
+      toast.success("Account created successfully! Logging in...");
 
-              toast.success("Joined campaign successfully!");
-              router.push(`/campaigns/${campaignId}`);
-            });
-          } else {
-            // Normal login flow if no campaignId
-            // We might need a general participant login here or redirect to login page
-            toast.success("Please log in.");
-            router.push("/login");
-          }
+      // 2. Auto Login & Join
+      if (campaignId) {
+        const response = await participantLogin({
+          email: data.email,
+          password: data.password,
+          campaignId
         });
 
-    } catch (error: any) {
+        if (response?.user?.name) {
+          localStorage.setItem('campaignMemberName', response.user.name);
+        }
+
+        toast.success("Joined campaign successfully!");
+        router.push(`/campaigns/${campaignId}`);
+      } else {
+        toast.success("Please log in.");
+        router.push("/login");
+      }
+    } catch (error) {
       console.error("Signup error:", error);
-      const errorMessage = error.response?.data?.message || "Signup failed. Please try again.";
+      let errorMessage = "Signup failed. Please try again.";
+      if (isAxiosError(error)) {
+        errorMessage = (error.response?.data as {message: string})?.message || errorMessage;
+      }
       toast.error(errorMessage);
     }
   };

@@ -263,9 +263,34 @@ const getStaffCampaignById = async (id: string): Promise<OngoingCampaign> => {
 };
 
 export const useGetStaffCampaignById = (id: string) => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', id],
     queryFn: () => getStaffCampaignById(id),
     enabled: !!id,
+    initialData: () => {
+      // Try to find the campaign in the 'ongoing' campaigns list cache
+      const ongoingCampaignsQueries = queryClient.getQueriesData<PaginatedOngoingCampaignsResponse>({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing'],
+      });
+
+      for (const [, queryData] of ongoingCampaignsQueries) {
+        const campaign = queryData?.data?.find((c) => c.id === id);
+        if (campaign) {
+          return campaign;
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => {
+      // Use the timestamp of the list query if found
+       const ongoingCampaignsQueries = queryClient.getQueryState([CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing']);
+       // This is tricky because getQueryState needs exact key or we iterate.
+       // For simplicity, we just return undefined which defaults to 0 (stale) if we don't find it,
+       // or just rely on default behavior.
+       // If initialData is provided, it's considered fresh by default based on staleTime.
+       return undefined;
+    }
   });
 };

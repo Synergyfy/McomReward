@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, Hash, Hand, User } from "lucide-react";
@@ -18,9 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Image from 'next/image';
 
 import { useGetParticipantBalance, useClaimCode } from '@/services/customer-campaigns/hook';
-import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 
-export default function EarnPointsPage() {
+interface PageProps {
+  params: Promise<{ campaignId: string }>;
+}
+
+export default function EarnPointsPage({ params }: PageProps) {
+  const { campaignId } = use(params);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isEnterCodeModalOpen, setIsEnterCodeModalOpen] = useState(false);
   const [isMerchantEnterCodeModalOpen, setIsMerchantEnterCodeModalOpen] = useState(false);
@@ -29,7 +33,6 @@ export default function EarnPointsPage() {
   const [customerNumber, setCustomerNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+1'); // Default country code
 
-  const { campaignId } = useCampaignMembership();
   const { data: balance } = useGetParticipantBalance(campaignId);
   const { mutate: claimCode } = useClaimCode();
 

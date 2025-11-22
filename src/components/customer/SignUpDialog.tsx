@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import { useSignUp } from '@/services/customer-campaigns/hook';
 
 interface SignUpDialogProps {
   isOpen: boolean;
@@ -14,16 +15,44 @@ interface SignUpDialogProps {
 }
 
 export function SignUpDialog({ isOpen, onClose, campaignTitle }: SignUpDialogProps) {
-  const { joinCampaign, setMemberName } = useCampaignMembership();
+  const { joinCampaign, setMemberName, campaignId } = useCampaignMembership();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const { mutate: signUp, isPending } = useSignUp();
 
   const handleSignUp = () => {
-    if (name.trim() && email.trim()) {
-      setMemberName(name);
-      joinCampaign();
-      onClose();
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      alert('Please fill in all fields.');
+      return;
     }
+
+    if (password !== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
+
+    signUp({
+      name,
+      email,
+      password,
+      confirmPassword,
+      campaignId: campaignId || '', // Ensure campaignId is available
+    }, {
+      onSuccess: (data) => {
+        setMemberName(name);
+        joinCampaign(campaignId); // Update context
+        alert('Sign up successful!');
+        onClose();
+      },
+      onError: (error: any) => {
+        console.error('Sign up failed:', error);
+        const errorMessage = error.response?.data?.message || 'Failed to sign up. Please try again.';
+        alert(errorMessage);
+      }
+    });
   };
 
   return (
@@ -48,10 +77,22 @@ export function SignUpDialog({ isOpen, onClose, campaignTitle }: SignUpDialogPro
             </Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="col-span-3" placeholder="john.doe@example.com" />
           </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="password" className="text-right">
+              Password
+            </Label>
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="col-span-3" placeholder="******" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="confirmPassword" className="text-right">
+              Confirm Password
+            </Label>
+            <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="col-span-3" placeholder="******" />
+          </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSignUp} disabled={!name.trim() || !email.trim()}>
-            Sign Up & Join
+          <Button type="submit" onClick={handleSignUp} disabled={!name.trim() || !email.trim() || !password || !confirmPassword || isPending}>
+            {isPending ? 'Signing Up...' : 'Sign Up & Join'}
           </Button>
         </DialogFooter>
       </DialogContent>

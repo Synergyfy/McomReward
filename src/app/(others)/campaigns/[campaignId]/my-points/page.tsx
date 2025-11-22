@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import {
   Card,
   CardContent,
@@ -58,8 +58,13 @@ const transactionHistory = [
   },
 ];
 
-export default function MyPointsPage() {
-  const { isMember, campaignId } = useCampaignMembership();
+interface PageProps {
+  params: Promise<{ campaignId: string }>;
+}
+
+export default function MyPointsPage({ params }: PageProps) {
+  const { campaignId } = use(params);
+  const { isMember } = useCampaignMembership();
   const { data: balance } = useGetParticipantBalance(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();

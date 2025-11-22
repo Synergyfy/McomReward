@@ -13,10 +13,12 @@ import { mockCampaigns } from '@/lib/mock-data/campaigns';
 import { AdjustMatchingPointsModal } from '@/components/admin/matching-points/AdjustMatchingPointsModal';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Globe, SlidersHorizontal, Briefcase, Megaphone, BarChart, UserPlus } from 'lucide-react';
+import { useAwardMatchingPoints } from '@/services/matching-points/hook';
 
 export default function MatchingPointsSettingsPage() {
   const [settings, setSettings] = useState<MatchingPointsSettings>(mockMatchingPointsSettings);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const { mutate: awardPoints } = useAwardMatchingPoints();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -88,8 +90,18 @@ export default function MatchingPointsSettingsPage() {
   };
 
   const handleAdjustMatchingPoints = (userId: string, amount: number, reason: string) => {
-    console.log(`Manually adjusting matching points for user ${userId}: Amount=${amount}, Reason=${reason}`);
-    handleShowFeedback("Points Adjusted!", `Matching points for ${userId} adjusted by ${amount}.`);
+    awardPoints({
+      email: userId,
+      points: amount,
+      description: reason,
+    }, {
+      onSuccess: () => {
+        handleShowFeedback("Points Adjusted!", `Matching points for ${userId} adjusted by ${amount}.`);
+      },
+      onError: () => {
+        handleShowFeedback("Error", "Failed to adjust matching points.");
+      }
+    });
   };
 
   return (

@@ -3,11 +3,12 @@
 import React, { useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Ticket, ShoppingBag, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
 import { useGetPublicCampaignDetails } from '@/services/customer-campaigns/hook';
+import { RewardResponse } from '@/services/rewards/types';
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 
 interface PageProps {
@@ -29,7 +30,7 @@ export default function RedeemPointsPage({ params }: PageProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<{ title: string } | null>(null);
 
-    const handleRedeemClick = (reward: any) => {
+    const handleRedeemClick = (reward: RewardResponse) => {
         // In a real app, this would call a mutation to redeem the reward
         if (userPoints >= reward.pointsRequired) {
             setSelectedReward(reward);

@@ -2,11 +2,13 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api from '../api';
 import {
   CreateCampaignRequest,
+  CreateCampaignPayload,
   CampaignResponse,
   PaginatedCampaignsResponse,
   BusinessCampaign,
   PaginatedCampaignAnalyticsResponse,
   DetailedCampaignAnalytics,
+  PaginatedAdminCampaignsResponse,
   PaginatedCustomerActivityResponseDto,
 } from './types';
 
@@ -15,8 +17,8 @@ const ANALYTICS_QUERY_KEY = 'campaign-analytics';
 const CUSTOMER_ACTIVITIES_QUERY_KEY = 'customer-activities';
 
 // Create Campaign
-const createCampaign = async (campaignData: CreateCampaignRequest): Promise<CampaignResponse> => {
-  const { data } = await api.post<CampaignResponse>('/campaigns/business/campaigns', campaignData);
+const createCampaign = async (campaignData: CreateCampaignPayload): Promise<CampaignResponse> => {
+  const { data } = await api.post<CampaignResponse>('/campaigns', campaignData);
   return data;
 };
 
@@ -126,25 +128,40 @@ export const useGetAllPublicCampaigns = (page: number = 1, limit: number = 10) =
   });
 };
 
-// Get Campaign Analytics
-const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
-  const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
+// Get Admin Campaigns
+const getAdminCampaigns = async (page: number, limit: number): Promise<PaginatedAdminCampaignsResponse> => {
+  const { data } = await api.get<PaginatedAdminCampaignsResponse>('/campaigns/admins', {
     params: { page, limit },
   });
   return data;
 };
 
-export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) => {
+export const useGetAdminCampaigns = (page: number = 1, limit: number = 10) => {
   return useQuery({
-    queryKey: [ANALYTICS_QUERY_KEY, 'list', { page, limit }],
-    queryFn: () => getCampaignAnalytics(page, limit),
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'admin', { page, limit }],
+    queryFn: () => getAdminCampaigns(page, limit),
   });
+};
+
+// Get Campaign Analytics
+const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
+    const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
+        params: { page, limit },
+    });
+    return data;
+};
+
+export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) => {
+    return useQuery<PaginatedCampaignAnalyticsResponse>({
+        queryKey: [ANALYTICS_QUERY_KEY, { page, limit }],
+        queryFn: () => getCampaignAnalytics(page, limit),
+    });
 };
 
 // Get Detailed Campaign Analytics
 const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
-  const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/${campaignId}/analytics/detailed`);
-  return data;
+    const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/analytics/${campaignId}`);
+    return data;
 };
 
 export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
@@ -152,6 +169,22 @@ export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
     queryKey: [ANALYTICS_QUERY_KEY, 'detailed', campaignId],
     queryFn: () => getDetailedCampaignAnalytics(campaignId),
     enabled: !!campaignId,
+  });
+};
+
+// Delete Campaign
+const deleteCampaign = async (campaignId: string): Promise<void> => {
+  await api.delete(`/campaigns/${campaignId}`);
+};
+
+export const useDeleteCampaign = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
   });
 };
 
@@ -187,5 +220,19 @@ export const useGetParticipantActivity = (participantId: string, page: number = 
     queryKey: [CUSTOMER_ACTIVITIES_QUERY_KEY, 'participant', participantId, { page, limit }],
     queryFn: () => getParticipantActivity(participantId, page, limit),
     enabled: !!participantId,
+  });
+};
+
+// Get Campaign By ID
+const getCampaignById = async (id: string): Promise<CampaignResponse> => {
+  const { data } = await api.get<CampaignResponse>(`/campaigns/${id}`);
+  return data;
+};
+
+export const useGetCampaignById = (id: string) => {
+  return useQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, id],
+    queryFn: () => getCampaignById(id),
+    enabled: !!id,
   });
 };

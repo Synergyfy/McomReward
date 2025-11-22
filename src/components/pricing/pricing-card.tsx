@@ -6,6 +6,7 @@ interface PricingCardProps {
     name: string
     description: string
     quarterlyPrice: number
+    annualPrice: number
     icon: LucideIcon
     includesNfc?: boolean
     features: string[]
@@ -14,7 +15,7 @@ interface PricingCardProps {
 }
 
 export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
-  const price = billingCycle === "annual" ? tier.quarterlyPrice * 4 : tier.quarterlyPrice
+  const price = billingCycle === "annual" ? tier.annualPrice : tier.quarterlyPrice
   const Icon = tier.icon
 
   return (

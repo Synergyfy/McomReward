@@ -13,8 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import DateTimePicker from './datePicker';
 import Image from 'next/image';
-import { Calendar, Users, Gift, Tag } from 'lucide-react'; // Added icons
+import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
+import { useGetRewards } from '@/services/rewards/hook';
 
 interface RewardOption {
   value: string;
@@ -25,13 +26,6 @@ interface StepProps {
   onNext: () => void;
   onBack: () => void;
 }
-
-// Mock rewards data (replace with actual API call later)
-const mockRewards = [
-  { id: '1', title: 'Summer Voucher ($50)', image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: '2', title: 'Gift Card (00)', image: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  { id: '3', title: 'Discount Coupon (20% off)', image: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-];
 
 const mockWishlistInsights = [
   {
@@ -69,12 +63,16 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
   const itemName = searchParams.get('itemName');
 
+  // Fetch rewards from API
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
+  const rewards = rewardsData?.data || [];
+
   useEffect(() => {
     if (itemName && !formData.campaignName) {
-      updateFormData({ 
-        campaignName: `${itemName} Campaign`, 
+      updateFormData({
+        campaignName: `${itemName} Campaign`,
         audienceType: ['wishlist_target'],
-        wishlistItemIds: [itemName] 
+        wishlistItemIds: [itemName]
       });
     }
   }, [searchParams, formData.campaignName, updateFormData, itemName]);
@@ -142,7 +140,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     return true;
   };
 
-  const rewardOptions = mockRewards.map(reward => ({ value: reward.id, label: reward.title }));
+  const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
 
   return (
     <Card>
@@ -173,6 +171,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                 updateFormData({ rewardIds: selectedIds });
               }}
               styles={selectErrorStyle}
+              isLoading={isLoadingRewards}
+              placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
             />
             <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
           </div>
@@ -218,12 +218,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <Label>Audience Type</Label>
             <div className="flex flex-col space-y-1">
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="members" 
+                <Checkbox
+                  id="members"
                   checked={formData.audienceType.includes('members')}
                   onCheckedChange={(checked) => {
-                    const newAudienceType = checked 
-                      ? [...formData.audienceType, 'members'] 
+                    const newAudienceType = checked
+                      ? [...formData.audienceType, 'members']
                       : formData.audienceType.filter(t => t !== 'members');
                     updateFormData({ audienceType: newAudienceType });
                   }}
@@ -231,12 +231,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                 <Label htmlFor="members">Members</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id="badge_level"
                   checked={formData.audienceType.includes('badge_level')}
                   onCheckedChange={(checked) => {
-                    const newAudienceType = checked 
-                      ? [...formData.audienceType, 'badge_level'] 
+                    const newAudienceType = checked
+                      ? [...formData.audienceType, 'badge_level']
                       : formData.audienceType.filter(t => t !== 'badge_level');
                     updateFormData({ audienceType: newAudienceType });
                   }}
@@ -244,12 +244,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                 <Label htmlFor="badge_level">Badge Level</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id="wishlist_target"
                   checked={formData.audienceType.includes('wishlist_target')}
                   onCheckedChange={(checked) => {
-                    const newAudienceType = checked 
-                      ? [...formData.audienceType, 'wishlist_target'] 
+                    const newAudienceType = checked
+                      ? [...formData.audienceType, 'wishlist_target']
                       : formData.audienceType.filter(t => t !== 'wishlist_target');
                     updateFormData({ audienceType: newAudienceType });
                   }}
@@ -402,24 +402,24 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <p className="text-sm text-gray-600 mb-4 text-center">See how your campaign will appear on web and mobile devices.</p>
 
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" style={{ backgroundColor: formData.bgColor }}>
-                <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-                    {imagePreviewUrl && (
-                        <Image src={imagePreviewUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />
+              <div className="relative h-48 w-full overflow-hidden bg-gray-200">
+                {imagePreviewUrl && (
+                  <Image src={imagePreviewUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />
+                )}
+              </div>
+              <div className="relative px-5">
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2">
+                  <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
+                    {logoPreviewUrl ? (
+                      <Image src={logoPreviewUrl} alt="Logo Preview" layout="fill" objectFit="cover" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-500">
+                        <span className="text-xs">Logo</span>
+                      </div>
                     )}
+                  </div>
                 </div>
-                <div className="relative px-5">
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                        <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
-                            {logoPreviewUrl ? (
-                                <Image src={logoPreviewUrl} alt="Logo Preview" layout="fill" objectFit="cover" />
-                            ) : (
-                                <div className="h-full w-full flex items-center justify-center text-gray-500">
-                                    <span className="text-xs">Logo</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+              </div>
               <div className="pt-16 p-5 text-center" style={{ color: formData.bgColorTextColor }}>
                 <h5 className="font-extrabold text-2xl mb-2">{formData.campaignName || '[Campaign Name]'}</h5>
                 <p className="text-base mb-4">{formData.campaignMessage || '[Campaign Message]'}</p>
@@ -427,7 +427,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                 <div className="space-y-3 text-sm mb-5 border-t pt-4">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center font-medium"><Gift className="h-4 w-4 mr-2 text-blue-500" />Rewards:</span>
-                    <span className="text-right">{formData.rewardIds.map(id => mockRewards.find(r => r.id === id)?.title).join(', ') || '[Select Rewards]'}</span>
+                    <span className="text-right">{formData.rewardIds.map(id => rewards.find(r => r.id === id)?.title).join(', ') || '[Select Rewards]'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center font-medium"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>

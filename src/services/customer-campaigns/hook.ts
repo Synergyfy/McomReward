@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { InternalAxiosRequestConfig } from 'axios';
 import api from '../api';
 import { JoinCampaignResponse, PaginatedPublicCampaigns, PublicCampaign } from './types';
 
@@ -9,7 +10,7 @@ const getPublicCampaigns = async (page: number, limit: number): Promise<Paginate
   const { data } = await api.get<PaginatedPublicCampaigns>('/campaigns', {
     params: { page, limit },
     _skipAuthRedirect: true
-  });
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -24,7 +25,7 @@ export const useGetPublicCampaigns = (page: number, limit: number) => {
 const getPublicCampaignDetails = async (campaignId: string): Promise<PublicCampaign> => {
   const { data } = await api.get<PublicCampaign>(`/campaigns/public/business-campaign/${campaignId}`, {
     _skipAuthRedirect: true
-  });
+  } as InternalAxiosRequestConfig);
   return data;
 };
 

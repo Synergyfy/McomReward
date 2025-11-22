@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
-import { useSystemOverview, useTopBusinesses, useTopRewards } from '@/services/analytics/hook';
+import { useGrowthActivityChart, useSystemOverview, useTopBusinesses, useTopRewards } from '@/services/analytics/hook';
 import {
   pointsDistributionData,
   consumerGrowthData,
@@ -19,7 +19,17 @@ export default function ReportingAnalyticsPage() {
   const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
   const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
   const { data: topRewards, isLoading: isLoadingTopRewards, error: topRewardsError } = useTopRewards();
+  const { data: growthData, isLoading: isLoadingGrowthData, error: growthDataError } = useGrowthActivityChart();
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  const chartData = React.useMemo(() => {
+    if (!growthData) return [];
+    return growthData.labels.map((label, index) => ({
+      month: label,
+      newRegistrations: growthData.registrations[index],
+      activityCount: growthData.activities[index],
+    }));
+  }, [growthData]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDownload = (reportName: string, data: Record<string, any> | Record<string, any>[]) => {
@@ -91,40 +101,19 @@ export default function ReportingAnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Consumer Growth and Activity</CardTitle>
+            <CardTitle>Business Tier Distribution</CardTitle>
             <div className="flex gap-2 ml-auto">
               <Button size="sm" onClick={() => handleDownload('Consumer_Growth', consumerGrowthData)}>
                 <Download className="mr-2 h-4 w-4" /> Download XLS
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleDownloadPdf('Consumer_Growth')}>
-                Download PDF
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={consumerGrowthData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="newRegistrations" stroke="#8884d8" name="New Registrations" />
-                <Line type="monotone" dataKey="activityCount" stroke="#82ca9d" name="Activity Count" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Business Tier Distribution</CardTitle>
-            <div className="flex gap-2 ml-auto">
-              <Button size="sm" onClick={() => handleDownload('Business_Tiers', businessTierData)}>
-                <Download className="mr-2 h-4 w-4" /> Download XLS
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => handleDownloadPdf('Business_Tiers')}>
-                Download PDF
-              </Button>
+              <div className="flex gap-2 ml-auto">
+                <Button size="sm" onClick={() => handleDownload('Business_Tiers', businessTierData)}>
+                  <Download className="mr-2 h-4 w-4" /> Download XLS
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleDownloadPdf('Business_Tiers')}>
+                  Download PDF
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

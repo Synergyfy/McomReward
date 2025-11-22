@@ -61,3 +61,11 @@ export interface SubCategoryResponse {
   updatedAt: string;
   deletedAt: string | null;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  nextPage: number | null;
+}

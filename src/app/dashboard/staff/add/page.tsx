@@ -14,11 +14,13 @@ const AddStaffPage = () => {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<CreateStaffDto>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const validate = (): boolean => {
@@ -33,6 +35,9 @@ const AddStaffPage = () => {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -77,7 +82,7 @@ const AddStaffPage = () => {
       createStaff(finalStaffData, {
         onSuccess: () => {
           alert('Staff member created successfully');
-          router.push('/dashboard/staff/all');
+          router.push('/dashboard/staff');
         },
         onError: (error) => {
           alert(`Error creating staff: ${error.message}`);
@@ -137,6 +142,26 @@ const AddStaffPage = () => {
                 </div>
               </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(false)} />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(true)} />
+                  )}
+                </div>
+              </div>
+              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Avatar</label>

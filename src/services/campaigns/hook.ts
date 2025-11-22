@@ -10,6 +10,8 @@ import {
   DetailedCampaignAnalytics,
   PaginatedAdminCampaignsResponse,
   PaginatedCustomerActivityResponseDto,
+  PaginatedOngoingCampaignsResponse,
+  OngoingCampaign,
 } from './types';
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
@@ -234,5 +236,54 @@ export const useGetCampaignById = (id: string) => {
     queryKey: [CAMPAIGNS_QUERY_KEY, id],
     queryFn: () => getCampaignById(id),
     enabled: !!id,
+  });
+};
+
+// Get Staff Ongoing Campaigns
+const getStaffOngoingCampaigns = async (page: number, limit: number): Promise<PaginatedOngoingCampaignsResponse> => {
+  const { data } = await api.get<PaginatedOngoingCampaignsResponse>('/campaigns/staff/ongoing', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetStaffOngoingCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing', { page, limit }],
+    queryFn: () => getStaffOngoingCampaigns(page, limit),
+  });
+};
+
+// Get Staff Campaign By ID (using the same endpoint but typed as OngoingCampaign if structure matches, otherwise we might need a specific endpoint)
+// Assuming /campaigns/:id returns the full campaign details. We'll cast it to OngoingCampaign for now.
+// If the structure differs significantly from the list view, we might need to adjust.
+const getStaffCampaignById = async (id: string): Promise<OngoingCampaign> => {
+  const { data } = await api.get<OngoingCampaign>(`/campaigns/${id}`);
+  return data;
+};
+
+export const useGetStaffCampaignById = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', id],
+    queryFn: () => getStaffCampaignById(id),
+    enabled: !!id,
+    initialData: () => {
+      // Try to find the campaign in the 'ongoing' campaigns list cache
+      const ongoingCampaignsQueries = queryClient.getQueriesData<PaginatedOngoingCampaignsResponse>({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing'],
+      });
+
+      for (const [, queryData] of ongoingCampaignsQueries) {
+        const campaign = queryData?.data?.find((c) => c.id === id);
+        if (campaign) {
+          return campaign;
+        }
+      }
+      return undefined;
+    },
+    // Set staleTime to avoid immediate refetch if initialData is found
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

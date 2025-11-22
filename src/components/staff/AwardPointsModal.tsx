@@ -6,22 +6,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Receipt, Phone, Loader2, CheckCircle } from "lucide-react";
+import { QrCode, Receipt, Phone, Loader2, CheckCircle, ScanLine } from "lucide-react";
 import { useScanParticipant, useGenerateCode, useDualScan } from "@/services/participant-campaign-balance/hook";
 import { toast } from "sonner";
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 interface AwardPointsModalProps {
   campaignId: string;
   campaignName: string;
-  staffCode?: string; // Optional, can be pre-filled if available
+  staffCode?: string;
 }
 
 export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardPointsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [points, setPoints] = useState<number>(50); // Default to 50 as per scenario, but editable
+  const [points, setPoints] = useState<number>(50);
 
   // Method A State
   const [participantCodeA, setParticipantCodeA] = useState("");
+  const [isScanningQR, setIsScanningQR] = useState(false);
 
   // Method C State
   const [participantCodeC, setParticipantCodeC] = useState("");
@@ -55,10 +57,14 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
   const handleGenerateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Calculate expiresAt (default: 7 days from now)
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const result = await generateCode({
         campaignId,
         points,
-        type: 'EARN'
+        type: 'EARN',
+        expiresAt
       });
       setGeneratedCode(result.code);
       toast.success("Claim code generated successfully!");
@@ -92,6 +98,15 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
     setParticipantCodeA("");
     setParticipantCodeC("");
     setPoints(50);
+    setIsScanningQR(false);
+  };
+
+  const handleQRScan = (result: { rawValue: string }[]) => {
+    if (result && result.length > 0) {
+      setParticipantCodeA(result[0].rawValue);
+      setIsScanningQR(false);
+      toast.success("QR Code Scanned!");
+    }
   };
 
   return (
@@ -102,7 +117,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
           Award Points
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Award Points</DialogTitle>
           <DialogDescription>
@@ -132,6 +147,32 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
               <p className="text-sm text-gray-500">
                 Use this when the customer is present and shows their QR code.
               </p>
+
+              {isScanningQR ? (
+                <div className="relative w-full aspect-square max-w-[300px] mx-auto bg-black rounded-lg overflow-hidden">
+                  <Scanner
+                    onScan={handleQRScan}
+                    allowMultiple={true}
+                    scanDelay={2000}
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute bottom-4 left-1/2 transform -translate-x-1/2"
+                    onClick={() => setIsScanningQR(false)}
+                  >
+                    Cancel Scan
+                  </Button>
+                </div>
+              ) : (
+                 <div className="flex justify-center pb-2">
+                    <Button variant="secondary" onClick={() => setIsScanningQR(true)} className="gap-2">
+                        <ScanLine className="h-4 w-4" />
+                        Scan QR Code
+                    </Button>
+                 </div>
+              )}
+
               <form onSubmit={handleScanSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="points-a">Points to Award</Label>
@@ -153,7 +194,6 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
                     onChange={(e) => setParticipantCodeA(e.target.value)}
                     required
                   />
-                  {/* In a real app, a QR Scanner component would act here */}
                 </div>
                 <Button type="submit" className="w-full" disabled={isScanning}>
                   {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : "Award Points"}
@@ -166,7 +206,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
           <TabsContent value="receipt" className="space-y-4 py-4">
              <div className="space-y-2">
               <p className="text-sm text-gray-500">
-                Generate a code to write on a receipt for the customer to claim later.
+                Generate a code to write on a receipt for the customer to claim later. (Valid for 7 days)
               </p>
               {!generatedCode ? (
                 <form onSubmit={handleGenerateSubmit} className="space-y-4">

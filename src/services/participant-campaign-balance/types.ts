@@ -11,6 +11,7 @@ export interface GenerateCodePayload {
   campaignId: string;
   points: number;
   type: TransactionType;
+  expiresAt: string;
 }
 
 export interface DualScanPayload {

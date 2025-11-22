@@ -283,14 +283,7 @@ export const useGetStaffCampaignById = (id: string) => {
       }
       return undefined;
     },
-    initialDataUpdatedAt: () => {
-      // Use the timestamp of the list query if found
-       const ongoingCampaignsQueries = queryClient.getQueryState([CAMPAIGNS_QUERY_KEY, 'staff', 'ongoing']);
-       // This is tricky because getQueryState needs exact key or we iterate.
-       // For simplicity, we just return undefined which defaults to 0 (stale) if we don't find it,
-       // or just rely on default behavior.
-       // If initialData is provided, it's considered fresh by default based on staleTime.
-       return undefined;
-    }
+    // Set staleTime to avoid immediate refetch if initialData is found
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

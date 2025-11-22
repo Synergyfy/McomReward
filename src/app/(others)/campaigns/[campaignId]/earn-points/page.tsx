@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from 'next/image';
 
-import { useGetParticipantBalance, useClaimCode } from '@/services/customer-campaigns/hook';
+import { useGetParticipantBalance, useClaimCode, useGetUniqueCode } from '@/services/customer-campaigns/hook';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -34,6 +34,7 @@ export default function EarnPointsPage({ params }: PageProps) {
   const [countryCode, setCountryCode] = useState('+1'); // Default country code
 
   const { data: balance } = useGetParticipantBalance(campaignId);
+  const { data: uniqueCodeData } = useGetUniqueCode();
   const { mutate: claimCode } = useClaimCode();
 
   const earnMethods = [
@@ -65,7 +66,7 @@ export default function EarnPointsPage({ params }: PageProps) {
 
   const handleCodeSubmit = () => {
     if (!enteredCode) return;
-    claimCode({ code: enteredCode }, {
+    claimCode({ code: enteredCode, campaignId }, {
       onSuccess: (data) => {
         alert(`Success: ${data.message}. You earned ${data.pointsAwarded} points!`);
         setIsEnterCodeModalOpen(false);
@@ -126,16 +127,16 @@ export default function EarnPointsPage({ params }: PageProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-4">
-            {balance?.uniqueCode ? (
+            {uniqueCodeData?.uniqueCode ? (
               <>
                 <Image
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${balance.uniqueCode}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uniqueCodeData.uniqueCode}`}
                   alt="QR Code"
                   width={200}
                   height={200}
                   className="w-48 h-48 mb-4"
                 />
-                <p className="text-lg font-bold tracking-widest">{balance.uniqueCode}</p>
+                <p className="text-lg font-bold tracking-widest">{uniqueCodeData.uniqueCode}</p>
               </>
             ) : (
               <p>Loading QR Code...</p>

@@ -90,6 +90,7 @@ export interface ParticipantBalance {
 
 export interface ClaimCodePayload {
   code: string;
+  campaignId: string;
 }
 
 export interface ClaimCodeResponse {
@@ -160,4 +161,8 @@ export interface SignUpPayload {
 export interface SignUpResponse {
   message: string;
   participantId?: string;
+}
+
+export interface UniqueCodeResponse {
+  uniqueCode: string;
 }

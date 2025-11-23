@@ -12,6 +12,7 @@ import { useAuth } from "@/services/business/hook";
 import { useParticipantLogin } from "@/services/auth/hook";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useJoinCampaign } from "@/services/customer-campaigns/hook";
+import { useQueryClient } from "@tanstack/react-query";
 
 type LoginFormData = {
   email: string;
@@ -32,10 +33,11 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaignId");
   const redirectUrl = searchParams.get("redirect");
+  const queryClient = useQueryClient();
 
   const { mutateAsync: login } = useAuth();
   const { mutateAsync: participantLogin } = useParticipantLogin();
-  const { mutate: joinCampaign } = useJoinCampaign();
+  const { mutateAsync: joinCampaign } = useJoinCampaign();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: LoginFormData) => {
@@ -45,10 +47,21 @@ function LoginForm() {
       if (campaignId) {
         // Participant Login with Auto-Join
         await participantLogin({ ...loginData, campaignId })
-          .then((response) => {
+          .then(async (response) => {
             // Store user name for CampaignMembershipContext
             if (response?.user?.name) {
               localStorage.setItem('campaignMemberName', response.user.name);
+            }
+
+            if (campaignId) {
+              try {
+                await joinCampaign(campaignId);
+              } catch (joinError) {
+                console.error("Failed to auto-join campaign:", joinError);
+              }
+
+              await queryClient.invalidateQueries({ queryKey: ['isJoined', campaignId] });
+              await queryClient.invalidateQueries({ queryKey: ['publicCampaigns', campaignId] });
             }
 
             toast.success("Login successful! Joining campaign...");
@@ -169,7 +182,7 @@ function LoginForm() {
 
         <p className="text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href={campaignId ? `/signup?campaignId=${campaignId}` : "/signup"} className="text-orange-400 hover:underline font-medium">
+          <a href={campaignId ? `/signup?campaignId=${campaignId}&type=customer` : "/signup"} className="text-orange-400 hover:underline font-medium">
             Sign up
           </a>
         </p>

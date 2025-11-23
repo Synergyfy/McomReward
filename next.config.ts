@@ -60,7 +60,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'https://mcom-loyalty-api.vercel.app/api/v1/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

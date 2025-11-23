@@ -33,8 +33,8 @@ export default function CampaignDetailPage({ params }: PageProps) {
       onError: (error: Error) => {
         console.error('Failed to join campaign:', error);
         if (isAxiosError(error) && error.response?.status === 401) {
-          // Redirect to login with campaignId
-          window.location.href = `/login?campaignId=${campaignId}`;
+          // Redirect to signup with campaignId and type=customer to skip selection
+          window.location.href = `/signup?campaignId=${campaignId}&type=customer`;
         } else {
           alert('Failed to join campaign. Please try again.');
         }

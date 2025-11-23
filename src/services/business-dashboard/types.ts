@@ -1,3 +1,23 @@
+export interface Activity {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  type: 'EARN' | 'REDEEM';
+  points: number;
+  redemptionCode: string | null;
+  description: string;
+  participant: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  campaign: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface GeneralAnalyticsDto {
   totalCustomers: number;
   totalCampaigns: number;
@@ -9,10 +29,7 @@ export interface GeneralAnalyticsDto {
     name: string;
     customerCount: number;
   }[];
-  lastTenActivities: {
-    activity: string;
-    timestamp: string;
-  }[];
+  lastTenActivities: Activity[];
 }
 
 export interface ChartQueryDto {

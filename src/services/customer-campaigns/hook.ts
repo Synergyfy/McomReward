@@ -201,3 +201,21 @@ export const useDualScan = () => {
     mutationFn: dualScan,
   });
 };
+
+// Get Participant History
+import { ParticipantHistoryResponse } from './types';
+
+const getParticipantHistory = async (campaignId: string, page: number, limit: number): Promise<ParticipantHistoryResponse> => {
+  const { data } = await api.get<ParticipantHistoryResponse>(`/participant-campaign-balance/history/${campaignId}`, {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetParticipantHistory = (campaignId: string, page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['participantHistory', campaignId, page, limit],
+    queryFn: () => getParticipantHistory(campaignId, page, limit),
+    enabled: !!campaignId,
+  });
+};

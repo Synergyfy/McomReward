@@ -1,5 +1,5 @@
 import api, { setBearerToken } from '../api';
-import {  Business,  BusinessLoginDto,  BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto, PaginatedResponse, Category, Subcategory} from './types';
+import { Business, BusinessLoginDto, BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto, PaginatedResponse, Category, Subcategory } from './types';
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ const BUSINESS_QUERY_KEY = 'business';
 const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<string> => {
   const dataToSend = { ...signUpData, referralCode: signUpData.inviteCode };
   // Remove inviteCode if it's not needed on the backend or if referralCode replaces it
-  delete dataToSend.inviteCode; 
+  delete dataToSend.inviteCode;
   const { data } = await api.post<string>('/business/signup', dataToSend);
 
   return data;
@@ -51,6 +51,8 @@ export const useAuth = () => {
         router.push('/staff/dashboard');
       } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
         router.push('/business/onboard');
+      } else if (data.user.role === 'Participant') {
+        router.push('/wallet');
       } else {
         router.push('/dashboard');
       }
@@ -70,9 +72,8 @@ export const useBusinessOnboard = () => {
   return useMutation({
     mutationFn: businessOnboard,
     mutationKey: [BUSINESS_QUERY_KEY],
-    onSuccess: () =>
-    {
-      QueryClient.invalidateQueries({queryKey: [BUSINESS_QUERY_KEY]})
+    onSuccess: () => {
+      QueryClient.invalidateQueries({ queryKey: [BUSINESS_QUERY_KEY] })
     }
 
   })

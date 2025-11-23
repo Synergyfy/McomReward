@@ -25,38 +25,9 @@ import {
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
-import { useGetParticipantBalance, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
+import { useGetParticipantBalance, useCheckCampaignJoinStatus, useGetParticipantHistory } from '@/services/customer-campaigns/hook';
 
-const transactionHistory = [
-  {
-    id: '1',
-    action: 'Earned Points',
-    details: 'Purchase at Mcom Store',
-    points: '+50',
-    date: '2025-10-28',
-  },
-  {
-    id: '2',
-    action: 'Redeemed Reward',
-    details: 'Free Coffee',
-    points: '-50',
-    date: '2025-10-25',
-  },
-  {
-    id: '3',
-    action: 'Earned Points',
-    details: 'Completed a survey',
-    points: '+20',
-    date: '2025-10-22',
-  },
-  {
-    id: '4',
-    action: 'Earned Points',
-    details: 'Referred a friend',
-    points: '+100',
-    date: '2025-10-19',
-  },
-];
+
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -67,6 +38,7 @@ export default function MyPointsPage({ params }: PageProps) {
   const { isCampaignJoined } = useCampaignMembership();
   const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
   const { data: balance } = useGetParticipantBalance(campaignId);
+  const { data: historyData } = useGetParticipantHistory(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();
 
@@ -145,16 +117,29 @@ export default function MyPointsPage({ params }: PageProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactionHistory.map((transaction) => (
+                    {historyData?.data?.map((transaction) => (
                       <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">{transaction.action}</TableCell>
-                        <TableCell>{transaction.details}</TableCell>
-                        <TableCell className={`text-right font-bold ${transaction.points.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.points}
+                        <TableCell className="font-medium">
+                          {transaction.type === 'EARN' ? 'Earned Points' : 'Redeemed Reward'}
                         </TableCell>
-                        <TableCell className="text-right">{transaction.date}</TableCell>
+                        <TableCell>
+                          {transaction.description || (transaction.type === 'EARN' ? transaction.business?.name : transaction.reward?.title)}
+                        </TableCell>
+                        <TableCell className={`text-right font-bold ${transaction.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
+                          {transaction.type === 'EARN' ? '+' : '-'}{transaction.points}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {new Date(transaction.createdAt).toLocaleDateString()}
+                        </TableCell>
                       </TableRow>
                     ))}
+                    {(!historyData?.data || historyData.data.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+                          No transaction history found.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>

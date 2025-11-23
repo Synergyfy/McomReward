@@ -12,6 +12,7 @@ import { useAuth } from "@/services/business/hook";
 import { useParticipantLogin } from "@/services/auth/hook";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useJoinCampaign } from "@/services/customer-campaigns/hook";
+import { useQueryClient } from "@tanstack/react-query";
 
 type LoginFormData = {
   email: string;
@@ -32,6 +33,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaignId");
   const redirectUrl = searchParams.get("redirect");
+  const queryClient = useQueryClient();
 
   const { mutateAsync: login } = useAuth();
   const { mutateAsync: participantLogin } = useParticipantLogin();
@@ -49,6 +51,11 @@ function LoginForm() {
             // Store user name for CampaignMembershipContext
             if (response?.user?.name) {
               localStorage.setItem('campaignMemberName', response.user.name);
+            }
+
+            if (campaignId) {
+              await queryClient.invalidateQueries({ queryKey: ['isJoined', campaignId] });
+              await queryClient.invalidateQueries({ queryKey: ['publicCampaigns', campaignId] });
             }
 
             toast.success("Login successful! Joining campaign...");

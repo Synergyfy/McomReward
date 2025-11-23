@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown } from "lucide-react";
+import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
@@ -120,11 +120,25 @@ export default function BusinessDashboard() {
         </CardHeader>
         <CardContent>
           {analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {analyticsData.lastTenActivities.map((a) => (
-                <li key={a.id} className="flex justify-between text-sm text-gray-700">
-                  <span>{a.description}</span>
-                  <span className="text-gray-500">{new Date(a.createdAt).toLocaleDateString()}</span>
+                <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                  <div className="flex flex-col">
+                    <span className="font-medium text-gray-900">{a.participant?.name || "Unknown User"}</span>
+                    <span className="text-xs text-gray-500">{a.participant?.email}</span>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1">
+                    <div className={`flex items-center gap-1 font-bold ${a.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
+                      {a.type === 'EARN' ? <Plus size={14} strokeWidth={3} /> : <Minus size={14} strokeWidth={3} />}
+                      {a.points}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-semibold text-gray-700 uppercase mr-1">{a.type}</span>
+                      <span className="text-xs text-gray-500">- {a.description}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">{new Date(a.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </li>
               ))}
             </ul>

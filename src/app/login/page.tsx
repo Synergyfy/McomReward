@@ -47,7 +47,7 @@ function LoginForm() {
       if (campaignId) {
         // Participant Login with Auto-Join
         await participantLogin({ ...loginData, campaignId })
-          .then((response) => {
+          .then(async (response) => {
             // Store user name for CampaignMembershipContext
             if (response?.user?.name) {
               localStorage.setItem('campaignMemberName', response.user.name);

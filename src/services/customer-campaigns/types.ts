@@ -89,6 +89,12 @@ export interface ParticipantBalance {
   balance: number;
 }
 
+export interface ParticipantGlobalBalanceResponse {
+  globalTotalPoints: number;
+  matchingPoints: number;
+  campaignBalances: ParticipantBalance[];
+}
+
 export interface ClaimCodePayload {
   code: string;
   campaignId: string;

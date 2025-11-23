@@ -19,7 +19,8 @@ import {
   SignUpPayload,
   SignUpResponse,
   IsJoinedResponse,
-  UniqueCodeResponse
+  UniqueCodeResponse,
+  ParticipantGlobalBalanceResponse
 } from './types';
 
 const PUBLIC_CAMPAIGNS_QUERY_KEY = 'publicCampaigns';
@@ -217,5 +218,18 @@ export const useGetParticipantHistory = (campaignId: string, page: number = 1, l
     queryKey: ['participantHistory', campaignId, page, limit],
     queryFn: () => getParticipantHistory(campaignId, page, limit),
     enabled: !!campaignId,
+  });
+};
+
+// Get Participant Global Balance
+const getParticipantGlobalBalance = async (): Promise<ParticipantGlobalBalanceResponse> => {
+  const { data } = await api.get<ParticipantGlobalBalanceResponse>('/participant-campaign-balance/my-balance');
+  return data;
+};
+
+export const useGetParticipantGlobalBalance = () => {
+  return useQuery({
+    queryKey: ['participantGlobalBalance'],
+    queryFn: getParticipantGlobalBalance,
   });
 };

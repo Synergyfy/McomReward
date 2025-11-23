@@ -14,7 +14,7 @@ export default function WalletPage() {
         </div>
 
         <div className="space-y-8">
-          <PointsBalanceCard wallet={mockWallet} />
+          <PointsBalanceCard />
           <TransactionHistory transactions={mockWallet.transactions} />
         </div>
       </div>

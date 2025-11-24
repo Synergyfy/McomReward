@@ -1,14 +1,16 @@
 'use client';
 
 import { isAxiosError } from 'axios';
-import React, { use, useState } from 'react';
+import React, { use } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { Calendar, Tag, Info, CheckCircle, Users, Trophy } from "lucide-react";
+import { Calendar, Tag, Info, CheckCircle, Users, Trophy, Gift, ArrowRight } from "lucide-react";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import Link from 'next/link';
 import { useGetPublicCampaignDetails, useJoinCampaign, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
+import { Badge } from "@/components/ui/badge";
+import LoadingSpinner from '@/components/ui/Loading';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -43,236 +45,286 @@ export default function CampaignDetailPage({ params }: PageProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-lg text-gray-600">Loading campaign details...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error || !campaign) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-lg text-red-500">Failed to load campaign. Please try again later.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Campaign Not Found</h2>
+          <p className="text-gray-600 mb-6">We couldn't load the campaign details. It might have ended or been removed.</p>
+          <Link href="/">
+            <Button variant="outline">Return Home</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
+  // Fallback image if bannerUrl is missing or fails
+  const bannerImage = campaign.bannerUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900">
-      <div className="relative">
-        {/* Hero Section - Title and Headline */}
-        <div className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
-          <Image
-            src={campaign.banner_url || '/placeholder-image.jpg'}
-            alt={campaign.title || 'Campaign Image'}
-            layout="fill"
-            objectFit="cover"
-            className="brightness-75"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end pb-16 px-4 md:px-8 lg:px-16">
-            <div className="max-w-4xl mx-auto text-white text-center">
-              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-lg">
-                {campaign.title}
-              </h1>
-              <p className="text-lg md:text-xl mb-8 opacity-90 drop-shadow-md">
-                {isMember ? `Welcome, ${memberName}!` : campaign.tagline || (campaign.description || campaign.campaignMessage || '').substring(0, 100) + '...'}
-              </p>
-              {!isMember && (
-                <Button
-                  onClick={handleJoinClick}
-                  className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-                >
-                  Join Campaign & Get Reward
-                </Button>
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24">
+      {/* Hero Section */}
+      <div className="relative h-[450px] md:h-[550px] w-full overflow-hidden group">
+        <Image
+          src={bannerImage}
+          alt={campaign.name || 'Campaign Banner'}
+          layout="fill"
+          objectFit="cover"
+          className="brightness-50 transition-transform duration-700 group-hover:scale-105"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end pb-16 px-6 md:px-16">
+          <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-end md:items-center gap-8">
+            {/* Logo Overlay */}
+            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white">
+              {campaign.logoUrl ? (
+                <Image
+                  src={campaign.logoUrl}
+                  alt="Campaign Logo"
+                  layout="fill"
+                  objectFit="cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                  <span className="text-xs font-bold uppercase">No Logo</span>
+                </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="container mx-auto py-12 px-4 md:px-8 lg:px-16 relative z-10">
-          <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8 md:p-12 space-y-10 -mt-20">
-            {isMember && (
-              <div className="p-4 bg-green-100 border-l-4 border-green-500 rounded-lg">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">You have joined this campaign. Welcome, {memberName}!</p>
-                  </div>
-                </div>
+            <div className="flex-1 text-white">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
+                  {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
+                </Badge>
+                {campaign.audienceType && (
+                  <Badge variant="secondary" className="px-3 py-1 text-sm uppercase tracking-wide bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-sm">
+                    {campaign.audienceType}
+                  </Badge>
+                )}
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 drop-shadow-xl">
+                {campaign.name}
+              </h1>
+              <p className="text-lg md:text-xl text-gray-200 max-w-2xl line-clamp-2 drop-shadow-md">
+                {campaign.campaignMessage || campaign.tagline || 'Join this exclusive campaign to earn rewards!'}
+              </p>
+            </div>
+
+            {/* Desktop Join Button (Hero) */}
+            {!isMember && (
+              <div className="hidden md:block shrink-0">
+                <Button
+                  onClick={handleJoinClick}
+                  disabled={isJoining}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-6 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border-2 border-white/20"
+                >
+                  {isJoining ? 'Joining...' : (campaign.ctaText || 'Join Campaign')}
+                </Button>
               </div>
             )}
-            {!isMember && (
-              <>
-                {/* Campaign Description */}
-                <section>
-                  <h2 className="text-3xl font-bold text-gray-800 mb-4">About This Campaign</h2>
-                  <p className="text-lg text-gray-700 leading-relaxed">
-                    {campaign.description || campaign.campaignMessage}
-                  </p>
-                </section>
+          </div>
+        </div>
+      </div>
 
-                {/* Key Information */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="p-6 shadow-md border-l-4 border-orange-600">
-                    <CardHeader className="!p-0 mb-3">
-                      <CardTitle className="text-xl font-semibold flex items-center text-gray-800">
-                        <Calendar className="w-5 h-5 mr-2 text-orange-600" />
-                        Campaign Period
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="!p-0 text-gray-700 text-lg">
-                      <p>{new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="p-6 shadow-md border-l-4 border-orange-600">
-                    <CardHeader className="!p-0 mb-3">
-                      <CardTitle className="text-xl font-semibold flex items-center text-gray-800">
-                        <Tag className="w-5 h-5 mr-2 text-orange-600" />
-                        Category
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="!p-0 text-gray-700 text-lg">
-                      <p>{campaign.category || 'General'}</p>
-                    </CardContent>
-                  </Card>
-                </section>
+      <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-10 space-y-12">
 
-                {/* Eligibility & Limits */}
-                <section>
-                  <h2 className="text-3xl font-bold text-gray-800 mb-4">Eligibility & Limits</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="p-6 shadow-md border-l-4 border-orange-600">
-                      <CardHeader className="!p-0 mb-3">
-                        <CardTitle className="text-xl font-semibold flex items-center text-gray-800">
-                          <Users className="w-5 h-5 mr-2 text-orange-600" />
-                          Target Audience
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="!p-0 text-gray-700 text-lg">
-                        <p>
-                          <span className="inline-block bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full mr-2 mb-1">
-                            {campaign.audience_type === 'all' ? 'All Customers' : campaign.audience_type}
-                          </span>
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="p-6 shadow-md border-l-4 border-orange-600">
-                      <CardHeader className="!p-0 mb-3">
-                        <CardTitle className="text-xl font-semibold flex items-center text-gray-800">
-                          <Info className="w-5 h-5 mr-2 text-orange-600" />
-                          Campaign Limits
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="!p-0 text-gray-700 text-lg">
-                        {campaign.rewardsAvailable !== undefined && campaign.rewardsAvailable > 0 && <p>Rewards Available: {campaign.rewardsAvailable}</p>}
-                        {campaign.stopAfterClaims !== undefined && campaign.stopAfterClaims > 0 && <p>Stops After: {campaign.stopAfterClaims} Claims</p>}
-                        {(campaign.rewardsAvailable === 0 || campaign.rewardsAvailable === undefined) && (campaign.stopAfterClaims === 0 || campaign.stopAfterClaims === undefined) && <p>Unlimited Rewards/Claims</p>}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </section>
-              </>
-            )}
+        {/* Member Status Banner */}
+        {isMember && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6 shadow-lg flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="p-3 bg-green-100 rounded-full text-green-600 shrink-0">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-green-800">You are a member!</h3>
+              <p className="text-green-700">Welcome back, {memberName}. You can now earn points and redeem rewards.</p>
+            </div>
+          </div>
+        )}
 
-            {/* Multiple Rewards Display */}
-            {campaign.rewards && campaign.rewards.length > 0 && (
-              <section>
-                <h2 className="text-3xl font-bold text-gray-800 mb-6">Rewards in this Campaign</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {campaign.rewards.map((rewardItem, index) => (
-                    <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-200">
-                      <div className="relative h-48 w-full">
-                        <Image
-                          src={rewardItem.image}
-                          alt={rewardItem.title}
-                          layout="fill"
-                          objectFit="cover"
-                        />
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-full text-blue-600">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Start Date</p>
+                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.startDate).toLocaleDateString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-full text-blue-600">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">End Date</p>
+                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.endDate).toLocaleDateString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-purple-100 rounded-full text-purple-600">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Audience</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">{campaign.audienceType}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-green-100 rounded-full text-green-600">
+                <Gift className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Availability</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {campaign.quantity > 0 ? `${campaign.quantity} Spots` : 'Unlimited'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-12">
+
+            {/* About Section */}
+            <section>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <Info className="w-8 h-8 text-orange-600" />
+                About This Campaign
+              </h2>
+              <div className="prose prose-lg text-gray-600 max-w-none leading-relaxed">
+                {/* Render HTML if it looks like HTML, otherwise just text */}
+                {/<[a-z][\s\S]*>/i.test(campaign.campaignMessage) ? (
+                  <div dangerouslySetInnerHTML={{ __html: campaign.campaignMessage }} />
+                ) : (
+                  <p>{campaign.campaignMessage}</p>
+                )}
+              </div>
+            </section>
+
+            {/* How to Earn Section (if data exists) */}
+            {campaign.howToEarn && campaign.howToEarn.length > 0 && (
+              <section className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">How to Participate</h2>
+                <ul className="space-y-4">
+                  {campaign.howToEarn.map((step, index) => (
+                    <li key={index} className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
+                        {index + 1}
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">{rewardItem.title}</h3>
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-3">{rewardItem.description}</p>
-                        <div className="flex justify-between items-center text-md font-semibold text-gray-700">
-                          <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {rewardItem.pointsRequired > 0 ? `${rewardItem.pointsRequired} Points` : 'No Points Req.'}</p>
-                          {rewardItem.value && <p>{rewardItem.value}</p>}
-                        </div>
-                        {rewardItem.quantity > 0 && (
-                          <p className="text-xs text-gray-500 mt-2">Limited: {rewardItem.quantity} available</p>
-                        )}
-                      </CardContent>
-                    </Card>
+                      <p className="text-gray-700 pt-1">{step}</p>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
             )}
 
-            {!isMember && (
-              <>
-                {/* How to Earn */}
-                {campaign.howToEarn && campaign.howToEarn.length > 0 && (
-                  <section>
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">How to Participate & Earn</h2>
-                    <ul className="space-y-3 text-lg text-gray-700">
-                      {campaign.howToEarn.map((item, index) => (
-                        <li key={index} className="flex items-start">
-                          <CheckCircle className="w-6 h-6 mr-3 text-green-500 flex-shrink-0 mt-1" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                )}
-
-                {/* Terms and Conditions */}
-                {campaign.termsAndConditions && campaign.termsAndConditions.length > 0 && (
-                  <section>
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">Terms & Conditions</h2>
-                    <ul className="space-y-3 text-base text-gray-600 list-disc pl-5">
-                      {campaign.termsAndConditions.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </section>
-                )}
-              </>
+            {/* Terms Section (if data exists) */}
+            {campaign.termsAndConditions && campaign.termsAndConditions.length > 0 && (
+              <section className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Terms & Conditions</h2>
+                <ul className="space-y-2 list-disc pl-5 text-gray-600 text-sm">
+                  {campaign.termsAndConditions.map((term, index) => (
+                    <li key={index}>{term}</li>
+                  ))}
+                </ul>
+              </section>
             )}
+
+          </div>
+
+          {/* Sidebar Column: Rewards */}
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-24">
+              <div className="p-6 bg-gray-50 border-b border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-orange-600" />
+                  Rewards ({campaign.rewards?.length || 0})
+                </h3>
+              </div>
+              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+                {campaign.rewards && campaign.rewards.length > 0 ? (
+                  campaign.rewards.map((reward, index) => (
+                    <div key={index} className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300">
+                      <div className="h-32 w-full relative bg-gray-100">
+                        <Image
+                          src={reward.image || 'https://placehold.co/400x300?text=Reward'}
+                          alt={reward.title}
+                          layout="fill"
+                          objectFit="cover"
+                          className="group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-white/90 text-gray-900 hover:bg-white shadow-sm backdrop-blur-sm">
+                            {reward.pointsRequired} Pts
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-bold text-gray-900 mb-1 line-clamp-1">{reward.title}</h4>
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{reward.description}</p>
+                        <div className="flex items-center justify-between">
+                          {reward.value > 0 && (
+                            <span className="text-sm font-medium text-green-600">Value: £{reward.value}</span>
+                          )}
+                          {reward.quantity > 0 && (
+                            <span className="text-xs text-gray-400">Qty: {reward.quantity}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Gift className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No rewards listed yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Sticky Join Button */}
-        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
-          <div className="max-w-4xl mx-auto flex justify-center">
-            {isMember ? (
-              <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
-                <Link href={`/campaigns/${campaignId}/my-points`} passHref>
-                  <Button className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-                    View My Points
-                  </Button>
-                </Link>
-                <Link href={`/campaigns/${campaignId}/redeem-points`} passHref>
-                  <Button className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-                    Redeem Rewards
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <Button
-                onClick={handleJoinClick}
-                className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg px-12 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-              >
-                Join Campaign & Get Reward
-              </Button>
-            )}
-          </div>
-          <div className="mt-4 text-center">
-            <Link href={`/campaigns/${campaignId}/contact-us`} className="text-gray-500 hover:text-orange-600 text-sm underline">
-              Need help? Contact Us
-            </Link>
-          </div>
+      {/* Sticky Mobile/Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-50 md:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          {isMember ? (
+            <div className="flex gap-2 w-full">
+              <Link href={`/campaigns/${campaignId}/my-points`} className="flex-1">
+                <Button variant="outline" className="w-full border-orange-200 text-orange-700 hover:bg-orange-50">
+                  My Points
+                </Button>
+              </Link>
+              <Link href={`/campaigns/${campaignId}/redeem-points`} className="flex-1">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-lg">
+                  Redeem
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <Button
+              onClick={handleJoinClick}
+              disabled={isJoining}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg py-6 rounded-xl shadow-lg"
+            >
+              {isJoining ? 'Joining...' : (campaign.ctaText || 'Join Now')}
+            </Button>
+          )}
         </div>
       </div>
     </div>

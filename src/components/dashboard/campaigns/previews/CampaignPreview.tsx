@@ -2,47 +2,17 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import { Tag, Trophy, Users, Calendar, Gift, Info } from "lucide-react";
+import { Trophy, Users, Calendar, Gift, Info } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useClaimCampaign } from '@/services/campaigns/hook';
 import { Badge } from "@/components/ui/badge";
-
-// Define a local interface matching the actual API response (camelCase)
-interface CampaignReward {
-  id: string;
-  title: string;
-  pointsRequired: number;
-  value: number;
-  description: string;
-  image: string;
-  quantity: number;
-}
-
-interface CampaignData {
-  id: string;
-  name: string;
-  campaignType: string;
-  campaignMessage: string;
-  startDate: string;
-  endDate: string;
-  quantity: number;
-  audienceType: string;
-  bannerUrl: string;
-  logoUrl: string | null;
-  ctaText: string;
-  ctaBackgroundColor: string;
-  ctaTextColor: string;
-  textColor: string;
-  backgroundColor: string;
-  disabled: boolean;
-  rewards: CampaignReward[];
-}
+import { PublicCampaignResponse } from '@/services/campaigns/types';
 
 interface CampaignPreviewProps {
-  campaign: CampaignData;
+  campaign: PublicCampaignResponse;
 }
 
 export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
@@ -63,14 +33,14 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
   };
 
   // Helper to get points required from the first reward
-  const pointsRequired = campaign.rewards && campaign.rewards.length > 0 ? campaign.rewards[0].pointsRequired : 0;
+  const pointsRequired = campaign.rewards && campaign.rewards.length > 0 ? campaign.rewards[0].points_required : 0;
 
   return (
     <div className="bg-gray-50 min-h-screen text-gray-900 pb-20">
       {/* Hero Section */}
       <div className="relative h-80 w-full overflow-hidden">
         <Image
-          src={campaign.bannerUrl || 'https://via.placeholder.com/1920x700?text=Campaign+Hero'}
+          src={campaign.banner_url || 'https://via.placeholder.com/1920x700?text=Campaign+Hero'}
           alt={campaign.name || 'Campaign Hero'}
           layout="fill"
           objectFit="cover"
@@ -81,11 +51,11 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
           <div className="max-w-5xl mx-auto w-full text-white">
             <div className="flex items-center gap-3 mb-4">
               <Badge className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 text-sm uppercase tracking-wide">
-                {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
+                {campaign.campaign_type?.replace('_', ' ') || 'Campaign'}
               </Badge>
-              {campaign.audienceType && (
+              {campaign.audience_type && (
                 <Badge variant="outline" className="text-white border-white/50 px-3 py-1 text-sm uppercase tracking-wide">
-                  {campaign.audienceType} Only
+                  {campaign.audience_type} Only
                 </Badge>
               )}
             </div>
@@ -96,7 +66,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-orange-400" />
                 <span>
-                  {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
+                  {new Date(campaign.start_date).toLocaleDateString()} - {new Date(campaign.end_date).toLocaleDateString()}
                 </span>
               </div>
             </div>
@@ -137,7 +107,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium uppercase">Audience</p>
-                <p className="text-2xl font-bold text-gray-900 capitalize">{campaign.audienceType}</p>
+                <p className="text-2xl font-bold text-gray-900 capitalize">{campaign.audience_type}</p>
               </div>
             </CardContent>
           </Card>
@@ -153,7 +123,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                 <h2 className="text-2xl font-bold text-gray-800">About This Campaign</h2>
               </div>
               <p className="text-gray-700 leading-loose text-lg">
-                {campaign.campaignMessage || 'No description available for this campaign.'}
+                {campaign.campaign_message || 'No description available for this campaign.'}
               </p>
             </section>
 
@@ -165,7 +135,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                   Campaign Rewards
                 </h2>
                 <div className="grid grid-cols-1 gap-6">
-                  {campaign.rewards.map((reward: CampaignReward) => (
+                  {campaign.rewards.map((reward) => (
                     <Card key={reward.id} className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow duration-300">
                       <div className="flex flex-col md:flex-row">
                         {reward.image && (
@@ -182,7 +152,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="text-xl font-bold text-gray-900">{reward.title}</h4>
                             <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-none">
-                              {reward.pointsRequired} Points
+                              {reward.points_required} Points
                             </Badge>
                           </div>
                           <p className="text-gray-600 mb-4 line-clamp-2">{reward.description}</p>
@@ -218,7 +188,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Duration</span>
                       <span className="font-medium text-gray-900">
-                        {Math.ceil((new Date(campaign.endDate).getTime() - new Date(campaign.startDate).getTime()) / (1000 * 60 * 60 * 24))} Days
+                        {Math.ceil((new Date(campaign.end_date).getTime() - new Date(campaign.start_date).getTime()) / (1000 * 60 * 60 * 24))} Days
                       </span>
                     </div>
                     {campaign.quantity > 0 && (
@@ -232,9 +202,9 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                     onClick={handleClaim}
                     disabled={isPending}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg py-6 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
-                    style={{ backgroundColor: campaign.ctaBackgroundColor || undefined, color: campaign.ctaTextColor || undefined }}
+                    style={{ backgroundColor: campaign.cta_background_color || undefined, color: campaign.cta_text_color || undefined }}
                   >
-                    {isPending ? 'Claiming...' : (campaign.ctaText || 'Claim Campaign')}
+                    {isPending ? 'Claiming...' : (campaign.cta_text || 'Claim Campaign')}
                   </Button>
                   <p className="text-xs text-center text-gray-400">
                     By claiming, you agree to the campaign terms.

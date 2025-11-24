@@ -48,7 +48,7 @@ export default function CampaignDetailsPage() {
       </div>
 
       {/* Banner Section */}
-      <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-md bg-gray-100">
+      <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-md bg-gray-100 group">
         {campaign.bannerUrl ? (
           <Image
             src={campaign.bannerUrl}
@@ -62,6 +62,25 @@ export default function CampaignDetailsPage() {
             No Banner Image
           </div>
         )}
+
+        {/* Logo Overlay */}
+        <div className="absolute -bottom-10 left-8 md:left-12">
+          <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+            {campaign.logoUrl ? (
+              <Image
+                src={campaign.logoUrl}
+                alt="Campaign Logo"
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                <Tag className="w-8 h-8" />
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="absolute top-4 right-4">
           <Badge
             variant={campaign.disabled ? "destructive" : "default"}
@@ -71,6 +90,9 @@ export default function CampaignDetailsPage() {
           </Badge>
         </div>
       </div>
+
+      {/* Spacer for Logo */}
+      <div className="h-6 md:h-8"></div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -95,9 +117,38 @@ export default function CampaignDetailsPage() {
                   <span className="capitalize">{campaign.audienceType}</span>
                 </div>
                 {campaign.business?.name && (
-                   <div className="flex items-center gap-2 text-sm bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
+                  <div className="flex items-center gap-2 text-sm bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
                     <MapPin className="h-4 w-4" />
                     <span>{campaign.business.name}</span>
+                  </div>
+                )}
+                {campaign.uniqueCode && (
+                  <div className="flex items-center gap-2 text-sm bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-full border border-yellow-200">
+                    <Tag className="h-4 w-4" />
+                    <span className="font-mono">{campaign.uniqueCode}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Reward Type</p>
+                  <p className="text-gray-800 capitalize">{campaign.rewardType?.replace('_', ' ') || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Sign Up Bonus</p>
+                  <p className="text-gray-800">{campaign.signUpPoint ? `${campaign.signUpPoint} pts` : 'None'}</p>
+                </div>
+                {campaign.regularPointsThreshold && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Regular Threshold</p>
+                    <p className="text-gray-800">{campaign.regularPointsThreshold} pts</p>
+                  </div>
+                )}
+                {campaign.matchingPointsThreshold && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Matching Threshold</p>
+                    <p className="text-gray-800">{campaign.matchingPointsThreshold} pts</p>
                   </div>
                 )}
               </div>
@@ -175,7 +226,7 @@ export default function CampaignDetailsPage() {
         {/* Right Column: Stats & Info */}
         <div className="space-y-6">
           <Card>
-             <CardHeader>
+            <CardHeader>
               <CardTitle className="text-lg">Campaign Schedule</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -197,7 +248,7 @@ export default function CampaignDetailsPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                 <div className="bg-gray-100 p-2 rounded-lg text-gray-600">
+                <div className="bg-gray-100 p-2 rounded-lg text-gray-600">
                   <Calendar className="h-5 w-5" />
                 </div>
                 <div>
@@ -215,8 +266,8 @@ export default function CampaignDetailsPage() {
             </CardContent>
           </Card>
 
-           <Card>
-             <CardHeader>
+          <Card>
+            <CardHeader>
               <CardTitle className="text-lg">Performance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">

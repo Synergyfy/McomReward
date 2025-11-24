@@ -127,7 +127,7 @@ export default function BusinessOnboardingWizard() {
                       Step 1: Business Details
                     </h2>
                     <div>
-                      <Label htmlFor="sectorId">Sector</Label>
+                      <Label htmlFor="sectorId">Sector <span className="text-red-500">*</span></Label>
                       <select
                         id="sectorId"
                         {...register("sectorId")}
@@ -148,7 +148,7 @@ export default function BusinessOnboardingWizard() {
                     </div>
 
                     <div>
-                      <Label htmlFor="categoryId">Category</Label>
+                      <Label htmlFor="categoryId">Category <span className="text-red-500">*</span></Label>
                       <select
                         id="categoryId"
                         {...register("categoryId")}
@@ -170,7 +170,7 @@ export default function BusinessOnboardingWizard() {
                     </div>
 
                     <div>
-                      <Label htmlFor="subCategoryId">Subcategory</Label>
+                      <Label htmlFor="subCategoryId">Subcategory (optional)</Label>
                       <select
                         id="subCategoryId"
                         {...register("subCategoryId")}
@@ -216,7 +216,7 @@ export default function BusinessOnboardingWizard() {
                       Step 2: Contact Information
                     </h2>
                     <div>
-                      <Label htmlFor="phone">Phone Number</Label>
+                      <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
                       <Input
                         id="phone"
                         placeholder="+1 (555) 123-4567"
@@ -230,7 +230,7 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="address">Business Address</Label>
+                      <Label htmlFor="address">Business Address <span className="text-red-500">*</span></Label>
                       <Input
                         id="address"
                         placeholder="123 Main Street, Anytown, USA"
@@ -244,7 +244,7 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="website">Website URL</Label>
+                      <Label htmlFor="website">Website URL (optional)</Label>
                       <Input
                         id="website"
                         placeholder="https://yourbusiness.com"
@@ -258,7 +258,7 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
-                      <Label className="mb-2">Social Media Profiles</Label>
+                      <Label className="mb-2">Social Media Profiles (optional)</Label>
                       <div className="space-y-3">
                         {fields.map((field, index) => (
                           <div key={field.id} className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function BusinessOnboardingWizard() {
                     </h2>
                     <div>
                       <Label htmlFor="referralCapacity">
-                        Referral Capacity
+                        Referral Capacity <span className="text-red-500">*</span>
                       </Label>
                       <p className="text-sm text-gray-500 mb-2">
                         Set the maximum number of new customers you can accept

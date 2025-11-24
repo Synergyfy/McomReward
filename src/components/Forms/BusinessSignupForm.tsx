@@ -86,7 +86,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               type="text"
@@ -100,7 +100,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
             )}
           </div>
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
             <Input
               id="email"
               type="email"
@@ -115,7 +115,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
             <div className="relative">
               <Input
                 id="password"
@@ -144,7 +144,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
             )}
           </div>
           <div>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
             <Input
               id="confirmPassword"
               type={showPassword ? "text" : "password"}

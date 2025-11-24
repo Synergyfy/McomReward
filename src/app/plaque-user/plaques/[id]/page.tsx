@@ -18,7 +18,10 @@ import {
     ArrowLeft,
     ExternalLink,
     Smartphone,
-    Globe
+    Globe,
+    Gift,
+    DollarSign,
+    Clock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';

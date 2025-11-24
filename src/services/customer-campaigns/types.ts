@@ -2,16 +2,41 @@ import { RewardResponse } from "@/services/rewards/types";
 
 export interface PublicCampaign {
   id: string;
-  title: string;
-  description: string;
+  name: string;
+  campaignType: string;
+  campaignMessage: string;
   startDate: string;
   endDate: string;
-  banner_url: string;
-  logo_url: string | null;
-  campaign_type: string;
+  quantity: number;
+  audienceType: string;
+  bannerUrl: string;
+  logoUrl: string | null;
+  ctaText: string;
+  ctaBackgroundColor: string;
+  ctaTextColor: string;
+  disabled: boolean;
+  textColor: string;
+  backgroundColor: string;
+  signUpPoint: number | null;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  rewardType: string;
+  regularPointsThreshold: number | null;
+  matchingPointsThreshold: number | null;
+  totalMatchingPointsEarned: number;
+  matchingPointsDisabledByAdmin: boolean;
+  uniqueCode: string | null;
+  earnPointPageTitle: string | null;
+  earnPointPageDescription: string | null;
+  redeemRewardPageTitle: string | null;
+  redeemRewardPageDescription: string | null;
+  contactUsPageTitle: string | null;
+  contactUsPageDescription: string | null;
+  contactEmail: string | null;
+  contactPhoneNumber: string | null;
+  footerText: string | null;
   rewards: RewardResponse[];
-  audience_type: string;
-  tagline?: string;
+  tagline?: string; // Keeping optional fields that might be computed or from other endpoints
   howToEarn?: string[];
   termsAndConditions?: string[];
   rewardsAvailable?: number;
@@ -19,13 +44,6 @@ export interface PublicCampaign {
   category?: string;
   badgeLevel?: string;
   wishlistItemId?: string;
-  contactUsPageTitle?: string;
-  contactUsPageDescription?: string;
-  contactEmail?: string;
-  contactPhoneNumber?: string;
-  redeemRewardPageTitle?: string;
-  redeemRewardPageDescription?: string;
-  campaignMessage?: string; // Added to support potential schema change
 }
 
 export interface PublicCampaignSummary {

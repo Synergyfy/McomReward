@@ -99,8 +99,8 @@ export default function CustomerSignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white ">
-      <div className="w-full max-w-md bg-white rounded-2xl  p-8 space-y-6">
+    <div className="w-full space-y-6">
+      <div>
         <h2 className="text-2xl font-semibold text-center text-gray-800">
           Join <span className="text-orange-500">MCOM Rewards</span>
         </h2>

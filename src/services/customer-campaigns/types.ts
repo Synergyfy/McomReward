@@ -240,3 +240,19 @@ export interface ParticipantHistoryResponse {
   page: number;
   limit: number;
 }
+
+export interface MyCampaign {
+  id: string;
+  name: string;
+  campaignMessage: string;
+  balance: number;
+  regularPointsThreshold: number;
+  bannerUrl: string;
+}
+
+export interface MyCampaignsResponse {
+  data: MyCampaign[];
+  total: number;
+  page: number;
+  limit: number;
+}

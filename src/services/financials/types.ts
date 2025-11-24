@@ -1,14 +1,24 @@
 
 export interface Tier {
   id: string;
-  name: string;
-  monthlyPrice: string;
-  quaterlyPrice: string;
-  annualPrice: string;
-  features: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  name: string;
+  monthlyPrice: string;
+  annualPrice: string;
+  quaterlyPrice: string;
+  features: string[];
+  status: string;
+  stripeMonthlyPriceId: string;
+  stripeQuarterlyPriceId: string;
+  stripeAnnualPriceId: string;
+  paypalMonthlyPlanId: string;
+  paypalQuarterlyPlanId: string;
+  paypalAnnualPlanId: string;
+  qrCodeCount: number;
+  description?: string;
+  includesNfc?: boolean;
 }
 
 export interface TierCreateInput {

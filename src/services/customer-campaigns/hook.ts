@@ -262,3 +262,20 @@ export const useGetParticipantProfile = () => {
     queryFn: getParticipantProfile,
   });
 };
+
+// Get My Campaigns
+import { MyCampaignsResponse } from './types';
+
+const getMyCampaigns = async (page: number, limit: number): Promise<MyCampaignsResponse> => {
+  const { data } = await api.get<MyCampaignsResponse>('/participant/campaigns', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetMyCampaigns = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['myCampaigns', page, limit],
+    queryFn: () => getMyCampaigns(page, limit),
+  });
+};

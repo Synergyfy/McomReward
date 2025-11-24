@@ -1,6 +1,16 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { Tier, SubscribeDto, SubscriptionResponse } from './types';
+import {
+    Tier,
+    StripeInitiateRequest,
+    StripeInitiateResponse,
+    StripeVerifyRequest,
+    StripeVerifyResponse,
+    PayPalInitiateRequest,
+    PayPalInitiateResponse,
+    PayPalVerifyRequest,
+    PayPalVerifyResponse
+} from './types';
 
 const PAYMENT_QUERY_KEY = 'payment';
 
@@ -16,13 +26,48 @@ export const useGetTiers = () => {
     });
 };
 
-const subscribe = async (payload: SubscribeDto): Promise<SubscriptionResponse> => {
-    const { data } = await api.post<SubscriptionResponse>('/payment/subscribe', payload);
+// Stripe Payment Hooks
+const initiateStripePayment = async (payload: StripeInitiateRequest): Promise<StripeInitiateResponse> => {
+    const { data } = await api.post<StripeInitiateResponse>('/payment/stripe/initiate', payload);
     return data;
 };
 
-export const useSubscribe = () => {
+export const useStripeInitiate = () => {
     return useMutation({
-        mutationFn: subscribe,
+        mutationFn: initiateStripePayment,
+    });
+};
+
+const verifyStripePayment = async (payload: StripeVerifyRequest): Promise<StripeVerifyResponse> => {
+    const { data } = await api.post<StripeVerifyResponse>('/payment/stripe/verify', payload);
+    return data;
+};
+
+export const useStripeVerify = () => {
+    return useMutation({
+        mutationFn: verifyStripePayment,
+    });
+};
+
+// PayPal Payment Hooks
+const initiatePayPalPayment = async (payload: PayPalInitiateRequest): Promise<PayPalInitiateResponse> => {
+    const { data } = await api.post<PayPalInitiateResponse>('/payment/paypal/initiate', payload);
+    return data;
+};
+
+export const usePayPalInitiate = () => {
+    return useMutation({
+        mutationFn: initiatePayPalPayment,
+    });
+};
+
+const verifyPayPalPayment = async (payload: PayPalVerifyRequest): Promise<PayPalVerifyResponse> => {
+    const { data } = await api.post<PayPalVerifyResponse>('/payment/paypal/verify', payload);
+    return data;
+};
+
+export const usePayPalVerify = () => {
+    return useMutation({
+        mutationFn: verifyPayPalPayment,
     });
 };

@@ -4,6 +4,9 @@ import React from 'react';
 import { mockWallet } from '@/lib/mock-data/wallet';
 import { PointsBalanceCard } from '@/components/customer/PointsBalanceCard';
 import { TransactionHistory } from '@/components/customer/TransactionHistory';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
 export default function WalletPage() {
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -16,6 +19,14 @@ export default function WalletPage() {
         <div className="space-y-8">
           <PointsBalanceCard />
           <TransactionHistory />
+
+          <div className="flex justify-center mt-8">
+            <Link href="/campaigns">
+              <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">
+                Join Campaign
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

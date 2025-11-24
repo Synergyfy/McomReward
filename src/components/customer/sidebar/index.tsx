@@ -43,7 +43,7 @@ export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
         <li className="mb-2">
           <Link href="/wishlist" className={linkClasses("/wishlist")}>
             <Heart className="mr-3" />
-          My Wishlist
+            My Wishlist
           </Link>
         </li>
         {/* <li className="mb-2">

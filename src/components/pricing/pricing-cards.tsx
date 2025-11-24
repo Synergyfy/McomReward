@@ -33,8 +33,8 @@ export default function PricingCards({ billingCycle }: PricingCardsProps) {
   const displayTiers = tiers?.filter(t => t.name !== "Trial").map((t) => ({
     name: t.name,
     description: t.description || "Unlock your potential", // Fallback description
-    quarterlyPrice: t.quaterly_price, // Note typo in backend response 'quaterly_price'
-    annualPrice: t.annual_price,
+    quarterlyPrice: parseFloat(t.quaterlyPrice), // Parse string to number
+    annualPrice: parseFloat(t.annualPrice), // Parse string to number
     includesNfc: t.includesNfc ?? false,
     icon: iconByTier[t.name] ?? Target,
     features: t.features,

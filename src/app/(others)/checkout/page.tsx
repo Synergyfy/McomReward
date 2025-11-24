@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
-import { useGetTiers, useSubscribe } from "@/services/payment/hook"
-import { PlanType, PaymentProvider, Tier } from "@/services/payment/types"
+import { useGetTiers, useStripeInitiate, usePayPalInitiate } from "@/services/payment/hook"
+import { PlanType, PaymentProvider } from "@/services/payment/types"
 import { toast } from "sonner"
 
 const iconByTier: Record<string, LucideIcon> = {
@@ -34,7 +34,10 @@ function CheckoutContent() {
 
   // Fetch tiers from backend
   const { data: tiers, isLoading: isLoadingTiers } = useGetTiers();
-  const { mutate: subscribe, isPending: isSubscribing } = useSubscribe();
+  const { mutate: initiateStripe, isPending: isInitiatingStripe } = useStripeInitiate();
+  const { mutate: initiatePayPal, isPending: isInitiatingPayPal } = usePayPalInitiate();
+
+  const isProcessing = isInitiatingStripe || isInitiatingPayPal;
 
   // Find the selected tier object from backend data
   // We check both name and ID to be robust, as params might pass either
@@ -47,7 +50,7 @@ function CheckoutContent() {
 
   const basePrice = useMemo(() => {
     if (!tier) return 0;
-    return billing === "annual" ? tier.annual_price : tier.quaterly_price;
+    return billing === "annual" ? parseFloat(tier.annualPrice) : parseFloat(tier.quaterlyPrice);
   }, [tier, billing]);
 
   const { final, discount } = useMemo(() => applyCoupon(basePrice, appliedCoupon), [basePrice, appliedCoupon])
@@ -97,30 +100,42 @@ function CheckoutContent() {
 
     const planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
 
-    // Mock payment token for Stripe for now as we don't have Stripe Elements integrated yet
-    const mockToken = "tok_visa";
-
-    subscribe({
+    const paymentPayload = {
       tier_id: tier.id,
       plan_type: planType,
-      provider: paymentProvider,
-      payment_token: paymentProvider === PaymentProvider.STRIPE ? mockToken : undefined,
-      return_url: `${window.location.origin}/checkout/confirmation?plan=${encodeURIComponent(tier.name)}&billing=${billing}`,
-      cancel_url: `${window.location.origin}/checkout?plan=${encodeURIComponent(tier.name)}&billing=${billing}`,
-    }, {
-      onSuccess: (data) => {
-        if (paymentProvider === PaymentProvider.PAYPAL && 'approveLink' in data) {
-          window.location.href = data.approveLink;
-        } else {
-          // Stripe success or other direct success
-          router.push(`/checkout/confirmation?plan=${encodeURIComponent(tier.name)}&billing=${billing}`);
+      coupon_code: appliedCoupon?.code || "",
+    };
+
+    if (paymentProvider === PaymentProvider.STRIPE) {
+      initiateStripe(paymentPayload, {
+        onSuccess: (data) => {
+          toast.success("Payment initiated! Client Secret: " + data.clientSecret.substring(0, 20) + "...");
+          console.log("Stripe Client Secret:", data.clientSecret);
+        },
+        onError: (error) => {
+          console.error("Stripe initiation failed:", error);
+          toast.error("Failed to initiate Stripe payment. Please try again.");
         }
-      },
-      onError: (error) => {
-        console.error("Subscription failed:", error);
-        toast.error("Subscription failed. Please try again.");
-      }
-    });
+      });
+    } else {
+      initiatePayPal(paymentPayload, {
+        onSuccess: (data) => {
+          toast.success("Redirecting to PayPal...");
+          console.log("PayPal Order ID:", data.orderId);
+
+          if (data.approveLink) {
+            window.location.href = data.approveLink;
+          } else {
+            const paypalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${data.orderId}`;
+            window.location.href = paypalUrl;
+          }
+        },
+        onError: (error) => {
+          console.error("PayPal initiation failed:", error);
+          toast.error("Failed to initiate PayPal payment. Please try again.");
+        }
+      });
+    }
   };
 
   return (
@@ -224,11 +239,11 @@ function CheckoutContent() {
         <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
         <button
           onClick={handleConfirmPurchase}
-          disabled={isSubscribing}
+          disabled={isProcessing}
           className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {isSubscribing && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isSubscribing ? 'Processing...' : 'Confirm Purchase'}
+          {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isProcessing ? 'Processing...' : 'Confirm Purchase'}
         </button>
       </div>
     </main>

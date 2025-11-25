@@ -16,11 +16,12 @@ const mockRewards: RewardResponse[] = [
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     disabled: false,
+    rewardType: 'voucher',
     type: 'voucher',
     status: 'active',
     expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [],
-  },
+    badgeLevel: [] as string[],
+  } as RewardResponse,
   {
     id: 'reward-2',
     title: '10% Off Next Purchase',
@@ -32,11 +33,12 @@ const mockRewards: RewardResponse[] = [
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     disabled: false,
+    rewardType: 'voucher',
     type: 'voucher',
     status: 'active',
     expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [],
-  },
+    badgeLevel: [] as string[],
+  } as RewardResponse,
   {
     id: 'reward-3',
     title: 'Free Dessert',
@@ -48,21 +50,21 @@ const mockRewards: RewardResponse[] = [
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     disabled: false,
+    rewardType: 'voucher',
     type: 'voucher',
     status: 'active',
     expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [],
-  },
+    badgeLevel: [] as string[],
+  } as RewardResponse,
 ];
 
 interface Step3RewardProps {
   rewardId: string;
-  setRewardId: (id: string, reward: RewardResponse) => void; // Changed to accept full reward object
+  setRewardId: (id: string, reward: RewardResponse) => void;
   error?: string;
 }
 
 export default function Step3Reward({ rewardId, setRewardId, error }: Step3RewardProps) {
-  // Using mock data instead of useGetAllBusinessRewards hook
   const isLoadingRewards = false; 
 
   return (
@@ -88,7 +90,7 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
               key={reward.id}
               reward={reward}
               isSelected={reward.id === rewardId}
-              onSelect={(selectedReward) => setRewardId(selectedReward.id, selectedReward)} // Pass full reward object
+              onSelect={(selectedReward) => setRewardId(selectedReward.id, selectedReward)}
             />
           ))}
         </div>

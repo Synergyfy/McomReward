@@ -7,7 +7,7 @@ export interface AdminParticipant {
   activity: string;
   campaignsJoined: number;
   rewardsRedeemed: number;
-  points: number;
+  globalTotalPoints: number;
   matchingPoints: number;
   joinedDate: string;
 }

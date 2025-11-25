@@ -2,41 +2,46 @@ export interface BusinessLevel {
     id: string;
     name: string;
     minPoints: number;
-    maxPoints?: number;
+    maxPoints: number | null;
     minCampaigns: number;
-    maxCampaigns?: number;
+    maxCampaigns: number | null;
     privileges: string[];
     description: string;
-    color?: string; // Added for UI compatibility, though not in doc explicitly, useful for frontend
-    criteria?: string[]; // Added for UI compatibility
+    created_at: string;
+    updated_at: string;
 }
 
 export interface CustomerBadge {
     id: string;
     name: string;
     minPoints: number;
+    maxPoints: number | null;
     minCampaignsJoined: number;
+    maxCampaignsJoined: number | null;
     privileges: string[];
     description: string;
-    color?: string; // Added for UI compatibility
-    criteria?: string[]; // Added for UI compatibility
+    created_at: string;
+    updated_at: string;
 }
 
 export interface BusinessProgression {
     id: string;
     businessId: string;
+    currentLevel: BusinessLevel;
     currentPoints: number;
     totalCampaignsCreated: number;
     isManualOverride: boolean;
-    currentLevel: BusinessLevel;
+    updated_at: string;
 }
 
 export interface CustomerProgression {
+    id: string;
     participantId: string;
     currentBadge: CustomerBadge;
     currentPoints: number;
     totalCampaignsJoined: number;
     isManualOverride: boolean;
+    updated_at: string;
 }
 
 export interface ProgressionHistory {
@@ -54,10 +59,8 @@ export interface CreateBusinessLevelPayload {
     maxPoints?: number;
     minCampaigns: number;
     maxCampaigns?: number;
-    privileges: string[];
-    description: string;
-    color?: string;
-    criteria?: string[];
+    privileges?: string[];
+    description?: string;
 }
 
 export type UpdateBusinessLevelPayload = Partial<CreateBusinessLevelPayload>;
@@ -65,11 +68,11 @@ export type UpdateBusinessLevelPayload = Partial<CreateBusinessLevelPayload>;
 export interface CreateCustomerBadgePayload {
     name: string;
     minPoints: number;
+    maxPoints?: number;
     minCampaignsJoined: number;
-    privileges: string[];
-    description: string;
-    color?: string;
-    criteria?: string[];
+    maxCampaignsJoined?: number;
+    privileges?: string[];
+    description?: string;
 }
 
 export type UpdateCustomerBadgePayload = Partial<CreateCustomerBadgePayload>;

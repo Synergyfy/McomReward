@@ -13,6 +13,7 @@ import { useParticipantLogin } from "@/services/auth/hook";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useJoinCampaign } from "@/services/customer-campaigns/hook";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCampaignMembership } from "@/context/CampaignMembershipContext";
 
 type LoginFormData = {
   email: string;
@@ -37,7 +38,8 @@ function LoginForm() {
 
   const { mutateAsync: login } = useAuth();
   const { mutateAsync: participantLogin } = useParticipantLogin();
-  const { mutateAsync: joinCampaign } = useJoinCampaign();
+  const { mutateAsync: joinCampaignApi } = useJoinCampaign();
+  const { joinCampaign: joinCampaignContext } = useCampaignMembership();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: LoginFormData) => {
@@ -55,7 +57,8 @@ function LoginForm() {
 
             if (campaignId) {
               try {
-                await joinCampaign(campaignId);
+                await joinCampaignApi(campaignId);
+                joinCampaignContext(campaignId);
               } catch (joinError) {
                 console.error("Failed to auto-join campaign:", joinError);
               }

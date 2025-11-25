@@ -11,6 +11,7 @@ import { useSignUp, useJoinCampaign } from "@/services/customer-campaigns/hook";
 import { useParticipantLogin } from "@/services/auth/hook";
 import { isAxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCampaignMembership } from "@/context/CampaignMembershipContext";
 
 type SignupData = {
   name: string;
@@ -27,7 +28,8 @@ export default function CustomerSignupPage() {
 
   const { mutateAsync: signUp, isPending: isSigningUp } = useSignUp();
   const { mutateAsync: participantLogin } = useParticipantLogin();
-  const { mutateAsync: joinCampaign } = useJoinCampaign();
+  const { mutateAsync: joinCampaignApi } = useJoinCampaign();
+  const { joinCampaign: joinCampaignContext } = useCampaignMembership();
 
   const {
     register,
@@ -67,7 +69,9 @@ export default function CustomerSignupPage() {
 
         // Explicitly join the campaign after login to ensure status is updated
         try {
-          await joinCampaign(campaignId);
+          await joinCampaignApi(campaignId);
+          // Update client-side context immediately for optimistic UI update
+          joinCampaignContext(campaignId);
         } catch (joinError) {
           console.error("Failed to auto-join campaign:", joinError);
           // Don't block flow if join fails (maybe already joined), but log it

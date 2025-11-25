@@ -19,8 +19,9 @@ import { useCreateReward } from '@/services/rewards/hook';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-// Using mock data for prototype purposes
-import { useGetSectors, useGetCategoriesBySector, useGetSubCategoriesByCategory } from '@/services/sectors/hook';
+// Import tiers service
+import { useGetSectors } from '@/services/sectors/hook';
+import { useGetTiers } from '@/services/tiers/hook';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -32,10 +33,9 @@ interface CreateRewardWizardModalProps {
 
 const rewardTypes = [
   { value: 'voucher', label: 'Voucher', icon: '🎟️' },
-  { value: 'gift_card', label: 'Gift Card', icon: '🎁' },
   { value: 'coupon', label: 'Coupon', icon: '🏷️' },
-  { value: 'points_offer', label: 'Points Offer', icon: '⭐' },
-  { value: 'physical_product', label: 'Physical Product', icon: '📦' },
+  { value: 'physical product', label: 'Physical Product', icon: '📦' },
+  { value: 'digital', label: 'Digital', icon: '💻' },
 ];
 
 export default function CreateRewardWizardModal({
@@ -48,6 +48,7 @@ export default function CreateRewardWizardModal({
   const router = useRouter();
   const { mutate: createReward, isPending: isCreating } = useCreateReward();
   const { data: sectors = [] } = useGetSectors();
+  const { data: tiers = [] } = useGetTiers();
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
   const totalSteps = 3;
@@ -61,25 +62,13 @@ export default function CreateRewardWizardModal({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<RewardResponse['status']>('draft');
   const [selectedSector, setSelectedSector] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+  const [rewardSource, setRewardSource] = useState('mcom vault');
+  const [audience, setAudience] = useState('all business');
 
-  // Fetch categories when sector is selected
-  const { data: categoriesPaginated } = useGetCategoriesBySector(selectedSector || undefined);
-  const availableCategories = categoriesPaginated?.data || [];
-
-  // Fetch subcategories when category is selected
-  const { data: subCategoriesPaginated } = useGetSubCategoriesByCategory(selectedCategory || undefined);
-  const availableSubCategories = subCategoriesPaginated?.data || [];
-  const [rewardSource, setRewardSource] = useState('mcom');
-  const [audience, setAudience] = useState('all_businesses');
-
-  // Effect to reset sector/category/subcategory when audience changes to 'all_businesses'
+  // Effect to reset sector when audience changes to 'all business'
   useEffect(() => {
-    if (audience === 'all_businesses') {
+    if (audience === 'all business') {
       setSelectedSector('');
-      setSelectedCategory('');
-      setSelectedSubCategory('');
     }
   }, [audience]);
 
@@ -90,7 +79,7 @@ export default function CreateRewardWizardModal({
 
   const resetForm = () => {
     setStep(1);
-    setRewardType('points_offer');
+    setRewardType('voucher');
     setName('');
     setDescription('');
     setValue(0);
@@ -101,10 +90,8 @@ export default function CreateRewardWizardModal({
     setImagePreviewUrl(null);
     setStatus('draft');
     setSelectedSector('');
-    setSelectedCategory('');
-    setSelectedSubCategory('');
-    setRewardSource('mcom');
-    setAudience('all_businesses');
+    setRewardSource('mcom vault');
+    setAudience('all business');
     setErrors({});
   };
 
@@ -164,6 +151,11 @@ export default function CreateRewardWizardModal({
   };
 
   const handleSubmit = () => {
+    // Get the first tier name for badge_level field
+    const firstTierName = badgeLevel.length > 0
+      ? (tiers.find(t => t.id === badgeLevel[0])?.name || '')
+      : '';
+
     const payload: CreateRewardRequest = {
       title: name,
       points_required: Number(pointsRequired),
@@ -172,13 +164,13 @@ export default function CreateRewardWizardModal({
       image: imagePreviewUrl || '',
       quantity: 100, // Default or add field if needed
       reward_type: rewardType,
-      badge_level: badgeLevel.length > 0 ? badgeLevel[0] : '', // Backend expects string, taking first or empty
+      badge_level: firstTierName,
       reward_source: rewardSource,
       audience,
       expiry_datetime: expiry.toISOString(),
       status,
       sector_ids: selectedSector ? [selectedSector] : [],
-      tier_ids: [], // Add tier selection if needed, currently empty based on UI
+      tier_ids: badgeLevel, // badgeLevel now contains tier IDs
     };
 
     createReward(payload, {
@@ -223,6 +215,7 @@ export default function CreateRewardWizardModal({
               {/* Reward Type */}
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Type</label>
+                <p className="text-xs text-muted-foreground mb-2">Choose the type of reward you're offering (voucher, physical item, or digital product)</p>
                 <Select value={rewardType} onValueChange={setRewardType}>
                   <SelectTrigger><SelectValue placeholder="Select reward type" /></SelectTrigger>
                   <SelectContent position="popper" className="z-[10000]">
@@ -236,72 +229,56 @@ export default function CreateRewardWizardModal({
               {/* Name */}
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-                <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
+                <p className="text-xs text-muted-foreground mb-2">Enter a clear, descriptive name for this reward</p>
+                <Input id="name" placeholder="e.g., £10 Coffee Voucher" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
               {/* Description */}
               <div>
                 <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
-                <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <p className="text-xs text-muted-foreground mb-2">Provide details about what this reward includes and how to use it</p>
+                <Textarea id="description" placeholder="e.g., Enjoy a £10 voucher redeemable at any participating coffee shop" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
 
               {/* Audience - moved to be directly after Description */}
               <div>
                 <label className="block text-sm font-medium mb-1">Audience</label>
+                <p className="text-xs text-muted-foreground mb-2">Select who can access this reward - all businesses or specific sectors only</p>
                 <Select value={audience} onValueChange={setAudience}>
                   <SelectTrigger><SelectValue placeholder="Select Audience" /></SelectTrigger>
                   <SelectContent position="popper" className="z-[10000]">
-                    <SelectItem value="all_businesses">All Businesses</SelectItem>
-                    <SelectItem value="specific_sectors">Specific Sectors</SelectItem>
+                    <SelectItem value="all business">All Businesses</SelectItem>
+                    <SelectItem value="specific sectors">Specific Sectors</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Sector/Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Sector</label>
-                  <Select
-                    value={selectedSector}
-                    onValueChange={v => { setSelectedSector(v); setSelectedCategory(''); setSelectedSubCategory(''); }}
-                    disabled={audience === 'all_businesses'}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select Sector" /></SelectTrigger>
-                    <SelectContent position="popper" className="z-[10000]">
-                      <SelectContent position="popper" className="z-[10000]">
-                        {sectors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                      </SelectContent>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Category</label>
-                  <Select value={selectedCategory} onValueChange={v => { setSelectedCategory(v); setSelectedSubCategory(''); }} disabled={!selectedSector}>
-                    <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                    <SelectContent position="popper" className="z-[10000]">
-                      {availableCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Sub-Category</label>
-                  <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory} disabled={!selectedCategory}>
-                    <SelectTrigger><SelectValue placeholder="Select Sub-Category" /></SelectTrigger>
-                    <SelectContent position="popper" className="z-[10000]">
-                      {availableSubCategories.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Sector */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Sector</label>
+                <p className="text-xs text-muted-foreground mb-2">Choose a specific business sector if you selected "Specific Sectors" above</p>
+                <Select
+                  value={selectedSector}
+                  onValueChange={setSelectedSector}
+                  disabled={audience === 'all business'}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select Sector" /></SelectTrigger>
+                  <SelectContent position="popper" className="z-[10000]">
+                    {sectors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Value and Points */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="value" className="block text-sm font-medium mb-1">Value (£)</label>
+                  <p className="text-xs text-muted-foreground mb-2">Monetary value of the reward</p>
                   <Input id="value" type="number" placeholder="0" value={value} onChange={(e) => setValue(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
                 <div>
                   <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
+                  <p className="text-xs text-muted-foreground mb-2">Points needed to redeem this reward</p>
                   <Input id="points" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
               </div>
@@ -310,41 +287,46 @@ export default function CreateRewardWizardModal({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Badge Level (Optional)</label>
+                  <p className="text-xs text-muted-foreground mb-2">Restrict this reward to specific tier levels</p>
                   <div className="space-y-2 border rounded-md p-3">
-                    {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map((level) => (
-                      <div key={level} className="flex items-center space-x-2">
+                    {tiers.map((tier) => (
+                      <div key={tier.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={`badge-${level}`}
-                          checked={badgeLevel.includes(level)}
+                          id={`badge-${tier.id}`}
+                          checked={badgeLevel.includes(tier.id)}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setBadgeLevel([...badgeLevel, level]);
+                              setBadgeLevel([...badgeLevel, tier.id]);
                             } else {
-                              setBadgeLevel(badgeLevel.filter((l) => l !== level));
+                              setBadgeLevel(badgeLevel.filter((l) => l !== tier.id));
                             }
                           }}
                         />
                         <Label
-                          htmlFor={`badge-${level}`}
+                          htmlFor={`badge-${tier.id}`}
                           className="text-sm font-normal cursor-pointer"
                         >
-                          {level}
+                          {tier.name}
                         </Label>
                       </div>
                     ))}
                   </div>
                   {badgeLevel.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {badgeLevel.map((level) => (
-                        <Badge key={level} variant="secondary" className="text-xs">
-                          {level}
-                        </Badge>
-                      ))}
+                      {badgeLevel.map((tierId) => {
+                        const tier = tiers.find(t => t.id === tierId);
+                        return tier ? (
+                          <Badge key={tierId} variant="secondary" className="text-xs">
+                            {tier.name}
+                          </Badge>
+                        ) : null;
+                      })}
                     </div>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
+                  <p className="text-xs text-muted-foreground mb-2">Set as draft to save for later or active to publish</p>
                   <Select value={status} onValueChange={(v) => setStatus(v as RewardResponse['status'])}>
                     <SelectTrigger><SelectValue placeholder="Set status" /></SelectTrigger>
                     <SelectContent position="popper" className="z-[10000]">
@@ -359,9 +341,10 @@ export default function CreateRewardWizardModal({
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Reward Source</label>
+                  <p className="text-xs text-muted-foreground mb-2">Indicate whether this reward is from MCOM's inventory or a partner</p>
                   <RadioGroup value={rewardSource} onValueChange={setRewardSource} className="flex space-x-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mcom" id="mcom" />
+                      <RadioGroupItem value="mcom vault" id="mcom" />
                       <Label htmlFor="mcom">MCOM Vault</Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -375,10 +358,12 @@ export default function CreateRewardWizardModal({
               {/* Expiry and Image */}
               <div>
                 <label className="block text-sm font-medium mb-2">Expiry Date</label>
+                <p className="text-xs text-muted-foreground mb-2">Set when this reward offer expires and is no longer available</p>
                 <DateTimePicker date={expiry} setDate={setExpiry} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Reward Image</label>
+                <p className="text-xs text-muted-foreground mb-2">Upload an attractive image representing this reward</p>
                 <CloudinaryUpload onFileSelect={handleFileSelect} />
                 {imagePreviewUrl && (
                   <div className="mt-4">
@@ -418,13 +403,12 @@ export default function CreateRewardWizardModal({
                     {badgeLevel.length > 0 && (
                       <div className="flex justify-between">
                         <span className="font-medium">Badge Level:</span>
-                        <span>{badgeLevel.join(', ')}</span>
+                        <span>{badgeLevel.map(tierId => tiers.find(t => t.id === tierId)?.name).filter(Boolean).join(', ')}</span>
                       </div>
                     )}
                     {selectedSector && <div className="flex justify-between"><span className="font-medium">Sector:</span><span>{sectors.find(s => s.id === selectedSector)?.name}</span></div>}
-                    {selectedCategory && <div className="flex justify-between"><span className="font-medium">Category:</span><span>{availableCategories.find(c => c.id === selectedCategory)?.name}</span></div>}
                     <div className="flex justify-between"><span className="font-medium">Audience:</span><span>{audience.replace('_', ' ')}</span></div>
-                    <div className="flex justify-between"><span className="font-medium">Source:</span><span>{rewardSource === 'mcom' ? 'MCOM Vault' : 'Partner'}</span></div>
+                    <div className="flex justify-between"><span className="font-medium">Source:</span><span>{rewardSource === 'mcom vault' ? 'MCOM Vault' : 'Partner'}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Expires:</span><span>{expiry.toLocaleDateString()}</span></div>
                   </div>
                 </CardContent>

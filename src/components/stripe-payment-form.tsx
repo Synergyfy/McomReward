@@ -43,7 +43,6 @@ const StripePaymentForm = ({ onSuccess }: StripePaymentFormProps) => {
         { transaction_id: paymentIntent.id },
         {
           onSuccess: () => {
-            toast.success('Payment verified successfully!');
             onSuccess(paymentIntent.id);
           },
           onError: (error) => {

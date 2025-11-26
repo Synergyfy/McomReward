@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useGetMyWishlist, useCreateWishlistItem } from '@/services/wishlist/hook';
 import { WishlistItem, CreateWishlistDto } from '@/services/wishlist/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 
 // Adapter function to convert Service WishlistItem to Component WishlistItem
 const adaptWishlistItem = (item: WishlistItem): CardWishlistItem => ({
@@ -115,27 +115,45 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">My Wishlist</h1>
-        <p className="mt-4 text-lg text-gray-600">Your saved items and experiences.</p>
-      </div>
-      <div className="text-center">
-        <Button onClick={handleCreate} disabled={isCreating}>
-            {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
-            Create Wishlist
-        </Button>
+    <div className="container mx-auto px-4 py-8 max-w-7xl min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+        <div className="text-left">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
+             <span className="block text-primary xl:inline">My Wishlist</span>
+          </h1>
+          <p className="mt-3 text-lg text-gray-500 dark:text-gray-400 sm:max-w-xl">
+             Your curated collection of desires, goals, and dream items.
+          </p>
+        </div>
+        <div>
+           <Button onClick={handleCreate} disabled={isCreating} size="lg" className="rounded-full shadow-lg hover:shadow-xl transition-all">
+               {isCreating ? <Loader2 className="h-5 w-5 animate-spin mr-2"/> : <Plus className="h-5 w-5 mr-2" />}
+               Create New Wish
+           </Button>
+        </div>
       </div>
       
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex justify-center items-center h-96">
+          <div className="flex flex-col items-center gap-3">
+             <Loader2 className="h-10 w-10 animate-spin text-primary" />
+             <p className="text-muted-foreground animate-pulse">Loading your wishes...</p>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {wishlistItems.length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 py-12">
-              <p>Your wishlist is empty. Start by adding something!</p>
+            <div className="col-span-full flex flex-col items-center justify-center py-20 bg-gray-50 dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-800">
+               <div className="bg-white dark:bg-zinc-800 p-4 rounded-full shadow-sm mb-4">
+                  <Plus className="h-10 w-10 text-gray-400" />
+               </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your wishlist is empty</h3>
+              <p className="text-gray-500 dark:text-gray-400 mt-2 text-center max-w-sm">
+                Start building your dream collection by adding items you love.
+              </p>
+              <Button variant="link" onClick={handleCreate} className="mt-4 text-primary">
+                 Add your first item &rarr;
+              </Button>
             </div>
           ) : (
             wishlistItems.map((item) => (

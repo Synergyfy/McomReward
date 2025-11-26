@@ -54,29 +54,30 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const [step, setStep] = useState(1);
   const { data: categories, isLoading: isCategoriesLoading } = useGetCategories();
 
-  // Step 1 state
+  // Step 1 state (Who is it for?)
   const [wishlistFor, setWishlistFor] = useState<'myself' | 'friend' | 'family' | ''>(itemToEdit ? 'myself' : '');
   const [myEmail, setMyEmail] = useState(''); 
   const [friendName, setFriendName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [customRelationship, setCustomRelationship] = useState('');
-  const [notify, setNotify] = useState<'yes' | 'no' | '' >('');
   const [contactMethods, setContactMethods] = useState({ email: false, phone: false });
   const [friendEmail, setFriendEmail] = useState('');
   const [friendPhone, setFriendPhone] = useState('');
 
-  // Step 2 state
+  // Step 2 state (Item Basic Details)
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
+  const [uploadOrLink, setUploadOrLink] = useState<'upload' | 'link' | '' >('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  // Step 3 state (Item Preference Details)
   const [occasion, setOccasion] = useState('None');
   const [season, setSeason] = useState('None');
   const [targetDate, setTargetDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [consent, setConsent] = useState(false);
-  const [uploadOrLink, setUploadOrLink] = useState<'upload' | 'link' | '' >('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const [isUploading, setIsUploading] = useState(false);
 
@@ -111,7 +112,6 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setFriendName('');
         setRelationship('');
         setCustomRelationship('');
-        setNotify('');
         setContactMethods({ email: false, phone: false });
         setFriendEmail('');
         setFriendPhone('');
@@ -134,7 +134,6 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     setFriendName('');
     setRelationship('');
     setCustomRelationship('');
-    setNotify('');
     setContactMethods({ email: false, phone: false });
     setFriendEmail('');
     setFriendPhone('');
@@ -145,10 +144,6 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     if (value !== 'other') {
       setCustomRelationship('');
     }
-  };
-
-  const handleNotifyChange = (value: 'yes' | 'no') => {
-    setNotify(value);
   };
 
   const handleContactMethodChange = (method: 'email' | 'phone') => {
@@ -192,6 +187,18 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     }
     setStep(2);
   };
+
+  const handleConfirmStep2 = () => {
+      if (!name) {
+          alert("Please enter item name.");
+          return;
+      }
+      if (!categoryId) {
+          alert("Please select a category.");
+          return;
+      }
+      setStep(3);
+  }
 
   const uploadToCloudinary = async (file: File): Promise<string> => {
     // Using the same server-side proxy route pattern as seen in SectorDialog
@@ -254,7 +261,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   };
 
   const handleBack = () => {
-    setStep(1);
+    setStep((prev) => prev - 1);
   };
 
   const renderStep1 = () => (
@@ -400,12 +407,8 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         </AnimatePresence>
       </motion.div>
       <DialogFooter>
-        {!itemToEdit && <Button variant="outline" onClick={handleBack} disabled={isUploading}>Back</Button>}
+        {!itemToEdit && <Button variant="outline" onClick={handleBack} disabled={true}>Back</Button>}
         <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
-        <Button onClick={handleSave} disabled={isUploading}>
-            {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isUploading ? 'Uploading...' : 'Save to Wishlist'}
-        </Button>
       </DialogFooter>
     </div>
   );
@@ -413,15 +416,15 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   const renderStep2 = () => (
     <div className="space-y-4 py-4">
       <DialogHeader>
-        <DialogTitle>{itemToEdit ? 'Edit Wishlist Item' : 'Save to Wishlist'}</DialogTitle>
+        <DialogTitle>{itemToEdit ? 'Edit Wishlist Item - Details' : 'Add Item - Details'}</DialogTitle>
         <DialogDescription>
-          {itemToEdit ? 'Update the details of your wishlist item.' : 'Add this item to your wishlist to get updates and special offers.'}
+          Enter the basic details of the item.
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Item Name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Vintage Leather Jacket"/>
           <p className="text-xs text-gray-500">The name of the item you&apos;re wishing for.</p>
         </div>
 
@@ -500,68 +503,84 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
           )}
           <p className="text-xs text-gray-500">Select the category this item belongs to.</p>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="occasion">Occasion</Label>
-          <Select onValueChange={setOccasion} value={occasion}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an occasion" />
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              <SelectItem value="None">None</SelectItem>
-              <SelectItem value="Birthday">Birthday</SelectItem>
-              <SelectItem value="Anniversary">Anniversary</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-gray-500">Is this for a special occasion?</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Target Date</Label>
-          <DateTimePicker date={targetDate} setDate={setTargetDate} />
-          <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="season">Season</Label>
-          <Select onValueChange={setSeason} value={season}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a season" />
-            </SelectTrigger>
-            <SelectContent className="z-[9999]">
-              <SelectItem value="None">None</SelectItem>
-              <SelectItem value="Autumn">Autumn</SelectItem>
-              <SelectItem value="Winter">Winter</SelectItem>
-              <SelectItem value="Spring">Spring</SelectItem>
-              <SelectItem value="Summer">Summer</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-gray-500">Optionally, select a season.</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Priority</Label>
-          <RadioGroup defaultValue={priority} onValueChange={(v) => setPriority(v as 'Low' | 'Medium' | 'High')} className="flex space-x-4 py-2">
-            <div className="flex items-center space-x-2"><RadioGroupItem value="Low" id="p1" /><Label htmlFor="p1">Low</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="Medium" id="p2" /><Label htmlFor="p2">Medium</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="High" id="p3" /><Label htmlFor="p3">High</Label></div>
-          </RadioGroup>
-          <p className="text-xs text-gray-500">How much do you want this item?</p>
-        </div>
-        <div className="flex items-center space-x-2 pt-4">
-          <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(Boolean(checked))} />
-          <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Yes — I want to receive offers related to this item
-          </label>
-        </div>
       </div>
       <DialogFooter>
-        {!itemToEdit && <Button variant="outline" onClick={handleBack} disabled={isUploading}>Back</Button>}
-        <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
-        <Button onClick={handleSave} disabled={isUploading}>
-            {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isUploading ? 'Uploading...' : 'Save to Wishlist'}
-        </Button>
+        <Button variant="outline" onClick={handleBack} disabled={isUploading}>Back</Button>
+        <Button onClick={handleConfirmStep2}>Continue</Button>
       </DialogFooter>
     </div>
   );
+
+  const renderStep3 = () => (
+      <div className="space-y-4 py-4">
+        <DialogHeader>
+          <DialogTitle>{itemToEdit ? 'Edit Wishlist Item - Preferences' : 'Add Item - Preferences'}</DialogTitle>
+          <DialogDescription>
+            Set your preferences and priorities.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="occasion">Occasion</Label>
+            <Select onValueChange={setOccasion} value={occasion}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an occasion" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="None">None</SelectItem>
+                <SelectItem value="Birthday">Birthday</SelectItem>
+                <SelectItem value="Anniversary">Anniversary</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">Is this for a special occasion?</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Target Date</Label>
+            <DateTimePicker date={targetDate} setDate={setTargetDate} />
+            <p className="text-xs text-gray-500">An ideal date to get this item or offers for it.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="season">Season</Label>
+            <Select onValueChange={setSeason} value={season}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a season" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                <SelectItem value="None">None</SelectItem>
+                <SelectItem value="Autumn">Autumn</SelectItem>
+                <SelectItem value="Winter">Winter</SelectItem>
+                <SelectItem value="Spring">Spring</SelectItem>
+                <SelectItem value="Summer">Summer</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">Optionally, select a season.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <RadioGroup defaultValue={priority} onValueChange={(v) => setPriority(v as 'Low' | 'Medium' | 'High')} className="flex space-x-4 py-2">
+              <div className="flex items-center space-x-2"><RadioGroupItem value="Low" id="p1" /><Label htmlFor="p1">Low</Label></div>
+              <div className="flex items-center space-x-2"><RadioGroupItem value="Medium" id="p2" /><Label htmlFor="p2">Medium</Label></div>
+              <div className="flex items-center space-x-2"><RadioGroupItem value="High" id="p3" /><Label htmlFor="p3">High</Label></div>
+            </RadioGroup>
+            <p className="text-xs text-gray-500">How much do you want this item?</p>
+          </div>
+          <div className="flex items-center space-x-2 pt-4">
+            <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(Boolean(checked))} />
+            <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Yes — I want to receive offers related to this item
+            </label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleBack} disabled={isUploading}>Back</Button>
+          <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isUploading}>
+              {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUploading ? 'Uploading...' : 'Save to Wishlist'}
+          </Button>
+        </DialogFooter>
+      </div>
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -569,12 +588,14 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: step === 1 ? -50 : 50 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: step === 1 ? 50 : -50 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
           >
-            {step === 1 ? renderStep1() : renderStep2()}
+            {step === 1 && renderStep1()}
+            {step === 2 && renderStep2()}
+            {step === 3 && renderStep3()}
           </motion.div>
         </AnimatePresence>
       </DialogContent>

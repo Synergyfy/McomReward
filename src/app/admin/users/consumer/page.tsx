@@ -5,7 +5,8 @@ import { UserDataTable } from '@/components/admin/users/UserDataTable';
 import { createConsumerColumns } from '@/components/admin/users/columns';
 import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
 import { useAdminParticipants } from '@/services/admin/hook';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AdminConsumerUsersPage() {
   const [page, setPage] = useState(1);
@@ -63,42 +64,132 @@ export default function AdminConsumerUsersPage() {
     );
   }
 
+  const totalPages = response?.totalPages || 1;
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5; // Adjust as needed
+    const ellipsis = <MoreHorizontal className="h-4 w-4" />;
+
+    if (totalPages <= maxVisiblePages + 2) {
+        for (let i = 1; i <= totalPages; i++) {
+            items.push(
+                <Button
+                    key={i}
+                    variant={page === i ? "default" : "outline"}
+                    size="icon"
+                    className="w-8 h-8"
+                    onClick={() => setPage(i)}
+                >
+                    {i}
+                </Button>
+            );
+        }
+    } else {
+        // Always show first page
+        items.push(
+            <Button
+                key={1}
+                variant={page === 1 ? "default" : "outline"}
+                size="icon"
+                className="w-8 h-8"
+                onClick={() => setPage(1)}
+            >
+                1
+            </Button>
+        );
+
+        if (page > 3) {
+            items.push(<div key="start-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
+        }
+
+        const startPage = Math.max(2, page - 1);
+        const endPage = Math.min(totalPages - 1, page + 1);
+
+        for (let i = startPage; i <= endPage; i++) {
+            items.push(
+                <Button
+                    key={i}
+                    variant={page === i ? "default" : "outline"}
+                    size="icon"
+                    className="w-8 h-8"
+                    onClick={() => setPage(i)}
+                >
+                    {i}
+                </Button>
+            );
+        }
+
+        if (page < totalPages - 2) {
+             items.push(<div key="end-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
+        }
+
+        // Always show last page
+        items.push(
+            <Button
+                key={totalPages}
+                variant={page === totalPages ? "default" : "outline"}
+                size="icon"
+                className="w-8 h-8"
+                onClick={() => setPage(totalPages)}
+            >
+                {totalPages}
+            </Button>
+        );
+    }
+
+    return items;
+  };
+
   return (
     <div className="p-4 md:p-6 2xl:p-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Consumer Management</h1>
         <p className="text-gray-600 mt-1">Monitor and manage all consumer accounts on the platform.</p>
       </div>
-      <div className="p-6 border rounded-lg bg-white shadow-sm">
+      <div className="p-6 border rounded-lg bg-white shadow-sm flex flex-col min-h-[600px]">
         <h2 className="text-xl font-semibold mb-4">Consumer User Data Table</h2>
-        <UserDataTable
-          columns={createConsumerColumns}
-          data={consumerUsers}
-          onUpdateUser={handleUpdateUser}
-          onDeleteUser={handleDeleteUser}
-          onAdjustUserPoints={handleAdjustUserPoints}
-          onSuspendUser={handleSuspendUser}
-        />
-        {/* Simple Pagination Controls (since UserDataTable does client-side pagination on the provided data) */}
-        {/* If we want true server-side pagination, we'd need to update UserDataTable or provide controls here */}
-        <div className="flex justify-end gap-2 mt-4">
-             <button
-                className="px-4 py-2 text-sm border rounded disabled:opacity-50"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous Page
-              </button>
-              <span className="flex items-center text-sm">
-                Page {page} of {response?.totalPages || 1}
-              </span>
-              <button
-                className="px-4 py-2 text-sm border rounded disabled:opacity-50"
-                onClick={() => setPage(p => p + 1)}
-                disabled={page >= (response?.totalPages || 1)}
-              >
-                Next Page
-              </button>
+        <div className="flex-grow">
+          <UserDataTable
+            columns={createConsumerColumns}
+            data={consumerUsers}
+            onUpdateUser={handleUpdateUser}
+            onDeleteUser={handleDeleteUser}
+            onAdjustUserPoints={handleAdjustUserPoints}
+            onSuspendUser={handleSuspendUser}
+          />
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-4 border-t pt-4">
+          <div className="text-sm text-gray-500">
+             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, response?.total || 0)} of {response?.total || 0} entries
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-8 h-8"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+                {renderPaginationItems()}
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-8 h-8"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

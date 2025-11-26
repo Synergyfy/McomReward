@@ -5,7 +5,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
+  // getPaginationRowModel,
   getFilteredRowModel,
   useReactTable,
   ColumnFiltersState,
@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { AdjustPointsModal } from './AdjustPointsModal';
@@ -168,12 +168,13 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
     data,
     columns: tableColumns, // Use the dynamically created columns
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // getPaginationRowModel: getPaginationRowModel(), // Removed client-side pagination
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       columnFilters,
     },
+    // manualPagination: true, // We are handling pagination manually in the parent
   });
 
   return (
@@ -238,24 +239,8 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+      
+      {/* Pagination controls removed from here as they are now in the parent page */}
 
       {/* Modals */}
       <ConfirmationDialog

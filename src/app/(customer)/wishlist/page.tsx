@@ -65,17 +65,36 @@ export default function WishlistPage() {
     }
   };
 
-  const handleSave = async (item: Omit<CardWishlistItem, 'id'> | CardWishlistItem) => {
+  const handleSave = async (item: Omit<CardWishlistItem, 'id'> | CardWishlistItem | any) => {
+    // Note: We are using 'any' on item because we are passing extra fields (isForThirdParty, etc.) from the modal
+    // that are not strictly in CardWishlistItem type. Ideally, we should update the type definition.
+    
+    // We expect the Modal to pass us a valid `categoryId` in the `category` field now.
+    // Or we expect `item.category` to be the ID.
+    
+    // Validate category ID is UUID
+    const categoryId = item.category;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId);
+    
+    if (!isUuid) {
+        toast.error("Please select a valid category.");
+        return;
+    }
+
     const dto: CreateWishlistDto = {
         itemName: item.name,
         itemImageUrl: item.imageUrl,
-        categoryId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', // Mock Category ID
+        categoryId: categoryId, 
         occasion: item.occasion ? item.occasion.toUpperCase() as any : 'NONE',
         season: 'NONE', 
         targetDate: item.targetDate,
         priority: item.priority.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH',
         marketingConsent: item.consent,
-        isForThirdParty: false, 
+        isForThirdParty: item.isForThirdParty || false,
+        recipientName: item.recipientName,
+        recipientEmail: item.recipientEmail,
+        recipientPhone: item.recipientPhone,
+        relationship: item.relationship
     };
 
     try {

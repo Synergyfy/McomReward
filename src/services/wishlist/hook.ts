@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
-import { CreateWishlistDto, WishlistItem, Paginated, PaginationDto, WishlistAggregate } from './types';
+import { CreateWishlistDto, WishlistItem, Paginated, PaginationDto, WishlistAggregate, Category } from './types';
 
 const WISHLIST_QUERY_KEY = 'wishlist';
 const WISHLIST_INSIGHTS_QUERY_KEY = 'wishlistInsights';
+const CATEGORIES_QUERY_KEY = 'categories';
 
 // --- API Functions ---
 
@@ -26,12 +27,10 @@ const fetchWishlistInsights = async (params: PaginationDto) => {
   return data;
 };
 
-// Placeholder for future campaign targeting (conceptual)
-const createTargetedCampaignFn = async (data: any) => {
-    // This is a conceptual endpoint as per documentation
-    const { data: response } = await api.post('/wishlist/campaign/target-wishlist', data);
-    return response;
-}
+const fetchCategories = async () => {
+    const { data } = await api.get<Category[]>('/categories');
+    return data;
+};
 
 // --- Hooks ---
 
@@ -57,4 +56,11 @@ export const useGetWishlistInsights = (params: PaginationDto = { page: 1, limit:
     queryKey: [WISHLIST_INSIGHTS_QUERY_KEY, params],
     queryFn: () => fetchWishlistInsights(params),
   });
+};
+
+export const useGetCategories = () => {
+    return useQuery({
+        queryKey: [CATEGORIES_QUERY_KEY],
+        queryFn: fetchCategories,
+    });
 };

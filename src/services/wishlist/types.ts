@@ -2,9 +2,9 @@ export interface Category {
   id: string;
   name: string;
   imageUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
+  created_at: string; // Changed to match API doc
+  updated_at: string; // Changed to match API doc
+  deleted_at: string | null; // Changed to match API doc
 }
 
 export interface Participant {
@@ -20,7 +20,16 @@ export interface WishlistItem {
   deletedAt: string | null;
   itemName: string;
   itemImageUrl: string | null;
-  category: Category;
+  category: {
+    id: string;
+    name: string;
+    // The wishlist item response might still use camelCase or whatever the wishlist endpoint returns.
+    // Based on previous wishlist doc, it was nested object. 
+    // Let's assume the wishlist endpoint returns the category object as defined there.
+    // However, for fetching categories list, we use the snake_case one.
+    // Let's keep this generic or permissive if possible.
+    [key: string]: any; 
+  };
   participant: Participant;
   isForThirdParty: boolean;
   recipientName: string | null;
@@ -56,7 +65,10 @@ export interface WishlistAggregate {
   updatedAt: string;
   deletedAt: string | null;
   itemName: string;
-  category: Category;
+  category: {
+      id: string;
+      name: string;
+  };
   audienceSize: number;
   targetDates: (string | null)[];
 }

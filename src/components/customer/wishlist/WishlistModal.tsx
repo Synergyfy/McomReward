@@ -20,6 +20,8 @@ import { WishlistItem } from '@/components/customer/wishlist/WishlistItemCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import Image from 'next/image';
+import { useGetCategories } from '@/services/wishlist/hook';
+import { Category } from '@/services/wishlist/types';
 
 interface WishlistModalProps {
   isOpen: boolean;
@@ -31,6 +33,7 @@ interface WishlistModalProps {
 
 export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }: WishlistModalProps) => {
   const [step, setStep] = useState(1);
+  const { data: categories, isLoading: isCategoriesLoading } = useGetCategories();
 
   // Step 1 state
   const [wishlistFor, setWishlistFor] = useState<'myself' | 'friend' | 'family' | ''>(itemToEdit ? 'myself' : '');
@@ -45,7 +48,8 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
 
   // Step 2 state
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('Food');
+  // Use categoryId instead of category name
+  const [categoryId, setCategoryId] = useState<string>('');
   const [occasion, setOccasion] = useState('None');
   const [season, setSeason] = useState('None');
   const [targetDate, setTargetDate] = useState<Date | undefined>();
@@ -60,7 +64,18 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
     if (isOpen) {
       if (itemToEdit) {
         setName(itemToEdit.name);
-        setCategory(itemToEdit.category);
+        // Map category name back to ID if possible, or handle this properly.
+        // For editing, if the item object doesn't have categoryId, we might have trouble displaying the correct category.
+        // Assuming itemToEdit might be coming from a place that doesn't have the ID handy or matching.
+        // Ideally we should pass the full object with IDs.
+        // For now, let's try to match by name if ID isn't available, or just default.
+        if (categories) {
+            const matchedCategory = categories.find(c => c.name === itemToEdit.category);
+            if (matchedCategory) {
+                setCategoryId(matchedCategory.id);
+            }
+        }
+        
         setPriority(itemToEdit.priority);
         setConsent(itemToEdit.consent);
         setOccasion(itemToEdit.occasion || 'None');
@@ -71,7 +86,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
       } else {
         // Reset for new item
         setName(itemName || '');
-        setCategory('Food');
+        setCategoryId(''); // Reset category
         setPriority('Medium');
         setConsent(false);
         setOccasion('None');
@@ -92,7 +107,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         setImagePreviewUrl(null);
       }
     }
-  }, [itemToEdit, itemName, isOpen]);
+  }, [itemToEdit, itemName, isOpen, categories]);
 
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
@@ -165,15 +180,38 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
   };
 
   const handleSave = () => {
-    const newItem: Omit<WishlistItem, 'id'> | WishlistItem = {
+    // Find category name for display purposes if needed, though onSave expects just fields to pass to API mostly.
+    // The component WishlistItem interface expects `category` as string (name).
+    // But the API call needs `categoryId`. 
+    // We will pass the ID in a way the parent can use it, or we rely on the parent to handle the DTO construction.
+    // Given the current structure, let's pass the ID in the 'category' field if the parent is smart enough, 
+    // OR we pass an extended object.
+    
+    // Actually, looking at the parent `handleSave`, it constructs `CreateWishlistDto`. 
+    // It currently hardcodes `categoryId`. We need to pass the selected category ID up.
+    
+    // We can "hack" the category field to pass the ID, or we need to update the `WishlistItem` type in the component.
+    // But `WishlistItem` is used for display cards too.
+    
+    // Best approach: Pass the ID. The parent `handleSave` in `page.tsx` will need to use it.
+    // We'll overload the `category` field with the ID for now, since `page.tsx` uses it to set `categoryId`.
+    
+    const newItem: any = {
       ...(itemToEdit || {}),
       name,
-      category,
+      category: categoryId, // Passing ID here!
       priority,
       consent,
       occasion,
       targetDate: targetDate?.toISOString(),
       imageUrl: imagePreviewUrl || undefined,
+      
+      // Pass the third party info as well so parent can construct DTO properly
+      isForThirdParty: wishlistFor !== 'myself',
+      recipientName: wishlistFor === 'myself' ? undefined : (wishlistFor === 'friend' ? friendName : 'Family Member'), // Simplify for now
+      recipientEmail: wishlistFor === 'myself' ? myEmail : (contactMethods.email ? friendEmail : undefined),
+      recipientPhone: wishlistFor !== 'myself' && contactMethods.phone ? friendPhone : undefined,
+      relationship: wishlistFor === 'family' ? relationship.toUpperCase() : (wishlistFor === 'friend' ? 'OTHERS' : undefined),
     };
     onSave(newItem);
     onClose();
@@ -400,6 +438,27 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
                 </div>
             </div>
         )}
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          {isCategoriesLoading ? (
+            <div className="text-sm text-gray-500">Loading categories...</div>
+          ) : (
+            <Select onValueChange={setCategoryId} value={categoryId}>
+                <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                {categories?.map((cat: Category) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                    </SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+          )}
+          <p className="text-xs text-gray-500">Select the category this item belongs to.</p>
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="occasion">Occasion</Label>

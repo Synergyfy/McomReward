@@ -179,7 +179,7 @@ export default function TierBadgeControlPage() {
               <Card key={tier.id} className="shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <AwardIcon className="h-5 w-5" style={{ color: tier.color || '#000' }} /> {tier.name}
+                    <AwardIcon className="h-5 w-5" /> {tier.name}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleAddEditTier(tier)}>Edit</Button>
@@ -191,8 +191,8 @@ export default function TierBadgeControlPage() {
                   <div>
                     <h4 className="font-semibold">Criteria:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {tier.criteria?.map((c, i) => <li key={i}>{c}</li>)}
-                      {!tier.criteria && <li>Min Points: {tier.minPoints}</li>}
+                      <li>Points: {tier.minPoints} - {tier.maxPoints ? tier.maxPoints : '∞'}</li>
+                      <li>Campaigns Created: {tier.minCampaigns} - {tier.maxCampaigns ? tier.maxCampaigns : '∞'}</li>
                     </ul>
                   </div>
                   <div>
@@ -217,7 +217,7 @@ export default function TierBadgeControlPage() {
               <Card key={badge.id} className="shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
-                    <Crown className="h-5 w-5" style={{ color: badge.color || '#000' }} /> {badge.name}
+                    <Crown className="h-5 w-5" /> {badge.name}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleAddEditBadge(badge)}>Edit</Button>
@@ -229,8 +229,8 @@ export default function TierBadgeControlPage() {
                   <div>
                     <h4 className="font-semibold">Criteria:</h4>
                     <ul className="list-disc list-inside text-gray-700">
-                      {badge.criteria?.map((c, i) => <li key={i}>{c}</li>)}
-                      {!badge.criteria && <li>Min Points: {badge.minPoints}</li>}
+                      <li>Points: {badge.minPoints} - {badge.maxPoints ? badge.maxPoints : '∞'}</li>
+                      <li>Campaigns Joined: {badge.minCampaignsJoined} - {badge.maxCampaignsJoined ? badge.maxCampaignsJoined : '∞'}</li>
                     </ul>
                   </div>
                   <div>

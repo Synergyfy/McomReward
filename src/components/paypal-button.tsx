@@ -2,46 +2,9 @@
 'use client'
 
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import type { OnApproveData, OnApproveActions } from "@paypal/paypal-js/types/components/buttons"; // Import directly from paypal-js types
 import { initiatePaypalPayment, verifyPaypalPayment } from "@/services/payment/paypal";
 import { PayPalVerifyResponse } from "@/services/payment/types";
-
-// From @paypal/react-paypal-js types
-interface OnApproveData {
-  orderID: string;
-  payerID?: string;
-  subscriptionID?: string;
-}
-
-interface PurchaseUnit {
-  amount: {
-    currency_code: string;
-    value: string;
-  };
-  description?: string;
-  // and other properties as needed
-}
-
-interface OrderResponseBody {
-  id: string;
-  status: string;
-  purchase_units: PurchaseUnit[];
-  payer: {
-    name: {
-      given_name: string;
-      surname: string;
-    };
-    email_address: string;
-    payer_id: string;
-  };
-}
-
-interface OnApproveActions {
-  order: {
-    capture(): Promise<OrderResponseBody>;
-    // Other potential methods might exist, but capture is the most common
-  };
-}
-
 
 interface PayPalButtonProps {
   tier_id: string;
@@ -77,8 +40,13 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
 
   const onApprove = async (data: OnApproveData, actions: OnApproveActions) => {
     try {
-      const details = await verifyPaypalPayment({ transaction_id: data.orderID });
-      onPaymentSuccess(details, data.orderID);
+      // Ensure actions.order is available before calling capture
+      if (!actions.order) {
+        throw new Error("PayPal order actions not available.");
+      }
+      const orderDetail = await actions.order.capture(); // Use the captured order details
+      const details = await verifyPaypalPayment({ transaction_id: orderDetail.id });
+      onPaymentSuccess(details, orderDetail.id);
     } catch (error) {
       console.error("Error capturing PayPal order:", error);
       onPaymentError(error as Error);

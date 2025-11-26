@@ -72,7 +72,7 @@ export const useAddBusinessReward = () => {
       rewardId: string;
       pointRequired: number;
       quantity?: number;
-    }) => addBusinessReward(rewardId, { pointRequired, quantity }),
+    }) => addBusinessReward(rewardId, { point_required: pointRequired, quantity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
       queryClient.invalidateQueries({ queryKey: ['unaddedRewards'] });

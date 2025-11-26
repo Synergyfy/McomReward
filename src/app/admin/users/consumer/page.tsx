@@ -22,7 +22,7 @@ export default function AdminConsumerUsersPage() {
     activity: participant.activity as ConsumerUser['activity'],
     campaignsJoined: participant.campaignsJoined,
     rewardsRedeemed: participant.rewardsRedeemed,
-    points: participant.points,
+    points: participant.globalTotalPoints,
     matchingPoints: participant.matchingPoints,
     joinedDate: new Date(participant.joinedDate),
   })) || [];

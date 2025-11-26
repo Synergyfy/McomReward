@@ -26,10 +26,26 @@ import { Category } from '@/services/wishlist/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface WishlistFormValues {
+  id?: string;
+  name: string;
+  category: string;
+  priority: 'Low' | 'Medium' | 'High';
+  occasion?: string;
+  targetDate?: string;
+  consent: boolean;
+  imageUrl?: string;
+  isForThirdParty: boolean;
+  recipientName?: string;
+  recipientEmail?: string;
+  recipientPhone?: string;
+  relationship?: string;
+}
+
 interface WishlistModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: Omit<WishlistItem, 'id'> | WishlistItem) => void;
+  onSave: (item: WishlistFormValues) => void;
   itemToEdit?: WishlistItem;
   itemName?: string;
 }
@@ -217,7 +233,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         finalImageUrl = imagePreviewUrl || ''; // Fallback if editing and existing image
     }
 
-    const newItem: any = {
+    const newItem: WishlistFormValues = {
       ...(itemToEdit || {}),
       name,
       category: categoryId, 

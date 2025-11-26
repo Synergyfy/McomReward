@@ -8,6 +8,7 @@ import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
 import { useGetTiers, useStripeInitiate, usePayPalInitiate } from "@/services/payment/hook"
 import { PlanType, PaymentProvider } from "@/services/payment/types"
 import { toast } from "sonner"
+import PayPalButton from "@/components/paypal-button"
 
 const iconByTier: Record<string, LucideIcon> = {
   Trial: Target,
@@ -214,6 +215,50 @@ function CheckoutContent() {
             <div className="font-semibold">PayPal</div>
           </button>
         </div>
+        {paymentProvider === PaymentProvider.PAYPAL && (
+          <div className="mt-4">
+            <PayPalButton
+              tier_id={tier.id}
+              plan_type={billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY}
+              coupon_code={appliedCoupon?.code || ""}
+              onPaymentSuccess={async (details) => {
+                console.log("Payment successful:", details);
+                toast.success("Payment confirmed! Updating your subscription...");
+
+                try {
+                  const res = await fetch("/api/update-subscription", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      userId: "123", // Replace with actual user ID
+                      tierId: tier.id,
+                      planType: billing === "annual" ? "annually" : "quarterly",
+                      paymentId: details.id,
+                    }),
+                  });
+
+                  const data = await res.json();
+
+                  if (data.success) {
+                    toast.success("Subscription updated! Redirecting...");
+                    router.push("/confirmation");
+                  } else {
+                    toast.error("Failed to update subscription. Please contact support.");
+                  }
+                } catch (error) {
+                  console.error("Error updating subscription:", error);
+                  toast.error("An error occurred while updating your subscription.");
+                }
+              }}
+              onPaymentError={(error) => {
+                console.error("Payment error:", error);
+                toast.error("Payment failed. Please try again.");
+              }}
+            />
+          </div>
+        )}
       </section>
 
       <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
@@ -235,17 +280,19 @@ function CheckoutContent() {
         <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
       </section>
 
-      <div className="flex items-center justify-between">
-        <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
-        <button
-          onClick={handleConfirmPurchase}
-          disabled={isProcessing}
-          className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isProcessing ? 'Processing...' : 'Confirm Purchase'}
-        </button>
-      </div>
+      {paymentProvider === PaymentProvider.STRIPE && (
+        <div className="flex items-center justify-between">
+          <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
+          <button
+            onClick={handleConfirmPurchase}
+            disabled={isProcessing}
+            className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isProcessing ? 'Processing...' : 'Confirm Purchase'}
+          </button>
+        </div>
+      )}
     </main>
   )
 }

@@ -179,6 +179,20 @@ function CheckoutContent() {
         {billing === "annual" && (
           <p className="text-xs text-foreground/60 mt-2">Annual price is quarterly × 4.</p>
         )}
+        {paymentProvider === PaymentProvider.STRIPE && clientSecret && (
+          <div className="mt-4">
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <StripePaymentForm
+                onSuccess={(transactionId) => {
+                  toast.success(`Payment successful! Transaction ID: ${transactionId}`);
+                  // Here you can add logic to update the user's subscription,
+                  // redirect to a confirmation page, etc.
+                  router.push("/confirmation");
+                }}
+              />
+            </Elements>
+          </div>
+        )}
       </section>
 
       <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
@@ -285,34 +299,17 @@ function CheckoutContent() {
         <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
       </section>
 
-      {paymentProvider === PaymentProvider.STRIPE && (
+      {paymentProvider === PaymentProvider.STRIPE && !clientSecret && (
         <div className="flex items-center justify-between">
-          {!clientSecret ? (
-            <>
-              <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
-              <button
-                onClick={handleConfirmPurchase}
-                disabled={isProcessing}
-                className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isProcessing ? 'Processing...' : 'Proceed to Payment'}
-              </button>
-            </>
-          ) : (
-            <div className="w-full">
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <StripePaymentForm
-                  onSuccess={(transactionId) => {
-                    toast.success(`Payment successful! Transaction ID: ${transactionId}`);
-                    // Here you can add logic to update the user's subscription,
-                    // redirect to a confirmation page, etc.
-                    router.push("/confirmation");
-                  }}
-                />
-              </Elements>
-            </div>
-          )}
+          <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
+          <button
+            onClick={handleConfirmPurchase}
+            disabled={isProcessing}
+            className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isProcessing ? 'Processing...' : 'Proceed to Payment'}
+          </button>
         </div>
       )}
     </main>

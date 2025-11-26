@@ -40,10 +40,11 @@ export interface RewardResponse {
   createdAt: string;
   updatedAt: string;
   disabled: boolean;
-  type: string;
+  rewardType: string; // Backend uses rewardType (camelCase)
+  type: string; // Keep for backward compatibility
   status: string;
   expiry: string;
-  badgeLevel: string[];
+  badgeLevel: string | string[]; // Can be string or array
 }
 
 export interface GetRewardsResponse {

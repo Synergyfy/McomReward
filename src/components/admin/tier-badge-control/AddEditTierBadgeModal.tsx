@@ -34,9 +34,9 @@ export function AddEditTierBadgeModal({
 }: AddEditTierBadgeModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [minPoints, setMinPoints] = useState<number>(0);
+  const [minPoints, setMinPoints] = useState<number | string>('');
   const [maxPoints, setMaxPoints] = useState<number | undefined>(undefined);
-  const [minCampaigns, setMinCampaigns] = useState<number>(0);
+  const [minCampaigns, setMinCampaigns] = useState<number | string>('');
   const [maxCampaigns, setMaxCampaigns] = useState<number | undefined>(undefined);
 
   const [privileges, setPrivileges] = useState<string[]>(['']);
@@ -81,9 +81,9 @@ export function AddEditTierBadgeModal({
       // Reset form
       setName('');
       setDescription('');
-      setMinPoints(0);
+      setMinPoints('');
       setMaxPoints(undefined);
-      setMinCampaigns(0);
+      setMinCampaigns('');
       setMaxCampaigns(undefined);
       setPrivileges(['']);
     }
@@ -110,7 +110,7 @@ export function AddEditTierBadgeModal({
     const commonData = {
       name,
       description,
-      minPoints,
+      minPoints: typeof minPoints === 'string' ? (minPoints === '' ? 0 : Number(minPoints)) : minPoints,
       maxPoints,
       privileges: privileges.filter(p => p.trim() !== ''),
     };
@@ -119,13 +119,13 @@ export function AddEditTierBadgeModal({
     if (type === 'tier') {
       dataToSave = {
         ...commonData,
-        minCampaigns,
+        minCampaigns: typeof minCampaigns === 'string' ? (minCampaigns === '' ? 0 : Number(minCampaigns)) : minCampaigns,
         maxCampaigns,
       };
     } else {
       dataToSave = {
         ...commonData,
-        minCampaignsJoined: minCampaigns,
+        minCampaignsJoined: typeof minCampaigns === 'string' ? (minCampaigns === '' ? 0 : Number(minCampaigns)) : minCampaigns,
         maxCampaignsJoined: maxCampaigns,
       };
     }
@@ -167,7 +167,13 @@ export function AddEditTierBadgeModal({
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="minPoints" className="text-right">Min Points</Label>
-            <Input type="number" id="minPoints" value={minPoints} onChange={(e) => setMinPoints(Number(e.target.value))} className="col-span-3" />
+            <Input
+              type="number"
+              id="minPoints"
+              value={minPoints}
+              onChange={(e) => setMinPoints(e.target.value === '' ? '' : Number(e.target.value))}
+              className="col-span-3"
+            />
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
@@ -177,14 +183,20 @@ export function AddEditTierBadgeModal({
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="minCampaigns" className="text-right">{type === 'tier' ? 'Min Campaigns' : 'Min Joined'}</Label>
-            <Input type="number" id="minCampaigns" value={minCampaigns} onChange={(e) => setMinCampaigns(Number(e.target.value))} className="col-span-3" />
+            <Input
+              type="number"
+              id="minCampaigns"
+              value={minCampaigns}
+              onChange={(e) => setMinCampaigns(e.target.value === '' ? '' : Number(e.target.value))}
+              className="col-span-3"
+            />
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="maxCampaigns" className="text-right">{type === 'tier' ? 'Max Campaigns' : 'Max Joined'}</Label>
             <Input type="number" id="maxCampaigns" value={maxCampaigns || ''} onChange={(e) => setMaxCampaigns(e.target.value ? Number(e.target.value) : undefined)} className="col-span-3" placeholder="Optional" />
           </div>
-
+          
           {/* Privileges */}
           <div className="grid grid-cols-4 items-start gap-4">
             <Label className="text-right pt-2">Privileges</Label>

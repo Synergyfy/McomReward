@@ -9,16 +9,20 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockMatchingPointsSettings, MatchingPointsSettings } from '@/lib/mock-data/matching-points';
 import { initialSectors } from '@/lib/mock-data/sectors';
-import { mockCampaigns } from '@/lib/mock-data/campaigns';
 import { AdjustMatchingPointsModal } from '@/components/admin/matching-points/AdjustMatchingPointsModal';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { Globe, SlidersHorizontal, Briefcase, Megaphone, BarChart, UserPlus } from 'lucide-react';
-import { useAwardMatchingPoints } from '@/services/matching-points/hook';
+import { Globe, SlidersHorizontal, Briefcase, Megaphone, BarChart, UserPlus, Loader2 } from 'lucide-react';
+import { useAwardMatchingPoints, useToggleMatchingPoints } from '@/services/matching-points/hook';
+import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
 
 export default function MatchingPointsSettingsPage() {
   const [settings, setSettings] = useState<MatchingPointsSettings>(mockMatchingPointsSettings);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const { mutate: awardPoints } = useAwardMatchingPoints();
+  const { mutate: toggleMatchingPoints } = useToggleMatchingPoints();
+
+  // Fetch public campaigns
+  const { data: campaignsData, isLoading: isLoadingCampaigns, error: campaignsError } = useGetPublicCampaigns(1, 100);
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -259,40 +263,55 @@ export default function MatchingPointsSettingsPage() {
                   <CardDescription>Enable or disable matching points for individual campaigns.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockCampaigns.map((campaign) => {
-                    const campaignSetting = settings.campaignSpecificEnabled.find(cs => cs.campaignId === campaign.id);
-                    const isEnabled = campaignSetting ? campaignSetting.enabled : false;
+                  {isLoadingCampaigns ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Loading campaigns...</span>
+                    </div>
+                  ) : campaignsError ? (
+                    <div className="text-center py-8 text-destructive">
+                      Failed to load campaigns. Please try again later.
+                    </div>
+                  ) : !campaignsData?.data || campaignsData.data.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No campaigns found.
+                    </div>
+                  ) : (
+                    campaignsData.data.map((campaign) => {
+                      const isEnabled = !campaign.matchingPointsDisabledByAdmin;
 
-                    const handleToggleChange = (checked: boolean) => {
-                      setSettings(prevSettings => {
-                        const existingCampaignIndex = prevSettings.campaignSpecificEnabled.findIndex(cs => cs.campaignId === campaign.id);
-                        if (existingCampaignIndex > -1) {
-                          const newCampaigns = [...prevSettings.campaignSpecificEnabled];
-                          newCampaigns[existingCampaignIndex] = { ...newCampaigns[existingCampaignIndex], enabled: checked };
-                          return { ...prevSettings, campaignSpecificEnabled: newCampaigns };
-                        } else {
-                          return {
-                            ...prevSettings,
-                            campaignSpecificEnabled: [
-                              ...prevSettings.campaignSpecificEnabled,
-                              { campaignId: campaign.id, enabled: checked }
-                            ]
-                          };
-                        }
-                      });
-                    };
+                      const handleToggleChange = (checked: boolean) => {
+                        toggleMatchingPoints(
+                          { campaignId: campaign.id },
+                          {
+                            onSuccess: () => {
+                              handleShowFeedback(
+                                "Success",
+                                `Matching points for "${campaign.name}" have been ${checked ? 'enabled' : 'disabled'}.`
+                              );
+                            },
+                            onError: () => {
+                              handleShowFeedback(
+                                "Error",
+                                `Failed to toggle matching points for "${campaign.name}". Please try again.`
+                              );
+                            }
+                          }
+                        );
+                      };
 
-                    return (
-                      <div key={campaign.id} className="flex items-center justify-between border-b pb-4 last:border-b-0">
-                        <Label htmlFor={`switch-${campaign.id}`} className="flex-1 pr-4">{campaign.title}</Label>
-                        <Switch
-                          id={`switch-${campaign.id}`}
-                          checked={isEnabled}
-                          onCheckedChange={handleToggleChange}
-                        />
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div key={campaign.id} className="flex items-center justify-between border-b pb-4 last:border-b-0">
+                          <Label htmlFor={`switch-${campaign.id}`} className="flex-1 pr-4">{campaign.name}</Label>
+                          <Switch
+                            id={`switch-${campaign.id}`}
+                            checked={isEnabled}
+                            onCheckedChange={handleToggleChange}
+                          />
+                        </div>
+                      );
+                    })
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -15,7 +15,7 @@ export const createBusinessSchema = z.object({
   subCategoryId: z.string().optional().nullable(),
   phone: z.string().min(7, "Valid phone number is required"),
   address: z.string(),
-  website: z.url().nullish().or(z.literal("")).optional(),
+  website: z.string().optional(),
   socialMedia: socialMediaSchema,
   referralCapacity: z.number({
     error: "Referral capacity is required",

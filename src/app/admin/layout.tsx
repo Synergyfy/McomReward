@@ -28,7 +28,7 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="flex-1 md:ml-64">
-        {/* Header for mobile */}
+        {/* Header */}
         <AdminHeader onMenuClick={toggleSidebar} />
         <main className="p-4 sm:p-6 md:p-10">
           {children}

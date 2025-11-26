@@ -10,3 +10,14 @@ export interface AwardMatchingPointsResponse {
     updated_at: string;
     deleted_at: string | null;
 }
+
+export interface ToggleMatchingPointsRequest {
+    campaignId: string;
+}
+
+export interface ToggleMatchingPointsResponse {
+    id: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}

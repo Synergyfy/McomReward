@@ -32,5 +32,5 @@ export interface GetBusinessRewardsResponse {
 
 export interface CreateBusinessRewardDto {
   quantity?: number;
-  pointRequired: number;
+  point_required: number;
 }

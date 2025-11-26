@@ -179,20 +179,6 @@ function CheckoutContent() {
         {billing === "annual" && (
           <p className="text-xs text-foreground/60 mt-2">Annual price is quarterly × 4.</p>
         )}
-        {paymentProvider === PaymentProvider.STRIPE && clientSecret && (
-          <div className="mt-4">
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <StripePaymentForm
-                onSuccess={(transactionId) => {
-                  toast.success(`Payment successful! Transaction ID: ${transactionId}`);
-                  // Here you can add logic to update the user's subscription,
-                  // redirect to a confirmation page, etc.
-                  router.push("/confirmation");
-                }}
-              />
-            </Elements>
-          </div>
-        )}
       </section>
 
       <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
@@ -234,6 +220,20 @@ function CheckoutContent() {
             <div className="font-semibold">PayPal</div>
           </button>
         </div>
+        {paymentProvider === PaymentProvider.STRIPE && clientSecret && (
+          <div className="mt-4">
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <StripePaymentForm
+                onSuccess={(transactionId) => {
+                  toast.success(`Payment successful! Transaction ID: ${transactionId}`);
+                  // Here you can add logic to update the user's subscription,
+                  // redirect to a confirmation page, etc.
+                  router.push("/confirmation");
+                }}
+              />
+            </Elements>
+          </div>
+        )}
         {paymentProvider === PaymentProvider.PAYPAL && (
           <div className="mt-4">
             <PayPalButton

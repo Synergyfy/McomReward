@@ -1,16 +1,54 @@
 
-// @ts-nocheck
 'use client'
 
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { initiatePaypalPayment, verifyPaypalPayment } from "@/services/payment/paypal";
+import { PayPalVerifyResponse } from "@/services/payment/types";
+
+// From @paypal/react-paypal-js types
+interface OnApproveData {
+  orderID: string;
+  payerID?: string;
+  subscriptionID?: string;
+}
+
+interface PurchaseUnit {
+  amount: {
+    currency_code: string;
+    value: string;
+  };
+  description?: string;
+  // and other properties as needed
+}
+
+interface OrderResponseBody {
+  id: string;
+  status: string;
+  purchase_units: PurchaseUnit[];
+  payer: {
+    name: {
+      given_name: string;
+      surname: string;
+    };
+    email_address: string;
+    payer_id: string;
+  };
+}
+
+interface OnApproveActions {
+  order: {
+    capture(): Promise<OrderResponseBody>;
+    // Other potential methods might exist, but capture is the most common
+  };
+}
+
 
 interface PayPalButtonProps {
   tier_id: string;
   plan_type: "monthly" | "annual" | "quaterly";
   coupon_code: string;
-  onPaymentSuccess: (details: any) => void;
-  onPaymentError: (error: any) => void;
+  onPaymentSuccess: (details: PayPalVerifyResponse, orderId: string) => void;
+  onPaymentError: (error: Error) => void;
 }
 
 const PayPalButton: React.FC<PayPalButtonProps> = ({
@@ -32,22 +70,22 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
       }
     } catch (error) {
       console.error("Error creating PayPal order:", error);
-      onPaymentError(error);
+      onPaymentError(error as Error);
       throw error;
     }
   };
 
-  const onApprove = async (data: any, actions: any) => {
+  const onApprove = async (data: OnApproveData, actions: OnApproveActions) => {
     try {
       const details = await verifyPaypalPayment({ transaction_id: data.orderID });
-      onPaymentSuccess(details);
+      onPaymentSuccess(details, data.orderID);
     } catch (error) {
       console.error("Error capturing PayPal order:", error);
-      onPaymentError(error);
+      onPaymentError(error as Error);
     }
   };
 
-  const onError = (err: any) => {
+  const onError = (err: Error) => {
     console.error("PayPal error:", err);
     onPaymentError(err);
   };
@@ -63,7 +101,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
   return (
     <PayPalScriptProvider
       options={{
-        "client-id": paypalClientId,
+        clientId: paypalClientId,
         currency: "GBP",
       }}
     >

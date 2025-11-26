@@ -219,9 +219,9 @@ function CheckoutContent() {
           <div className="mt-4">
             <PayPalButton
               tier_id={tier.id}
-              plan_type={billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY}
+              plan_type={billing === "annual" ? "annual" : "quaterly"}
               coupon_code={appliedCoupon?.code || ""}
-              onPaymentSuccess={async (details) => {
+              onPaymentSuccess={async (details, orderId) => {
                 console.log("Payment successful:", details);
                 toast.success("Payment confirmed! Updating your subscription...");
 
@@ -235,7 +235,7 @@ function CheckoutContent() {
                       userId: "123", // Replace with actual user ID
                       tierId: tier.id,
                       planType: billing === "annual" ? "annually" : "quarterly",
-                      paymentId: details.id,
+                      paymentId: orderId,
                     }),
                   });
 

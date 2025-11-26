@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from 'next/navigation';
 import { AudienceEstimateModal } from '@/components/admin/campaigns/AudienceEstimateModal';
+import { useGetWishlistInsights } from '@/services/wishlist/hook';
+import { WishlistAggregate } from '@/services/wishlist/types';
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from 'lucide-react';
 
 type WishlistInsight = {
   itemName: string;
@@ -13,36 +17,35 @@ type WishlistInsight = {
   estimatedCount: number;
   topDates: string;
   priorityDistribution: string;
+  // Store original for reference if needed
+  original?: WishlistAggregate; 
 };
-
-const mockWishlistInsights: WishlistInsight[] = [
-  {
-    itemName: 'Gourmet Burger',
-    category: 'Food',
-    estimatedCount: 124,
-    topDates: 'Oct, Nov',
-    priorityDistribution: 'High: 60%, Medium: 30%, Low: 10%',
-  },
-  {
-    itemName: 'Winter Jacket',
-    category: 'Fashion',
-    estimatedCount: 78,
-    topDates: 'Dec, Jan',
-    priorityDistribution: 'High: 40%, Medium: 50%, Low: 10%',
-  },
-  {
-    itemName: 'Wireless Headphones',
-    category: 'Electronics',
-    estimatedCount: 210,
-    topDates: 'N/A',
-    priorityDistribution: 'High: 70%, Medium: 20%, Low: 10%',
-  },
-];
 
 export default function WishlistInsightsPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<WishlistInsight | null>(null);
+  const { data: insightsData, isLoading: loading, error } = useGetWishlistInsights({ page: 1, limit: 100 });
+  const { toast } = useToast();
+
+  if (error) {
+      console.error("Failed to fetch admin wishlist insights:", error);
+      toast({
+          title: "Error",
+          description: "Failed to load wishlist insights. Please try again.",
+          variant: "destructive",
+      });
+  }
+
+  // Transform API data to Component state
+  const insights: WishlistInsight[] = insightsData?.data?.map(item => ({
+        itemName: item.itemName,
+        category: item.category.name,
+        estimatedCount: item.audienceSize,
+        topDates: item.targetDates.filter(Boolean).slice(0, 3).join(', ') || 'N/A', // Show top 3 dates
+        priorityDistribution: 'N/A', // API response doesn't currently include priority breakdown
+        original: item
+    })) || [];
 
   const handleCreateCampaignClick = (item: WishlistInsight) => {
     setSelectedItem(item);
@@ -68,32 +71,46 @@ export default function WishlistInsightsPage() {
             <CardTitle>Aggregated Wishlist Data</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Estimated Count</TableHead>
-                  <TableHead>Top Dates</TableHead>
-                  <TableHead>Priority Distribution</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockWishlistInsights.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.itemName}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.estimatedCount}</TableCell>
-                    <TableCell>{item.topDates}</TableCell>
-                    <TableCell>{item.priorityDistribution}</TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleCreateCampaignClick(item)}>Create Campaign</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {loading ? (
+                <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Item Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Estimated Count</TableHead>
+                    <TableHead>Top Dates</TableHead>
+                    <TableHead>Priority Distribution</TableHead>
+                    <TableHead></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {insights.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                                No wishlist insights available yet.
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        insights.map((item, index) => (
+                        <TableRow key={index}>
+                            <TableCell>{item.itemName}</TableCell>
+                            <TableCell>{item.category}</TableCell>
+                            <TableCell>{item.estimatedCount}</TableCell>
+                            <TableCell>{item.topDates}</TableCell>
+                            <TableCell>{item.priorityDistribution}</TableCell>
+                            <TableCell>
+                            <Button onClick={() => handleCreateCampaignClick(item)}>Create Campaign</Button>
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    )}
+                </TableBody>
+                </Table>
+            )}
           </CardContent>
         </Card>
       </div>

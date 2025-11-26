@@ -39,7 +39,6 @@ export function AddEditTierBadgeModal({
   const [minCampaigns, setMinCampaigns] = useState<number | string>('');
   const [maxCampaigns, setMaxCampaigns] = useState<number | undefined>(undefined);
 
-  const [criteria, setCriteria] = useState<string[]>(['']);
   const [privileges, setPrivileges] = useState<string[]>(['']);
 
   // State for Feedback Dialog
@@ -64,18 +63,19 @@ export function AddEditTierBadgeModal({
       setName(initialData.name);
       setDescription(initialData.description);
       setPrivileges(initialData.privileges && initialData.privileges.length > 0 ? initialData.privileges : ['']);
-      setCriteria(initialData.criteria && initialData.criteria.length > 0 ? initialData.criteria : ['']);
 
       if (type === 'tier') {
         const tier = initialData as BusinessLevel;
         setMinPoints(tier.minPoints);
-        setMaxPoints(tier.maxPoints);
+        setMaxPoints(tier.maxPoints || undefined);
         setMinCampaigns(tier.minCampaigns);
-        setMaxCampaigns(tier.maxCampaigns);
+        setMaxCampaigns(tier.maxCampaigns || undefined);
       } else {
         const badge = initialData as CustomerBadge;
         setMinPoints(badge.minPoints);
+        setMaxPoints(badge.maxPoints || undefined);
         setMinCampaigns(badge.minCampaignsJoined);
+        setMaxCampaigns(badge.maxCampaignsJoined || undefined);
       }
     } else {
       // Reset form
@@ -85,7 +85,6 @@ export function AddEditTierBadgeModal({
       setMaxPoints(undefined);
       setMinCampaigns('');
       setMaxCampaigns(undefined);
-      setCriteria(['']);
       setPrivileges(['']);
     }
   }, [initialData, type, isOpen]);
@@ -112,15 +111,14 @@ export function AddEditTierBadgeModal({
       name,
       description,
       minPoints: typeof minPoints === 'string' ? (minPoints === '' ? 0 : Number(minPoints)) : minPoints,
+      maxPoints,
       privileges: privileges.filter(p => p.trim() !== ''),
-      criteria: criteria.filter(c => c.trim() !== ''),
     };
 
     let dataToSave;
     if (type === 'tier') {
       dataToSave = {
         ...commonData,
-        maxPoints,
         minCampaigns: typeof minCampaigns === 'string' ? (minCampaigns === '' ? 0 : Number(minCampaigns)) : minCampaigns,
         maxCampaigns,
       };
@@ -128,11 +126,11 @@ export function AddEditTierBadgeModal({
       dataToSave = {
         ...commonData,
         minCampaignsJoined: typeof minCampaigns === 'string' ? (minCampaigns === '' ? 0 : Number(minCampaigns)) : minCampaigns,
+        maxCampaignsJoined: maxCampaigns,
       };
     }
 
     onSave(dataToSave);
-    // onClose(); // Let parent close it on success
   };
 
   const handleAddInput = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
@@ -178,12 +176,10 @@ export function AddEditTierBadgeModal({
             />
           </div>
 
-          {type === 'tier' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="maxPoints" className="text-right">Max Points</Label>
-              <Input type="number" id="maxPoints" value={maxPoints || ''} onChange={(e) => setMaxPoints(e.target.value ? Number(e.target.value) : undefined)} className="col-span-3" />
-            </div>
-          )}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="maxPoints" className="text-right">Max Points</Label>
+            <Input type="number" id="maxPoints" value={maxPoints || ''} onChange={(e) => setMaxPoints(e.target.value ? Number(e.target.value) : undefined)} className="col-span-3" placeholder="Optional" />
+          </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="minCampaigns" className="text-right">{type === 'tier' ? 'Min Campaigns' : 'Min Joined'}</Label>
@@ -196,39 +192,11 @@ export function AddEditTierBadgeModal({
             />
           </div>
 
-          {type === 'tier' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="maxCampaigns" className="text-right">Max Campaigns</Label>
-              <Input type="number" id="maxCampaigns" value={maxCampaigns || ''} onChange={(e) => setMaxCampaigns(e.target.value ? Number(e.target.value) : undefined)} className="col-span-3" />
-            </div>
-          )}
-
-          {/* Criteria (Visual Only) */}
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label className="text-right pt-2">Display Criteria</Label>
-            <div className="col-span-3 space-y-2">
-              {criteria.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={item}
-                    onChange={(e) => handleChangeInput(index, e.target.value, setCriteria)}
-                    placeholder="e.g., 1000+ Points (Visual description)"
-                  />
-                  {criteria.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveInput(index, setCriteria)}>
-                      <MinusCircle className="h-4 w-4 text-red-500" />
-                    </Button>
-                  )}
-                  {index === criteria.length - 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => handleAddInput(setCriteria)}>
-                      <PlusCircle className="h-4 w-4 text-green-500" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="maxCampaigns" className="text-right">{type === 'tier' ? 'Max Campaigns' : 'Max Joined'}</Label>
+            <Input type="number" id="maxCampaigns" value={maxCampaigns || ''} onChange={(e) => setMaxCampaigns(e.target.value ? Number(e.target.value) : undefined)} className="col-span-3" placeholder="Optional" />
           </div>
-
+          
           {/* Privileges */}
           <div className="grid grid-cols-4 items-start gap-4">
             <Label className="text-right pt-2">Privileges</Label>

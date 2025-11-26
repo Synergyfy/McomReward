@@ -5,10 +5,13 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
-import { useGetTiers, useStripeInitiate, usePayPalInitiate } from "@/services/payment/hook"
+import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify } from "@/services/payment/hook"
 import { PlanType, PaymentProvider } from "@/services/payment/types"
 import { toast } from "sonner"
+import { Elements } from '@stripe/react-stripe-js';
 import PayPalButton from "@/components/paypal-button"
+import { stripePromise } from "@/components/stripe-provider"
+import StripePaymentForm from "@/components/stripe-payment-form"
 
 const iconByTier: Record<string, LucideIcon> = {
   Trial: Target,
@@ -32,11 +35,13 @@ function CheckoutContent() {
   const [appliedCoupon, setAppliedCoupon] = useState(() => findCoupon(initialCoupon))
   const [couponError, setCouponError] = useState<string | null>(null)
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>(PaymentProvider.STRIPE)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
 
   // Fetch tiers from backend
   const { data: tiers, isLoading: isLoadingTiers } = useGetTiers();
   const { mutate: initiateStripe, isPending: isInitiatingStripe } = useStripeInitiate();
   const { mutate: initiatePayPal, isPending: isInitiatingPayPal } = usePayPalInitiate();
+  const { mutate: verifyStripe, isPending: isVerifyingStripe } = useStripeVerify();
 
   const isProcessing = isInitiatingStripe || isInitiatingPayPal;
 
@@ -110,8 +115,8 @@ function CheckoutContent() {
     if (paymentProvider === PaymentProvider.STRIPE) {
       initiateStripe(paymentPayload, {
         onSuccess: (data) => {
-          toast.success("Payment initiated! Client Secret: " + data.clientSecret.substring(0, 20) + "...");
-          console.log("Stripe Client Secret:", data.clientSecret);
+          setClientSecret(data.clientSecret);
+          toast.success("Payment initiated!");
         },
         onError: (error) => {
           console.error("Stripe initiation failed:", error);
@@ -215,13 +220,27 @@ function CheckoutContent() {
             <div className="font-semibold">PayPal</div>
           </button>
         </div>
+        {paymentProvider === PaymentProvider.STRIPE && clientSecret && (
+          <div className="mt-4">
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <StripePaymentForm
+                onSuccess={(transactionId) => {
+                  toast.success(`Payment successful! Transaction ID: ${transactionId}`);
+                  // Here you can add logic to update the user's subscription,
+                  // redirect to a confirmation page, etc.
+                  router.push("/confirmation");
+                }}
+              />
+            </Elements>
+          </div>
+        )}
         {paymentProvider === PaymentProvider.PAYPAL && (
           <div className="mt-4">
             <PayPalButton
               tier_id={tier.id}
-              plan_type={billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY}
+              plan_type={billing === "annual" ? "annual" : "quarterly"}
               coupon_code={appliedCoupon?.code || ""}
-              onPaymentSuccess={async (details) => {
+              onPaymentSuccess={async (details, orderId) => {
                 console.log("Payment successful:", details);
                 toast.success("Payment confirmed! Updating your subscription...");
 
@@ -235,7 +254,7 @@ function CheckoutContent() {
                       userId: "123", // Replace with actual user ID
                       tierId: tier.id,
                       planType: billing === "annual" ? "annually" : "quarterly",
-                      paymentId: details.id,
+                      paymentId: orderId,
                     }),
                   });
 
@@ -280,7 +299,7 @@ function CheckoutContent() {
         <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
       </section>
 
-      {paymentProvider === PaymentProvider.STRIPE && (
+      {paymentProvider === PaymentProvider.STRIPE && !clientSecret && (
         <div className="flex items-center justify-between">
           <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
           <button
@@ -289,7 +308,7 @@ function CheckoutContent() {
             className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isProcessing ? 'Processing...' : 'Confirm Purchase'}
+            {isProcessing ? 'Processing...' : 'Proceed to Payment'}
           </button>
         </div>
       )}

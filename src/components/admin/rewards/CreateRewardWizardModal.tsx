@@ -51,7 +51,7 @@ export default function CreateRewardWizardModal({
   const { data: tiers = [] } = useGetTiers();
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
-  const totalSteps = 3;
+  const totalSteps = 2;
   const [rewardType, setRewardType] = useState('voucher');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);

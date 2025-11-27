@@ -11,9 +11,17 @@ export interface Reward {
   updatedAt: string;
 }
 
-export interface GetRewardsResponse {
-  data: Reward[];
+export interface PaginationMeta {
   total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  next: number | null;
+  previous: number | null;
+}
+
+export interface GetRewardsResponse extends PaginationMeta {
+  data: Reward[];
 }
 
 export interface BusinessReward {
@@ -25,9 +33,8 @@ export interface BusinessReward {
   updatedAt: string;
 }
 
-export interface GetBusinessRewardsResponse {
+export interface GetBusinessRewardsResponse extends PaginationMeta {
   data: BusinessReward[];
-  total: number;
 }
 
 export interface CreateBusinessRewardDto {

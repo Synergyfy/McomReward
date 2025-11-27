@@ -183,7 +183,6 @@ export default function CreateRewardWizardModal({
         image: finalImageUrl,
         quantity: 100, // Default or add field if needed
         reward_type: rewardType,
-        badge_level: badgeLevel.length > 0 ? badgeLevel[0] : '', // Using first element or empty string
         reward_source: rewardSource,
         audience,
         expiry_datetime: expiry.toISOString(),

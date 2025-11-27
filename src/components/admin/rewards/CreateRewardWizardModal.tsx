@@ -32,10 +32,11 @@ interface CreateRewardWizardModalProps {
 }
 
 const rewardTypes = [
-  { value: 'voucher', label: 'Voucher', icon: '🎟️' },
+  { value: 'Voucher', label: 'Voucher', icon: '🎟️' },
+  { value: 'gift card', label: 'Gift Card', icon: '💳' },
   { value: 'coupon', label: 'Coupon', icon: '🏷️' },
+  { value: 'point offer', label: 'Point Offer', icon: '✨' },
   { value: 'physical product', label: 'Physical Product', icon: '📦' },
-  { value: 'digital', label: 'Digital', icon: '💻' },
 ];
 
 export default function CreateRewardWizardModal({
@@ -52,7 +53,7 @@ export default function CreateRewardWizardModal({
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
   const totalSteps = 2;
-  const [rewardType, setRewardType] = useState('voucher');
+  const [rewardType, setRewardType] = useState('Voucher');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
@@ -152,10 +153,6 @@ export default function CreateRewardWizardModal({
 
   const handleSubmit = () => {
     // Get the first tier name for badge_level field
-    const firstTierName = badgeLevel.length > 0
-      ? (tiers.find(t => t.id === badgeLevel[0])?.name || '')
-      : '';
-
     const payload: CreateRewardRequest = {
       title: name,
       points_required: Number(pointsRequired),
@@ -164,7 +161,6 @@ export default function CreateRewardWizardModal({
       image: imagePreviewUrl || '',
       quantity: 100, // Default or add field if needed
       reward_type: rewardType,
-      badge_level: firstTierName,
       reward_source: rewardSource,
       audience,
       expiry_datetime: expiry.toISOString(),

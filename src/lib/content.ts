@@ -21,7 +21,7 @@ export interface Coupon {
 interface PricingData {
   tiers: Tier[];
   featuresForComparison: string[];
-  comparisonMatrix: Record<string, boolean[]>; // keys match tier names (columns)
+  comparisonMatrix: Record<string, (string | boolean)[]>; // keys match tier names (columns)
   trial: { durationDays: number; creditCardRequired: boolean };
   coupons: Coupon[];
 }
@@ -46,7 +46,7 @@ export function listFeatureRows(): string[] {
   return pricing.featuresForComparison as string[];
 }
 
-export function getComparisonMatrix(): Record<string, boolean[]> {
+export function getComparisonMatrix(): Record<string, (string | boolean)[]> {
   return data.comparisonMatrix;
 }
 

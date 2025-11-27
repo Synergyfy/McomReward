@@ -11,22 +11,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
+import { Loader2 } from 'lucide-react';
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
 }
 
-// Mock data for prototype
-const userData = {
-  name: 'Business Owner',
-  initials: 'BO',
-  points: 1250,
-  badge: 'Partner',
-  tier: 'Bronze',
-  notifications: 3,
-};
-
 export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
+  const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
+  const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
+
+  const tierName = subscription?.tier?.name;
+  const userPoints = profile?.totalPointsEarned;
+  const userBadge = profile?.role;
+  const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
+
+  const isLoading = isLoadingSubscription || isLoadingProfile;
+  const isError = isErrorSubscription || isErrorProfile;
+
+  const notificationsCount = 3; // Leaving as mock.
+
   return (
     <header className="flex items-center justify-between p-4 bg-white border-b sticky top-0 z-40">
       {/* Mobile Menu Button */}
@@ -47,14 +53,22 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
           {/* Points Balance */}
           <div className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-yellow-500" />
-            <span>{userData.points.toLocaleString()} Points</span>
+            <span>{isLoading ? '...' : (userPoints?.toLocaleString() ?? 0)} Points</span>
           </div>
 
           {/* Badge Status */}
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-500" />
-            <Badge variant="secondary">{userData.badge}</Badge>
-            <Badge variant="secondary">{userData.tier}</Badge>
+            {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : isError ? (
+                <Badge variant="destructive">Error</Badge>
+            ) : (
+                <>
+                    <Badge variant="secondary">{userBadge || 'N/A'}</Badge>
+                    <Badge variant="secondary">{tierName || 'N/A'}</Badge>
+                </>
+            )}
           </div>
         </div>
 
@@ -63,7 +77,7 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-6 w-6" />
-              {userData.notifications > 0 && (
+              {notificationsCount > 0 && (
                 <span className="absolute top-0 right-0 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -88,7 +102,7 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
             aria-label="User menu"
           >
             <User size={18} />
-            {userData.initials}
+            {isLoading ? '...' : userInitials}
           </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -105,3 +119,4 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
     </header>
   );
 }
+

@@ -117,7 +117,6 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
       reward_type: 'voucher',
       status: 'active',
       expiry_datetime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      badge_level: '',
       reward_source: 'mcom',
       audience: 'all_businesses',
       sector_ids: [],

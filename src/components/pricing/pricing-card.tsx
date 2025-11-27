@@ -59,7 +59,7 @@ export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
 
       <Link
         href={`/checkout?plan=${encodeURIComponent(tier.name)}&billing=${billingCycle}`}
-        className="w-full inline-block text-center py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 mb-3 bg-primary text-primary-foreground group-hover:bg-primary-foreground group-hover:text-primary shadow-md"
+        className="w-full inline-block text-center py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 mb-3 bg-primary text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground shadow-md"
       >
         {tier.name === "Trial" ? "Start Trial" : `Choose ${tier.name}`}
       </Link>

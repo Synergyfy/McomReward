@@ -1,74 +1,39 @@
-import * as z from "zod";
-import { businessSignUpSchema, createBusinessSchema} from "@/lib/validators/signupSchemas";
-
-
-export type CreateBusinessDto = z.infer<typeof createBusinessSchema>;
-export type BusinessSignUpDto = z.infer<typeof businessSignUpSchema>;
-
-
-
-
-// export interface CreateBusinessDto {
-//   name: string;
-//   email: string;
-//   password: string;
-//   confirmPassword: string;
-//   phone: string;
-//   address: string;
-//   sectorId: string;
-//   website?: string;
-//   socialMedia?: {
-//     [key: string]: string;
-//   };
-//   referralCapacity: number;
-// }
-
-export interface Business {
-  id:string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  website?: string;
-  socialMedia?: {
-    [key: string]: string;
-  };
-  uniqueCode: string;
-  createdAt: string;
-  updatedAt: string;
-  isOnboarded: boolean;
-}
+// --- Reconstructed from hook.ts usage ---
 
 export interface BusinessLoginDto {
   email: string;
   password: string;
 }
 
-export interface BusinessLoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
+export interface User {
     role: string;
+    name: string;
     isOnboarded: boolean;
-  };
 }
 
-export interface Category {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  name: string;
-  imageUrl: string;
+export interface BusinessLoginResponse {
+    user: User;
+    accessToken: string;
+    refreshToken: string;
 }
 
-export interface Subcategory {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+export interface BusinessSignUpDto {
   name: string;
-  imageUrl: string;
+  email: string;
+  password: string;
+  confirmPassword?: string;
+  inviteCode?: string;
+}
+
+export interface CreateBusinessDto {
+  sectorId: string;
+  categoryId: string;
+  subCategoryId?: string | null;
+  phone: string;
+  address: string;
+  website?: string;
+  socialMedia?: { name: string; link: string; }[];
+  referralCapacity: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -76,5 +41,47 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   limit: number;
-  nextPage?: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  imageUrl?: string;
+}
+
+export interface Subcategory {
+  id: string;
+  name: string;
+  imageUrl?: string;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+}
+
+
+// --- New Type for Business Profile ---
+
+export interface BusinessProfile {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  website: string;
+  socialMedia: string[];
+  uniqueCode: string;
+  role: string;
+  referralCapacity: number;
+  affiliateCode: string;
+  referralPoints: string;
+  reputationPoints: string;
+  isDisabled: boolean;
+  stripeCustomerId: string | null;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
 }

@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 // Import tiers service
 import { useGetSectors } from '@/services/sectors/hook';
 import { useGetTiers } from '@/services/tiers/hook';
+import toast from 'react-hot-toast';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -32,10 +33,11 @@ interface CreateRewardWizardModalProps {
 }
 
 const rewardTypes = [
-  { value: 'voucher', label: 'Voucher', icon: '🎟️' },
+  { value: 'Voucher', label: 'Voucher', icon: '🎟️' },
+  { value: 'gift card', label: 'Gift Card', icon: '💳' },
   { value: 'coupon', label: 'Coupon', icon: '🏷️' },
+  { value: 'point offer', label: 'Point Offer', icon: '✨' },
   { value: 'physical product', label: 'Physical Product', icon: '📦' },
-  { value: 'digital', label: 'Digital', icon: '💻' },
 ];
 
 export default function CreateRewardWizardModal({
@@ -51,8 +53,8 @@ export default function CreateRewardWizardModal({
   const { data: tiers = [] } = useGetTiers();
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
-  const totalSteps = 3;
-  const [rewardType, setRewardType] = useState('voucher');
+  const totalSteps = 2;
+  const [rewardType, setRewardType] = useState('Voucher');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
@@ -64,6 +66,7 @@ export default function CreateRewardWizardModal({
   const [selectedSector, setSelectedSector] = useState('');
   const [rewardSource, setRewardSource] = useState('mcom vault');
   const [audience, setAudience] = useState('all business');
+  const [newRewardId, setNewRewardId] = useState<string | null>(null);
 
   // Effect to reset sector when audience changes to 'all business'
   useEffect(() => {
@@ -150,48 +153,76 @@ export default function CreateRewardWizardModal({
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
-    // Get the first tier name for badge_level field
-    const firstTierName = badgeLevel.length > 0
-      ? (tiers.find(t => t.id === badgeLevel[0])?.name || '')
-      : '';
+  const handleSubmit = async () => {
+    try {
+      let finalImageUrl = imagePreviewUrl || '';
 
-    const payload: CreateRewardRequest = {
-      title: name,
-      points_required: Number(pointsRequired),
-      value: Number(value),
-      description,
-      image: imagePreviewUrl || '',
-      quantity: 100, // Default or add field if needed
-      reward_type: rewardType,
-      badge_level: firstTierName,
-      reward_source: rewardSource,
-      audience,
-      expiry_datetime: expiry.toISOString(),
-      status,
-      sector_ids: selectedSector ? [selectedSector] : [],
-      tier_ids: badgeLevel, // badgeLevel now contains tier IDs
-    };
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
 
-    createReward(payload, {
-      onSuccess: () => {
-        // First, close the main wizard dialog
-        onClose();
-        // Then, show the success prompt. A timeout ensures the first dialog has time to close.
-        setTimeout(() => {
-          setShowCampaignPrompt(true);
-        }, 150);
-      },
-      onError: (error: unknown) => {
-        console.error('Failed to create reward:', error);
-        // Toast is handled in the hook
+        const uploadResponse = await fetch('/api/upload/rewards', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || 'Image upload failed');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        finalImageUrl = uploadResult.secure_url;
       }
-    });
+
+      const payload: CreateRewardRequest = {
+        title: name,
+        points_required: Number(pointsRequired),
+        value: Number(value),
+        description,
+        image: finalImageUrl,
+        quantity: 100, // Default or add field if needed
+        reward_type: rewardType,
+        reward_source: rewardSource,
+        audience,
+        expiry_datetime: expiry.toISOString(),
+        status,
+        sector_ids: selectedSector ? [selectedSector] : [],
+        tier_ids: badgeLevel,
+      };
+
+      createReward(payload, {
+        onSuccess: (newlyCreatedReward) => {
+          setNewRewardId(newlyCreatedReward.id);
+          // First, close the main wizard dialog
+          onClose();
+          // Then, show the success prompt. A timeout ensures the first dialog has time to close.
+          setTimeout(() => {
+            setShowCampaignPrompt(true);
+          }, 150);
+        },
+        onError: (error: unknown) => {
+          console.error('Failed to create reward:', error);
+          // Toast is handled in the hook
+        }
+      });
+    } catch (error: unknown) {
+      console.error('Error submitting reward:', error);
+      let errorMessage = 'An unexpected error occurred during submission.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
+    }
   };
 
   const handleCampaignYes = () => {
     setShowCampaignPrompt(false);
-    router.push('/dashboard/campaigns/create');
+    if (newRewardId) {
+      router.push(`/admin/campaigns/create?rewardId=${newRewardId}`);
+    } else {
+      router.push('/admin/campaigns/create');
+    }
   };
 
   const handleCampaignNo = () => {

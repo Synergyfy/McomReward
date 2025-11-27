@@ -62,6 +62,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
   const itemName = searchParams.get('itemName');
+  const newRewardId = searchParams.get('rewardId');
 
   // Fetch rewards from API
   const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
@@ -76,6 +77,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
       });
     }
   }, [searchParams, formData.campaignName, updateFormData, itemName]);
+
+  useEffect(() => {
+    if (newRewardId && rewards.length > 0 && !formData.rewardIds.includes(newRewardId)) {
+      const newRewardOption = rewards.find(r => r.id === newRewardId);
+      if (newRewardOption) {
+        updateFormData({ rewardIds: [...formData.rewardIds, newRewardId] });
+      }
+    }
+  }, [newRewardId, formData.rewardIds, updateFormData, rewards]);
 
   useEffect(() => {
     if (formData.imageUrl) {

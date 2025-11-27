@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, CircleUserRound } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   DropdownMenu,
@@ -33,10 +33,30 @@ const FrontPageNavbar = () => {
   const handleLogout = () => {
     Cookies.remove('access');
     Cookies.remove('refresh');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
     router.push('/login');
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/campaigns' || pathname === '/terms';
+  const handleDashboardClick = () => {
+    const role = localStorage.getItem('userRole');
+    switch (role) {
+      case 'Admin':
+        router.push('/admin/dashboard');
+        break;
+      case 'Participant':
+        router.push('/wallet');
+        break;
+      case 'Staff':
+        router.push('/staff/dashboard');
+        break;
+      default:
+        router.push('/dashboard');
+        break;
+    }
+  };
+
+  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/checkout' || pathname === '/faq' || pathname === '/privacy' || pathname === '/about' || pathname === '/deals' || pathname === '/campaigns' || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;
@@ -81,12 +101,12 @@ const FrontPageNavbar = () => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold cursor-pointer">
-                  A
+                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-bold cursor-pointer">
+                  <CircleUserRound size={24} />
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48">
-                <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                <DropdownMenuItem onClick={handleDashboardClick}>
                   Dashboard
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/settings')}>

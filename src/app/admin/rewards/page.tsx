@@ -8,23 +8,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import CreateRewardWizardModal from '@/components/admin/rewards/CreateRewardWizardModal';
-import { MoreVertical, Edit, Copy } from 'lucide-react';
+import { MoreVertical, Edit, Copy, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useGetRewards } from '@/services/rewards/hook';
+import { useGetRewards, useDeleteReward } from '@/services/rewards/hook';
 import { RewardResponse } from '@/services/rewards/types';
 import LoadingSpinner from '@/components/ui/Loading';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 
 const typeLabels: { [key: string]: string } = {
-  'voucher': 'Voucher',
+  'Voucher': 'Voucher',
+  'gift card': 'Gift Card',
   'coupon': 'Coupon',
+  'point offer': 'Point Offer',
   'physical product': 'Physical Product',
-  'digital': 'Digital',
 };
 
 const audienceLabels: { [key: string]: string } = {
@@ -39,6 +50,27 @@ const sectorLabels: { [key: string]: string } = {
   'sec-3': 'Health & Wellness',
 }
 
+interface DisplayStatus {
+  text: string;
+  variant: 'default' | 'secondary' | 'destructive';
+}
+
+const getRewardDisplayStatus = (reward: RewardResponse): DisplayStatus => {
+  const now = new Date();
+  const expiryDate = new Date(reward.expiry);
+
+  if (expiryDate < now) {
+    return { text: 'Expired', variant: 'destructive' };
+  }
+
+  if (reward.status === 'active') {
+    return { text: 'Active', variant: 'default' };
+  } else if (reward.status === 'draft') {
+    return { text: 'Draft', variant: 'secondary' };
+  }
+  return { text: 'Unknown', variant: 'secondary' }; // Fallback
+};
+
 export default function AdminRewardsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -46,11 +78,13 @@ export default function AdminRewardsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
+  const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10); // You can adjust the limit as needed
 
   const { data, isLoading, isError } = useGetRewards(page, limit);
+  const { mutate: deleteReward, isPending: isDeleting } = useDeleteReward();
   const rewards = data?.data || [];
 
   const groupedAndFilteredRewards = useMemo(() => {
@@ -94,6 +128,20 @@ export default function AdminRewardsPage() {
       setModalMode('duplicate');
       setSelectedReward(reward);
       setIsModalOpen(true);
+    }
+  };
+
+  const handleDelete = (rewardId: string) => {
+    setRewardToDelete(rewardId);
+  };
+
+  const confirmDelete = () => {
+    if (rewardToDelete) {
+      deleteReward(rewardToDelete, {
+        onSuccess: () => {
+          setRewardToDelete(null);
+        },
+      });
     }
   };
 
@@ -183,9 +231,10 @@ export default function AdminRewardsPage() {
                             </div>
                             <div>
                               <CardTitle className="text-lg">{reward.title}</CardTitle>
-                              <Badge variant={!reward.disabled ? 'default' : 'secondary'}>
-                                {!reward.disabled ? 'Active' : 'Disabled'}
-                              </Badge>
+                              {(() => {
+                                const { text, variant } = getRewardDisplayStatus(reward);
+                                return <Badge variant={variant}>{text}</Badge>;
+                              })()}
                             </div>
                           </div>
                           <div>
@@ -203,6 +252,10 @@ export default function AdminRewardsPage() {
                                 <DropdownMenuItem onClick={() => handleDuplicate(reward.id)}>
                                   <Copy className="mr-2 h-4 w-4" />
                                   <span>Duplicate</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDelete(reward.id)} className="text-red-600">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Delete</span>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -241,6 +294,25 @@ export default function AdminRewardsPage() {
           mode={modalMode}
           reward={selectedReward}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!rewardToDelete} onOpenChange={() => setRewardToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the reward
+                and remove it from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

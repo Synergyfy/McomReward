@@ -19,11 +19,12 @@ import {
   Activity,
   Tag,
   LayoutDashboard,
+  Loader2,
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
 import { motion } from 'framer-motion';
-import { seasonalMockData as data } from '../../../app/mock-data';
+import { useGetBusinessProfile } from '@/services/business/hook';
 
 
 interface BusinessSidebarProps {
@@ -36,6 +37,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
   const [ isVouchersOpen, setIsVouchersOpen] = useState (false);
   const [isMyAssetsOpen, setIsMyAssetsOpen] = useState(false);
   const linkClasses = useLinkClasses();
+  const { data: profile, isLoading } = useGetBusinessProfile();
 
   return (
     <div
@@ -53,7 +55,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-3xl font-semibold text-orange-500 mb-6"
               >
-                {data.businessName} 
+                {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'} 
               </motion.h1>
       </div>
 

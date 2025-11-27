@@ -6,7 +6,6 @@ export interface CreateRewardRequest {
   image: string;
   quantity: number;
   reward_type: string;
-  badge_level: string;
   reward_source: string;
   audience: string;
   expiry_datetime: string;

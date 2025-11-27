@@ -12,6 +12,7 @@ export interface CampaignFormData {
   audienceType: string[];
   badgeLevels?: string[];
   wishlistItemIds?: string[];
+  wishlistAggregateId?: string; // Added field for wishlist aggregate ID
   campaignMessage: string;
   imageUrl: string;
   logoUrl: string;
@@ -61,6 +62,7 @@ const defaultFormData: CampaignFormData = {
   audienceType: [],
   badgeLevels: [],
   wishlistItemIds: [],
+  wishlistAggregateId: undefined,
   campaignMessage: '',
   imageUrl: '',
   logoUrl: '',

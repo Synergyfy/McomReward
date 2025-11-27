@@ -43,7 +43,7 @@ export default function WishlistTable({ wishlistItems }: WishlistTableProps) {
                 <TableCell>{item.count}</TableCell>
                 <TableCell>{item.targetDate}</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/dashboard/campaigns/create?from=wishlist&itemName=${encodeURIComponent(item.itemName)}`}>
+                  <Link href={`/dashboard/campaigns/create?from=wishlist&itemName=${encodeURIComponent(item.itemName)}&wishlistId=${item.id}`}>
                     <Button variant="outline" size="sm">Create Campaign</Button>
                   </Link>
                 </TableCell>

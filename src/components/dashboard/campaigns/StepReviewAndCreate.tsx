@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCampaignForm } from '@/context/CampaignFormContext';
-import { Calendar, Users, Gift, Tag } from 'lucide-react';
+import { Calendar, Users, Gift, Tag, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import CampaignDetailPagePreview from './previews/CampaignDetailPagePreview';
@@ -23,6 +23,11 @@ import RedeemPointsPagePreview from './previews/RedeemPointsPagePreview';
 import ContactUsPagePreview from './previews/ContactUsPagePreview';
 
 import FooterPreview from './previews/FooterPreview';
+import { useCreateCampaign } from '@/services/campaigns/hook';
+import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlist';
+import { CreateCampaignPayload } from '@/services/campaigns/types';
+import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
+import { toast } from 'sonner';
 
 interface StepProps {
   onBack: () => void;
@@ -40,11 +45,85 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail'); // State for managing active preview tab
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateCampaign = () => {
-    // Here you would typically send the formData to your API
-    console.log('Creating campaign with data:', formData);
-    setShowSuccessDialog(true);
+  const createCampaignMutation = useCreateCampaign();
+  const createCampaignFromWishlistMutation = useCreateCampaignFromWishlist();
+
+  const handleCreateCampaign = async () => {
+    setIsSubmitting(true);
+    try {
+      if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
+        // Create campaign from wishlist
+        const wishlistPayload: CreateCampaignFromWishlistDto = {
+          wishlistAggregateId: formData.wishlistAggregateId,
+          name: formData.campaignName,
+          campaign_type: formData.campaignType.toUpperCase(),
+          campaign_message: formData.campaignMessage,
+          start_date: formData.startDate?.toISOString() || new Date().toISOString(),
+          end_date: formData.endDate?.toISOString() || new Date().toISOString(),
+          quantity: Number(formData.rewardsAvailable) || 0,
+          audience_type: 'ALL', // Or specific audience type for wishlist if needed
+          banner_url: formData.imageUrl,
+          logo_url: formData.logoUrl,
+          cta_text: formData.ctaButtonText,
+          cta_background_color: formData.ctaBgColor,
+          cta_text_color: formData.ctaTextColor,
+          text_color: formData.bgColorTextColor,
+          background_color: formData.bgColor,
+          signUpPoint: 0, // Default or from form if available
+          reward_type: 'REGULAR', // Default
+          regular_points_threshold: 0, // Default
+          matching_points_threshold: 0, // Default
+          business_reward_ids: formData.rewardIds,
+          reward_ids: [], // Assuming admin rewards are separate or mixed
+        };
+
+        await createCampaignFromWishlistMutation.mutateAsync(wishlistPayload);
+      } else {
+        // Create regular campaign
+        // Note: You need to map formData to CreateCampaignPayload correctly
+        // This is a simplified mapping, ensure all fields match your DTO
+        const regularPayload: CreateCampaignPayload = {
+          name: formData.campaignName,
+          campaign_type: formData.campaignType.toUpperCase(),
+          campaign_message: formData.campaignMessage,
+          start_date: formData.startDate?.toISOString() || new Date().toISOString(),
+          end_date: formData.endDate?.toISOString() || new Date().toISOString(),
+          quantity: Number(formData.rewardsAvailable) || 0,
+          audience_type: formData.audienceType.join(','), // Adjust format as needed
+          signUpPoint: 0,
+          banner_url: formData.imageUrl,
+          logo_url: formData.logoUrl,
+          cta_text: formData.ctaButtonText,
+          cta_background_color: formData.ctaBgColor,
+          cta_text_color: formData.ctaTextColor,
+          text_color: formData.bgColorTextColor,
+          background_color: formData.bgColor,
+          reward_type: 'REGULAR',
+          regular_points_threshold: 0,
+          matching_points_threshold: 0,
+          earn_point_page_title: formData.earnTitle || '',
+          earn_point_page_description: formData.earnText || '',
+          redeem_reward_page_title: formData.redeemTitle || '',
+          redeem_reward_page_description: formData.redeemText || '',
+          contact_us_page_title: formData.contactTitle || '',
+          contact_us_page_description: formData.contactText || '',
+          contact_email: formData.contactEmail || '',
+          contact_phone_number: formData.contactPhone || '',
+          footer_text: formData.footerText || '',
+          business_reward_ids: formData.rewardIds,
+        };
+        await createCampaignMutation.mutateAsync(regularPayload);
+      }
+
+      setShowSuccessDialog(true);
+    } catch (error) {
+      console.error("Failed to create campaign:", error);
+      toast.error("Failed to create campaign. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDialogAcknowledge = () => {
@@ -111,8 +190,10 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
           </div>
 
           <div className="flex justify-between mt-6">
-            <Button variant="outline" onClick={onBack}>Back</Button>
-            <Button onClick={handleCreateCampaign}>Create Campaign</Button>
+            <Button variant="outline" onClick={onBack} disabled={isSubmitting}>Back</Button>
+            <Button onClick={handleCreateCampaign} disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Create Campaign'}
+            </Button>
           </div>
         </CardContent>
       </Card>

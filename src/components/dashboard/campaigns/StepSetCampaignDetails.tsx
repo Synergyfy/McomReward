@@ -46,6 +46,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   useEffect(() => {
     const from = searchParams.get('from');
     const itemName = searchParams.get('itemName');
+    const wishlistId = searchParams.get('wishlistId'); // Capture wishlistId
 
     if (from === 'wishlist' && itemName) {
       updateFormData({
@@ -54,6 +55,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           ? formData.audienceType
           : [...formData.audienceType, 'wishlist_target'],
         wishlistItemIds: [itemName],
+        wishlistAggregateId: wishlistId || undefined, // Store wishlist ID
       });
     } else if (dealName && !formData.campaignName) {
       updateFormData({

@@ -40,6 +40,27 @@ const sectorLabels: { [key: string]: string } = {
   'sec-3': 'Health & Wellness',
 }
 
+interface DisplayStatus {
+  text: string;
+  variant: 'default' | 'secondary' | 'destructive';
+}
+
+const getRewardDisplayStatus = (reward: RewardResponse): DisplayStatus => {
+  const now = new Date();
+  const expiryDate = new Date(reward.expiry_datetime);
+
+  if (expiryDate < now) {
+    return { text: 'Expired', variant: 'destructive' };
+  }
+
+  if (reward.status === 'active') {
+    return { text: 'Active', variant: 'default' };
+  } else if (reward.status === 'draft') {
+    return { text: 'Draft', variant: 'secondary' };
+  }
+  return { text: 'Unknown', variant: 'secondary' }; // Fallback
+};
+
 export default function AdminRewardsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -184,9 +205,10 @@ export default function AdminRewardsPage() {
                             </div>
                             <div>
                               <CardTitle className="text-lg">{reward.title}</CardTitle>
-                              <Badge variant={!reward.disabled ? 'default' : 'secondary'}>
-                                {!reward.disabled ? 'Active' : 'Disabled'}
-                              </Badge>
+                              {(() => {
+                                const { text, variant } = getRewardDisplayStatus(reward);
+                                return <Badge variant={variant}>{text}</Badge>;
+                              })()}
                             </div>
                           </div>
                           <div>

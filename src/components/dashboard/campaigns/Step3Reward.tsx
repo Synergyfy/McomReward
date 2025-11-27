@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SelectableRewardCard from './SelectableRewardCard';
 import { RewardResponse } from '@/services/rewards/types';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
-import { useInView } from 'react-intersection-observer';
+import { useInView } from '@/hooks/use-in-view';
 import { Loader2 } from 'lucide-react';
 
 interface Step3RewardProps {
@@ -17,7 +17,7 @@ interface Step3RewardProps {
 export default function Step3Reward({ rewardId, setRewardId, error }: Step3RewardProps) {
   const [page, setPage] = useState(1);
   const [allRewards, setAllRewards] = useState<RewardResponse[]>([]);
-  const { ref, inView } = useInView();
+  const { ref, inView } = useInView<HTMLDivElement>();
   
   const { data: rewardsData, isLoading: isLoadingRewards, isFetching } = useGetBusinessRewards(page, 10);
 
@@ -32,6 +32,11 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
         // Adjust properties if needed based on BusinessReward structure vs RewardResponse
         quantity: businessReward.quantity ?? businessReward.reward.quantity,
         pointsRequired: businessReward.pointRequired,
+        // Default values for missing properties from BusinessReward
+        type: 'standard', 
+        status: 'active',
+        expiry: new Date().toISOString(),
+        badgeLevel: [],
       }));
 
       setAllRewards((prev) => {

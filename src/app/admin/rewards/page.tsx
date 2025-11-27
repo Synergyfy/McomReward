@@ -21,23 +21,22 @@ import LoadingSpinner from '@/components/ui/Loading';
 
 
 const typeLabels: { [key: string]: string } = {
-  voucher: 'Vouchers',
-  gift_card: 'Gift Cards',
-  coupon: 'Coupons',
-  points_offer: 'Points Offers',
-  physical_product: 'Physical Products',
+  'voucher': 'Voucher',
+  'coupon': 'Coupon',
+  'physical product': 'Physical Product',
+  'digital': 'Digital',
 };
 
 const audienceLabels: { [key: string]: string } = {
-  all_businesses: 'All Businesses',
-  specific_sectors: 'Specific Sectors',
-  specific_tiers: 'Specific Tiers',
+  'all business': 'All Businesses',
+  'specific sectors': 'Specific Sectors',
+  'specific tiers': 'Specific Tiers',
 };
 
 const sectorLabels: { [key: string]: string } = {
-    'sec-1': 'Food & Dining',
-    'sec-2': 'Fashion & Beauty',
-    'sec-3': 'Health & Wellness',
+  'sec-1': 'Food & Dining',
+  'sec-2': 'Fashion & Beauty',
+  'sec-3': 'Health & Wellness',
 }
 
 export default function AdminRewardsPage() {
@@ -57,15 +56,15 @@ export default function AdminRewardsPage() {
   const groupedAndFilteredRewards = useMemo(() => {
     const filtered = rewards.filter((reward) => {
       const matchesSearch = reward.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            reward.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === 'all' || reward.type === filterType;
+        reward.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === 'all' || reward.rewardType === filterType;
       const matchesStatus = filterStatus === 'all' || reward.status === filterStatus;
       return matchesSearch && matchesType && matchesStatus;
     });
 
     // Group by type
     return filtered.reduce((acc, reward) => {
-      const group = typeLabels[reward.type] || 'Other';
+      const group = typeLabels[reward.rewardType] || 'Other';
       if (!acc[group]) {
         acc[group] = [];
       }
@@ -225,17 +224,6 @@ export default function AdminRewardsPage() {
                             <span className="font-medium text-gray-500">Created:</span>
                             <span>{new Date(reward.createdAt).toLocaleDateString()}</span>
                           </div>
-                           {/* Assuming sector and audience are part of RewardResponse or can be derived */}
-                           {/*
-                           <div className="flex justify-between">
-                            <span className="font-medium text-gray-500">Sector:</span>
-                            <span>{sectorLabels[(reward as any).sector] || 'N/A'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium text-gray-500">Audience:</span>
-                            <span className="capitalize">{audienceLabels[(reward as any).audience] || 'N/A'}</span>
-                          </div>
-                          */}
                         </div>
                       </CardContent>
                     </Card>

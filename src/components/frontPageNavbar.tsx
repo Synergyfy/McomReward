@@ -36,7 +36,7 @@ const FrontPageNavbar = () => {
     router.push('/login');
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/campaigns';
+  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/campaigns' || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;

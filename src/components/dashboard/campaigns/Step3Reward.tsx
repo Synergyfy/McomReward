@@ -18,7 +18,7 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
   const [page, setPage] = useState(1);
   const [allRewards, setAllRewards] = useState<RewardResponse[]>([]);
   const { ref, inView } = useInView<HTMLDivElement>();
-  
+
   const { data: rewardsData, isLoading: isLoadingRewards, isFetching } = useGetBusinessRewards(page, 10);
 
   // Append new rewards when data is fetched
@@ -33,7 +33,7 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
         quantity: businessReward.quantity ?? businessReward.reward.quantity,
         pointsRequired: businessReward.pointRequired,
         // Default values for missing properties from BusinessReward
-        type: 'standard', 
+        type: 'standard',
         status: 'active',
         expiry: new Date().toISOString(),
         badgeLevel: [],
@@ -86,12 +86,12 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
               />
             ))}
           </div>
-          
+
           {/* Intersection observer target for infinite scroll */}
           {rewardsData && page < (rewardsData.totalPages || 1) && (
-             <div ref={ref} className="flex justify-center py-4">
-               {isFetching && <Loader2 className="h-6 w-6 animate-spin text-gray-400" />}
-             </div>
+            <div ref={ref} className="flex justify-center py-4">
+              {isFetching && <Loader2 className="h-6 w-6 animate-spin text-gray-400" />}
+            </div>
           )}
         </div>
       ) : (
@@ -100,7 +100,7 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
           <p className="text-sm text-gray-400 mt-1">Add rewards in the Rewards Dashboard first.</p>
         </div>
       )}
-      
+
       {error && !rewardId && <p className="text-red-500 text-sm mt-4">Reward selection is required.</p>}
     </div>
   );

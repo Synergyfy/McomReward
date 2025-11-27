@@ -23,7 +23,7 @@ export interface Tier {
 export enum PlanType {
     MONTHLY = 'monthly',
     QUARTERLY = 'quarterly',
-    ANNUALLY = 'annually',
+    ANNUALLY = 'annual',
 }
 
 export enum PaymentProvider {
@@ -34,7 +34,7 @@ export enum PaymentProvider {
 // Stripe Payment Types
 export interface StripeInitiateRequest {
     tier_id: string;
-    plan_type: string; // "monthly" | "quarterly" | "annually"
+    plan_type: string; // "monthly" | "quarterly" | "annual"
     coupon_code?: string;
 }
 
@@ -53,7 +53,7 @@ export interface StripeVerifyResponse {
 // PayPal Payment Types
 export interface PayPalInitiateRequest {
     tier_id: string;
-    plan_type: string; // "monthly" | "quarterly" | "annually"
+    plan_type: string; // "monthly" | "quarterly" | "annual"
     coupon_code?: string;
 }
 

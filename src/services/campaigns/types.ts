@@ -1,3 +1,5 @@
+
+
 export interface CreateCampaignRequest {
   title: string;
   description: string;
@@ -136,11 +138,17 @@ export interface BusinessCampaign {
   campaign: PublicCampaignResponse;
 }
 
-export interface PaginatedCampaignsResponse {
-  data: PublicCampaignResponse[];
+export interface PaginationMeta {
   total: number;
   page: number;
   limit: number;
+  totalPages: number;
+  next: number | null;
+  previous: number | null;
+}
+
+export interface PaginatedCampaignsResponse extends PaginationMeta {
+  data: PublicCampaignResponse[];
 }
 
 export interface ParticipantCampaignSearchResponse {
@@ -227,18 +235,12 @@ export interface OngoingCampaign {
   participantCount: number;
 }
 
-export interface PaginatedOngoingCampaignsResponse {
+export interface PaginatedOngoingCampaignsResponse extends PaginationMeta {
   data: OngoingCampaign[];
-  total: number;
-  page: number;
-  limit: number;
 }
 
-export interface PaginatedAdminCampaignsResponse {
+export interface PaginatedAdminCampaignsResponse extends PaginationMeta {
   data: CampaignResponse[];
-  total: number;
-  page: number;
-  limit: number;
 }
 
 export interface CampaignAnalytics {
@@ -255,11 +257,8 @@ export interface CampaignAnalytics {
   redemptionRate: number;
 }
 
-export interface PaginatedCampaignAnalyticsResponse {
+export interface PaginatedCampaignAnalyticsResponse extends PaginationMeta {
   data: CampaignAnalytics[];
-  total: number;
-  page: number;
-  limit: number;
 }
 
 export interface WeeklyChartData {
@@ -310,9 +309,6 @@ export interface CustomerActivityResponseDto {
 
 }
 
-export interface PaginatedCustomerActivityResponseDto {
+export interface PaginatedCustomerActivityResponseDto extends PaginationMeta {
   data: CustomerActivityResponseDto[];
-  total: number;
-  page: number;
-  limit: number;
 }

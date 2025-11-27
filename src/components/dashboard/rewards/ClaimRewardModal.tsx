@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -10,6 +9,7 @@ import { useGetUnaddedRewards, useAddBusinessReward } from '@/services/business-
 import LoadingSpinner from '@/components/ui/Loading';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 interface ClaimRewardModalProps {
   isOpen: boolean;
@@ -17,12 +17,150 @@ interface ClaimRewardModalProps {
   onCreateFromScratch: () => void;
 }
 
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+}
+
+const Pagination = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  limit,
+  onPageChange,
+}: PaginationProps) => {
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 3; // Reduced for modal space
+    const ellipsis = <MoreHorizontal className="h-4 w-4" />;
+
+    if (totalPages <= maxVisiblePages + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+    } else {
+      items.push(
+        <Button
+          key={1}
+          variant={currentPage === 1 ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(1)}
+        >
+          1
+        </Button>
+      );
+
+      if (currentPage > 2) {
+        items.push(
+          <div
+            key="start-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+
+      if (currentPage < totalPages - 1) {
+        items.push(
+          <div
+            key="end-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      items.push(
+        <Button
+          key={totalPages}
+          variant={currentPage === totalPages ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(totalPages)}
+        >
+          {totalPages}
+        </Button>
+      );
+    }
+
+    return items;
+  };
+
+  return (
+    <div className="flex items-center justify-between mt-4 border-t pt-4">
+      <div className="text-sm text-gray-500 hidden sm:block">
+        {(currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalItems)} of {totalItems}
+      </div>
+      <div className="flex items-center space-x-2 mx-auto sm:mx-0">
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="flex items-center space-x-1">
+          {renderPaginationItems()}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default function ClaimRewardModal({
   isOpen,
   onClose,
   onCreateFromScratch,
 }: ClaimRewardModalProps) {
-  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(1, 100);
+  const [page, setPage] = useState(1);
+  const limit = 6;
+  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(page, limit);
   const addRewardMutation = useAddBusinessReward();
   const [points, setPoints] = useState<{ [key: string]: number }>({});
 
@@ -30,7 +168,7 @@ export default function ClaimRewardModal({
     if (isOpen) {
       refetch();
     }
-  }, [isOpen, refetch]);
+  }, [isOpen, refetch, page]);
 
   useEffect(() => {
     if (unaddedRewards) {
@@ -38,7 +176,7 @@ export default function ClaimRewardModal({
         acc[reward.id] = reward.pointsRequired;
         return acc;
       }, {} as { [key: string]: number });
-      setPoints(initialPoints);
+      setPoints((prev) => ({ ...prev, ...initialPoints }));
     }
   }, [unaddedRewards]);
 
@@ -128,6 +266,15 @@ export default function ClaimRewardModal({
               </Card>
             ))}
           </div>
+          {unaddedRewards && (
+             <Pagination
+                currentPage={page}
+                totalPages={unaddedRewards.totalPages || 1}
+                totalItems={unaddedRewards.total || 0}
+                limit={limit}
+                onPageChange={setPage}
+             />
+          )}
         </div>
 
         <div className="mt-6 text-center">

@@ -9,15 +9,153 @@ import {
   useGetBusinessRewards,
   useGetAllRewards,
 } from '@/services/business-reward/hooks';
-import { BusinessReward, Reward } from '@/services/business-reward/types';
+import { BusinessReward, Reward, PaginationMeta } from '@/services/business-reward/types';
 import LoadingSpinner from '@/components/ui/Loading';
 import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
 import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRewardModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
+};
+
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+}
+
+const Pagination = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  limit,
+  onPageChange,
+}: PaginationProps) => {
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    const ellipsis = <MoreHorizontal className="h-4 w-4" />;
+
+    if (totalPages <= maxVisiblePages + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+    } else {
+      items.push(
+        <Button
+          key={1}
+          variant={currentPage === 1 ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(1)}
+        >
+          1
+        </Button>
+      );
+
+      if (currentPage > 3) {
+        items.push(
+          <div
+            key="start-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+
+      if (currentPage < totalPages - 2) {
+        items.push(
+          <div
+            key="end-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      items.push(
+        <Button
+          key={totalPages}
+          variant={currentPage === totalPages ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(totalPages)}
+        >
+          {totalPages}
+        </Button>
+      );
+    }
+
+    return items;
+  };
+
+  return (
+    <div className="flex items-center justify-between mt-4 border-t pt-4">
+      <div className="text-sm text-gray-500">
+        Showing {(currentPage - 1) * limit + 1} to{' '}
+        {Math.min(currentPage * limit, totalItems)} of {totalItems} entries
+      </div>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="flex items-center space-x-1">
+          {renderPaginationItems()}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export default function BusinessRewardsPage() {
@@ -28,17 +166,22 @@ export default function BusinessRewardsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Reward | null>(null);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
 
+  // Pagination state
+  const [businessRewardsPage, setBusinessRewardsPage] = useState(1);
+  const [allRewardsPage, setAllRewardsPage] = useState(1);
+  const limit = 9; // Grid friendly limit
+
   const {
     data: businessRewardsData,
     isLoading: isLoadingBusinessRewards,
     isError: isErrorBusinessRewards,
-  } = useGetBusinessRewards(1, 10);
+  } = useGetBusinessRewards(businessRewardsPage, limit);
 
   const {
     data: allRewardsData,
     isLoading: isLoadingAllRewards,
     isError: isErrorAllRewards,
-  } = useGetAllRewards(1, 10);
+  } = useGetAllRewards(allRewardsPage, limit);
 
   const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
     setEditingReward(reward);
@@ -100,54 +243,65 @@ export default function BusinessRewardsPage() {
             <p className="text-gray-500 text-lg">No rewards found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allRewardsData?.data.map((reward: Reward) => (
-              <Card
-                key={reward.id}
-                className="flex flex-col hover:shadow-lg transition-shadow duration-200"
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-                        {reward.image && (
-                          <Image
-                            src={reward.image}
-                            alt={reward.title}
-                            layout="fill"
-                            objectFit="cover"
-                          />
-                        )}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allRewardsData?.data.map((reward: Reward) => (
+                <Card
+                  key={reward.id}
+                  className="flex flex-col hover:shadow-lg transition-shadow duration-200"
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
+                          {reward.image && (
+                            <Image
+                              src={reward.image}
+                              alt={reward.title}
+                              layout="fill"
+                              objectFit="cover"
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{reward.title}</CardTitle>
+                          <Badge
+                            variant={!reward.disabled ? 'default' : 'secondary'}
+                          >
+                            {!reward.disabled ? 'Active' : 'Expired'}
+                          </Badge>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">{reward.title}</CardTitle>
-                        <Badge
-                          variant={!reward.disabled ? 'default' : 'secondary'}
-                        >
-                          {!reward.disabled ? 'Active' : 'Expired'}
-                        </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-sm text-gray-600 mb-3">
+                      {reward.description}
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Value:</span>
+                        <span>£{reward.value}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Points:</span>
+                        <span>{reward.pointsRequired}</span>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-gray-600 mb-3">
-                    {reward.description}
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Value:</span>
-                      <span>£{reward.value}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Points:</span>
-                      <span>{reward.pointsRequired}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {allRewardsData && (
+              <Pagination
+                currentPage={allRewardsPage}
+                totalPages={allRewardsData.totalPages || 1}
+                totalItems={allRewardsData.total || 0}
+                limit={limit}
+                onPageChange={setAllRewardsPage}
+              />
+            )}
+          </>
         )}
 
         <div className="mt-12">
@@ -165,62 +319,76 @@ export default function BusinessRewardsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {businessRewardsData?.data.map((businessReward: BusinessReward) => (
-                <Card
-                  key={businessReward.id}
-                  className="flex flex-col hover:shadow-lg transition-shadow duration-200"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-                          {businessReward.reward.image && (
-                            <Image
-                              src={businessReward.reward.image}
-                              alt={businessReward.reward.title}
-                              layout="fill"
-                              objectFit="cover"
-                            />
-                          )}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {businessRewardsData?.data.map((businessReward: BusinessReward) => (
+                  <Card
+                    key={businessReward.id}
+                    className="flex flex-col hover:shadow-lg transition-shadow duration-200"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
+                            {businessReward.reward.image && (
+                              <Image
+                                src={businessReward.reward.image}
+                                alt={businessReward.reward.title}
+                                layout="fill"
+                                objectFit="cover"
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">
+                              {businessReward.reward.title}
+                            </CardTitle>
+                            <Badge
+                              variant={
+                                !businessReward.reward.disabled
+                                  ? 'default'
+                                  : 'secondary'
+                              }
+                            >
+                              {!businessReward.reward.disabled
+                                ? 'Active'
+                                : 'Expired'}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {businessReward.reward.title}
-                          </CardTitle>
-                          <Badge
-                            variant={
-                              !businessReward.reward.disabled
-                                ? 'default'
-                                : 'secondary'
-                            }
-                          >
-                            {!businessReward.reward.disabled
-                              ? 'Active'
-                              : 'Expired'}
-                          </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <p className="text-sm text-gray-600 mb-3">
+                        {businessReward.reward.description}
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Value:</span>
+                          <span>£{businessReward.reward.value}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Points:</span>
+                          <span>
+                            {businessReward.pointRequired ||
+                              businessReward.reward.pointsRequired}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-sm text-gray-600 mb-3">
-                      {businessReward.reward.description}
-                    </p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Value:</span>
-                        <span>£{businessReward.reward.value}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">Points:</span>
-                        <span>{businessReward.pointRequired || businessReward.reward.pointsRequired}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {businessRewardsData && (
+                <Pagination
+                  currentPage={businessRewardsPage}
+                  totalPages={businessRewardsData.totalPages || 1}
+                  totalItems={businessRewardsData.total || 0}
+                  limit={limit}
+                  onPageChange={setBusinessRewardsPage}
+                />
+              )}
+            </>
           )}
         </div>
 

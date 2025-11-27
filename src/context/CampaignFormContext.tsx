@@ -12,9 +12,12 @@ export interface CampaignFormData {
   audienceType: string[];
   badgeLevels?: string[];
   wishlistItemIds?: string[];
+  wishlistAggregateId?: string; // Added field for wishlist aggregate ID
   campaignMessage: string;
   imageUrl: string;
+  imageFile?: File | null; // Added to store the file object
   logoUrl: string;
+  logoFile?: File | null; // Added to store the file object
   ctaButtonText: 'Claim Reward' | 'Join Now' | 'Refer & Earn';
   distributionChannels: {
     qrCode: boolean;
@@ -61,9 +64,12 @@ const defaultFormData: CampaignFormData = {
   audienceType: [],
   badgeLevels: [],
   wishlistItemIds: [],
+  wishlistAggregateId: undefined,
   campaignMessage: '',
   imageUrl: '',
+  imageFile: null,
   logoUrl: '',
+  logoFile: null,
   ctaButtonText: 'Claim Reward',
   distributionChannels: {
     qrCode: false,

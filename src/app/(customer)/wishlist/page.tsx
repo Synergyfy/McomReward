@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { WishlistItemCard, WishlistItem as CardWishlistItem } from "@/components/customer/wishlist/WishlistItemCard";
-import { WishlistModal } from '@/components/customer/wishlist/WishlistModal';
+import { WishlistModal, WishlistFormValues } from '@/components/customer/wishlist/WishlistModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useGetMyWishlist, useCreateWishlistItem, useUpdateWishlistItem, useDeleteWishlistItem } from '@/services/wishlist/hook';
@@ -78,21 +78,7 @@ export default function WishlistPage() {
     }
   };
 
-  const handleSave = async (item: Omit<CardWishlistItem, 'id'> | CardWishlistItem | {
-      id?: string;
-      name: string;
-      category: string;
-      priority: string;
-      occasion?: string;
-      targetDate?: string;
-      consent: boolean;
-      imageUrl?: string;
-      isForThirdParty?: boolean;
-      recipientName?: string;
-      recipientEmail?: string;
-      recipientPhone?: string;
-      relationship?: 'FATHER' | 'MOTHER' | 'BROTHER' | 'SISTER' | 'HUSBAND' | 'WIFE' | 'OTHERS';
-  }) => {
+  const handleSave = async (item: WishlistFormValues) => {
     // We expect the Modal to pass us a valid `categoryId` in the `category` field now.
     // Or we expect `item.category` to be the ID.
     
@@ -114,15 +100,15 @@ export default function WishlistPage() {
         targetDate: item.targetDate,
         priority: item.priority.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH',
         marketingConsent: item.consent,
-        isForThirdParty: 'isForThirdParty' in item ? item.isForThirdParty || false : false,
-        recipientName: 'recipientName' in item ? item.recipientName : undefined,
-        recipientEmail: 'recipientEmail' in item ? item.recipientEmail : undefined,
-        recipientPhone: 'recipientPhone' in item ? item.recipientPhone : undefined,
-        relationship: 'relationship' in item ? item.relationship : undefined
+        isForThirdParty: item.isForThirdParty || false,
+        recipientName: item.recipientName,
+        recipientEmail: item.recipientEmail,
+        recipientPhone: item.recipientPhone,
+        relationship: item.relationship
     };
 
     try {
-        if ('id' in item && item.id) {
+        if (item.id) {
             // Edit mode
             const updateDto: UpdateWishlistDto = payload;
             await updateWishlist({ id: item.id, data: updateDto });

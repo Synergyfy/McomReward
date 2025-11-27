@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle, Pencil } from 'lucide-react';
+import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns } from '@/services/campaigns/hook';
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
@@ -21,16 +21,154 @@ const currentUser = {
   plan: 'starter', // 'starter', 'co-branded', 'white-label'
 };
 
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+}
+
+const Pagination = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  limit,
+  onPageChange,
+}: PaginationProps) => {
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    const ellipsis = <MoreHorizontal className="h-4 w-4" />;
+
+    if (totalPages <= maxVisiblePages + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+    } else {
+      items.push(
+        <Button
+          key={1}
+          variant={currentPage === 1 ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(1)}
+        >
+          1
+        </Button>
+      );
+
+      if (currentPage > 3) {
+        items.push(
+          <div
+            key="start-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={currentPage === i ? 'default' : 'outline'}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => onPageChange(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
+
+      if (currentPage < totalPages - 2) {
+        items.push(
+          <div
+            key="end-ellipsis"
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
+          >
+            {ellipsis}
+          </div>
+        );
+      }
+
+      items.push(
+        <Button
+          key={totalPages}
+          variant={currentPage === totalPages ? 'default' : 'outline'}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(totalPages)}
+        >
+          {totalPages}
+        </Button>
+      );
+    }
+
+    return items;
+  };
+
+  return (
+    <div className="flex items-center justify-between mt-8 border-t pt-4">
+      <div className="text-sm text-gray-500 hidden sm:block">
+        Showing {(currentPage - 1) * limit + 1} to{' '}
+        {Math.min(currentPage * limit, totalItems)} of {totalItems} entries
+      </div>
+      <div className="flex items-center space-x-2 mx-auto sm:mx-0">
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="flex items-center space-x-1">
+          {renderPaginationItems()}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default function CampaignsListPage() {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [createdPage, setCreatedPage] = useState(1);
+  const [claimedPage, setClaimedPage] = useState(1);
+  const limit = 9; // Changed to 9 to match grid layout (3 cols)
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedCampaignId, setCopiedCampaignId] = useState<string | null>(null);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
-  const { data: createdCampaignsData, isLoading: isLoadingCreated } = useGetMyCreatedCampaigns(page, limit);
-  const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(page, limit);
+  const { data: createdCampaignsData, isLoading: isLoadingCreated } = useGetMyCreatedCampaigns(createdPage, limit);
+  const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(claimedPage, limit);
 
   const handleCopyLink = (campaignId: string) => {
     const campaignUrl = `${window.location.origin}/campaigns/${campaignId}`;
@@ -261,57 +399,25 @@ export default function CampaignsListPage() {
             <TabsContent value="created">
               {renderCampaigns(filteredCreatedCampaigns, isLoadingCreated)}
               {createdCampaignsData && createdCampaignsData.total > 0 && (
-                <div className="flex justify-center items-center space-x-4 mt-8">
-                  <Button
-                    onClick={() => setPage(page - 1)}
-                    disabled={page <= 1}
-                    variant="outline"
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-gray-600">
-                    Page {createdCampaignsData.page} of{' '}
-                    {Math.ceil(createdCampaignsData.total / createdCampaignsData.limit)}
-                  </span>
-                  <Button
-                    onClick={() => setPage(page + 1)}
-                    disabled={
-                      page >=
-                      Math.ceil(createdCampaignsData.total / createdCampaignsData.limit)
-                    }
-                    variant="outline"
-                  >
-                    Next
-                  </Button>
-                </div>
+                <Pagination
+                  currentPage={createdPage}
+                  totalPages={createdCampaignsData.totalPages || 1}
+                  totalItems={createdCampaignsData.total || 0}
+                  limit={limit}
+                  onPageChange={setCreatedPage}
+                />
               )}
             </TabsContent>
             <TabsContent value="claimed">
               {renderCampaigns(filteredClaimedCampaigns, isLoadingClaimed)}
               {claimedCampaignsData && claimedCampaignsData.total > 0 && (
-                <div className="flex justify-center items-center space-x-4 mt-8">
-                  <Button
-                    onClick={() => setPage(page - 1)}
-                    disabled={page <= 1}
-                    variant="outline"
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-gray-600">
-                    Page {claimedCampaignsData.page} of{' '}
-                    {Math.ceil(claimedCampaignsData.total / claimedCampaignsData.limit)}
-                  </span>
-                  <Button
-                    onClick={() => setPage(page + 1)}
-                    disabled={
-                      page >=
-                      Math.ceil(claimedCampaignsData.total / claimedCampaignsData.limit)
-                    }
-                    variant="outline"
-                  >
-                    Next
-                  </Button>
-                </div>
+                <Pagination
+                  currentPage={claimedPage}
+                  totalPages={claimedCampaignsData.totalPages || 1}
+                  totalItems={claimedCampaignsData.total || 0}
+                  limit={limit}
+                  onPageChange={setClaimedPage}
+                />
               )}
             </TabsContent>
           </Tabs>

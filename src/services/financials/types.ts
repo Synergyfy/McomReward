@@ -1,4 +1,27 @@
 
+export interface TierQuotas {
+  maxActiveCampaigns: number;
+  maxRewardsPerCampaign: number;
+  monthlyPointsAllowance: number;
+}
+
+export interface TierFeatureFlags {
+  canCreateCampaignFromScratch: boolean;
+  canEditAdminTemplates: boolean;
+  hasAccessToAdvancedAnalytics: boolean;
+  hasAccessToCRM: boolean;
+}
+
+export interface TierProgressBonuses {
+  [key: string]: number;
+}
+
+export interface TierConfiguration {
+  quotas: TierQuotas;
+  featureFlags: TierFeatureFlags;
+  progressBonuses?: TierProgressBonuses;
+}
+
 export interface Tier {
   id: string;
   createdAt: string;
@@ -19,6 +42,7 @@ export interface Tier {
   qrCodeCount: number;
   description?: string;
   includesNfc?: boolean;
+  configuration: TierConfiguration;
 }
 
 export interface TierCreateInput {
@@ -27,6 +51,7 @@ export interface TierCreateInput {
   quaterly_price: number;
   annual_price: number;
   features: string[];
+  configuration: TierConfiguration;
 }
 
 export interface TierUpdateInput {
@@ -35,6 +60,7 @@ export interface TierUpdateInput {
   quaterly_price?: number;
   annual_price?: number;
   features?: string[];
+  configuration?: TierConfiguration;
 }
 
 // Membership and Payment history types returned by `/payment-history` endpoint

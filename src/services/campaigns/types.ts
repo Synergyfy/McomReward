@@ -1,17 +1,4 @@
-import {
-  CreateCampaignRequest,
-  CreateCampaignPayload,
-  CampaignResponse,
-  PaginatedCampaignsResponse,
-  BusinessCampaign,
-  PaginatedCampaignAnalyticsResponse,
-  DetailedCampaignAnalytics,
-  PaginatedAdminCampaignsResponse,
-  PaginatedCustomerActivityResponseDto,
-  PaginatedOngoingCampaignsResponse,
-  OngoingCampaign,
-  ParticipantCampaignSearchResponse,
-} from './types';
+
 
 export interface CreateCampaignRequest {
   title: string;

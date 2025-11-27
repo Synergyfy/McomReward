@@ -26,7 +26,7 @@ import { Category } from '@/services/wishlist/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface WishlistFormValues {
+export interface WishlistFormValues {
   id?: string;
   name: string;
   category: string;
@@ -39,7 +39,7 @@ interface WishlistFormValues {
   recipientName?: string;
   recipientEmail?: string;
   recipientPhone?: string;
-  relationship?: string;
+  relationship?: 'FATHER' | 'MOTHER' | 'BROTHER' | 'SISTER' | 'HUSBAND' | 'WIFE' | 'OTHERS';
 }
 
 interface WishlistModalProps {
@@ -240,6 +240,24 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
         finalImageUrl = imagePreviewUrl || ''; // Fallback if editing and existing image
     }
 
+    let finalRelationship: WishlistFormValues['relationship'] = undefined;
+    if (wishlistFor === 'family') {
+        if (relationship === 'other') {
+            finalRelationship = 'OTHERS';
+        } else {
+            // Ensure the value is one of the allowed types. 
+            // The select values are lowercase, so we uppercase them.
+            const upper = relationship.toUpperCase();
+            if (['FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'HUSBAND', 'WIFE', 'OTHERS'].includes(upper)) {
+                finalRelationship = upper as WishlistFormValues['relationship'];
+            } else {
+                finalRelationship = 'OTHERS';
+            }
+        }
+    } else if (wishlistFor === 'friend') {
+        finalRelationship = 'OTHERS';
+    }
+
     const newItem: WishlistFormValues = {
       ...(itemToEdit || {}),
       name,
@@ -254,7 +272,7 @@ export const WishlistModal = ({ isOpen, onClose, onSave, itemToEdit, itemName }:
       recipientName: wishlistFor === 'myself' ? undefined : (wishlistFor === 'friend' ? friendName : 'Family Member'),
       recipientEmail: wishlistFor === 'myself' ? myEmail : (contactMethods.email ? friendEmail : undefined),
       recipientPhone: wishlistFor !== 'myself' && contactMethods.phone ? friendPhone : undefined,
-      relationship: wishlistFor === 'family' ? relationship.toUpperCase() : (wishlistFor === 'friend' ? 'OTHERS' : undefined),
+      relationship: finalRelationship,
     };
     onSave(newItem);
     onClose();

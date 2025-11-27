@@ -14,13 +14,7 @@ import DateTimePicker from './datePicker';
 import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
-
-// Mock data (replace with actual API calls later)
-const mockRewards = [
-  { id: '1', title: 'Summer Voucher ($50)' },
-  { id: '2', title: 'Gift Card (00)' },
-  { id: '3', title: 'Discount Coupon (20% off)' },
-];
+import { useGetBusinessRewards } from '@/services/business-reward/hooks';
 
 const mockWishlistInsights = [
   { itemName: 'Gourmet Burger', category: 'Food', estimatedCount: 124 },
@@ -42,6 +36,14 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
   const dealName = searchParams.get('dealName');
+
+  // Fetch rewards using the hook
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100); // Fetching first 100 for now
+
+  const rewardOptions = rewardsData?.data.map(r => ({
+    value: r.reward.id,
+    label: r.reward.title
+  })) || [];
 
   useEffect(() => {
     const from = searchParams.get('from');
@@ -71,14 +73,14 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     if (formData.logoUrl) setLogoPreviewUrl(formData.logoUrl);
   }, [formData.imageUrl, formData.logoUrl]);
 
-  const handleFileSelect = (_: File | null, previewUrl: string | null) => {
+  const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setImagePreviewUrl(previewUrl);
-    updateFormData({ imageUrl: previewUrl || '' });
+    updateFormData({ imageUrl: previewUrl || '', imageFile: file });
   };
 
-  const handleLogoSelect = (_: File | null, previewUrl: string | null) => {
+  const handleLogoSelect = (file: File | null, previewUrl: string | null) => {
     setLogoPreviewUrl(previewUrl);
-    updateFormData({ logoUrl: previewUrl || '' });
+    updateFormData({ logoUrl: previewUrl || '', logoFile: file });
   };
 
   const handleNextClick = () => {
@@ -126,7 +128,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           {/* Rewards to Attach */}
           <div>
             <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
-            <Select isMulti options={toSelectOptions(mockRewards.map(r => r.title))} value={toSelectOptions(formData.rewardIds)} onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })} styles={errors.rewardIds ? selectErrorStyle : {}} />
+            <Select
+              isMulti
+              options={rewardOptions}
+              value={rewardOptions.filter(opt => formData.rewardIds.includes(opt.value))}
+              onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })}
+              styles={errors.rewardIds ? selectErrorStyle : {}}
+              placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
+              isDisabled={isLoadingRewards}
+            />
             <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
           </div>
 
@@ -201,7 +211,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           {/* CTA Button */}
           <div>
             <Label htmlFor="ctaButtonText">CTA Button</Label>
-            <Select options={[{value: 'Claim Reward', label: 'Claim Reward'}, {value: 'Join Now', label: 'Join Now'}, {value: 'Refer & Earn', label: 'Refer & Earn'}]} value={{value: formData.ctaButtonText, label: formData.ctaButtonText}} onChange={(opt) => updateFormData({ ctaButtonText: opt?.value || 'Claim Reward' })} styles={errors.ctaButtonText ? selectErrorStyle : {}} />
+            <Select options={[{ value: 'Claim Reward', label: 'Claim Reward' }, { value: 'Join Now', label: 'Join Now' }, { value: 'Refer & Earn', label: 'Refer & Earn' }]} value={{ value: formData.ctaButtonText, label: formData.ctaButtonText }} onChange={(opt) => updateFormData({ ctaButtonText: opt?.value || 'Claim Reward' })} styles={errors.ctaButtonText ? selectErrorStyle : {}} />
             <p className="text-sm text-gray-500 mt-1">The call-to-action text for the button.</p>
           </div>
 

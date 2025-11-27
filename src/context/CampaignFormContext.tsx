@@ -15,7 +15,9 @@ export interface CampaignFormData {
   wishlistAggregateId?: string; // Added field for wishlist aggregate ID
   campaignMessage: string;
   imageUrl: string;
+  imageFile?: File | null; // Added to store the file object
   logoUrl: string;
+  logoFile?: File | null; // Added to store the file object
   ctaButtonText: 'Claim Reward' | 'Join Now' | 'Refer & Earn';
   distributionChannels: {
     qrCode: boolean;
@@ -65,7 +67,9 @@ const defaultFormData: CampaignFormData = {
   wishlistAggregateId: undefined,
   campaignMessage: '',
   imageUrl: '',
+  imageFile: null,
   logoUrl: '',
+  logoFile: null,
   ctaButtonText: 'Claim Reward',
   distributionChannels: {
     qrCode: false,

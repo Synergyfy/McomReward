@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCampaignForm } from '@/context/CampaignFormContext';
-import { Calendar, Users, Gift, Tag, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import CampaignDetailPagePreview from './previews/CampaignDetailPagePreview';
@@ -33,18 +33,11 @@ interface StepProps {
   onBack: () => void;
 }
 
-// Mock rewards data (should be fetched from API)
-const mockRewards = [
-  { id: '1', title: 'Summer Voucher ($50)', image: 'https://via.placeholder.com/150' },
-  { id: '2', title: 'Gift Card ($100)', image: 'https://via.placeholder.com/150' },
-  { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
-];
-
 export default function StepReviewAndCreate({ onBack }: StepProps) {
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail'); // State for managing active preview tab
+  const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createCampaignMutation = useCreateCampaign();
@@ -53,54 +46,96 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const handleCreateCampaign = async () => {
     setIsSubmitting(true);
     try {
+      let bannerUrl = formData.imageUrl;
+      let logoUrl = formData.logoUrl;
+
+      // Upload Banner if file exists
+      if (formData.imageFile) {
+        const bannerFormData = new FormData();
+        bannerFormData.append('file', formData.imageFile);
+        bannerFormData.append('folder', 'campaigns'); // Add folder if needed by API
+        const bannerRes = await fetch('/api/upload/campaigns', {
+          method: 'POST',
+          body: bannerFormData,
+        });
+        if (!bannerRes.ok) throw new Error('Failed to upload banner');
+        const bannerData = await bannerRes.json();
+        bannerUrl = bannerData.secure_url;
+      }
+
+      // Upload Logo if file exists
+      if (formData.logoFile) {
+        const logoFormData = new FormData();
+        logoFormData.append('file', formData.logoFile);
+        logoFormData.append('folder', 'campaigns'); // Add folder if needed by API
+        const logoRes = await fetch('/api/upload/campaigns', {
+          method: 'POST',
+          body: logoFormData,
+        });
+        if (!logoRes.ok) throw new Error('Failed to upload logo');
+        const logoData = await logoRes.json();
+        logoUrl = logoData.secure_url;
+      }
+
+      const campaignTypeMap: Record<string, string> = {
+        'QR Code': 'qr_code',
+        'Referral': 'referral',
+        'Social / Email': 'social_or_email',
+        'Special Occasion': 'special_occasion'
+      };
+
+      const audienceTypeMap: Record<string, string> = {
+        'members': 'members',
+        'badge_level': 'badge_level',
+        'wishlist_target': 'target_wishlist'
+      };
+
       if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
         // Create campaign from wishlist
         const wishlistPayload: CreateCampaignFromWishlistDto = {
           wishlistAggregateId: formData.wishlistAggregateId,
           name: formData.campaignName,
-          campaign_type: formData.campaignType.toUpperCase(),
+          campaign_type: campaignTypeMap[formData.campaignType] || 'qr_code',
           campaign_message: formData.campaignMessage,
           start_date: formData.startDate?.toISOString() || new Date().toISOString(),
           end_date: formData.endDate?.toISOString() || new Date().toISOString(),
           quantity: Number(formData.rewardsAvailable) || 0,
-          audience_type: 'ALL', // Or specific audience type for wishlist if needed
-          banner_url: formData.imageUrl,
-          logo_url: formData.logoUrl,
+          audience_type: 'target_wishlist',
+          banner_url: bannerUrl || '',
+          logo_url: logoUrl || '',
           cta_text: formData.ctaButtonText,
           cta_background_color: formData.ctaBgColor,
           cta_text_color: formData.ctaTextColor,
           text_color: formData.bgColorTextColor,
           background_color: formData.bgColor,
-          signUpPoint: 0, // Default or from form if available
-          reward_type: 'REGULAR', // Default
-          regular_points_threshold: 0, // Default
-          matching_points_threshold: 0, // Default
+          signUpPoint: 0,
+          reward_type: 'regular',
+          regular_points_threshold: 0,
+          matching_points_threshold: 0,
           business_reward_ids: formData.rewardIds,
-          reward_ids: [], // Assuming admin rewards are separate or mixed
+          reward_ids: [],
         };
 
         await createCampaignFromWishlistMutation.mutateAsync(wishlistPayload);
       } else {
         // Create regular campaign
-        // Note: You need to map formData to CreateCampaignPayload correctly
-        // This is a simplified mapping, ensure all fields match your DTO
         const regularPayload: CreateCampaignPayload = {
           name: formData.campaignName,
-          campaign_type: formData.campaignType.toUpperCase(),
+          campaign_type: campaignTypeMap[formData.campaignType] || 'qr_code',
           campaign_message: formData.campaignMessage,
           start_date: formData.startDate?.toISOString() || new Date().toISOString(),
           end_date: formData.endDate?.toISOString() || new Date().toISOString(),
           quantity: Number(formData.rewardsAvailable) || 0,
-          audience_type: formData.audienceType.join(','), // Adjust format as needed
+          audience_type: formData.audienceType.map(t => audienceTypeMap[t] || t).join(','),
           signUpPoint: 0,
-          banner_url: formData.imageUrl,
-          logo_url: formData.logoUrl,
+          banner_url: bannerUrl || '',
+          logo_url: logoUrl || '',
           cta_text: formData.ctaButtonText,
           cta_background_color: formData.ctaBgColor,
           cta_text_color: formData.ctaTextColor,
           text_color: formData.bgColorTextColor,
           background_color: formData.bgColor,
-          reward_type: 'REGULAR',
+          reward_type: 'regular',
           regular_points_threshold: 0,
           matching_points_threshold: 0,
           earn_point_page_title: formData.earnTitle || '',
@@ -131,8 +166,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
     resetFormData();
     router.push('/dashboard/campaigns');
   };
-
-  const selectedRewards = mockRewards.filter(r => formData.rewardIds.includes(r.id));
 
   return (
     <>

@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from 'dompurify';
 import { isAxiosError } from 'axios';
 import React, { use } from 'react';
 import { Button } from "@/components/ui/button";
@@ -98,9 +99,11 @@ export default function CampaignDetailPage({ params }: PageProps) {
 
             <div className="flex-1 text-white">
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
-                  {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
-                </Badge>
+                {campaign.campaignType !== 'QR_CODE' && (
+                  <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
+                    {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
+                  </Badge>
+                )}
                 {campaign.audienceType && (
                   <Badge variant="secondary" className="px-3 py-1 text-sm uppercase tracking-wide bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-sm">
                     {campaign.audienceType}
@@ -110,9 +113,10 @@ export default function CampaignDetailPage({ params }: PageProps) {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 drop-shadow-xl">
                 {campaign.name}
               </h1>
-              <p className="text-lg md:text-xl text-gray-200 max-w-2xl line-clamp-2 drop-shadow-md">
-                {campaign.campaignMessage || campaign.tagline || 'Join this exclusive campaign to earn rewards!'}
-              </p>
+              <div
+                className="text-lg md:text-xl text-gray-200 max-w-2xl line-clamp-2 drop-shadow-md"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(campaign.campaignMessage || campaign.tagline || 'Join this exclusive campaign to earn rewards!') }}
+              />
             </div>
 
             {/* Desktop Join Button (Hero) */}

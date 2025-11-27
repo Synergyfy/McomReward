@@ -48,6 +48,7 @@ export interface BusinessLoginResponse {
   accessToken: string;
   refreshToken: string;
   user: {
+    name: string;
     role: string;
     isOnboarded: boolean;
   };

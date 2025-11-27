@@ -41,6 +41,8 @@ export const useAuth = () => {
   return useMutation({
     mutationFn: login,
     onSuccess: (data) => {
+      localStorage.setItem('userRole', data.user.role);
+      localStorage.setItem('userName', data.user.name);
       Cookies.set('access', data.accessToken);
       Cookies.set('refresh', data.refreshToken);
       setBearerToken(data.accessToken);
@@ -139,6 +141,8 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
   return useMutation({
     mutationFn: businessSignIn,
     onSuccess: (data) => {
+      localStorage.setItem('userRole', data.user.role);
+      localStorage.setItem('userName', data.user.name);
       Cookies.set('access', data.accessToken);
       Cookies.set('refresh', data.refreshToken);
       setBearerToken(data.accessToken);

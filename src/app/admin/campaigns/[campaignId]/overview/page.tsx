@@ -4,13 +4,9 @@ import React from 'react';
 import { useParams } from 'next/navigation';
 import { useGetCampaignById } from '@/services/campaigns/hook';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import {
-  Calendar, Tag, Info, Gift, Users, Trophy,
-  LayoutTemplate, Palette, Phone, Mail, Globe,
-  CreditCard, Coins, Type
-} from "lucide-react";
+import { Calendar, Info, Users, Gift } from "lucide-react";
 import LoadingSpinner from '@/components/ui/Loading';
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
@@ -26,21 +22,36 @@ export default function CampaignOverviewPage() {
   }
 
   if (isError || !campaign) {
-    return <p className="text-center text-lg text-red-500 py-20">Campaign not found.</p>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Campaign Not Found</h2>
+          <p className="text-gray-600 mb-6">We couldn't load the campaign details. It might have ended or been removed.</p>
+          <Link href="/admin/campaigns">
+            <Button variant="outline">Return to Campaigns</Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
+  // Fallback image if bannerUrl is missing or fails
+  const bannerImage = campaign.bannerUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20">
+    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24">
       {/* Hero Section */}
-      <div className="relative h-[400px] w-full overflow-hidden group">
+      <div className="relative h-[450px] md:h-[550px] w-full overflow-hidden group">
         <Image
-          src={campaign.bannerUrl || 'https://via.placeholder.com/1920x600?text=No+Banner'}
-          alt={campaign.name}
+          src={bannerImage}
+          alt={campaign.name || 'Campaign Banner'}
           layout="fill"
           objectFit="cover"
           className="brightness-50 transition-transform duration-700 group-hover:scale-105"
+          priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end pb-12 px-6 md:px-16">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end pb-16 px-6 md:px-16">
           <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-end md:items-center gap-8">
             {/* Logo Overlay */}
             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white">
@@ -61,42 +72,47 @@ export default function CampaignOverviewPage() {
             <div className="flex-1 text-white">
               <div className="flex flex-wrap items-center gap-3 mb-3">
                 <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
-                  {campaign.campaignType?.replace('_', ' ')}
+                  {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
                 </Badge>
+                {campaign.audienceType && (
+                  <Badge variant="secondary" className="px-3 py-1 text-sm uppercase tracking-wide bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-sm">
+                    {campaign.audienceType}
+                  </Badge>
+                )}
                 {campaign.disabled && (
                   <Badge variant="destructive" className="px-3 py-1 text-sm uppercase tracking-wide">
                     Disabled
                   </Badge>
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-3 drop-shadow-xl">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 drop-shadow-xl">
                 {campaign.name}
               </h1>
-              <p className="text-lg text-gray-200 max-w-2xl line-clamp-2">
-                {campaign.campaignMessage}
+              <p className="text-lg md:text-xl text-gray-200 max-w-2xl line-clamp-2 drop-shadow-md">
+                {campaign.campaignMessage || 'Join this exclusive campaign to earn rewards!'}
               </p>
             </div>
 
-            {/* CTA Preview */}
+            {/* Admin Controls Placeholder (Optional) */}
             <div className="hidden md:block shrink-0">
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
-                <p className="text-white/80 text-xs mb-2 uppercase font-semibold tracking-wider text-center">CTA Preview</p>
+              <Link href={`/admin/campaigns/${campaignId}/edit`}>
                 <Button
-                  className="shadow-lg text-lg px-8 py-6 transition-transform hover:scale-105 bg-orange-600 hover:bg-orange-700 text-white"
+                  variant="secondary"
+                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md"
                 >
-                  {campaign.ctaText || 'Claim Reward'}
+                  Edit Campaign
                 </Button>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-10 space-y-12">
 
-        {/* Quick Stats / Info Grid */}
+        {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white shadow-lg border-none">
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-full text-blue-600">
                 <Calendar className="w-6 h-6" />
@@ -107,7 +123,7 @@ export default function CampaignOverviewPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-lg border-none">
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-full text-blue-600">
                 <Calendar className="w-6 h-6" />
@@ -118,7 +134,7 @@ export default function CampaignOverviewPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-lg border-none">
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-purple-100 rounded-full text-purple-600">
                 <Users className="w-6 h-6" />
@@ -129,223 +145,92 @@ export default function CampaignOverviewPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-lg border-none">
+          <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-shadow duration-300">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-full text-green-600">
                 <Gift className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Quantity</p>
-                <p className="text-sm font-semibold text-gray-900">{campaign.quantity > 0 ? campaign.quantity : 'Unlimited'}</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Availability</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {campaign.quantity > 0 ? `${campaign.quantity} Spots` : 'Unlimited'}
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-12">
 
-          {/* Left Column: Configuration Details */}
-          <div className="lg:col-span-2 space-y-8">
+            {/* About Section */}
+            <section>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <Info className="w-8 h-8 text-orange-600" />
+                About This Campaign
+              </h2>
+              <div className="prose prose-lg text-gray-600 max-w-none leading-relaxed">
+                {/* Render HTML if it looks like HTML, otherwise just text */}
+                {/<[a-z][\s\S]*>/i.test(campaign.campaignMessage) ? (
+                  <div dangerouslySetInnerHTML={{ __html: campaign.campaignMessage }} />
+                ) : (
+                  <p>{campaign.campaignMessage}</p>
+                )}
+              </div>
+            </section>
 
-            {/* Points Configuration */}
-            <Card className="border-none shadow-md overflow-hidden">
-              <CardHeader className="bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-orange-600" />
-                  <CardTitle className="text-lg font-bold text-gray-800">Points Configuration</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Reward Type</p>
-                  <p className="font-medium text-gray-900 capitalize">{campaign.rewardType}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Sign Up Bonus</p>
-                  <p className="font-medium text-gray-900">{campaign.signUpPoint} Points</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Regular Threshold</p>
-                  <p className="font-medium text-gray-900">{campaign.regularPointsThreshold} Points</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Matching Threshold</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900">{campaign.matchingPointsThreshold} Points</p>
-                    {campaign.matchingPointsDisabledByAdmin && (
-                      <Badge variant="outline" className="text-xs text-red-500 border-red-200">Disabled by Admin</Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Page Content Configuration */}
-            <Card className="border-none shadow-md overflow-hidden">
-              <CardHeader className="bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <LayoutTemplate className="w-5 h-5 text-blue-600" />
-                  <CardTitle className="text-lg font-bold text-gray-800">Page Content Settings</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 divide-y divide-gray-100">
-                {/* Earn Points Page */}
-                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-yellow-500" /> Earn Points Page
-                    </h4>
-                    <Link href={`/admin/campaigns/${campaignId}/earn-points`}>
-                      <Button variant="outline" size="sm" className="text-xs h-8">
-                        View Page
-                      </Button>
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                      <p className="text-sm text-gray-800">{campaign.earnPointPageTitle || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                      <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.earnPointPageDescription || '-' }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Redeem Rewards Page */}
-                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-pink-500" /> Redeem Rewards Page
-                    </h4>
-                    <Link href={`/admin/campaigns/${campaignId}/redeem-points`}>
-                      <Button variant="outline" size="sm" className="text-xs h-8">
-                        View Page
-                      </Button>
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                      <p className="text-sm text-gray-800">{campaign.redeemRewardPageTitle || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                      <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.redeemRewardPageDescription || '-' }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact Us Page */}
-                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-green-500" /> Contact Us Page
-                    </h4>
-                    <Link href={`/admin/campaigns/${campaignId}/contact-us`}>
-                      <Button variant="outline" size="sm" className="text-xs h-8">
-                        View Page
-                      </Button>
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                      <p className="text-sm text-gray-800">{campaign.contactUsPageTitle || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                      <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.contactUsPageDescription || '-' }} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      {campaign.contactEmail || 'No Email'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      {campaign.contactPhoneNumber || 'No Phone'}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Right Column: Theme & Rewards */}
+          {/* Sidebar Column: Rewards */}
           <div className="lg:col-span-1 space-y-8">
-
-            {/* Theme Preview */}
-            <Card className="border-none shadow-md overflow-hidden">
-              <CardHeader className="bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-purple-600" />
-                  <CardTitle className="text-lg font-bold text-gray-800">Theme Settings</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Background Color</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: campaign.backgroundColor }}></div>
-                    <span className="text-xs font-mono text-gray-500">{campaign.backgroundColor}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Text Color</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: campaign.textColor }}></div>
-                    <span className="text-xs font-mono text-gray-500">{campaign.textColor}</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 uppercase font-bold mb-2">Footer Text</p>
-                  <p className="text-sm text-gray-700 italic">"{campaign.footerText || 'No footer text'}"</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Rewards List */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Gift className="w-5 h-5 text-orange-600" /> Rewards ({campaign.rewards?.length || 0})
-              </h3>
-              {campaign.rewards && campaign.rewards.length > 0 ? (
-                <div className="space-y-4">
-                  {campaign.rewards.map((reward, index) => (
-                    <Card key={index} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex h-24">
-                        <div className="w-24 relative shrink-0 bg-gray-100">
-                          <Image
-                            src={reward.image}
-                            alt={reward.title}
-                            layout="fill"
-                            objectFit="cover"
-                          />
-                        </div>
-                        <div className="p-3 flex flex-col justify-center flex-1 min-w-0">
-                          <h4 className="font-bold text-gray-900 truncate">{reward.title}</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-xs font-normal">
-                              {reward.points_required} Pts
-                            </Badge>
-                            {reward.value > 0 && (
-                              <span className="text-xs text-green-600 font-medium">£{reward.value}</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-auto pt-1">Qty: {reward.quantity}</p>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-24">
+              <div className="p-6 bg-gray-50 border-b border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-orange-600" />
+                  Rewards ({campaign.rewards?.length || 0})
+                </h3>
+              </div>
+              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+                {campaign.rewards && campaign.rewards.length > 0 ? (
+                  campaign.rewards.map((reward, index) => (
+                    <div key={index} className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300">
+                      <div className="h-32 w-full relative bg-gray-100">
+                        <Image
+                          src={reward.image || 'https://placehold.co/400x300?text=Reward'}
+                          alt={reward.title}
+                          layout="fill"
+                          objectFit="cover"
+                          className="group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-white/90 text-gray-900 hover:bg-white shadow-sm backdrop-blur-sm">
+                            {reward.points_required} Pts
+                          </Badge>
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No rewards configured.</p>
-              )}
+                      <div className="p-4">
+                        <h4 className="font-bold text-gray-900 mb-1 line-clamp-1">{reward.title}</h4>
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{reward.description}</p>
+                        <div className="flex items-center justify-between">
+                          {reward.value > 0 && (
+                            <span className="text-sm font-medium text-green-600">Value: £{reward.value}</span>
+                          )}
+                          {reward.quantity > 0 && (
+                            <span className="text-xs text-gray-400">Qty: {reward.quantity}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Gift className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No rewards listed yet.</p>
+                  </div>
+                )}
+              </div>
             </div>
-
           </div>
         </div>
       </div>

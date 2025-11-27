@@ -32,15 +32,23 @@ export default function ComparisonTable() {
                 <td className="px-6 py-4 font-medium text-foreground">{feature}</td>
                 {tiers.map((tierName, tierIdx) => (
                   <td key={tierIdx} className="px-6 py-4 text-center">
-                    {includedByTier[tierName][features.indexOf(feature)] ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
-                        <Check className="w-4 h-4 text-primary" strokeWidth={3} />
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted">
-                        <Minus className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
-                      </span>
-                    )}
+                    <td key={tierIdx} className="px-6 py-4 text-center">
+                      {(() => {
+                        const value = includedByTier[tierName][features.indexOf(feature)];
+                        if (typeof value === 'string' || typeof value === 'number') {
+                          return <span className="text-sm font-medium text-gray-900">{value}</span>;
+                        }
+                        return value ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
+                            <Check className="w-4 h-4 text-primary" strokeWidth={3} />
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted">
+                            <Minus className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+                          </span>
+                        );
+                      })()}
+                    </td>
                   </td>
                 ))}
               </tr>

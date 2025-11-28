@@ -1,5 +1,5 @@
 import api, { setBearerToken } from '../api';
-import { Business, BusinessLoginDto, BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto, PaginatedResponse, Category, Subcategory, BusinessProfile } from './types';
+import { Business, BusinessLoginDto, BusinessLoginResponse, BusinessSignUpDto, CreateBusinessDto, PaginatedResponse, Category, Subcategory, BusinessProfile, UpdateBusinessProfileDto } from './types';
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -174,3 +174,21 @@ export const useGetBusinessProfile = () => {
         queryFn: getBusinessProfile,
     });
 };
+
+// Update Business Profile
+const updateBusinessProfile = async (updateData: UpdateBusinessProfileDto): Promise<BusinessProfile> => {
+    const { data } = await api.patch<BusinessProfile>('/business/profile', updateData);
+    return data;
+};
+
+export const useUpdateBusinessProfile = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateBusinessProfile,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [BUSINESS_PROFILE_QUERY_KEY] });
+        },
+    });
+};
+

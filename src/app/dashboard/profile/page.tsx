@@ -5,9 +5,9 @@ import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide
 import TierBadge, { TierName, isTierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
-import { useGetBusinessProfile } from '@/services/business/hook';
+import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
-import { BusinessProfile } from '@/services/business/types';
+import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
@@ -20,6 +20,8 @@ export default function BusinessProfilePage() {
 
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateBusinessProfile();
+
 
   useEffect(() => {
     if (profile) {
@@ -56,9 +58,34 @@ export default function BusinessProfilePage() {
   };
 
   const handleSave = () => {
-    setEditing(false);
-    // TODO: Add save logic or API call with a useUpdateBusinessProfile hook
-    console.log('Profile updated:', form);
+    const {
+      businessName,
+      whatsapp,
+      instagram,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      categoryName, // Make sure to exclude non-payload fields
+      ...restOfForm
+    } = form;
+  
+    const socialMedia = [];
+    if (whatsapp) socialMedia.push({ name: 'whatsapp', link: whatsapp });
+    if (instagram) socialMedia.push({ name: 'instagram', link: instagram });
+  
+    const payload: UpdateBusinessProfileDto = {
+      ...restOfForm,
+      name: businessName,
+      socialMedia,
+    };
+  
+    updateProfile(payload, {
+      onSuccess: () => {
+        setEditing(false);
+      },
+      onError: (error) => {
+        // Handle error (e.g., show a toast notification)
+        console.error('Failed to update profile:', error);
+      }
+    });
   };
 
   if (isLoadingProfile || isLoadingSubscription) {
@@ -119,13 +146,14 @@ export default function BusinessProfilePage() {
         {/* Edit / Save Button */}
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
+          disabled={isUpdating}
           className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${
             editing
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-orange-500 text-white hover:bg-orange-600'
-          }`}
+          } disabled:opacity-50`}
         >
-          {editing ? 'Save Changes' : 'Edit Profile'}
+          {isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>
       </div>
 

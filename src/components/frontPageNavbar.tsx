@@ -56,7 +56,7 @@ const FrontPageNavbar = () => {
     }
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/checkout' || pathname === '/faq' || pathname === '/privacy' || pathname === '/about' || pathname === '/deals' || pathname === '/campaigns' || pathname === '/terms';
+  const isSpecialPage = pathname === '/pricing' || pathname === '/reward' || pathname === '/checkout' || pathname === '/faq' || pathname === '/privacy' || pathname === '/about' || pathname === '/deals' || pathname.startsWith('/campaigns') || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;

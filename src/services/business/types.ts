@@ -73,7 +73,14 @@ export interface BusinessProfile {
   phone: string;
   address: string;
   website: string;
-  socialMedia: string[];
+  logoUrl?: string;
+  bannerUrl?: string;
+  description?: string;
+  category?: {
+    id: string;
+    name: string;
+  };
+  socialMedia: { name: string; link: string; }[];
   uniqueCode: string;
   role: string;
   referralCapacity: number;

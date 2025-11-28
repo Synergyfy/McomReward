@@ -1,31 +1,40 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide-react';
 import TierBadge from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
-
-// Mock user data for prototype
-const mockUser = {
-  plan: 'white-label', // 'starter', 'co-branded', 'white-label'
-};
+import { useGetBusinessProfile } from '@/services/business/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
+import { BusinessProfile } from '@/services/business/types';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    businessName: 'Bella’s Bakery',
-    email: 'bella@bakery.com',
-    phone: '+234 810 234 5678',
-    address: '12 Marina Road, Lagos',
-    category: 'Food & Drink',
-    description: 'Delicious pastries and desserts made fresh daily!',
-    logoUrl: 'https://images.unsplash.com/photo-1614289371518-722f2615943c?auto=format&fit=crop&w=200&q=80', // Placeholder logo
-    bannerUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80', // Placeholder banner
-    website: '',
-    whatsapp: '',
-    instagram: '',
-  });
+  const [form, setForm] = useState<Partial<BusinessProfile> & {
+    businessName?: string;
+    categoryName?: string;
+    whatsapp?: string;
+    instagram?: string;
+  }>({});
+
+  const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
+  const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
+
+  useEffect(() => {
+    if (profile) {
+      const instagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
+      const whatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+
+      setForm({
+        ...profile,
+        businessName: profile.name,
+        categoryName: profile.category?.name || 'N/A',
+        instagram,
+        whatsapp,
+      });
+    }
+  }, [profile]);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -48,9 +57,19 @@ export default function BusinessProfilePage() {
 
   const handleSave = () => {
     setEditing(false);
-    // TODO: Add save logic or API call
+    // TODO: Add save logic or API call with a useUpdateBusinessProfile hook
     console.log('Profile updated:', form);
   };
+
+  if (isLoadingProfile || isLoadingSubscription) {
+    return <div>Loading...</div>;
+  }
+
+  if (isErrorProfile || isErrorSubscription) {
+    return <div>Error loading profile data.</div>;
+  }
+
+  const plan = subscription?.tier?.name.toLowerCase() || 'starter';
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm  mt-8 p-8">
@@ -60,7 +79,7 @@ export default function BusinessProfilePage() {
           {/* Logo */}
           <div className="relative">
             <Image
-              src={form.logoUrl}
+              src={form.logoUrl || 'https://via.placeholder.com/96'}
               alt="Business Logo"
               className="w-24 h-24 rounded-full object-cover border-4 border-orange-500 shadow-md"
               width={96}
@@ -89,9 +108,9 @@ export default function BusinessProfilePage() {
           {/* Business Info */}
           <div>
             <h1 className="text-2xl font-bold text-gray-800">{form.businessName}</h1>
-            <p className="text-gray-500">{form.category}</p>
+            <p className="text-gray-500">{form.categoryName}</p>
             <div className="mt-2">
-              <TierBadge tier="Gold" />
+              <TierBadge tier={subscription?.tier?.name || "Gold"} />
             </div>
           </div>
         </div>
@@ -112,7 +131,7 @@ export default function BusinessProfilePage() {
       {/* Banner Image */}
       <div className="mb-8 relative h-48 w-full rounded-lg overflow-hidden shadow-md">
         <Image
-          src={form.bannerUrl}
+          src={form.bannerUrl || 'https://via.placeholder.com/800x200'}
           alt="Business Banner"
           layout="fill"
           objectFit="cover"
@@ -148,7 +167,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="businessName"
-            value={form.businessName}
+            value={form.businessName || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -163,8 +182,8 @@ export default function BusinessProfilePage() {
           </label>
           <input
             type="text"
-            name="category"
-            value={form.category}
+            name="categoryName"
+            value={form.categoryName || ''}
             disabled
             className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:bg-gray-50"
           />
@@ -179,7 +198,7 @@ export default function BusinessProfilePage() {
           <input
             type="email"
             name="email"
-            value={form.email}
+            value={form.email || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -195,7 +214,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="phone"
-            value={form.phone}
+            value={form.phone || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -211,7 +230,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="address"
-            value={form.address}
+            value={form.address || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -226,7 +245,7 @@ export default function BusinessProfilePage() {
           </label>
           <textarea
             name="description"
-            value={form.description}
+            value={form.description || ''}
             onChange={handleChange}
             disabled={!editing}
             rows={4}
@@ -243,7 +262,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="website"
-            value={form.website}
+            value={form.website || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -259,7 +278,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="whatsapp"
-            value={form.whatsapp}
+            value={form.whatsapp || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -275,7 +294,7 @@ export default function BusinessProfilePage() {
           <input
             type="text"
             name="instagram"
-            value={form.instagram}
+            value={form.instagram || ''}
             onChange={handleChange}
             disabled={!editing}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
@@ -284,12 +303,12 @@ export default function BusinessProfilePage() {
       </div>
 
       {/* Branding Pack Uploader - Conditionally rendered */}
-      {(mockUser.plan === 'co-branded' || mockUser.plan === 'white-label') && <BrandingManager />}
+      {(plan === 'co-branded' || plan === 'white-label') && <BrandingManager />}
 
       {/* Bottom Info */}
       <div className="mt-10 pt-6 border-t border-gray-100 text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-4">
-        <p>Joined: March 2024</p>
-        <p>Account Type: <span className="text-orange-500 font-medium">Gold Partner</span></p>
+        <p>Joined: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'N/A'}</p>
+        <p>Account Type: <span className="text-orange-500 font-medium">{subscription?.tier?.name || 'N/A'}</span></p>
       </div>
     </div>
   );

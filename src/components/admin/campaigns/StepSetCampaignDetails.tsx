@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetRewards } from '@/services/rewards/hook';
+import { useGetTiers } from '@/services/tiers/hook'; // Add this import
 
 interface RewardOption {
   value: string;

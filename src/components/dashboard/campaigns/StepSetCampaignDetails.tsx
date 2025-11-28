@@ -15,14 +15,13 @@ import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
+import { useGetTiers } from '@/services/tiers/hook'; // Import useGetTiers hook
 
 const mockWishlistInsights = [
   { itemName: 'Gourmet Burger', category: 'Food', estimatedCount: 124 },
   { itemName: 'Winter Jacket', category: 'Fashion', estimatedCount: 78 },
   { itemName: 'Wireless Headphones', category: 'Electronics', estimatedCount: 210 },
 ];
-
-const badgeLevels = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'];
 
 interface StepProps {
   onNext: () => void;
@@ -39,8 +38,13 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   // Fetch rewards using the hook
   const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100); // Fetching first 100 for now
+  const rewards = rewardsData?.data || [];
 
-  const rewardOptions = rewardsData?.data.map(r => ({
+  // Fetch tiers using the hook
+  const { data: tiersData } = useGetTiers();
+  const tiers = tiersData || [];
+
+  const rewardOptions = rewards.map(r => ({
     value: r.reward.id,
     label: r.reward.title
   })) || [];
@@ -182,7 +186,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             </div>
             <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
             {formData.audienceType.includes('badge_level') && (
-              <Select isMulti className="mt-2" options={toSelectOptions(badgeLevels)} value={toSelectOptions(formData.badgeLevels || [])} onChange={(opts) => updateFormData({ badgeLevels: opts.map(o => o.value) })} placeholder="Select badge levels..." styles={errors.badgeLevels ? selectErrorStyle : {}} />
+              <Select
+                isMulti
+                className="mt-2"
+                options={tiers.map(tier => ({ value: tier.name, label: tier.name }))}
+                value={formData.badgeLevels?.map(levelName => ({ value: levelName, label: levelName }))}
+                onChange={(opts) => updateFormData({ badgeLevels: opts.map(o => o.value) })}
+                placeholder="Select badge levels..."
+                styles={errors.badgeLevels ? selectErrorStyle : {}}
+              />
             )}
             {formData.audienceType.includes('wishlist_target') && (
               <Select isMulti className="mt-2" options={mockWishlistInsights.map(item => ({ value: item.itemName, label: `${item.itemName} (${item.estimatedCount} users)` }))} value={toSelectOptions(formData.wishlistItemIds || [])} onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })} placeholder="Select wishlist items..." styles={errors.wishlistItemIds ? selectErrorStyle : {}} />

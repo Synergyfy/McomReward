@@ -10,6 +10,7 @@ import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccess
 import { useGetPublicCampaignDetails, useGetParticipantBalance, useRedeemReward } from '@/services/customer-campaigns/hook';
 import { RewardResponse } from '@/services/rewards/types';
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
+import PublicRewardCard from '@/components/rewards/PublicRewardCard';
 
 interface PageProps {
     params: Promise<{ campaignId: string }>;
@@ -86,46 +87,16 @@ export default function RedeemPointsPage({ params }: PageProps) {
                 {/* Rewards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {campaign.rewards && campaign.rewards.length > 0 ? (
-                        campaign.rewards.map((reward) => {
-                            const canRedeem = userPoints >= reward.pointsRequired;
-                            // Calculate progress (clamped to 100)
-                            const progress = Math.min((userPoints / reward.pointsRequired) * 100, 100);
-
-                            return (
-                                <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-                                    <div className="relative h-48 w-full">
-                                        <Image
-                                            src={reward.image || '/placeholder-image.jpg'}
-                                            alt={reward.title}
-                                            layout="fill"
-                                            objectFit="cover"
-                                        />
-                                    </div>
-                                    <CardHeader>
-                                        <CardTitle className="text-2xl font-bold text-gray-800">{reward.title}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow flex flex-col justify-between">
-                                        <div>
-                                            <CardDescription className="text-lg text-gray-700 mb-4 h-20 line-clamp-3">
-                                                {reward.description}
-                                            </CardDescription>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-xl font-bold text-orange-600">{reward.pointsRequired} pts</span>
-                                                <Trophy className="h-8 w-8 text-gray-400" />
-                                            </div>
-                                            <Progress value={progress} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500" />
-                                        </div>
-                                        <Button
-                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                            disabled={!canRedeem}
-                                            onClick={() => handleRedeemClick(reward)}
-                                        >
-                                            {canRedeem ? 'Redeem' : `Requires ${reward.pointsRequired} points`}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })
+                        campaign.rewards.map((reward) => (
+                            <PublicRewardCard
+                                key={reward.id}
+                                reward={reward}
+                                userPoints={userPoints}
+                                isMember={true} // Since they are on redeem page, they are members
+                                onRedeem={() => handleRedeemClick(reward)}
+                                className="h-full"
+                            />
+                        ))
                     ) : (
                         <div className="col-span-full text-center text-gray-500">No rewards available for redemption at this time.</div>
                     )}

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useGetPublicCampaignDetails, useJoinCampaign, useCheckCampaignJoinStatus } from '@/services/customer-campaigns/hook';
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from '@/components/ui/Loading';
+import PublicRewardCard from '@/components/rewards/PublicRewardCard';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
@@ -115,16 +116,26 @@ export default function CampaignDetailPage({ params }: PageProps) {
               </p>
             </div>
 
-            {/* Desktop Join Button (Hero) */}
-            {!isMember && (
+            {/* Desktop Action Button (Hero) */}
+            {!isMember ? (
               <div className="hidden md:block shrink-0">
                 <Button
                   onClick={handleJoinClick}
                   disabled={isJoining}
                   className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-8 py-6 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border-2 border-white/20"
                 >
-                  {isJoining ? 'Joining...' : (campaign.ctaText || 'Join Campaign')}
+                  {isJoining ? 'Joining...' : 'Join Campaign'}
                 </Button>
+              </div>
+            ) : (
+              <div className="hidden md:block shrink-0">
+                <Link href="#rewards">
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-6 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border-2 border-white/20"
+                  >
+                    Claim Reward
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
@@ -244,7 +255,6 @@ export default function CampaignDetailPage({ params }: PageProps) {
                 </ul>
               </section>
             )}
-
           </div>
 
           {/* Sidebar Column: Rewards */}
@@ -256,37 +266,17 @@ export default function CampaignDetailPage({ params }: PageProps) {
                   Rewards ({campaign.rewards?.length || 0})
                 </h3>
               </div>
-              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+              <div className="p-6 space-y-6 max-h-[800px] overflow-y-auto custom-scrollbar">
                 {campaign.rewards && campaign.rewards.length > 0 ? (
                   campaign.rewards.map((reward, index) => (
-                    <div key={index} className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300">
-                      <div className="h-32 w-full relative bg-gray-100">
-                        <Image
-                          src={reward.image || 'https://placehold.co/400x300?text=Reward'}
-                          alt={reward.title}
-                          layout="fill"
-                          objectFit="cover"
-                          className="group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-white/90 text-gray-900 hover:bg-white shadow-sm backdrop-blur-sm">
-                            {reward.pointsRequired} Pts
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h4 className="font-bold text-gray-900 mb-1 line-clamp-1">{reward.title}</h4>
-                        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{reward.description}</p>
-                        <div className="flex items-center justify-between">
-                          {reward.value > 0 && (
-                            <span className="text-sm font-medium text-green-600">Value: £{reward.value}</span>
-                          )}
-                          {reward.quantity > 0 && (
-                            <span className="text-xs text-gray-400">Qty: {reward.quantity}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <PublicRewardCard
+                      key={index}
+                      reward={reward}
+                      isMember={isMember}
+                    // We don't have userPoints readily available in this context without fetching balance
+                    // But we can pass 0 or fetch it if needed. For now, let's keep it simple.
+                    // Actually, we should fetch balance if member to show progress.
+                    />
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-500">
@@ -298,10 +288,10 @@ export default function CampaignDetailPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Sticky Mobile/Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-50 md:hidden">
+      < div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-50 md:hidden" >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {isMember ? (
             <div className="flex gap-2 w-full">
@@ -310,9 +300,9 @@ export default function CampaignDetailPage({ params }: PageProps) {
                   My Points
                 </Button>
               </Link>
-              <Link href={`/campaigns/${campaignId}/redeem-points`} className="flex-1">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-lg">
-                  Redeem
+              <Link href="#rewards" className="flex-1">
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg">
+                  Claim Reward
                 </Button>
               </Link>
             </div>
@@ -322,11 +312,11 @@ export default function CampaignDetailPage({ params }: PageProps) {
               disabled={isJoining}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg py-6 rounded-xl shadow-lg"
             >
-              {isJoining ? 'Joining...' : (campaign.ctaText || 'Join Now')}
+              {isJoining ? 'Joining...' : 'Join Campaign'}
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

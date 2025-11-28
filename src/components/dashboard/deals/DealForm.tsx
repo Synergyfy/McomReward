@@ -33,8 +33,9 @@ import {
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { useCreateDeal } from '@/services/deals/hook';
 import { CreateDealDto } from '@/services/deals/types';
-import { useGetCategories, useGetSectors } from '@/services/business/hook';
+import { useGetCategories } from '@/services/business/hook';
 import { SectorSelect } from '@/components/SectorSelect';
+import { useUploadToCloudinary } from '@/services/upload/hook';
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -47,18 +48,20 @@ export default function DealForm() {
     watch,
     formState: { errors },
   } = useForm<CreateDealDto>();
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const router = useRouter();
   const [selectedSector, setSelectedSector] = useState<string>('');
 
-  const { data: categories, isLoading: isLoadingCategories } =
-    useGetCategories(selectedSector);
-  const { mutateAsync: createDeal, isPending } = useCreateDeal();
+  const { data: categories, isLoading: isLoadingCategories } = useGetCategories(selectedSector);
+  const { mutateAsync: createDeal, isPending: isCreatingDeal } = useCreateDeal();
+  const { mutateAsync: uploadImage, isPending: isUploadingImage } = useUploadToCloudinary();
 
   const currentImageUrl = watch('imageUrl');
 
   useEffect(() => {
+    // This is useful for pre-populating the form in an "edit" scenario
     if (currentImageUrl) {
       setImagePreviewUrl(currentImageUrl);
     }
@@ -66,12 +69,34 @@ export default function DealForm() {
 
   const handleImageSelect = (file: File | null, previewUrl: string | null) => {
     setImagePreviewUrl(previewUrl);
-    setValue('imageUrl', previewUrl || '', { shouldValidate: true });
+    setSelectedFile(file);
+    // Clear the field value so react-hook-form knows it's empty if no file is selected
+    setValue('imageUrl', '', { shouldValidate: !!file });
   };
 
   const onSubmit = async (data: CreateDealDto) => {
+    let finalImageUrl = data.imageUrl; // Use existing URL if any
+
+    if (selectedFile) {
+      try {
+        const uploadResult = await uploadImage({ file: selectedFile, folder: 'deals' });
+        finalImageUrl = uploadResult.secure_url;
+      } catch (error) {
+        toast.error('Image upload failed. Please try again.');
+        console.error('Cloudinary upload error:', error);
+        return; // Stop submission if upload fails
+      }
+    }
+
+    if (!finalImageUrl) {
+      toast.error('Please select an image for the deal.');
+      return;
+    }
+
+    const finalData = { ...data, imageUrl: finalImageUrl };
+
     try {
-      await createDeal(data);
+      await createDeal(finalData);
       toast.success('Deal created successfully!');
       router.push('/dashboard/deals');
     } catch (error) {
@@ -79,6 +104,8 @@ export default function DealForm() {
       console.error('Create deal error:', error);
     }
   };
+
+  const isSaving = isCreatingDeal || isUploadingImage;
 
   return (
     <TooltipProvider>
@@ -296,31 +323,26 @@ export default function DealForm() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save Deal'}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Deal'}
               </Button>
             </div>
           </form>
         </CardContent>
 
-        <Dialog
-          open={isSuccessModalOpen}
-          onOpenChange={setIsSuccessModalOpen}
-        >
+        {/* This dialog is no longer used, as we use toast notifications now */}
+        {/* Keeping it here in case it's needed for other purposes */}
+        <Dialog>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Deal Created Successfully!</DialogTitle>
+              <DialogTitle>Success!</DialogTitle>
             </DialogHeader>
             <DialogDescription>
-              Your new deal has been successfully created and is ready for
-              review.
+              This is a placeholder success dialog.
             </DialogDescription>
             <DialogFooter>
               <DialogClose asChild>
-                <Button
-                  type="button"
-                  onClick={() => setIsSuccessModalOpen(false)}
-                >
+                <Button type="button">
                   Close
                 </Button>
               </DialogClose>

@@ -58,34 +58,47 @@ export default function BusinessProfilePage() {
   };
 
   const handleSave = () => {
-    const {
-      businessName,
-      whatsapp,
-      instagram,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      categoryName, // Make sure to exclude non-payload fields
-      ...restOfForm
-    } = form;
-  
-    const socialMedia = [];
-    if (whatsapp) socialMedia.push({ name: 'whatsapp', link: whatsapp });
-    if (instagram) socialMedia.push({ name: 'instagram', link: instagram });
-  
-    const payload: UpdateBusinessProfileDto = {
-      ...restOfForm,
-      name: businessName,
-      socialMedia,
-    };
-  
-    updateProfile(payload, {
-      onSuccess: () => {
-        setEditing(false);
-      },
-      onError: (error) => {
-        // Handle error (e.g., show a toast notification)
-        console.error('Failed to update profile:', error);
-      }
-    });
+    if (!profile) return; // Should not happen if data is loaded
+
+    const payload: UpdateBusinessProfileDto = {};
+
+    // Compare simple string fields and add to payload if changed
+    if (form.businessName !== profile.name) payload.name = form.businessName;
+    if (form.email !== profile.email) payload.email = form.email;
+    if (form.phone !== profile.phone) payload.phone = form.phone;
+    if (form.address !== profile.address) payload.address = form.address;
+    if (form.description !== profile.description) payload.description = form.description;
+    if (form.website !== profile.website) payload.website = form.website;
+    if (form.logoUrl !== profile.logoUrl) payload.logoUrl = form.logoUrl;
+    if (form.bannerUrl !== profile.bannerUrl) payload.bannerUrl = form.bannerUrl;
+
+    // Compare and construct social media if changed
+    const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
+    const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+    const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
+
+    if (hasSocialChanged) {
+      const socialMedia = [];
+      if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
+      if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
+      payload.socialMedia = socialMedia;
+    }
+
+    // Only call update if there are actual changes
+    if (Object.keys(payload).length > 0) {
+      updateProfile(payload, {
+        onSuccess: () => {
+          setEditing(false);
+        },
+        onError: (error) => {
+          // TODO: Add user-facing error notification (e.g., toast)
+          console.error('Failed to update profile:', error);
+        },
+      });
+    } else {
+      // No changes, just exit editing mode
+      setEditing(false);
+    }
   };
 
   if (isLoadingProfile || isLoadingSubscription) {

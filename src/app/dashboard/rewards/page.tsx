@@ -19,6 +19,7 @@ import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateReward
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import { ChevronLeft, ChevronRight, MoreHorizontal, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
@@ -235,8 +236,9 @@ export default function BusinessRewardsPage() {
           setIsCreateModalOpen(false);
           setEditingBusinessRewardId(null);
         },
-        onError: (error: any) => {
-          const errorMessage = error?.response?.data?.message || 'Failed to update reward';
+        onError: (error: Error) => {
+          const axiosError = error as AxiosError<{ message: string }>;
+          const errorMessage = axiosError?.response?.data?.message || 'Failed to update reward';
           if (errorMessage === 'Your tier does not allow updating rewards.') {
             setTierLimitMessage(errorMessage);
             setIsTierLimitModalOpen(true);

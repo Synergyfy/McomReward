@@ -38,7 +38,7 @@ export interface CreateCampaignPayload {
   contact_email: string;
   contact_phone_number: string;
   footer_text: string;
-  business_reward_ids: string[];
+  reward_ids: string[];
 }
 
 export interface CampaignResponse {

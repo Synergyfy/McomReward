@@ -11,6 +11,7 @@ export interface TierFeatureFlags {
   canEditAdminTemplates: boolean;
   hasAccessToAdvancedAnalytics: boolean;
   hasAccessToCRM: boolean;
+  canUpdateReward: boolean;
 }
 
 export interface TierProgressBonuses {

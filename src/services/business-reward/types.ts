@@ -31,6 +31,16 @@ export interface BusinessReward {
   reward: Reward;
   createdAt: string;
   updatedAt: string;
+  title: string;
+  description: string;
+  image: string;
+  value: number;
+  disabled: boolean;
+  rewardType?: string;
+  rewardSource?: string;
+  audience?: string;
+  expiryDatetime?: string;
+  status?: string;
 }
 
 export interface GetBusinessRewardsResponse extends PaginationMeta {

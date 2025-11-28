@@ -261,9 +261,13 @@ export default function BusinessRewardsPage() {
     setEditingBusinessRewardId(businessReward.id);
     const mergedReward: Reward = {
       ...businessReward.reward,
-      pointsRequired: businessReward.pointRequired || businessReward.reward.pointsRequired,
-      quantity: businessReward.quantity || businessReward.reward.quantity || 0,
-      // Ensure other fields are correctly mapped if needed
+      title: businessReward.title,
+      description: businessReward.description,
+      image: businessReward.image,
+      value: businessReward.value,
+      disabled: businessReward.disabled,
+      pointsRequired: businessReward.pointRequired,
+      quantity: businessReward.quantity || 0,
     };
     handleOpenCreateModal(mergedReward);
   }, [handleOpenCreateModal]);
@@ -383,10 +387,10 @@ export default function BusinessRewardsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-                            {businessReward.reward.image && (
+                            {businessReward.image && (
                               <Image
-                                src={businessReward.reward.image}
-                                alt={businessReward.reward.title}
+                                src={businessReward.image}
+                                alt={businessReward.title}
                                 layout="fill"
                                 objectFit="cover"
                               />
@@ -394,16 +398,16 @@ export default function BusinessRewardsPage() {
                           </div>
                           <div>
                             <CardTitle className="text-lg">
-                              {businessReward.reward.title}
+                              {businessReward.title}
                             </CardTitle>
                             <Badge
                               variant={
-                                !businessReward.reward.disabled
+                                !businessReward.disabled
                                   ? 'default'
                                   : 'secondary'
                               }
                             >
-                              {!businessReward.reward.disabled
+                              {!businessReward.disabled
                                 ? 'Active'
                                 : 'Expired'}
                             </Badge>
@@ -421,18 +425,17 @@ export default function BusinessRewardsPage() {
                     </CardHeader>
                     <CardContent className="flex-grow">
                       <p className="text-sm text-gray-600 mb-3">
-                        {businessReward.reward.description}
+                        {businessReward.description}
                       </p>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="font-medium">Value:</span>
-                          <span>£{businessReward.reward.value}</span>
+                          <span>£{businessReward.value}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Points:</span>
                           <span>
-                            {businessReward.pointRequired ||
-                              businessReward.reward.pointsRequired}
+                            {businessReward.pointRequired}
                           </span>
                         </div>
                       </div>

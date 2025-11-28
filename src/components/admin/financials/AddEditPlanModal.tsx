@@ -32,6 +32,7 @@ const defaultConfiguration: TierConfiguration = {
     canEditAdminTemplates: false,
     hasAccessToAdvancedAnalytics: false,
     hasAccessToCRM: false,
+    canUpdateReward: false,
   },
   progressBonuses: {
     active_campaign_bonus: 0,
@@ -335,6 +336,11 @@ function FeatureFlagsSection({ flags, onChange }: { flags: Partial<TierFeatureFl
           label="CRM Access"
           checked={flags.hasAccessToCRM}
           onChange={(v) => onChange('hasAccessToCRM', v)}
+        />
+        <FeatureFlagToggle
+          label="Update Rewards"
+          checked={flags.canUpdateReward}
+          onChange={(v) => onChange('canUpdateReward', v)}
         />
       </div>
     </div>

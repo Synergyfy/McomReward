@@ -36,6 +36,8 @@ import { CreateDealDto } from '@/services/deals/types';
 import { useGetCategories } from '@/services/business/hook';
 import { SectorSelect } from '@/components/SectorSelect';
 import { useUploadToCloudinary } from '@/services/upload/hook';
+import { format, parseISO, isBefore, isValid } from 'date-fns'; // Import date-fns utilities
+
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -59,6 +61,7 @@ export default function DealForm() {
   const { mutateAsync: uploadImage, isPending: isUploadingImage } = useUploadToCloudinary();
 
   const currentImageUrl = watch('imageUrl');
+  const startDate = watch('startDate'); // Watch the start date for validation
 
   useEffect(() => {
     // This is useful for pre-populating the form in an "edit" scenario
@@ -290,6 +293,22 @@ export default function DealForm() {
                       id="endDate"
                       {...register('endDate', {
                         required: 'End date is required',
+                        validate: (value) => {
+                            if (!value || !startDate) {
+                                return true; // Let required rule handle empty values
+                            }
+                            const parsedEndDate = parseISO(value);
+                            const parsedStartDate = parseISO(startDate);
+
+                            if (!isValid(parsedEndDate)) {
+                                return 'Invalid end date';
+                            }
+                            if (!isValid(parsedStartDate)) {
+                                return 'Invalid start date';
+                            }
+
+                            return isBefore(parsedEndDate, parsedStartDate) ? 'End date cannot be before start date' : true;
+                        },
                       })}
                     />
                   </TooltipTrigger>
@@ -353,3 +372,4 @@ export default function DealForm() {
     </TooltipProvider>
   );
 }
+

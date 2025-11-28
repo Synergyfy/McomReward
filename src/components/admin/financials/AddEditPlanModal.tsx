@@ -409,7 +409,7 @@ function VariantSection({ variant, onChange, title }: { variant: TierVariant, on
     });
   };
 
-  const updatePricing = (key: keyof TierVariant, value: any) => {
+  const updatePricing = (key: keyof TierVariant, value: string | number) => {
     onChange({
       ...variant,
       [key]: value

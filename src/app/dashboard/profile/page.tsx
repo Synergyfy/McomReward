@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide-react';
-import TierBadge from "@/components/ui/tierBadge";
+import TierBadge, { TierName, isTierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
 import { useGetBusinessProfile } from '@/services/business/hook';
@@ -70,6 +70,8 @@ export default function BusinessProfilePage() {
   }
 
   const plan = subscription?.tier?.name.toLowerCase() || 'starter';
+  const tierName = subscription?.tier?.name;
+  const validTierName: TierName | undefined = tierName && isTierName(tierName) ? tierName : undefined;
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm  mt-8 p-8">
@@ -110,7 +112,7 @@ export default function BusinessProfilePage() {
             <h1 className="text-2xl font-bold text-gray-800">{form.businessName}</h1>
             <p className="text-gray-500">{form.categoryName}</p>
             <div className="mt-2">
-              <TierBadge tier={subscription?.tier?.name || "Gold"} />
+              <TierBadge tier={validTierName || "Gold"} />
             </div>
           </div>
         </div>

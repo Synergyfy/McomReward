@@ -1,11 +1,18 @@
 import { Medal, Award, Trophy, Crown } from "lucide-react";
 
-const tierIcons = {
+export const tierIcons = {
   Bronze: Medal,
   Silver: Award,
   Gold: Trophy,
   Platinum: Crown,
 };
+
+export type TierName = keyof typeof tierIcons;
+
+export const isTierName = (name: string): name is TierName => {
+  return name in tierIcons;
+};
+
 
 const tierStyles = {
   Bronze: "bg-amber-100 text-amber-700",

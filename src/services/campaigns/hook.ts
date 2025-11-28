@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 import api from '../api';
 import {
   CreateCampaignRequest,
@@ -25,10 +26,27 @@ const createCampaign = async (campaignData: CreateCampaignPayload): Promise<Camp
   return data;
 };
 
+// TODO: Add update campaign
+const updateCampaign = async (campaignData: CreateCampaignPayload): Promise<CampaignResponse> => {
+  const { data } = await api.put<CampaignResponse>('/campaigns', campaignData);
+  return data;
+};
+
 export const useCreateCampaign = () => {
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+
   return useMutation({
-    mutationFn: createCampaign,
+    mutationFn: (data: CreateCampaignPayload) => {
+      const payload = { ...data };
+      if (pathname?.includes('/dashboard/campaigns/create')) {
+        if (payload.reward_ids) {
+          payload.business_reward_ids = payload.reward_ids;
+          delete payload.reward_ids;
+        }
+      }
+      return createCampaign(payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
     },
@@ -148,23 +166,23 @@ export const useGetAdminCampaigns = (page: number = 1, limit: number = 10) => {
 
 // Get Campaign Analytics
 const getCampaignAnalytics = async (page: number, limit: number): Promise<PaginatedCampaignAnalyticsResponse> => {
-    const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
-        params: { page, limit },
-    });
-    return data;
+  const { data } = await api.get<PaginatedCampaignAnalyticsResponse>('/business/campaigns/analytics', {
+    params: { page, limit },
+  });
+  return data;
 };
 
 export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) => {
-    return useQuery<PaginatedCampaignAnalyticsResponse>({
-        queryKey: [ANALYTICS_QUERY_KEY, { page, limit }],
-        queryFn: () => getCampaignAnalytics(page, limit),
-    });
+  return useQuery<PaginatedCampaignAnalyticsResponse>({
+    queryKey: [ANALYTICS_QUERY_KEY, { page, limit }],
+    queryFn: () => getCampaignAnalytics(page, limit),
+  });
 };
 
 // Get Detailed Campaign Analytics
 const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
-    const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/analytics/${campaignId}`);
-    return data;
+  const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/analytics/${campaignId}`);
+  return data;
 };
 
 export const useGetDetailedCampaignAnalytics = (campaignId: string) => {

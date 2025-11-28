@@ -15,7 +15,7 @@ import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
 import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRewardModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Edit } from 'lucide-react';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
@@ -215,6 +215,15 @@ export default function BusinessRewardsPage() {
     setIsEditClaimedModalOpen(false);
   }, []);
 
+  const handleEditBusinessReward = useCallback((businessReward: BusinessReward) => {
+    const mergedReward: Reward = {
+      ...businessReward.reward,
+      pointsRequired: businessReward.pointRequired || businessReward.reward.pointsRequired,
+      // Ensure other fields are correctly mapped if needed
+    };
+    handleOpenCreateModal(mergedReward);
+  }, [handleOpenCreateModal]);
+
   if (isLoadingBusinessRewards || isLoadingAllRewards) {
     return <LoadingSpinner />;
   }
@@ -356,6 +365,14 @@ export default function BusinessRewardsPage() {
                             </Badge>
                           </div>
                         </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditBusinessReward(businessReward)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-grow">
@@ -419,6 +436,6 @@ export default function BusinessRewardsPage() {
           onSave={handleSaveReward}
         />
       </div>
-    </div>
+    </div >
   );
 }

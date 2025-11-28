@@ -7,6 +7,7 @@ import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Plus,
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
+import { useGetMySubscription } from '@/services/tiers/hook';
 import Loader from "@/components/ui/loader";
 import { ChartQueryDto } from "@/services/business-dashboard/types";
 
@@ -25,10 +26,13 @@ export default function BusinessDashboard() {
 
   const { data: analyticsData, isLoading: isAnalyticsLoading, isError: isAnalyticsError } = useGetGeneralAnalytics();
   const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
+  const { data: subscription, isLoading: isLoadingSubscription } = useGetMySubscription();
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
+  const tierName = subscription?.tier?.name || 'N/A';
+  const tierProgress = subscription?.tier?.progress || 0;
 
-  if (isAnalyticsLoading) {
+  if (isAnalyticsLoading || isLoadingSubscription) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
   }
 
@@ -48,7 +52,7 @@ export default function BusinessDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <TierProgress tier={{ name: "Gold", progress: 75 }} />
+        <TierProgress tier={{ name: tierName, progress: tierProgress }} />
         <PointsSummary summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }} />
       </div>
 

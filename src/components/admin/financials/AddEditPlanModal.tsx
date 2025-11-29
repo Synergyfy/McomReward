@@ -63,14 +63,37 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       setAnnualPrice(initialData.annualPrice);
       setFeatures(initialData.features.length > 0 ? initialData.features : ['']);
 
-      // Merge with default configuration to ensure all fields exist
-      setConfiguration({
-        ...defaultConfiguration,
-        ...initialData.configuration,
-        quotas: { ...defaultConfiguration.quotas, ...initialData.configuration.quotas },
-        featureFlags: { ...defaultConfiguration.featureFlags, ...initialData.configuration.featureFlags },
-        progressBonuses: { ...defaultConfiguration.progressBonuses, ...initialData.configuration.progressBonuses },
-      });
+      // Helper to normalize configuration from API (camelCase) to Component (snake_case/specific keys)
+      const normalizeConfiguration = (config: any): TierConfiguration => {
+        const normalizedFlags = {
+          ...defaultConfiguration.featureFlags,
+          ...config.featureFlags,
+          // Fix casing mismatch: API returns hasAccessToCrm, component expects hasAccessToCRM
+          hasAccessToCRM: config.featureFlags?.hasAccessToCrm ?? config.featureFlags?.hasAccessToCRM ?? false,
+        };
+
+        const normalizedBonuses = {
+          ...defaultConfiguration.progressBonuses,
+          ...config.progressBonuses,
+          // Fix casing mismatch: API returns camelCase, component expects snake_case
+          active_campaign_bonus: config.progressBonuses?.activeCampaignBonus ?? config.progressBonuses?.active_campaign_bonus ?? 0,
+          trusted_campaign_bonus: config.progressBonuses?.trustedCampaignBonus ?? config.progressBonuses?.trusted_campaign_bonus ?? 0,
+          partner_campaign_bonus: config.progressBonuses?.partnerCampaignBonus ?? config.progressBonuses?.partner_campaign_bonus ?? 0,
+        };
+
+        return {
+          ...defaultConfiguration,
+          ...config,
+          quotas: { ...defaultConfiguration.quotas, ...config.quotas },
+          featureFlags: normalizedFlags,
+          progressBonuses: normalizedBonuses,
+          // Recursively normalize variants if they exist
+          pro: config.pro ? { ...config.pro, featureFlags: { ...config.pro.featureFlags, hasAccessToCRM: config.pro.featureFlags?.hasAccessToCrm ?? config.pro.featureFlags?.hasAccessToCRM }, progressBonuses: { ...config.pro.progressBonuses, active_campaign_bonus: config.pro.progressBonuses?.activeCampaignBonus ?? config.pro.progressBonuses?.active_campaign_bonus, trusted_campaign_bonus: config.pro.progressBonuses?.trustedCampaignBonus ?? config.pro.progressBonuses?.trusted_campaign_bonus, partner_campaign_bonus: config.pro.progressBonuses?.partnerCampaignBonus ?? config.pro.progressBonuses?.partner_campaign_bonus } } : undefined,
+          pro_plus: config.pro_plus ? { ...config.pro_plus, featureFlags: { ...config.pro_plus.featureFlags, hasAccessToCRM: config.pro_plus.featureFlags?.hasAccessToCrm ?? config.pro_plus.featureFlags?.hasAccessToCRM }, progressBonuses: { ...config.pro_plus.progressBonuses, active_campaign_bonus: config.pro_plus.progressBonuses?.activeCampaignBonus ?? config.pro_plus.progressBonuses?.active_campaign_bonus, trusted_campaign_bonus: config.pro_plus.progressBonuses?.trustedCampaignBonus ?? config.pro_plus.progressBonuses?.trusted_campaign_bonus, partner_campaign_bonus: config.pro_plus.progressBonuses?.partnerCampaignBonus ?? config.pro_plus.progressBonuses?.partner_campaign_bonus } } : undefined,
+        };
+      };
+
+      setConfiguration(normalizeConfiguration(initialData.configuration));
     } else {
       setName('');
       setMonthlyPrice('');

@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 export interface CampaignFormData {
   campaignType: string;
   campaignName: string;
+  target_tier_id?: string;
+  maxRewardsPerCampaign?: number;
   rewardIds: string[];
   startDate: Date | undefined;
   endDate: Date | undefined;
@@ -57,6 +59,8 @@ interface CampaignFormContextType {
 const defaultFormData: CampaignFormData = {
   campaignType: '',
   campaignName: '',
+  target_tier_id: undefined,
+  maxRewardsPerCampaign: undefined,
   rewardIds: [],
   startDate: undefined,
   endDate: undefined,

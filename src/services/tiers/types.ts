@@ -16,6 +16,24 @@ export interface TierResponse {
     paypalAnnualPlanId?: string | null;
     qrCodeCount?: number;
     deletedAt?: string | null;
+    configuration?: {
+        quotas: {
+            maxActiveCampaigns: number;
+            maxRewardsPerCampaign: number;
+            monthlyPointsAllowance: number;
+        };
+        featureFlags: {
+            hasAccessToCrm: boolean;
+            canEditAdminTemplates: boolean;
+            canCreateCampaignFromScratch: boolean;
+            hasAccessToAdvancedAnalytics: boolean;
+        };
+        progressBonuses: {
+            activeCampaignBonus: number;
+            partnerCampaignBonus: number;
+            trustedCampaignBonus: number;
+        };
+    };
 }
 
 export interface GetTiersResponse {

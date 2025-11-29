@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useClaimCampaign } from '@/services/campaigns/hook';
 import { Badge } from "@/components/ui/badge";
 import { PublicCampaignResponse } from '@/services/campaigns/types';
+import TierLimitModal from '../TierLimitModal';
+import { AxiosError } from 'axios';
 
 interface CampaignPreviewProps {
   campaign: PublicCampaignResponse;
@@ -18,6 +20,8 @@ interface CampaignPreviewProps {
 export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
   const router = useRouter();
   const { mutate: claimCampaign, isPending } = useClaimCampaign();
+  const [isTierLimitModalOpen, setIsTierLimitModalOpen] = React.useState(false);
+  const [tierLimitMessage, setTierLimitMessage] = React.useState('');
 
   const handleClaim = () => {
     claimCampaign(campaign.id, {
@@ -25,8 +29,17 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
         toast.success(`Campaign "${campaign.name}" has been successfully claimed!`);
         router.push('/dashboard/campaigns/list');
       },
-      onError: (error) => {
+      onError: (error: Error | AxiosError<unknown>) => {
         console.error('Failed to claim campaign:', error);
+
+        // Check for the specific error message regarding active campaigns limit
+        const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || '';
+        if (errorMessage.includes('limit of 1 active campaigns') || errorMessage.includes('Upgrade or level up')) {
+          setTierLimitMessage(errorMessage);
+          setIsTierLimitModalOpen(true);
+          return;
+        }
+
         toast.error('Failed to claim campaign. Please try again.');
       }
     });
@@ -215,6 +228,12 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
           </div>
         </div>
       </div>
+
+      <TierLimitModal
+        isOpen={isTierLimitModalOpen}
+        onClose={() => setIsTierLimitModalOpen(false)}
+        message={tierLimitMessage}
+      />
     </div>
   );
 }

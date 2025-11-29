@@ -4,6 +4,7 @@ export interface TierQuotas {
   maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
+  maxTeamMembers: number;
 }
 
 export interface TierFeatureFlags {
@@ -11,6 +12,7 @@ export interface TierFeatureFlags {
   canEditAdminTemplates: boolean;
   hasAccessToAdvancedAnalytics: boolean;
   hasAccessToCRM: boolean;
+  canUpdateReward: boolean;
 }
 
 export interface TierProgressBonuses {

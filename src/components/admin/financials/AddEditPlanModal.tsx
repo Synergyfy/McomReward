@@ -26,6 +26,7 @@ const defaultConfiguration: TierConfiguration = {
     maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
+    maxTeamMembers: 1,
   },
   featureFlags: {
     canCreateCampaignFromScratch: false,
@@ -328,6 +329,15 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
             type="number"
             value={quotas.monthlyPointsAllowance ?? ''}
             onChange={(e) => onChange('monthlyPointsAllowance', parseInt(e.target.value))}
+            placeholder="Inherit"
+          />
+        </div>
+        <div>
+          <Label htmlFor="maxTeamMembers">Max Team Members (-1 for unlimited)</Label>
+          <Input
+            type="number"
+            value={quotas.maxTeamMembers ?? ''}
+            onChange={(e) => onChange('maxTeamMembers', parseInt(e.target.value))}
             placeholder="Inherit"
           />
         </div>

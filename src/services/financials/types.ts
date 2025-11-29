@@ -4,6 +4,7 @@ export interface TierQuotas {
   maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
+  maxTeamMembers: number;
 }
 
 export interface TierFeatureFlags {

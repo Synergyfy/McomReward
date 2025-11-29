@@ -13,6 +13,8 @@ export interface CampaignFormData {
   badgeLevels?: string[];
   wishlistItemIds?: string[];
   wishlistAggregateId?: string; // Added field for wishlist aggregate ID
+  targetTierId?: string;
+  tierConfiguration?: any;
   campaignMessage: string;
   imageUrl: string;
   imageFile?: File | null; // Added to store the file object
@@ -65,6 +67,8 @@ const defaultFormData: CampaignFormData = {
   badgeLevels: [],
   wishlistItemIds: [],
   wishlistAggregateId: undefined,
+  targetTierId: undefined,
+  tierConfiguration: undefined,
   campaignMessage: '',
   imageUrl: '',
   imageFile: null,

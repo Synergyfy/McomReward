@@ -16,7 +16,7 @@ import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetRewards } from '@/services/rewards/hook';
-import { useGetTiers } from '@/services/tiers/hook'; // Add this import
+import { useGetTiers } from '@/services/tiers/hook';
 
 interface RewardOption {
   value: string;
@@ -68,6 +68,9 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   // Fetch rewards from API
   const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
   const rewards = rewardsData?.data || [];
+
+  // Fetch tiers from API
+  const { data: tiers = [] } = useGetTiers();
 
   useEffect(() => {
     if (itemName && !formData.campaignName) {
@@ -123,6 +126,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
     if (
       !campaignName.trim() ||
+      !formData.targetTierId ||
       rewardIds.length === 0 ||
       !startDate ||
       !endDate ||
@@ -172,6 +176,33 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           </div>
 
           <div>
+            <Label htmlFor="targetTier">Target Tier</Label>
+            <ShadcnSelect
+              value={formData.targetTierId}
+              onValueChange={(value) => {
+                const selectedTier = tiers.find(t => t.id === value);
+                updateFormData({
+                  targetTierId: value,
+                  tierConfiguration: selectedTier?.configuration,
+                  rewardIds: [] // Reset rewards when tier changes to ensure limits are respected
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a target tier" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiers.map((tier) => (
+                  <SelectItem key={tier.id} value={tier.id}>
+                    {tier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </ShadcnSelect>
+            <p className="text-sm text-gray-500 mt-1">Select the tier this campaign targets.</p>
+          </div>
+
+          <div>
             <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
             <Select<RewardOption, true>
               isMulti
@@ -179,13 +210,37 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
               value={rewardOptions.filter(option => formData.rewardIds.includes(option.value))}
               onChange={(selectedOptions: MultiValue<RewardOption>) => {
                 const selectedIds = selectedOptions ? selectedOptions.map(option => option.value) : [];
+
+                // Check tier limits
+                if (formData.tierConfiguration?.quotas?.maxRewardsPerCampaign) {
+                  const maxRewards = formData.tierConfiguration.quotas.maxRewardsPerCampaign;
+                  if (maxRewards !== -1 && selectedIds.length > maxRewards) {
+                    // Don't update if limit exceeded
+                    return;
+                  }
+                }
+
                 updateFormData({ rewardIds: selectedIds });
               }}
               styles={selectErrorStyle}
               isLoading={isLoadingRewards}
               placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
+              isOptionDisabled={() => {
+                if (formData.tierConfiguration?.quotas?.maxRewardsPerCampaign) {
+                  const maxRewards = formData.tierConfiguration.quotas.maxRewardsPerCampaign;
+                  return maxRewards !== -1 && formData.rewardIds.length >= maxRewards;
+                }
+                return false;
+              }}
             />
-            <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Choose the rewards to be given out in this campaign.
+              {formData.tierConfiguration?.quotas?.maxRewardsPerCampaign && formData.tierConfiguration.quotas.maxRewardsPerCampaign !== -1 && (
+                <span className="text-amber-600 ml-1">
+                  (Max {formData.tierConfiguration.quotas.maxRewardsPerCampaign} rewards allowed for this tier)
+                </span>
+              )}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -11,7 +11,7 @@ const fetchVouchers = async (params: VoucherQueryDto): Promise<Paginated<Voucher
 };
 
 export const useGetVouchers = (params: VoucherQueryDto) => {
-  return useQuery({
+  return useQuery<Paginated<Voucher>>({
     queryKey: [VOUCHERS_QUERY_KEY, params],
     queryFn: () => fetchVouchers(params),
     // Keep data fresh, but not too often for analytics-like views

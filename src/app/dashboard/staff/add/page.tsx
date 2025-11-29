@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCreateStaff } from '@/services/staff/hook';
 import { CreateStaffDto } from '@/services/staff/types';
 import { Eye, EyeOff, ArrowLeft, Upload, Loader2, User, Mail, Lock } from 'lucide-react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -99,9 +99,9 @@ const AddStaffPage = () => {
           toast.success('Staff member created successfully');
           router.push('/dashboard/staff');
         },
-        onError: (error: any) => {
+        onError: (error: Error | AxiosError<unknown>) => {
           // Check for the specific tier limit error message
-          const errorMessage = error.response?.data?.message || error.message;
+          const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || 'Unknown error';
           if (errorMessage && errorMessage.includes('You have reached your limit of')) {
             setTierLimitMessage(errorMessage);
             setIsTierLimitModalOpen(true);

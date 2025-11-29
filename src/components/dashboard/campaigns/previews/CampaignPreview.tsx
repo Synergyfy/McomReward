@@ -11,6 +11,7 @@ import { useClaimCampaign } from '@/services/campaigns/hook';
 import { Badge } from "@/components/ui/badge";
 import { PublicCampaignResponse } from '@/services/campaigns/types';
 import TierLimitModal from '../TierLimitModal';
+import { AxiosError } from 'axios';
 
 interface CampaignPreviewProps {
   campaign: PublicCampaignResponse;
@@ -28,11 +29,11 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
         toast.success(`Campaign "${campaign.name}" has been successfully claimed!`);
         router.push('/dashboard/campaigns/list');
       },
-      onError: (error: any) => {
+      onError: (error: Error | AxiosError<unknown>) => {
         console.error('Failed to claim campaign:', error);
 
         // Check for the specific error message regarding active campaigns limit
-        const errorMessage = error?.response?.data?.message || error?.message || '';
+        const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || '';
         if (errorMessage.includes('limit of 1 active campaigns') || errorMessage.includes('Upgrade or level up')) {
           setTierLimitMessage(errorMessage);
           setIsTierLimitModalOpen(true);

@@ -132,7 +132,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
       contact_phone_number: formData.contactPhone || '',
       footer_text: formData.footerText || '',
       reward_ids: formData.rewardIds,
-      target_tier_id: formData.targetTierId,
     };
 
     console.log('Creating campaign with payload:', payload);

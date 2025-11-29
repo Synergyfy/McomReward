@@ -40,7 +40,6 @@ export interface CreateCampaignPayload {
   footer_text: string;
   reward_ids?: string[];
   business_reward_ids?: string[];
-  target_tier_id?: string;
 }
 
 export interface CampaignResponse {

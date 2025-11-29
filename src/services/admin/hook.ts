@@ -23,6 +23,20 @@ export const useAdminParticipants = (page = 1, limit = 10, search = '') => {
   });
 };
 
+// Single Admin Participant (by ID)
+const getAdminParticipant = async (id: string): Promise<AdminParticipant> => {
+  const { data } = await api.get<AdminParticipant>(`/admin/participants/${id}`);
+  return data;
+};
+
+export const useAdminParticipant = (id: string) => {
+  return useQuery<AdminParticipant>({
+    queryKey: ['admin-participant', id],
+    queryFn: () => getAdminParticipant(id),
+    enabled: !!id,
+  });
+};
+
 // Admin Businesses
 const getAdminBusinesses = async (page = 1, limit = 10, search = ''): Promise<PaginatedResponse<AdminBusiness>> => {
   const params: Record<string, string | number> = { page, limit };

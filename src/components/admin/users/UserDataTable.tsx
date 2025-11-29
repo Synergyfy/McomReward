@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ColumnDef,
   flexRender,
@@ -46,6 +47,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
   onAdjustUserPoints,
   onSuspendUser,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   // State for Confirmation Dialog
@@ -122,9 +124,23 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
     setShowEditConsumerUserModal(true);
   };
 
-  const handleOpenViewUserDetailsModal = (user: BusinessUser | ConsumerUser) => {
-    setSelectedUserForView(user);
-    setShowViewUserDetailsModal(true);
+  const handleOpenViewUserDetailsModal = (user: BusinessUser | ConsumerUser, type?: 'business' | 'consumer') => {
+    // If type is explicitly 'consumer', or if it's missing but the user looks like a consumer (no tier)
+    // We prioritize the explicit type passed from the column definition
+    if (type === 'consumer') {
+       router.push(`/admin/users/consumer/${user.id}`);
+    } else if (type === 'business') {
+       setSelectedUserForView(user);
+       setShowViewUserDetailsModal(true);
+    } else {
+       // Fallback logic if type is not passed (should not happen with updated columns)
+       if ('tier' in user) {
+          setSelectedUserForView(user);
+          setShowViewUserDetailsModal(true);
+       } else {
+          router.push(`/admin/users/consumer/${user.id}`);
+       }
+    }
   };
 
   const handleSaveBusinessUser = (updatedUser: BusinessUser) => {

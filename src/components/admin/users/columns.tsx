@@ -30,7 +30,7 @@ export type ActionHandlers = {
   ) => void;
   onOpenEditBusinessUserModal: (user: BusinessUser) => void;
   onOpenEditConsumerUserModal: (user: ConsumerUser) => void;
-  onOpenViewUserDetailsModal: (user: BusinessUser | ConsumerUser) => void;
+  onOpenViewUserDetailsModal: (user: BusinessUser | ConsumerUser, type?: 'business' | 'consumer') => void;
   onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void; // New handler
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
@@ -74,7 +74,7 @@ const createActionColumn = <T extends BusinessUser | ConsumerUser>(
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => handlers.onOpenViewUserDetailsModal(item)}
+            onClick={() => handlers.onOpenViewUserDetailsModal(item, itemType)}
           >
             View Details
           </DropdownMenuItem>

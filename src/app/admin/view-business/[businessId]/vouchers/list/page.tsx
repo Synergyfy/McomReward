@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useParams } from 'next/navigation'; // Import useParams
 import { useGetVouchers } from '@/services/vouchers/hook'; // Import the new hook
-import { Voucher } from '@/services/vouchers/types'; // Import Voucher type
+import { Paginated, Voucher } from '@/services/vouchers/types'; // Import Voucher type
 
 export default function VouchersPage() {
   const [search, setSearch] = useState("");

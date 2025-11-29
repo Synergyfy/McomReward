@@ -19,26 +19,56 @@ export interface TierProgressBonuses {
   [key: string]: number;
 }
 
-export interface TierVariant {
+export interface ProgressionConditions {
+  minCampaignsCreated?: number;
+  minRewardsCreated?: number;
+  minPointsUsed?: number;
+  minCustomerScans?: number;
+  minParticipants?: number;
+  minCustomerInteractions?: number;
+  minDaysActive?: number;
+  profileCompleted?: boolean;
+  kycVerified?: boolean;
+}
+
+export interface ProgressionBenefits {
+  quotas?: Partial<TierQuotas>;
+  featureFlags?: Partial<TierFeatureFlags>;
+  bonusPoints?: number;
+  unlockNextTierPreview?: {
+    percentNextTierPoints?: number;
+    additionalTeamMembers?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any;
+  };
+}
+
+export interface ProgressionLevel {
+  conditions: ProgressionConditions;
+  benefits: ProgressionBenefits;
+}
+
+export interface SeasonalVariant {
+  price?: number;
+  stripe_price_id?: string;
+  paypal_plan_id?: string;
   quotas?: Partial<TierQuotas>;
   featureFlags?: Partial<TierFeatureFlags>;
   progressBonuses?: Partial<TierProgressBonuses>;
-  monthly_price?: number;
-  annual_price?: number;
-  quaterly_price?: number;
-  stripe_monthly_price_id?: string;
-  stripe_annual_price_id?: string;
-  stripe_quarterly_price_id?: string;
+  pro?: Partial<ProgressionLevel>;
+  pro_plus?: Partial<ProgressionLevel>;
 }
 
 export interface TierConfiguration {
   quotas: TierQuotas;
   featureFlags: TierFeatureFlags;
   progressBonuses?: TierProgressBonuses;
-  enablePro?: boolean;
-  enableProPlus?: boolean;
-  pro?: TierVariant;
-  pro_plus?: TierVariant;
+  pro?: ProgressionLevel;
+  pro_plus?: ProgressionLevel;
+  winter?: SeasonalVariant;
+  summer?: SeasonalVariant;
+  autumn?: SeasonalVariant;
+  spring?: SeasonalVariant;
 }
 
 export interface Tier {

@@ -25,17 +25,17 @@ export function PointsBalanceDisplay({
 
   if (isLoading) {
     return (
-      <Card className="flex items-center justify-center shadow-xl rounded-2xl overflow-hidden text-white h-[300px]">
+      <Card className="flex items-center justify-center shadow-xl rounded-2xl overflow-hidden text-white h-[300px] bg-gray-900">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
-          <div className="h-4 w-48 bg-gray-200 rounded"></div>
+          <div className="h-8 w-32 bg-gray-700 rounded mb-4"></div>
+          <div className="h-4 w-48 bg-gray-700 rounded"></div>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="flex items-center justify-center shadow-xl rounded-2xl overflow-hidden text-white ">
+    <Card className="flex items-center justify-center shadow-xl rounded-2xl overflow-hidden text-white bg-gray-900">
       <CardContent className="p-8 flex flex-col items-center justify-center text-center">
         {/* new copy */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

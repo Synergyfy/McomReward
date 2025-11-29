@@ -119,6 +119,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             audienceType,
             badgeLevels,
             wishlistItemIds,
+            maxRewardsPerCampaign,
         } = formData;
 
         if (
@@ -130,6 +131,11 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             !campaignMessage.trim() ||
             !ctaButtonText.trim()
         ) {
+            return false;
+        }
+
+        // Check if maxRewardsPerCampaign is enforced
+        if (maxRewardsPerCampaign && maxRewardsPerCampaign !== -1 && rewardIds.length > maxRewardsPerCampaign) {
             return false;
         }
 
@@ -179,13 +185,23 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                             value={rewardOptions.filter(option => formData.rewardIds.includes(option.value))}
                             onChange={(selectedOptions: MultiValue<RewardOption>) => {
                                 const selectedIds = selectedOptions ? selectedOptions.map(option => option.value) : [];
+                                if (formData.maxRewardsPerCampaign && formData.maxRewardsPerCampaign !== -1 && selectedIds.length > formData.maxRewardsPerCampaign) {
+                                    return; // Prevent selection if it exceeds the limit
+                                }
                                 updateFormData({ rewardIds: selectedIds });
                             }}
+                            isOptionDisabled={() => formData.maxRewardsPerCampaign !== undefined && formData.maxRewardsPerCampaign !== -1 && formData.rewardIds.length >= formData.maxRewardsPerCampaign}
                             styles={selectErrorStyle}
                             isLoading={isLoadingRewards}
                             placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
                         />
-                        <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
+                        <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.
+                            {formData.maxRewardsPerCampaign && formData.maxRewardsPerCampaign !== -1 && (
+                                <span className="text-red-500 ml-1">
+                                    (Max {formData.maxRewardsPerCampaign} rewards allowed for this tier)
+                                </span>
+                            )}
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

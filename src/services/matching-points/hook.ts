@@ -1,46 +1,65 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse } from './types';
-import toast from 'react-hot-toast';
+import { AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse, MatchingPointsOverview, MatchingPointsHistoryResponse, MatchingPointsQueryDto } from './types';
+// import { LoginResponse } from '@/services/auth/types'; // Not used in this file
 
-// Award Matching Points
+// const STAFF_QUERY_KEY = 'staff'; // Incorrect, removing or commenting out
+const MATCHING_POINTS_QUERY_KEY = 'matchingPoints'; // Corrected
+
+// Create Staff
 const awardMatchingPoints = async (data: AwardMatchingPointsRequest): Promise<AwardMatchingPointsResponse> => {
-    const response = await api.post<AwardMatchingPointsResponse>('/admin/award-matching-points', data);
-    return response.data;
+  const response = await api.post<AwardMatchingPointsResponse>('/admin/award-matching-points', data);
+  return response;
 };
 
 export const useAwardMatchingPoints = () => {
-    return useMutation({
-        mutationFn: awardMatchingPoints,
-        onSuccess: () => {
-            toast.success('Matching points awarded successfully!');
-        },
-        onError: (error) => {
-            console.error('Error awarding matching points:', error);
-            toast.error('Failed to award matching points. Please try again.');
-        },
-    });
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: awardMatchingPoints,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY] });
+    },
+  });
 };
 
-// Toggle Matching Points for Campaign
 const toggleMatchingPoints = async (data: ToggleMatchingPointsRequest): Promise<ToggleMatchingPointsResponse> => {
-    const response = await api.post<ToggleMatchingPointsResponse>('/admin/toggle-matching-points', data);
-    return response.data;
+  const response = await api.post<ToggleMatchingPointsResponse>('/admin/toggle-matching-points', data);
+  return response;
 };
 
 export const useToggleMatchingPoints = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: toggleMatchingPoints,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY] });
+    },
+  });
+};
 
-    return useMutation({
-        mutationFn: toggleMatchingPoints,
-        onSuccess: () => {
-            // Invalidate campaigns query to refetch updated data
-            queryClient.invalidateQueries({ queryKey: ['publicCampaigns'] });
-            toast.success('Matching points toggled successfully!');
-        },
-        onError: (error) => {
-            console.error('Error toggling matching points:', error);
-            toast.error('Failed to toggle matching points. Please try again.');
-        },
-    });
+// Get Matching Points Overview
+const fetchMatchingPointsOverview = async (params: MatchingPointsQueryDto): Promise<MatchingPointsOverview> => {
+  const { data } = await api.get<MatchingPointsOverview>('/business/matching-points/overview', { params });
+  return data;
+};
+
+export const useGetMatchingPointsOverview = (params: MatchingPointsQueryDto = {}) => {
+  return useQuery({
+    queryKey: [MATCHING_POINTS_QUERY_KEY, 'overview', params.businessId],
+    queryFn: () => fetchMatchingPointsOverview(params),
+  });
+};
+
+// Get Matching Points History
+const fetchMatchingPointsHistory = async (params: MatchingPointsQueryDto): Promise<MatchingPointsHistoryResponse> => {
+  const { data } = await api.get<MatchingPointsHistoryResponse>('/business/matching-points/history', { params });
+  return data;
+};
+
+export const useGetMatchingPointsHistory = (params: MatchingPointsQueryDto = {}) => {
+  return useQuery({
+    queryKey: [MATCHING_POINTS_QUERY_KEY, 'history', params.businessId],
+    queryFn: () => fetchMatchingPointsHistory(params),
+  });
 };

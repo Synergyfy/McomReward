@@ -1,5 +1,4 @@
-'use client';
-
+import { useRouter } from 'next/navigation'; // Added useRouter
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,17 +29,19 @@ export type ActionHandlers = {
   ) => void;
   onOpenEditBusinessUserModal: (user: BusinessUser) => void;
   onOpenEditConsumerUserModal: (user: ConsumerUser) => void;
-  onOpenViewUserDetailsModal: (user: BusinessUser | ConsumerUser) => void;
+  // onOpenViewUserDetailsModal: (user: BusinessUser | ConsumerUser) => void; // Removed
   onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void; // New handler
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
 };
 
 // Reusable Action Column
-const createActionColumn = <T extends BusinessUser | ConsumerUser>(
+const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   itemType: 'business' | 'consumer',
   handlers: ActionHandlers
-): ColumnDef<T> => ({
+) => ColumnDef<T> = (itemType, handlers) => {
+  const router = useRouter(); // Initialize useRouter
+  return ({
   id: 'actions',
   cell: ({ row }) => {
     const item = row.original;
@@ -73,11 +74,13 @@ const createActionColumn = <T extends BusinessUser | ConsumerUser>(
             Copy {itemType === 'business' ? 'Business' : 'Consumer'} ID
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => handlers.onOpenViewUserDetailsModal(item)}
-          >
-            View Details
-          </DropdownMenuItem>
+          {itemType === 'business' && ( // Only show "View Dashboard" for business users
+            <DropdownMenuItem
+              onClick={() => router.push(`/admin/view-business/${item.id}`)}
+            >
+              View Dashboard
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => {
               if (itemType === 'business') {
@@ -133,6 +136,7 @@ const createActionColumn = <T extends BusinessUser | ConsumerUser>(
     );
   },
 });
+};
 
 // Columns for Business Users
 export const createBusinessColumns = (handlers: ActionHandlers): ColumnDef<BusinessUser>[] => [

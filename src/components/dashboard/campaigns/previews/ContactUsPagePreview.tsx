@@ -3,25 +3,25 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, Mail, ArrowUpRight } from "lucide-react";
-import { CampaignFormData } from "@/context/CampaignFormContext";
+import { CampaignResponse } from "@/services/campaigns/types"; // Import CampaignResponse
 
 interface ContactUsPagePreviewProps {
-  campaignData: CampaignFormData;
+  campaign: CampaignResponse; // Changed from campaignData: CampaignFormData
 }
 
-export default function ContactUsPagePreview({ campaignData }: ContactUsPagePreviewProps) {
+export default function ContactUsPagePreview({ campaign }: ContactUsPagePreviewProps) {
   const contactMethods = [
     {
       icon: Phone,
       title: 'Call Us',
-      contact: campaignData.contactPhone || '+1 (555) 123-4567',
-      link: `tel:${campaignData.contactPhone}`,
+      contact: campaign.contactPhoneNumber || '+1 (555) 123-4567',
+      link: `tel:${campaign.contactPhoneNumber}`,
     },
     {
       icon: Mail,
       title: 'Email Us',
-      contact: campaignData.contactEmail || 'support@mcomloyalty.com',
-      link: `mailto:${campaignData.contactEmail}`,
+      contact: campaign.contactEmail || 'support@mcomloyalty.com',
+      link: `mailto:${campaign.contactEmail}`,
     },
   ];
 
@@ -31,18 +31,16 @@ export default function ContactUsPagePreview({ campaignData }: ContactUsPagePrev
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
-            {campaignData.contactTitle || 'Contact Us'}
+            {campaign.contactUsPageTitle || 'Contact Us'}
           </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            {campaignData.contactText || 'We\'re here to help. Reach out to us with any questions.'}
-          </p>
+          <p className="mt-4 text-xl text-gray-600" dangerouslySetInnerHTML={{ __html: campaign.contactUsPageDescription || 'We\'re here to help. Reach out to us with any questions.' }} />
         </div>
 
         {/* Contact Methods */}
         <div className="space-y-8">
           {contactMethods.map((method, index) => (
-            <a href={method.link} key={index} className="block group">
-              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 hover:border-orange-600 border-2 border-transparent">
+            <div key={index} className="block group"> {/* Changed <a> to <div> and disabled interaction */}
+              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardContent className="p-6 flex items-center justify-between">
                   <div className="flex items-center space-x-6">
                     <div className="bg-orange-600 text-white p-4 rounded-full">
@@ -53,10 +51,10 @@ export default function ContactUsPagePreview({ campaignData }: ContactUsPagePrev
                       <p className="text-lg text-gray-600">{method.contact}</p>
                     </div>
                   </div>
-                  <ArrowUpRight className="h-8 w-8 text-gray-400 group-hover:text-orange-600 transition-colors duration-300" />
+                  {/* Removed ArrowUpRight as interaction is disabled */}
                 </CardContent>
               </Card>
-            </a>
+            </div>
           ))}
         </div>
       </div>

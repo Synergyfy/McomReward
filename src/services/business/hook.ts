@@ -163,31 +163,31 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
 const BUSINESS_PROFILE_QUERY_KEY = 'businessProfile';
 
 // Get Business Profile
-const getBusinessProfile = async (): Promise<BusinessProfile> => {
-    const { data } = await api.get<BusinessProfile>('/business/profile');
+const getBusinessProfile = async (businessId?: string): Promise<BusinessProfile> => {
+    const { data } = await api.get<BusinessProfile>('/business/profile', { params: { businessId } });
     return data;
 };
 
-export const useGetBusinessProfile = () => {
+export const useGetBusinessProfile = (businessId?: string) => {
     return useQuery({
-        queryKey: [BUSINESS_PROFILE_QUERY_KEY],
-        queryFn: getBusinessProfile,
+        queryKey: [BUSINESS_PROFILE_QUERY_KEY, businessId],
+        queryFn: () => getBusinessProfile(businessId),
     });
 };
 
 // Update Business Profile
-const updateBusinessProfile = async (updateData: UpdateBusinessProfileDto): Promise<BusinessProfile> => {
-    const { data } = await api.patch<BusinessProfile>('/business/profile', updateData);
+const updateBusinessProfile = async (updateData: UpdateBusinessProfileDto, businessId?: string): Promise<BusinessProfile> => {
+    const { data } = await api.patch<BusinessProfile>('/business/profile', updateData, { params: { businessId } });
     return data;
 };
 
-export const useUpdateBusinessProfile = () => {
+export const useUpdateBusinessProfile = (businessId?: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: updateBusinessProfile,
+        mutationFn: (updateData: UpdateBusinessProfileDto) => updateBusinessProfile(updateData, businessId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [BUSINESS_PROFILE_QUERY_KEY] });
+            queryClient.invalidateQueries({ queryKey: [BUSINESS_PROFILE_QUERY_KEY, businessId] });
         },
     });
 };

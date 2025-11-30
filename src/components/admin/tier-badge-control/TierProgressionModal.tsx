@@ -53,7 +53,7 @@ export function TierProgressionModal({
         // Do not close here, let the parent handle closing on success
     };
 
-    const updateCondition = (level: 'pro' | 'pro_plus', key: string, value: any) => {
+    const updateCondition = (level: 'pro' | 'pro_plus', key: string, value: number | boolean) => {
         const setter = level === 'pro' ? setProConfig : setProPlusConfig;
         setter(prev => ({
             ...prev,

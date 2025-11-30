@@ -21,11 +21,11 @@ export default function AdminBusinessUsersPage() {
     email: business.email,
     tier: business.tier || '-', // Handle null tier
     sector: business.sector,
-    activityStatus: business.isDisabled ? 'Disabled' : 'Active',
+    activityStatus: (business.activityStatus as 'Active' | 'Disabled') || 'Active',
     campaignsCreated: business.campaignsCreated || 0, // Default to 0 if missing
     rewardsAttached: business.rewardsAttached || 0, // Default to 0 if missing
-    pointsBalance: business.remainingPointBalance,
-    memberSince: new Date(business.createdAt),
+    pointsBalance: business.pointsBalance,
+    memberSince: new Date(business.memberSince),
   })) || [];
 
   const handleUpdateUser = (updatedUser: BusinessUser | ConsumerUser) => {

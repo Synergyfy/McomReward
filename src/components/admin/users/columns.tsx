@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import Link from 'next/link';
 
 // Define types for the action handlers
 export type ActionHandlers = {
@@ -73,11 +74,19 @@ const createActionColumn = <T extends BusinessUser | ConsumerUser>(
             Copy {itemType === 'business' ? 'Business' : 'Consumer'} ID
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => handlers.onOpenViewUserDetailsModal(item)}
-          >
-            View Details
-          </DropdownMenuItem>
+          {itemType === 'consumer' ? (
+             <DropdownMenuItem asChild>
+                <Link href={`/admin/users/consumer/${item.id}`}>
+                  View Details
+                </Link>
+             </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              onClick={() => handlers.onOpenViewUserDetailsModal(item)}
+            >
+              View Details
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => {
               if (itemType === 'business') {

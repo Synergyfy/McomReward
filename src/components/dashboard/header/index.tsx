@@ -14,6 +14,8 @@ import {
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
+import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
+import { toast } from 'sonner';
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
@@ -23,6 +25,7 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
   const router = useRouter();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
+  const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout(); // Use the useLogout hook
 
   const tierName = subscription?.tier?.name;
   const userPoints = profile?.totalPointsEarned;
@@ -35,12 +38,18 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
   const notificationsCount = 3; // Leaving as mock.
 
   const handleLogout = () => {
-    // Clear any auth tokens/session data
-    localStorage.removeItem('authToken');
-    sessionStorage.clear();
-
-    // Redirect to login page
-    router.push('/login');
+    logoutMutation(undefined, {
+      onSuccess: () => {
+        toast.success('Logged out successfully.');
+        router.push('/login');
+      },
+      onError: (error) => {
+        console.error('Logout failed:', error);
+        toast.error('Logout failed. Please try again.');
+        // Even if server logout fails, clear client-side and redirect for better UX
+        router.push('/login');
+      }
+    });
   };
 
   return (
@@ -122,12 +131,19 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
             <DropdownMenuItem onClick={() => router.push('/dashboard/subscription')}>Billing</DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push('/dashboard/account')}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+              {isLoggingOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                'Logout'
+              )}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
   );
 }
+
 
 

@@ -5,6 +5,7 @@ import {
   CreateBusinessRewardDto,
   BusinessReward,
   GetRewardsResponse,
+  UpdateBusinessRewardDto,
 } from './types';
 
 const fetchBusinessRewards = async (page: number, limit: number, businessId?: string) => {
@@ -90,6 +91,35 @@ export const useRemoveBusinessReward = () => {
     mutationFn: removeBusinessReward,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
+    },
+  });
+};
+
+
+const updateBusinessReward = async (
+  rewardId: string,
+  payload: UpdateBusinessRewardDto
+) => {
+  const { data } = await api.put<BusinessReward>(
+    `rewards/business/rewards/${rewardId}`,
+    payload
+  );
+  return data;
+};
+
+export const useUpdateBusinessReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      rewardId,
+      payload,
+    }: {
+      rewardId: string;
+      payload: UpdateBusinessRewardDto;
+    }) => updateBusinessReward(rewardId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
+      queryClient.invalidateQueries({ queryKey: ['allRewards'] });
     },
   });
 };

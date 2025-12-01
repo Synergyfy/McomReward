@@ -30,8 +30,8 @@ export default function BusinessDashboard() {
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
   const tierName = subscription?.tier?.name || 'N/A';
-  // progress is not defined in TierResponse
-  const tierProgress = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tierProgress = (subscription?.tier as any)?.progress || 0;
 
   if (isAnalyticsLoading || isLoadingSubscription) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;

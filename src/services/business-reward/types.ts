@@ -31,6 +31,16 @@ export interface BusinessReward {
   reward: Reward;
   createdAt: string;
   updatedAt: string;
+  title: string;
+  description: string;
+  image: string;
+  value: number;
+  disabled: boolean;
+  rewardType?: string;
+  rewardSource?: string;
+  audience?: string;
+  expiryDatetime?: string;
+  status?: string;
 }
 
 export interface GetBusinessRewardsResponse extends PaginationMeta {
@@ -40,4 +50,21 @@ export interface GetBusinessRewardsResponse extends PaginationMeta {
 export interface CreateBusinessRewardDto {
   quantity?: number;
   point_required: number;
+}
+
+export enum RewardStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
+
+export interface UpdateBusinessRewardDto {
+  quantity?: number;
+  point_required?: number;
+  title?: string;
+  description?: string;
+  image?: string;
+  value?: number;
+  expiry_datetime?: Date;
+  status?: RewardStatus;
+  disabled?: boolean;
 }

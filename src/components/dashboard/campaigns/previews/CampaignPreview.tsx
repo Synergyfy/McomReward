@@ -9,23 +9,44 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useClaimCampaign } from '@/services/campaigns/hook';
 import { Badge } from "@/components/ui/badge";
-import { CampaignResponse, Reward } from '@/services/campaigns/types'; // Changed to CampaignResponse
+import { CampaignResponse, Reward } from '@/services/campaigns/types';
+import TierLimitModal from '../TierLimitModal';
+import { AxiosError } from 'axios';
 
 interface CampaignPreviewProps {
-  campaign: CampaignResponse; // Changed prop type
+  campaign: CampaignResponse;
 }
 
 export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
   const router = useRouter();
   const { mutate: claimCampaign, isPending } = useClaimCampaign();
+  const [isTierLimitModalOpen, setIsTierLimitModalOpen] = React.useState(false);
+  const [tierLimitMessage, setTierLimitMessage] = React.useState('');
 
   const handleClaim = () => {
-    // This action should be disabled in impersonation view
-    toast.info('Claiming campaigns is disabled in admin preview mode.');
+    claimCampaign(campaign.id, {
+      onSuccess: () => {
+        toast.success(`Campaign "${campaign.name}" has been successfully claimed!`);
+        router.push('/dashboard/campaigns/list');
+      },
+      onError: (error: Error | AxiosError<unknown>) => {
+        console.error('Failed to claim campaign:', error);
+
+        // Check for the specific error message regarding active campaigns limit
+        const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || '';
+        if (errorMessage.includes('limit of 1 active campaigns') || errorMessage.includes('Upgrade or level up')) {
+          setTierLimitMessage(errorMessage);
+          setIsTierLimitModalOpen(true);
+          return;
+        }
+
+        toast.error('Failed to claim campaign. Please try again.');
+      }
+    });
   };
 
   // Helper to get points required from the first reward
-  const pointsRequired = campaign.rewards && campaign.rewards.length > 0 ? campaign.rewards[0].pointsRequired : 0;
+  const pointsRequired = campaign.rewards && campaign.rewards.length > 0 ? campaign.rewards[0].points_required : 0;
 
   return (
     <div className="bg-gray-50 min-h-screen text-gray-900 pb-20">
@@ -144,7 +165,7 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="text-xl font-bold text-gray-900">{reward.title}</h4>
                             <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-none">
-                              {reward.pointsRequired} Points
+                              {reward.points_required} Points
                             </Badge>
                           </div>
                           <p className="text-gray-600 mb-4 line-clamp-2">{reward.description}</p>
@@ -207,6 +228,12 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
           </div>
         </div>
       </div>
+
+      <TierLimitModal
+        isOpen={isTierLimitModalOpen}
+        onClose={() => setIsTierLimitModalOpen(false)}
+        message={tierLimitMessage}
+      />
     </div>
   );
 }

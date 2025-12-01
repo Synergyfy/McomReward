@@ -7,13 +7,15 @@ import { Wallet, Megaphone, Heart, Settings,  HandCoins } from 'lucide-react';
 
 interface CustomerSidebarProps {
   isOpen: boolean;
+  activePath?: string;
 }
 
-export default function CustomerSidebar({ isOpen }: CustomerSidebarProps) {
+export default function CustomerSidebar({ isOpen, activePath }: CustomerSidebarProps) {
   const pathname = usePathname();
+  const currentPath = activePath || pathname;
 
   const linkClasses = (path: string) => {
-    const isActive = pathname === path;
+    const isActive = currentPath === path;
     return `flex items-center p-2 rounded-lg transition-colors duration-200 ${isActive ? 'bg-orange-600 text-white' : 'text-gray-600 hover:bg-orange-100 hover:text-orange-600'}`;
   };
 

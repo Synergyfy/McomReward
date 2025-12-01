@@ -16,6 +16,6 @@ export const useGetVouchers = (params: VoucherQueryDto) => {
     queryFn: () => fetchVouchers(params),
     // Keep data fresh, but not too often for analytics-like views
     staleTime: 5 * 60 * 1000, // 5 minutes
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };

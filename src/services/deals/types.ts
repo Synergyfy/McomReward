@@ -4,8 +4,8 @@ export interface CreateDealDto {
   imageUrl?: string;
   categoryId: string;
   value: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   termsAndConditions: string;
 }
 
@@ -15,8 +15,8 @@ export interface UpdateDealDto {
   imageUrl?: string;
   categoryId?: string;
   value?: number;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
   termsAndConditions?: string;
 }
 

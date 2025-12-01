@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCampaignForm } from '@/context/CampaignFormContext';
+import { useCampaignForm, CampaignFormData } from '@/context/CampaignFormContext';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -25,7 +25,7 @@ import ContactUsPagePreview from './previews/ContactUsPagePreview';
 import FooterPreview from './previews/FooterPreview';
 import { useCreateCampaign } from '@/services/campaigns/hook';
 import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlist';
-import { CreateCampaignPayload } from '@/services/campaigns/types';
+import { CreateCampaignPayload, CampaignResponse } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
 
@@ -42,6 +42,52 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
 
   const createCampaignMutation = useCreateCampaign();
   const createCampaignFromWishlistMutation = useCreateCampaignFromWishlist();
+
+  const transformedCampaign: CampaignResponse = useMemo(() => {
+    // Helper function to convert optional Date to ISO string
+    const toISOString = (date?: Date) => date ? date.toISOString() : '';
+
+    return {
+      id: 'preview-campaign-id', // Mock ID for preview purposes
+      name: formData.campaignName,
+      campaignType: formData.campaignType,
+      campaignMessage: formData.campaignMessage,
+      startDate: toISOString(formData.startDate),
+      endDate: toISOString(formData.endDate),
+      quantity: Number(formData.rewardsAvailable) || 0,
+      audienceType: formData.audienceType.join(','), // Assuming AudienceType is a comma-separated string
+      bannerUrl: formData.imageUrl || '',
+      logoUrl: formData.logoUrl || '',
+      ctaText: formData.ctaButtonText,
+      ctaBackgroundColor: formData.ctaBgColor,
+      ctaTextColor: formData.ctaTextColor,
+      textColor: formData.bgColorTextColor,
+      backgroundColor: formData.bgColor,
+      signUpPoint: 0, // Not available in CampaignFormData, default to 0
+      rewardType: '', // Not available in CampaignFormData, default to empty string
+      regularPointsThreshold: 0, // Not available in CampaignFormData, default to 0
+      matchingPointsThreshold: 0, // Not available in CampaignFormData, default to 0
+      earnPointPageTitle: formData.earnTitle || '',
+      earnPointPageDescription: formData.earnText || '',
+      redeemRewardPageTitle: formData.redeemTitle || '',
+      redeemRewardPageDescription: formData.redeemText || '',
+      contactUsPageTitle: formData.contactTitle || '',
+      contactUsPageDescription: formData.contactText || '',
+      contactEmail: formData.contactEmail || '',
+      contactPhoneNumber: formData.contactPhone || '',
+      footerText: formData.footerText || '',
+      rewards: [], // CampaignFormData does not contain full Reward objects, default to empty array
+      uniqueCode: null, // Not available in CampaignFormData, default to null
+      createdAt: new Date().toISOString(), // Default to current time
+      updatedAt: new Date().toISOString(), // Default to current time
+      deletedAt: null,
+      disabled: false,
+      totalPointsEarned: 0,
+      totalPointsRedeemed: 0,
+      totalMatchingPointsEarned: 0,
+      matchingPointsDisabledByAdmin: false,
+    };
+  }, [formData]);
 
   const handleCreateCampaign = async () => {
     setIsSubmitting(true);
@@ -191,16 +237,16 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
                     <CampaignDetailPagePreview campaignData={formData} />
                   </TabsContent>
                   <TabsContent value="earnPoints">
-                    <EarnPointsPagePreview campaignData={formData} />
+                    <EarnPointsPagePreview campaign={transformedCampaign} />
                   </TabsContent>
                   <TabsContent value="redeemPoints">
-                    <RedeemPointsPagePreview campaignData={formData} />
+                    <RedeemPointsPagePreview campaign={transformedCampaign} />
                   </TabsContent>
                   <TabsContent value="contactUs">
-                    <ContactUsPagePreview campaignData={formData} />
+                    <ContactUsPagePreview campaign={transformedCampaign} />
                   </TabsContent>
                   <TabsContent value="footer">
-                    <FooterPreview campaignData={formData} />
+                    <FooterPreview campaignData={{ footerText: formData.footerText }} />
                   </TabsContent>
                 </div>
               </Tabs>

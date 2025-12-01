@@ -6,8 +6,8 @@ import { LoginResponse } from '@/services/auth/types';
 const STAFF_QUERY_KEY = 'staff';
 
 // Create Staff
-const createStaff = async (staffData: CreateStaffDto): Promise<Staff> => {
-  const { data } = await api.post<Staff>('/staff', staffData);
+const createStaff = async (staffData: CreateStaffDto, businessId?: string): Promise<Staff> => {
+  const { data } = await api.post<Staff>('/staff', staffData, { params: { businessId } });
   return data;
 };
 

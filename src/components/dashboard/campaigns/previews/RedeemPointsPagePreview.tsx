@@ -11,14 +11,17 @@ interface RedeemPointsPagePreviewProps {
   campaign: CampaignResponse; // Changed from campaignData: CampaignFormData
 }
 
-// Helper to get Lucide icon based on reward type or just use a default
-const getRewardIcon = (type?: string) => {
-    switch(type) {
-        case 'discount': return Ticket;
-        case 'physical': return ShoppingBag;
-        case 'gift_card': return Gift;
-        default: return Star; // Default icon
+// Helper to get Lucide icon based on reward title
+const getRewardIcon = (title: string) => {
+    const lowerCaseTitle = title.toLowerCase();
+    if (lowerCaseTitle.includes('voucher') || lowerCaseTitle.includes('discount')) {
+        return Ticket;
     }
+    if (lowerCaseTitle.includes('gift card')) {
+        return Gift;
+    }
+    // Default or other types can be physical or virtual
+    return Star; // Default icon
 };
 
 export default function RedeemPointsPagePreview({ campaign }: RedeemPointsPagePreviewProps) {
@@ -41,7 +44,7 @@ export default function RedeemPointsPagePreview({ campaign }: RedeemPointsPagePr
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {campaign.rewards?.map((reward) => { // Use campaign.rewards instead of mockRewards
-            const Icon = getRewardIcon(reward.type); // Dynamically get icon
+            const Icon = getRewardIcon(reward.title); // Dynamically get icon from title
             // const canRedeem = userPoints >= reward.points_required; // Not relevant for admin preview
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">

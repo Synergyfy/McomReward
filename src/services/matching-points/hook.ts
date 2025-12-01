@@ -9,7 +9,7 @@ const MATCHING_POINTS_QUERY_KEY = 'matchingPoints'; // Corrected
 // Create Staff
 const awardMatchingPoints = async (data: AwardMatchingPointsRequest): Promise<AwardMatchingPointsResponse> => {
   const response = await api.post<AwardMatchingPointsResponse>('/admin/award-matching-points', data);
-  return response;
+  return response.data;
 };
 
 export const useAwardMatchingPoints = () => {
@@ -25,7 +25,7 @@ export const useAwardMatchingPoints = () => {
 
 const toggleMatchingPoints = async (data: ToggleMatchingPointsRequest): Promise<ToggleMatchingPointsResponse> => {
   const response = await api.post<ToggleMatchingPointsResponse>('/admin/toggle-matching-points', data);
-  return response;
+  return response.data;
 };
 
 export const useToggleMatchingPoints = () => {

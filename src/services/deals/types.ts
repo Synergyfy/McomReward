@@ -4,8 +4,8 @@ export interface CreateDealDto {
   imageUrl?: string;
   categoryId: string;
   value: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   termsAndConditions: string;
 }
 
@@ -15,8 +15,8 @@ export interface UpdateDealDto {
   imageUrl?: string;
   categoryId?: string;
   value?: number;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
   termsAndConditions?: string;
 }
 
@@ -71,6 +71,9 @@ export interface UpdateDealStatusDto {
 export interface PaginatedDealsResponse {
   data: Deal[];
   total: number;
-  currentPage: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   nextPage: number | null;
+  prevPage: number | null;
 }

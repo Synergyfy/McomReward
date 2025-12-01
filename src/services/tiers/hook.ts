@@ -20,27 +20,27 @@ export const useGetTiers = () => {
 };
 
 // Get My Subscription
-const getMySubscription = async (): Promise<Subscription> => {
-    const { data } = await api.get<Subscription>('/membership/my-membership');
+const getMySubscription = async (businessId?: string): Promise<Subscription> => {
+    const { data } = await api.get<Subscription>('/membership/my-membership', { params: { businessId } });
     return data;
 };
 
-export const useGetMySubscription = () => {
+export const useGetMySubscription = (businessId?: string) => {
     return useQuery({
-        queryKey: [SUBSCRIPTION_QUERY_KEY],
-        queryFn: getMySubscription,
+        queryKey: [SUBSCRIPTION_QUERY_KEY, businessId],
+        queryFn: () => getMySubscription(businessId),
     });
 };
 
 // Get Billing History
-const getBillingHistory = async (): Promise<BillingHistory[]> => {
-    const { data } = await api.get<BillingHistory[]>('/membership/my-payment-history');
+const getBillingHistory = async (businessId?: string): Promise<BillingHistory[]> => {
+    const { data } = await api.get<BillingHistory[]>('/membership/my-payment-history', { params: { businessId } });
     return data;
 };
 
-export const useGetBillingHistory = () => {
+export const useGetBillingHistory = (businessId?: string) => {
     return useQuery({
-        queryKey: [BILLING_HISTORY_QUERY_KEY],
-        queryFn: getBillingHistory,
+        queryKey: [BILLING_HISTORY_QUERY_KEY, businessId],
+        queryFn: () => getBillingHistory(businessId),
     });
 };

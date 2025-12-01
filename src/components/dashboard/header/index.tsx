@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Coins, Menu, Shield, User } from 'lucide-react';
+import { Loader2, Bell, Coins, Menu, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,15 +13,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from '@/services/business/hook';
-import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
+import { toast } from 'sonner';
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
 }
 
 export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
+  const router = useRouter();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
+  const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout(); // Use the useLogout hook
 
   const tierName = subscription?.tier?.name;
   const userPoints = profile?.totalPointsEarned;
@@ -32,6 +36,21 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
   const isError = isErrorSubscription || isErrorProfile;
 
   const notificationsCount = 3; // Leaving as mock.
+
+  const handleLogout = () => {
+    logoutMutation(undefined, {
+      onSuccess: () => {
+        toast.success('Logged out successfully.');
+        router.push('/login');
+      },
+      onError: (error) => {
+        console.error('Logout failed:', error);
+        toast.error('Logout failed. Please try again.');
+        // Even if server logout fails, clear client-side and redirect for better UX
+        router.push('/login');
+      }
+    });
+  };
 
   return (
     <header className="flex items-center justify-between p-4 bg-white border-b sticky top-0 z-40">
@@ -108,15 +127,23 @@ export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/dashboard/subscription')}>Billing</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/dashboard/account')}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+              {isLoggingOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                'Logout'
+              )}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
   );
 }
+
+
 

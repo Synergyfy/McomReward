@@ -34,6 +34,7 @@ export interface GeneralAnalyticsDto {
 
 export interface ChartQueryDto {
   period?: '7d' | '30d' | '3m' | '6m' | '1y';
+  businessId?: string;
 }
 
 export interface ChartData {

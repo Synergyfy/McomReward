@@ -8,31 +8,31 @@ import {
   UpdateBusinessRewardDto,
 } from './types';
 
-const fetchBusinessRewards = async (page: number, limit: number) => {
+const fetchBusinessRewards = async (page: number, limit: number, businessId?: string) => {
   const { data } = await api.get<GetBusinessRewardsResponse>(
-    `/rewards/business/my-added-rewards?page=${page}&limit=${limit}`
+    `/rewards/business/my-added-rewards`, { params: { page, limit, businessId } }
   );
   return data;
 };
 
-export const useGetBusinessRewards = (page: number, limit: number) => {
+export const useGetBusinessRewards = (page: number, limit: number, businessId?: string) => {
   return useQuery({
-    queryKey: ['businessRewards', page, limit],
-    queryFn: () => fetchBusinessRewards(page, limit),
+    queryKey: ['businessRewards', page, limit, businessId],
+    queryFn: () => fetchBusinessRewards(page, limit, businessId),
   });
 };
 
-const fetchAllRewards = async (page: number, limit: number) => {
+const fetchAllRewards = async (page: number, limit: number, businessId?: string) => {
   const { data } = await api.get<GetRewardsResponse>(
-    `/rewards/business/rewards?page=${page}&limit=${limit}`
+    `/rewards/business/rewards`, { params: { page, limit, businessId } }
   );
   return data;
 };
 
-export const useGetAllRewards = (page: number, limit: number) => {
+export const useGetAllRewards = (page: number, limit: number, businessId?: string) => {
   return useQuery({
-    queryKey: ['allRewards', page, limit],
-    queryFn: () => fetchAllRewards(page, limit),
+    queryKey: ['allRewards', page, limit, businessId],
+    queryFn: () => fetchAllRewards(page, limit, businessId),
   });
 };
 

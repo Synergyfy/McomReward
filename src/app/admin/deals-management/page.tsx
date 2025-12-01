@@ -13,7 +13,7 @@ import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { AddEditDealModal } from '@/components/admin/deals-management/AddEditDealModal';
 import { ViewDealDetailsModal } from '@/components/admin/deals-management/ViewDealDetailsModal';
 import { useGetAdminDeals, useUpdateDealStatus, useDeleteDeal, useCreateDeal, useUpdateDeal } from '@/services/deals/hook';
-import { Deal } from '@/services/deals/types';
+import { Deal, CreateDealDto } from '@/services/deals/types';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export default function DealsManagementPage() {
@@ -73,7 +73,7 @@ export default function DealsManagementPage() {
     setShowAddEditDealModal(true);
   };
 
-  const handleSaveDeal = async (savedDeal: any) => { // Type 'any' used here because the modal might return a partial object or DTO
+  const handleSaveDeal = async (savedDeal: CreateDealDto) => { // Type 'any' used here because the modal might return a partial object or DTO
     try {
       if (currentEditDeal) {
         await updateDealMutation.mutateAsync({ id: currentEditDeal.id, ...savedDeal });

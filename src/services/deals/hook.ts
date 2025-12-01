@@ -7,6 +7,7 @@ import {
   FilterDealDto,
   PaginatedDealsResponse,
   UpdateDealDto,
+  UpdateDealStatusDto,
 } from './types';
 
 const DEALS_QUERY_KEY = 'deals';
@@ -45,6 +46,23 @@ const deactivateDeal = async ({
   ...dealData
 }: DeactivateDealDto & { id: string }): Promise<Deal> => {
   const { data } = await api.patch<Deal>(`/deals/${id}/deactivate`, dealData);
+  return data;
+};
+
+const getAdminDeals = async (
+  params: FilterDealDto,
+): Promise<PaginatedDealsResponse> => {
+  const { data } = await api.get<PaginatedDealsResponse>('/deals/admin/all', {
+    params,
+  });
+  return data;
+};
+
+const updateDealStatus = async ({
+  id,
+  status,
+}: UpdateDealStatusDto & { id: string }): Promise<Deal> => {
+  const { data } = await api.patch<Deal>(`/deals/${id}/status`, { status });
   return data;
 };
 
@@ -104,6 +122,27 @@ export const useDeactivateDeal = () => {
 
   return useMutation({
     mutationFn: deactivateDeal,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [DEALS_QUERY_KEY, variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useGetAdminDeals = (params: FilterDealDto) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'admin', params],
+    queryFn: () => getAdminDeals(params),
+  });
+};
+
+export const useUpdateDealStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateDealStatus,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: [DEALS_QUERY_KEY, variables.id],

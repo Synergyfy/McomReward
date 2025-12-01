@@ -29,12 +29,11 @@ export default function CampaignPreview({ campaign }: CampaignPreviewProps) {
         toast.success(`Campaign "${campaign.name}" has been successfully claimed!`);
         router.push('/dashboard/campaigns/list');
       },
-      onError: (error: Error) => {
+      onError: (error: Error | AxiosError<unknown>) => {
         console.error('Failed to claim campaign:', error);
 
         // Check for the specific error message regarding active campaigns limit
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const errorMessage = ((error as any)?.response?.data as any)?.message || error?.message || '';
+        const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || '';
         if (errorMessage.includes('limit of 1 active campaigns') || errorMessage.includes('Upgrade or level up')) {
           setTierLimitMessage(errorMessage);
           setIsTierLimitModalOpen(true);

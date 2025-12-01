@@ -99,11 +99,9 @@ const AddStaffPage = () => {
           toast.success('Staff member created successfully');
           router.push('/dashboard/staff');
         },
-        onError: (error: Error) => {
-          const axiosError = error as AxiosError;
+        onError: (error: Error | AxiosError<unknown>) => {
           // Check for the specific tier limit error message
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const errorMessage = (axiosError.response?.data as any)?.message || error.message;
+          const errorMessage = (error as AxiosError<{ message: string }>)?.response?.data?.message || (error as Error)?.message || 'Unknown error';
           if (errorMessage && errorMessage.includes('You have reached your limit of')) {
             setTierLimitMessage(errorMessage);
             setIsTierLimitModalOpen(true);

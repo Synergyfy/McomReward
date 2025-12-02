@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGetParticipantProfile, useGetParticipantGlobalBalance } from '@/services/customer-campaigns/hook';
+import type { ParticipantGlobalBalanceResponse, ParticipantProfileResponse } from '@/services/customer-campaigns/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Menu } from 'lucide-react';
@@ -15,11 +16,23 @@ import {
 
 interface ModernHeaderProps {
     onMenuClick?: () => void;
+    // Optional overrides for impersonation/admin view
+    profile?: ParticipantProfileResponse;
+    balanceData?: ParticipantGlobalBalanceResponse;
+    isLoading?: boolean;
 }
 
-export default function ModernHeader({ onMenuClick }: ModernHeaderProps) {
-    const { data: profile, isLoading: isProfileLoading } = useGetParticipantProfile();
-    const { data: balanceData, isLoading: isBalanceLoading } = useGetParticipantGlobalBalance();
+export default function ModernHeader({ onMenuClick, profile: propsProfile, balanceData: propsBalance, isLoading: propsLoading }: ModernHeaderProps) {
+    const { data: fetchedProfile, isLoading: isProfileLoading } = useGetParticipantProfile();
+    const { data: fetchedBalance, isLoading: isBalanceLoading } = useGetParticipantGlobalBalance();
+
+    // Use props if provided (admin view), otherwise use fetched data (customer view)
+    // We check if props are specifically undefined to allow passing null if needed, but usually we just check presence
+    const isUsingProps = propsProfile !== undefined || propsBalance !== undefined;
+
+    const profile = isUsingProps ? propsProfile : fetchedProfile;
+    const balanceData = isUsingProps ? propsBalance : fetchedBalance;
+    const isLoading = isUsingProps ? propsLoading : (isProfileLoading || isBalanceLoading);
 
     const userName = profile?.name || 'Guest';
     const userInitials = userName
@@ -29,7 +42,6 @@ export default function ModernHeader({ onMenuClick }: ModernHeaderProps) {
         .toUpperCase()
         .slice(0, 2);
     const globalPoints = balanceData?.globalTotalPoints || 0;
-    const isLoading = isProfileLoading || isBalanceLoading;
 
     return (
         <header className="sticky top-0 z-20 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">

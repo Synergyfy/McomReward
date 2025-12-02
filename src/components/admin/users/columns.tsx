@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import Link from 'next/link';
 
 // Define types for the action handlers
 export type ActionHandlers = {
@@ -143,9 +144,104 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   handlers: ActionHandlers
 ) => ColumnDef<T> = (itemType, handlers) => ({
   id: 'actions',
-  cell: ({ row }) => (
-    <ActionsCell row={row} itemType={itemType} handlers={handlers} />
-  ),
+  cell: ({ row }) => {
+    const item = row.original;
+
+    const handleAdjustPoints = (amount: number, reason: string) => {
+      handlers.onAdjustUserPoints(item.id, itemType, amount, reason);
+    };
+
+    const handleSuspend = () => {
+      handlers.onSuspendUser(item.id, itemType);
+    };
+
+    const handleDelete = () => {
+      handlers.onDeleteUser(item.id, itemType);
+    };
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => navigator.clipboard.writeText(item.id)}
+          >
+            Copy {itemType === 'business' ? 'Business' : 'Consumer'} ID
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {itemType === 'consumer' ? (
+             <DropdownMenuItem asChild>
+                <Link href={`/admin/users/consumer/${item.id}`}>
+                  View Details
+                </Link>
+             </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              onClick={() => handlers.onOpenViewUserDetailsModal(item)}
+            >
+              View Details
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => {
+              if (itemType === 'business') {
+                handlers.onOpenEditBusinessUserModal(item as BusinessUser);
+              } else {
+                handlers.onOpenEditConsumerUserModal(item as ConsumerUser);
+              }
+            }}
+          >
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              handlers.onOpenAdjustPointsModal(
+                item.name,
+                'pointsBalance' in item ? item.pointsBalance : item.points,
+                handleAdjustPoints
+              )
+            }
+          >
+            Adjust Points
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              handlers.onOpenConfirmationDialog(
+                `Suspend ${item.name}?`,
+                `Are you sure you want to suspend ${item.name}'s account? They will not be able to log in.`,
+                handleSuspend,
+                'Suspend',
+                'Cancel'
+              )
+            }
+            className="text-yellow-600"
+          >
+            Suspend
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              handlers.onOpenConfirmationDialog(
+                `Delete ${item.name}?`,
+                `Are you sure you want to permanently delete ${item.name}'s account? This action cannot be undone.`,
+                handleDelete,
+                'Delete',
+                'Cancel'
+              )
+            }
+            className="text-red-600"
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  },
 });
 
 // Columns for Business Users

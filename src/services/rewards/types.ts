@@ -1,6 +1,6 @@
 export interface CreateRewardRequest {
   title: string;
-  points_required: number;
+  max_points: number;
   value: number;
   description: string;
   image: string;

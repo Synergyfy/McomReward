@@ -1,6 +1,7 @@
 import api from '../api';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { AdminParticipant, AdminBusiness, PaginatedResponse, AdminBusinessDetails } from './types';
+import type { ParticipantHistoryItem } from '../customer-campaigns/types';
 
 // Admin Participants
 const getAdminParticipants = async (page = 1, limit = 10, search = ''): Promise<PaginatedResponse<AdminParticipant>> => {
@@ -21,6 +22,35 @@ export const useAdminParticipants = (page = 1, limit = 10, search = '') => {
     queryFn: () => getAdminParticipants(page, limit, search),
     placeholderData: keepPreviousData,
   });
+};
+
+const getAdminParticipantDetails = async (id: string): Promise<AdminParticipant> => {
+    const { data } = await api.get<AdminParticipant>(`/admin/participants/${id}`);
+    return data;
+}
+
+export const useAdminParticipantDetails = (id: string) => {
+    return useQuery<AdminParticipant>({
+        queryKey: ['admin-participant', id],
+        queryFn: () => getAdminParticipantDetails(id),
+        enabled: !!id,
+    });
+};
+
+const getAdminParticipantHistory = async (id: string, page = 1, limit = 10): Promise<PaginatedResponse<ParticipantHistoryItem>> => {
+    const { data } = await api.get<PaginatedResponse<ParticipantHistoryItem>>(`/admin/participants/${id}/history`, {
+        params: { page, limit }
+    });
+    return data;
+}
+
+export const useAdminParticipantHistory = (id: string, page = 1, limit = 10) => {
+    return useQuery<PaginatedResponse<ParticipantHistoryItem>>({
+        queryKey: ['admin-participant-history', id, page, limit],
+        queryFn: () => getAdminParticipantHistory(id, page, limit),
+        enabled: !!id,
+        placeholderData: keepPreviousData,
+    });
 };
 
 // Admin Businesses

@@ -3,51 +3,51 @@
 
 import React from 'react';
 import EarnPointsPagePreview from '@/components/dashboard/campaigns/previews/EarnPointsPagePreview';
-import { CampaignFormData } from '@/context/CampaignFormContext';
+import { CampaignResponse } from '@/services/campaigns/types';
 
-const mockCampaignData: CampaignFormData = {
-    campaignType: '',
-    campaignName: '',
-    rewardIds: [],
-    startDate: undefined,
-    endDate: undefined,
-    rewardsAvailable: 0,
-    audienceType: [],
-    campaignMessage: '',
-    imageUrl: '',
-    logoUrl: '',
-    ctaButtonText: 'Claim Reward',
-    distributionChannels: {
-        qrCode: false,
-        shareLink: false,
-        embedButton: false,
-        emailSend: false,
-    },
-    schedulingRules: {
-        startDate: undefined,
-        stopAfterClaims: 0,
-        pauseOnRewardEmpty: false,
-        autoSwitchToPoints: true,
-    },
-    bgColor: '#FFFFFF',
-    ctaBgColor: '#000000',
-    bgColorTextColor: '#000000',
-    ctaTextColor: '#FFFFFF',
-    earnTitle: 'How to Earn Points',
-    earnText: 'Here are the ways you can earn points in this campaign.',
-    redeemTitle: '',
-    redeemText: '',
-    contactTitle: '',
-    contactText: '',
-    contactEmail: '',
-    contactPhone: '',
-    footerText: '',
-    howToEarn: [],
-    termsAndConditions: [],
+const mockCampaignData: CampaignResponse = {
+  id: 'mock-campaign-id',
+  name: 'Mock Earn Points Campaign',
+  campaignType: 'mock_type',
+  campaignMessage: 'This is a mock campaign message for earning points.',
+  startDate: '2023-01-01T00:00:00Z',
+  endDate: '2023-12-31T23:59:59Z',
+  quantity: 100,
+  audienceType: 'all',
+  bannerUrl: 'http://example.com/banner.jpg',
+  logoUrl: 'http://example.com/logo.png',
+  ctaText: 'Start Earning',
+  ctaBackgroundColor: '#000000',
+  ctaTextColor: '#FFFFFF',
+  textColor: '#000000',
+  backgroundColor: '#FFFFFF',
+  signUpPoint: 10,
+  rewardType: 'points',
+  regularPointsThreshold: 50,
+  matchingPointsThreshold: 20,
+  earnPointPageTitle: 'How to Earn Points in this Campaign',
+  earnPointPageDescription: 'Here are various ways you can collect points.',
+  redeemRewardPageTitle: 'Redeem Your Hard-Earned Rewards',
+  redeemRewardPageDescription: 'Browse and claim exciting rewards.',
+  contactUsPageTitle: 'Need Help?',
+  contactUsPageDescription: 'Our support team is ready to assist you.',
+  contactEmail: 'earnsupport@example.com',
+  contactPhoneNumber: '+1-555-987-6543',
+  footerText: '© 2023 Earn Points Program',
+  rewards: [],
+  uniqueCode: null,
+  createdAt: '2023-01-01T00:00:00Z',
+  updatedAt: '2023-01-01T00:00:00Z',
+  deletedAt: null,
+  disabled: false,
+  totalPointsEarned: 0,
+  totalPointsRedeemed: 0,
+  totalMatchingPointsEarned: 0,
+  matchingPointsDisabledByAdmin: false,
 };
 
 export default function EarnPointsPreviewPage() {
   return (
-    <EarnPointsPagePreview campaignData={mockCampaignData} />
+    <EarnPointsPagePreview campaign={mockCampaignData} />
   );
 }

@@ -5,9 +5,9 @@ import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide
 import TierBadge, { TierName, isTierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
-import { useGetBusinessProfile } from '@/services/business/hook';
+import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
-import { BusinessProfile } from '@/services/business/types';
+import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
@@ -20,6 +20,8 @@ export default function BusinessProfilePage() {
 
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateBusinessProfile();
+
 
   useEffect(() => {
     if (profile) {
@@ -56,9 +58,47 @@ export default function BusinessProfilePage() {
   };
 
   const handleSave = () => {
-    setEditing(false);
-    // TODO: Add save logic or API call with a useUpdateBusinessProfile hook
-    console.log('Profile updated:', form);
+    if (!profile) return; // Should not happen if data is loaded
+
+    const payload: UpdateBusinessProfileDto = {};
+
+    // Compare simple string fields and add to payload if changed
+    if (form.businessName !== profile.name) payload.name = form.businessName;
+    if (form.email !== profile.email) payload.email = form.email;
+    if (form.phone !== profile.phone) payload.phone = form.phone;
+    if (form.address !== profile.address) payload.address = form.address;
+    if (form.description !== profile.description) payload.description = form.description;
+    if (form.website !== profile.website) payload.website = form.website;
+    if (form.logoUrl !== profile.logoUrl) payload.logoUrl = form.logoUrl;
+    if (form.bannerUrl !== profile.bannerUrl) payload.bannerUrl = form.bannerUrl;
+
+    // Compare and construct social media if changed
+    const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
+    const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+    const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
+
+    if (hasSocialChanged) {
+      const socialMedia = [];
+      if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
+      if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
+      payload.socialMedia = socialMedia;
+    }
+
+    // Only call update if there are actual changes
+    if (Object.keys(payload).length > 0) {
+      updateProfile(payload, {
+        onSuccess: () => {
+          setEditing(false);
+        },
+        onError: (error) => {
+          // TODO: Add user-facing error notification (e.g., toast)
+          console.error('Failed to update profile:', error);
+        },
+      });
+    } else {
+      // No changes, just exit editing mode
+      setEditing(false);
+    }
   };
 
   if (isLoadingProfile || isLoadingSubscription) {
@@ -70,8 +110,7 @@ export default function BusinessProfilePage() {
   }
 
   const plan = subscription?.tier?.name.toLowerCase() || 'starter';
-  const tierName = subscription?.tier?.name;
-  const validTierName: TierName | undefined = tierName && isTierName(tierName) ? tierName : undefined;
+  const tierName = subscription?.tier?.name as TierName | undefined; // Directly use tierName and cast to satisfy type
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm  mt-8 p-8">
@@ -112,7 +151,7 @@ export default function BusinessProfilePage() {
             <h1 className="text-2xl font-bold text-gray-800">{form.businessName}</h1>
             <p className="text-gray-500">{form.categoryName}</p>
             <div className="mt-2">
-              <TierBadge tier={validTierName || "Gold"} />
+              <TierBadge tier={tierName} />
             </div>
           </div>
         </div>
@@ -120,13 +159,14 @@ export default function BusinessProfilePage() {
         {/* Edit / Save Button */}
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
+          disabled={isUpdating}
           className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${
             editing
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-orange-500 text-white hover:bg-orange-600'
-          }`}
+          } disabled:opacity-50`}
         >
-          {editing ? 'Save Changes' : 'Edit Profile'}
+          {isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>
       </div>
 

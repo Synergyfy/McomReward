@@ -113,8 +113,8 @@ export function AddEditDealModal({
       description,
       value,
       categoryId,
-      startDate: startDate!,
-      endDate: endDate!,
+      startDate: startDate!.toISOString(),
+      endDate: endDate!.toISOString(),
       termsAndConditions,
       // imageUrl: '' // Optional, handle if needed
     };

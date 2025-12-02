@@ -92,3 +92,16 @@ export interface BusinessProfile {
   totalPointsEarned: number;
   totalPointsRedeemed: number;
 }
+
+export interface UpdateBusinessProfileDto {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  description?: string;
+  socialMedia?: { name: string; link: string }[];
+}
+

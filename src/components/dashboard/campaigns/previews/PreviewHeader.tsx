@@ -7,13 +7,13 @@ import { useParams } from 'next/navigation';
 
 export default function PreviewHeader() {
   const params = useParams();
-  const { campaignId } = params;
+  const { businessId, campaignId } = params; // Extract businessId and campaignId
 
   const navLinks = [
-    { href: `/dashboard/campaigns/preview/${campaignId}`, label: 'OVERVIEW' },
-    { href: `/dashboard/campaigns/preview/${campaignId}/earn-points`, label: 'EARN POINTS' },
-    { href: `/dashboard/campaigns/preview/${campaignId}/redeem-points`, label: 'REDEem POINTS' },
-    { href: `/dashboard/campaigns/preview/${campaignId}/contact-us`, label: 'CONTACT US' },
+    { href: `/admin/view-business/${businessId}/campaigns/preview/${campaignId}/overview`, label: 'OVERVIEW' },
+    { href: `/admin/view-business/${businessId}/campaigns/preview/${campaignId}/earn-points`, label: 'EARN POINTS' },
+    { href: `/admin/view-business/${businessId}/campaigns/preview/${campaignId}/redeem-points`, label: 'REDEem POINTS' },
+    { href: `/admin/view-business/${businessId}/campaigns/preview/${campaignId}/contact-us`, label: 'CONTACT US' },
   ];
 
   return (

@@ -1,7 +1,16 @@
-import { useMutation } from '@tanstack/react-query';
-import api, { setBearerToken } from '../api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api, { setBearerToken, removeBearerToken } from '../api';
 import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse } from './types';
 import Cookies from 'js-cookie';
+
+// Helper to remove tokens
+const removeTokens = () => {
+  Cookies.remove('access');
+  Cookies.remove('refresh');
+  localStorage.removeItem('authToken'); // Assuming this was also a token storage
+  sessionStorage.clear(); // Clear any session storage
+  removeBearerToken(); // Clear bearer token from API instance
+};
 
 // Admin Login
 const adminSignIn = async (loginData: AdminLoginDto): Promise<AdminLoginResponse> => {
@@ -60,5 +69,34 @@ export const useRefreshToken = () => {
       // Update bearer token for subsequent requests
       setBearerToken(data.access_token);
     },
+  });
+};
+
+// Logout
+const logout = async (): Promise<void> => {
+  const refreshTokenValue = Cookies.get('refresh');
+  if (refreshTokenValue) {
+    // Attempt to invalidate token on the server
+    try {
+      await api.post('/auth/logout', { refresh_token: refreshTokenValue });
+    } catch (error) {
+      console.error('Server-side logout failed:', error);
+      // Continue with client-side logout even if server-side fails
+    }
+  }
+  removeTokens();
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.clear(); // Clear all react-query cache
+    },
+    onError: (error) => {
+      console.error('Logout mutation failed, performing client-side logout:', error);
+      removeTokens(); // Ensure tokens are removed even if mutation errors out
+    }
   });
 };

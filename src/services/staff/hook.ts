@@ -6,8 +6,8 @@ import { LoginResponse } from '@/services/auth/types';
 const STAFF_QUERY_KEY = 'staff';
 
 // Create Staff
-const createStaff = async (staffData: CreateStaffDto): Promise<Staff> => {
-  const { data } = await api.post<Staff>('/staff', staffData);
+const createStaff = async (staffData: CreateStaffDto, businessId?: string): Promise<Staff> => {
+  const { data } = await api.post<Staff>('/staff', staffData, { params: { businessId } });
   return data;
 };
 
@@ -37,72 +37,72 @@ export const useStaffLogin = () => {
 };
 
 
-export const useCreateStaff = () => {
+export const useCreateStaff = (businessId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createStaff,
+    mutationFn: (staffData: CreateStaffDto) => createStaff(staffData, businessId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY, 'all', businessId] });
     },
   });
 };
 
 // Get All Staff
-const getAllStaff = async (): Promise<PaginatedStaffResponse> => {
-  const { data } = await api.get<PaginatedStaffResponse>('/staff');
+const getAllStaff = async (businessId?: string): Promise<PaginatedStaffResponse> => {
+  const { data } = await api.get<PaginatedStaffResponse>('/staff', { params: { businessId } });
   return data;
 };
 
-export const useGetAllStaff = () => {
+export const useGetAllStaff = (businessId?: string) => {
   return useQuery({
-    queryKey: [STAFF_QUERY_KEY],
-    queryFn: getAllStaff,
+    queryKey: [STAFF_QUERY_KEY, 'all', businessId],
+    queryFn: () => getAllStaff(businessId),
     select: (data) => data.data,
   });
 };
 
 // Get Staff by ID
-const getStaffById = async (id: string): Promise<Staff> => {
-  const { data } = await api.get<Staff>(`/staff/${id}`);
+const getStaffById = async (id: string, businessId?: string): Promise<Staff> => {
+  const { data } = await api.get<Staff>(`/staff/${id}`, { params: { businessId } });
   return data;
 };
 
-export const useGetStaffById = (id: string) => {
+export const useGetStaffById = (id: string, businessId?: string) => {
   return useQuery({
-    queryKey: [STAFF_QUERY_KEY, id],
-    queryFn: () => getStaffById(id),
+    queryKey: [STAFF_QUERY_KEY, id, businessId],
+    queryFn: () => getStaffById(id, businessId),
     enabled: !!id,
   });
 };
 
 // Update Staff
-const updateStaff = async ({ id, ...updateData }: { id: string } & UpdateStaffDto): Promise<Staff> => {
-  const { data } = await api.patch<Staff>(`/staff/${id}`, updateData);
+const updateStaff = async ({ id, businessId, ...updateData }: { id: string, businessId?: string } & UpdateStaffDto): Promise<Staff> => {
+  const { data } = await api.patch<Staff>(`/staff/${id}`, updateData, { params: { businessId } });
   return data;
 };
 
-export const useUpdateStaff = () => {
+export const useUpdateStaff = (businessId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: updateStaff,
+    mutationFn: ({ id, ...updateData }: UpdateStaffDto & { id: string }) => updateStaff({ id, businessId, ...updateData }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY] });
-      queryClient.setQueryData([STAFF_QUERY_KEY, data.id], data);
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY, 'all', businessId] });
+      queryClient.setQueryData([STAFF_QUERY_KEY, data.id, businessId], data);
     },
   });
 };
 
 // Delete Staff
-const deleteStaff = async (id: string): Promise<void> => {
-  await api.delete(`/staff/${id}`);
+const deleteStaff = async (id: string, businessId?: string): Promise<void> => {
+  await api.delete(`/staff/${id}`, { params: { businessId } });
 };
 
-export const useDeleteStaff = () => {
+export const useDeleteStaff = (businessId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: deleteStaff,
+    mutationFn: (id: string) => deleteStaff(id, businessId), // Pass businessId to the mutation function
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY, 'all', businessId] });
     },
   });
 };

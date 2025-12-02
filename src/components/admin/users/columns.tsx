@@ -1,6 +1,5 @@
-'use client';
-
-import { ColumnDef } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
+import { ColumnDef, Row } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,12 +36,115 @@ export type ActionHandlers = {
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
 };
 
+const ActionsCell = <T extends BusinessUser | ConsumerUser>({
+  row,
+  itemType,
+  handlers,
+}: {
+  row: Row<T>;
+  itemType: 'business' | 'consumer';
+  handlers: ActionHandlers;
+}) => {
+  const router = useRouter(); // Initialize useRouter
+  const item = row.original;
+
+  const handleAdjustPoints = (amount: number, reason: string) => {
+    handlers.onAdjustUserPoints(item.id, itemType, amount, reason);
+  };
+
+  const handleSuspend = () => {
+    handlers.onSuspendUser(item.id, itemType);
+  };
+
+  const handleDelete = () => {
+    handlers.onDeleteUser(item.id, itemType);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => navigator.clipboard.writeText(item.id)}
+        >
+          Copy {itemType === 'business' ? 'Business' : 'Consumer'} ID
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {itemType === 'business' && ( // Only show "View Dashboard" for business users
+          <DropdownMenuItem
+            onClick={() => router.push(`/admin/view-business/${item.id}`)}
+          >
+            View Dashboard
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onClick={() => {
+            if (itemType === 'business') {
+              handlers.onOpenEditBusinessUserModal(item as BusinessUser);
+            } else {
+              handlers.onOpenEditConsumerUserModal(item as ConsumerUser);
+            }
+          }}
+        >
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            handlers.onOpenAdjustPointsModal(
+              item.name,
+              'pointsBalance' in item ? item.pointsBalance : item.points,
+              handleAdjustPoints
+            )
+          }
+        >
+          Adjust Points
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            handlers.onOpenConfirmationDialog(
+              `Suspend ${item.name}?`,
+              `Are you sure you want to suspend ${item.name}'s account? They will not be able to log in.`,
+              handleSuspend,
+              'Suspend',
+              'Cancel'
+            )
+          }
+          className="text-yellow-600"
+        >
+          Suspend
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            handlers.onOpenConfirmationDialog(
+              `Delete ${item.name}?`,
+              `Are you sure you want to permanently delete ${item.name}'s account? This action cannot be undone.`,
+              handleDelete,
+              'Delete',
+              'Cancel'
+            )
+          }
+          className="text-red-600"
+        >
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 // Reusable Action Column
-const createActionColumn = <T extends BusinessUser | ConsumerUser>(
+const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   itemType: 'business' | 'consumer',
   handlers: ActionHandlers
-): ColumnDef<T> => ({
+) => ColumnDef<T> = (itemType, handlers) => ({
   id: 'actions',
+<<<<<<< HEAD
   cell: ({ row }) => {
     const item = row.original;
 
@@ -141,6 +243,11 @@ const createActionColumn = <T extends BusinessUser | ConsumerUser>(
       </DropdownMenu>
     );
   },
+=======
+  cell: ({ row }) => (
+    <ActionsCell row={row} itemType={itemType} handlers={handlers} />
+  ),
+>>>>>>> dd228205946fff2bf5c945af1d9382da4a82dc7f
 });
 
 // Columns for Business Users

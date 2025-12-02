@@ -105,32 +105,32 @@ export const useClaimCampaign = () => {
 };
 
 // Get My Created Campaigns
-const getMyCreatedCampaigns = async (page: number, limit: number): Promise<PaginatedCampaignsResponse> => {
+const getMyCreatedCampaigns = async (page: number, limit: number, businessId?: string): Promise<PaginatedCampaignsResponse> => {
   const { data } = await api.get<PaginatedCampaignsResponse>('/business/campaigns/my-created-campaigns', {
-    params: { page, limit },
+    params: { page, limit, businessId },
   });
   return data;
 };
 
-export const useGetMyCreatedCampaigns = (page: number = 1, limit: number = 10) => {
+export const useGetMyCreatedCampaigns = (page: number = 1, limit: number = 10, businessId?: string) => {
   return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'my-created', { page, limit }],
-    queryFn: () => getMyCreatedCampaigns(page, limit),
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'my-created', { page, limit }, businessId],
+    queryFn: () => getMyCreatedCampaigns(page, limit, businessId),
   });
 };
 
 // Get My Claimed Campaigns
-const getMyClaimedCampaigns = async (page: number, limit: number): Promise<PaginatedCampaignsResponse> => {
+const getMyClaimedCampaigns = async (page: number, limit: number, businessId?: string): Promise<PaginatedCampaignsResponse> => {
   const { data } = await api.get<PaginatedCampaignsResponse>('/business/campaigns/my-claimed-campaigns', {
-    params: { page, limit },
+    params: { page, limit, businessId },
   });
   return data;
 };
 
-export const useGetMyClaimedCampaigns = (page: number = 1, limit: number = 10) => {
+export const useGetMyClaimedCampaigns = (page: number = 1, limit: number = 10, businessId?: string) => {
   return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'my-claimed', { page, limit }],
-    queryFn: () => getMyClaimedCampaigns(page, limit),
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'my-claimed', { page, limit }, businessId],
+    queryFn: () => getMyClaimedCampaigns(page, limit, businessId),
   });
 };
 
@@ -181,7 +181,7 @@ export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) =>
 
 // Get Detailed Campaign Analytics
 const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
-  const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/analytics/${campaignId}`);
+  const { data } = await api.get<DetailedCampaignAnalytics>(`/business/campaigns/${campaignId}/analytics/detailed`);
   return data;
 };
 
@@ -245,15 +245,15 @@ export const useGetParticipantActivity = (participantId: string, page: number = 
 };
 
 // Get Campaign By ID
-const getCampaignById = async (id: string): Promise<CampaignResponse> => {
-  const { data } = await api.get<CampaignResponse>(`/campaigns/${id}`);
+const getCampaignById = async (id: string, businessId?: string): Promise<CampaignResponse> => {
+  const { data } = await api.get<CampaignResponse>(`/campaigns/${id}`, { params: { businessId } });
   return data;
 };
 
-export const useGetCampaignById = (id: string) => {
+export const useGetCampaignById = (id: string, businessId?: string) => {
   return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, id],
-    queryFn: () => getCampaignById(id),
+    queryKey: [CAMPAIGNS_QUERY_KEY, id, businessId],
+    queryFn: () => getCampaignById(id, businessId),
     enabled: !!id,
   });
 };

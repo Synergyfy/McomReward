@@ -85,4 +85,5 @@ export interface Paginated<T> {
 export interface PaginationDto {
   page?: number;
   limit?: number;
+  businessId?: string;
 }

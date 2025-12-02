@@ -5,15 +5,15 @@ import { GeneralAnalyticsDto, ChartResponseDto, ChartQueryDto } from './types';
 const BUSINESS_DASHBOARD_QUERY_KEY = 'businessDashboard';
 
 // Get General Analytics
-const getGeneralAnalytics = async (): Promise<GeneralAnalyticsDto> => {
-  const { data } = await api.get<GeneralAnalyticsDto>('/analytics');
+const getGeneralAnalytics = async (businessId?: string): Promise<GeneralAnalyticsDto> => {
+  const { data } = await api.get<GeneralAnalyticsDto>('/analytics', { params: { businessId } });
   return data;
 };
 
-export const useGetGeneralAnalytics = () => {
+export const useGetGeneralAnalytics = (businessId?: string) => {
   return useQuery({
-    queryKey: [BUSINESS_DASHBOARD_QUERY_KEY, 'general'],
-    queryFn: getGeneralAnalytics,
+    queryKey: [BUSINESS_DASHBOARD_QUERY_KEY, 'general', businessId],
+    queryFn: () => getGeneralAnalytics(businessId),
   });
 };
 
@@ -25,7 +25,7 @@ const getChartData = async (params: ChartQueryDto): Promise<ChartResponseDto> =>
 
 export const useGetChartData = (params: ChartQueryDto) => {
   return useQuery({
-    queryKey: [BUSINESS_DASHBOARD_QUERY_KEY, 'chart', params.period],
+    queryKey: [BUSINESS_DASHBOARD_QUERY_KEY, 'chart', params.period, params.businessId],
     queryFn: () => getChartData(params),
     enabled: !!params.period,
   });

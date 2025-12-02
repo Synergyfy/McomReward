@@ -53,7 +53,6 @@ export default function DealsTable({ deals }: DealsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>End Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -63,7 +62,6 @@ export default function DealsTable({ deals }: DealsTableProps) {
             {deals.map(deal => (
               <TableRow key={deal.id}>
                 <TableCell className="font-medium">{deal.title}</TableCell>
-                <TableCell>{deal.category?.name}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(deal.status)}>
                     {deal.status}

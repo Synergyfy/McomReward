@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCreatePointPackage, useUpdatePointPackage, useGetTiers } from '@/services/financials';
 import { PointPackage, PointPackageCreateInput } from '@/services/financials/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AxiosError } from 'axios';
 
 const pointPackageSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -104,8 +105,8 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
         savedPackage = await createMutation.mutateAsync(payload);
       }
       onSave(savedPackage);
-    } catch (error: any) {
-      onShowFeedback('Error', error.message || 'There was an error saving the package.', 'OK');
+    } catch (error: AxiosError) {
+      onShowFeedback('Error', error.response?.data?.message || error.message || 'There was an error saving the package.', 'OK');
     }
   };
 

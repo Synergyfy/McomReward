@@ -64,7 +64,7 @@ export interface AdminBusinessDetails {
     name: string;
   };
   website: string;
-  socialMedia: Record<string, any>;
+  socialMedia: Record<string, string>;
   uniqueCode: string;
   role: string;
   referralCapacity: number;

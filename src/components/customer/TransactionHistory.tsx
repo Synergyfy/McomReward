@@ -1,0 +1,116 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowDown, ArrowUp, Star } from 'lucide-react';
+import { useGetParticipantGlobalHistory } from '@/services/customer-campaigns/hook';
+import { ParticipantHistoryItem } from '@/services/customer-campaigns/types';
+
+const filterCategories = [
+  'All',
+  'Earned',
+  'Spent',
+];
+
+export function TransactionHistory() {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  const { data, isLoading } = useGetParticipantGlobalHistory(page, limit);
+
+  const transactions = data?.data || [];
+  const totalPages = data ? Math.ceil(data.total / limit) : 0;
+
+  const filteredTransactions = transactions.filter(record => {
+    if (activeFilter === 'Earned') return record.type === 'EARN';
+    if (activeFilter === 'Spent') return record.type === 'REDEEM';
+    return true;
+  });
+
+  const getIconForTransaction = (transaction: ParticipantHistoryItem) => {
+    // Assuming 'matching' type might come in future or we identify it differently,
+    // for now using EARN/REDEEM.
+    // If there's a specific way to identify matching points in history, we'd add it here.
+    // Based on response, type is EARN/REDEEM.
+    if (transaction.type === 'EARN') {
+      return <ArrowUp className="w-5 h-5 text-green-500" />;
+    }
+    return <ArrowDown className="w-5 h-5 text-red-500" />;
+  };
+
+  return (
+    <Card className="shadow-lg rounded-2xl">
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <CardTitle className="text-2xl font-bold mb-4 sm:mb-0">Point History</CardTitle>
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+            {filterCategories.map(filter => (
+              <Button
+                key={filter}
+                variant={activeFilter === filter ? 'default' : 'outline'}
+                className="rounded-full text-xs px-3 py-1"
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-center py-8">Loading history...</div>
+        ) : filteredTransactions.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">No transactions found.</p>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/12"></TableHead>
+                  <TableHead className="w-4/12">Description</TableHead>
+                  <TableHead className="w-2/12">Type</TableHead>
+                  <TableHead className="w-3/12">Date</TableHead>
+                  <TableHead className="w-2/12 text-right">Points</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{getIconForTransaction(record)}</TableCell>
+                    <TableCell>
+                      <p className="font-semibold">{record.description}</p>
+                      <p className="text-xs text-gray-500">{record.campaign?.name}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={record.type === 'EARN' ? 'default' : 'secondary'}>
+                        {record.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className={`text-right font-bold ${record.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
+                      {record.type === 'EARN' ? '+' : '-'}{record.points}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex justify-center items-center mt-6 space-x-4 p-4 border-t">
+              <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} variant="outline">
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600">
+                Page {page} of {totalPages || 1}
+              </span>
+              <Button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages} variant="outline">
+                Next
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

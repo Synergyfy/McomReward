@@ -9,7 +9,7 @@ import Image from 'next/image';
 interface SectorOption {
   value: string;
   label: string;
-  imageUrl: string;
+  imageUrl: string | null;
 }
 
 interface SectorSelectProps {
@@ -22,7 +22,7 @@ const { Option, SingleValue } = components;
 const IconOption = (props: OptionProps<SectorOption>) => (
   <Option {...props}>
     <div className="flex items-center">
-      <Image src={props.data.imageUrl} alt={props.data.label} className="w-6 h-6 mr-2 rounded-full" width={24} height={24} />
+      <Image src={props.data.imageUrl || '/placeholder.png'} alt={props.data.label} className="w-6 h-6 mr-2 rounded-full" width={24} height={24} />
       {props.data.label}
     </div>
   </Option>
@@ -31,7 +31,7 @@ const IconOption = (props: OptionProps<SectorOption>) => (
 const IconSingleValue = (props: SingleValueProps<SectorOption>) => (
   <SingleValue {...props}>
     <div className="flex items-center">
-      <Image src={props.data.imageUrl} alt={props.data.label} className="w-6 h-6 mr-2 rounded-full" width={24} height={24} />
+      <Image src={props.data.imageUrl || '/placeholder.png'} alt={props.data.label} className="w-6 h-6 mr-2 rounded-full" width={24} height={24} />
       {props.data.label}
     </div>
   </SingleValue>

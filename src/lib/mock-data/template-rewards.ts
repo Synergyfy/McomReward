@@ -1,0 +1,53 @@
+
+import { Reward } from '@/services/business-reward/types';
+
+export const templateRewards: Reward[] = [
+  {
+    id: 'template-1',
+    title: '20% Off Store-Wide',
+    value: 20,
+    pointsRequired: 400,
+    image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=150&h=150&fit=crop&q=80',
+    description: 'A versatile coupon for 20% off any purchase. Great for attracting new customers.',
+    quantity: 100,
+    disabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'template-2',
+    title: '£10 Gift Card',
+    value: 10,
+    pointsRequired: 1000,
+    image: 'https://images.unsplash.com/photo-1577538205243-a71bf516c5b2?w=150&h=150&fit=crop&q=80',
+    description: 'A £10 gift card that can be used on any future purchase. Excellent for rewarding loyalty.',
+    quantity: 100,
+    disabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'template-3',
+    title: 'Free Coffee/Tea',
+    value: 5,
+    pointsRequired: 250,
+    image: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=150&h=150&fit=crop&q=80',
+    description: 'Offer a complimentary hot beverage. Perfect for cafes and restaurants.',
+    quantity: 100,
+    disabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'template-4',
+    title: 'Double Points Week',
+    value: 0,
+    pointsRequired: 0,
+    image: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=150&h=150&fit=crop&q=80',
+    description: 'Run a promotion to grant double loyalty points for all purchases over a week.',
+    quantity: 100,
+    disabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];

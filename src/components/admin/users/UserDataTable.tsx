@@ -1,0 +1,277 @@
+'use client';
+
+import * as React from 'react';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  // getPaginationRowModel,
+  getFilteredRowModel,
+  useReactTable,
+  ColumnFiltersState,
+} from '@tanstack/react-table';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+// import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ConfirmationDialog } from './ConfirmationDialog';
+import { AdjustPointsModal } from './AdjustPointsModal';
+import { EditBusinessUserModal } from './EditBusinessUserModal';
+import { EditConsumerUserModal } from './EditConsumerUserModal';
+import { BusinessUserDetailsModal } from './BusinessUserDetailsModal';
+import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import { ActionHandlers } from './columns'; // Import ActionHandlers type
+
+interface DataTableProps<TData, TValue> {
+  columns: (handlers: ActionHandlers) => ColumnDef<TData, TValue>[]; // Updated signature
+  data: TData[];
+  onUpdateUser: (updatedUser: BusinessUser | ConsumerUser) => void;
+  onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
+  onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onViewDetails: (userId: string) => void;
+}
+
+export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>({
+  columns,
+  data,
+  onUpdateUser,
+  onDeleteUser,
+  onAdjustUserPoints,
+  onSuspendUser,
+  onViewDetails,
+}: DataTableProps<TData, TValue>) {
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+
+  // State for Confirmation Dialog
+  const [showConfirmationDialog, setShowConfirmationDialog] = React.useState(false);
+  const [confirmationDialogProps, setConfirmationDialogProps] = React.useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+  }>({
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+  });
+
+  // State for Adjust Points Modal
+  const [showAdjustPointsModal, setShowAdjustPointsModal] = React.useState(false);
+  const [adjustPointsModalProps, setAdjustPointsModalProps] = React.useState({
+    userName: '',
+    currentPoints: 0,
+    onAdjust: (amount: number, reason: string) => {},
+  });
+
+  // State for Edit Modals
+  const [showEditBusinessUserModal, setShowEditBusinessUserModal] = React.useState(false);
+  const [showEditConsumerUserModal, setShowEditConsumerUserModal] = React.useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = React.useState<BusinessUser | ConsumerUser | null>(null);
+
+  // State for View Details Modal
+  const [showViewUserDetailsModal, setShowViewUserDetailsModal] = React.useState(false);
+  const [selectedUserIdForView, setSelectedUserIdForView] = React.useState<string | null>(null);
+
+  const handleCloseModals = () => {
+    setShowConfirmationDialog(false);
+    setShowAdjustPointsModal(false);
+    setShowEditBusinessUserModal(false);
+    setShowEditConsumerUserModal(false);
+    setSelectedUserForEdit(null);
+    setShowViewUserDetailsModal(false);
+    setSelectedUserIdForView(null);
+  };
+
+  const handleOpenViewUserDetailsModal = (user: BusinessUser | ConsumerUser) => {
+    setSelectedUserIdForView(user.id);
+    setShowViewUserDetailsModal(true);
+  };
+
+  const handleOpenConfirmationDialog = (
+    title: string,
+    description: string,
+    onConfirm: () => void,
+    confirmText?: string,
+    cancelText?: string
+  ) => {
+    setConfirmationDialogProps({ title, description, onConfirm, confirmText, cancelText });
+    setShowConfirmationDialog(true);
+  };
+
+  const handleOpenAdjustPointsModal = (
+    userName: string,
+    currentPoints: number,
+    onAdjust: (amount: number, reason: string) => void
+  ) => {
+    setAdjustPointsModalProps({ userName, currentPoints, onAdjust });
+    setShowAdjustPointsModal(true);
+  };
+
+  const handleOpenEditBusinessUserModal = (user: BusinessUser) => {
+    setSelectedUserForEdit(user);
+    setShowEditBusinessUserModal(true);
+  };
+
+  const handleOpenEditConsumerUserModal = (user: ConsumerUser) => {
+    setSelectedUserForEdit(user);
+    setShowEditConsumerUserModal(true);
+  };
+
+  const handleSaveBusinessUser = (updatedUser: BusinessUser) => {
+    onUpdateUser(updatedUser); // Propagate update to parent
+    handleCloseModals();
+  };
+
+  const handleSaveConsumerUser = (updatedUser: ConsumerUser) => {
+    onUpdateUser(updatedUser); // Propagate update to parent
+    handleCloseModals();
+  };
+
+  const tableColumns = React.useMemo(() => {
+    const handlers: ActionHandlers = {
+      onOpenConfirmationDialog: handleOpenConfirmationDialog,
+      onOpenAdjustPointsModal: handleOpenAdjustPointsModal,
+      onOpenEditBusinessUserModal: handleOpenEditBusinessUserModal,
+      onOpenEditConsumerUserModal: handleOpenEditConsumerUserModal,
+      onOpenViewUserDetailsModal: handleOpenViewUserDetailsModal,
+      onViewDetails: onViewDetails, // Use the prop directly
+      onDeleteUser: onDeleteUser,
+      onAdjustUserPoints: onAdjustUserPoints,
+      onSuspendUser: onSuspendUser,
+    };
+    return columns(handlers); // Pass the single handlers object
+  }, [
+    columns,
+    onViewDetails,
+    onDeleteUser,
+    onAdjustUserPoints,
+    onSuspendUser,
+  ]);
+
+
+  const table = useReactTable({
+    data,
+    columns: tableColumns, // Use the dynamically created columns
+    getCoreRowModel: getCoreRowModel(),
+    // getPaginationRowModel: getPaginationRowModel(), // Removed client-side pagination
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      columnFilters,
+    },
+    // manualPagination: true, // We are handling pagination manually in the parent
+  });
+
+  return (
+    <div>
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter by email..."
+          value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+          onChange={(event) =>
+            table.getColumn('email')?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={tableColumns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination controls removed from here as they are now in the parent page */}
+
+      {/* Modals */}
+      <ConfirmationDialog
+        isOpen={showConfirmationDialog}
+        onClose={handleCloseModals}
+        {...confirmationDialogProps}
+      />
+      <AdjustPointsModal
+        isOpen={showAdjustPointsModal}
+        onClose={handleCloseModals}
+        {...adjustPointsModalProps}
+      />
+      {selectedUserForEdit && showEditBusinessUserModal && (
+        <EditBusinessUserModal
+          isOpen={showEditBusinessUserModal}
+          onClose={handleCloseModals}
+          onSave={handleSaveBusinessUser}
+          user={selectedUserForEdit as BusinessUser}
+        />
+      )}
+      {selectedUserForEdit && showEditConsumerUserModal && (
+        <EditConsumerUserModal
+          isOpen={showEditConsumerUserModal}
+          onClose={handleCloseModals}
+          onSave={handleSaveConsumerUser}
+          user={selectedUserForEdit as ConsumerUser}
+        />
+      )}
+      {showViewUserDetailsModal && (
+        <BusinessUserDetailsModal
+          isOpen={showViewUserDetailsModal}
+          onClose={handleCloseModals}
+          businessId={selectedUserIdForView}
+        />
+      )}
+    </div>
+  );
+}

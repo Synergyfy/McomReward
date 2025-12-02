@@ -1,0 +1,7 @@
+[
+  { "name": "Business A", "redemptions": 500, "pointsIssued": 15000 },
+  { "name": "Business B", "redemptions": 450, "pointsIssued": 12000 },
+  { "name": "Business C", "redemptions": 300, "pointsIssued": 9000 },
+  { "name": "Business D", "redemptions": 250, "pointsIssued": 8000 },
+  { "name": "Business E", "redemptions": 200, "pointsIssued": 7000 }
+]

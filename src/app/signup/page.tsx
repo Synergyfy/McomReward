@@ -1,251 +1,197 @@
 "use client";
-import React, { useState } from 'react';
-import { useBusinessSignUp } from '@/services/business/hook';
-import { CreateBusinessDto } from '@/services/business/types';
-import { useRouter } from 'next/navigation';
-import { SectorSelect } from '@/components/SectorSelect';
-import { Eye, EyeOff } from 'lucide-react';
-import Image from 'next/image';
 
-const SignUpPage = () => {
-  const [step, setStep] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
-  const [formData, setFormData] = useState<CreateBusinessDto>({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    address: '',
-    sectorId: '',
-  });
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const router = useRouter();
+import React, { useState, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Building2, User, ArrowLeft } from "lucide-react";
+import CustomerSignupPage from "@/components/Forms/CustomerSignupForm";
+import BusinessSignupForm from "@/components/Forms/BusinessSignupForm";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-  const { mutate, isPending } = useBusinessSignUp();
+function SignupCard() {
+  const searchParams = useSearchParams();
+  const initialTypeParam = searchParams.get("type");
+  const initialType = (initialTypeParam === "customer" || initialTypeParam === "business") ? initialTypeParam : null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear validation error on change
-    if (errors.email || errors.password) {
-      setErrors({ email: '', password: '' });
-    }
+  const [selectedType, setSelectedType] = useState<"customer" | "business" | null>(initialType);
+
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
   };
-
-  const validate = () => {
-    const newErrors = { email: '', password: '' };
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address.";
-    }
-    if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters long.";
-    }
-    setErrors(newErrors);
-    return !newErrors.email && !newErrors.password;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
-      return;
-    }
-    if (validate()) {
-      mutate(formData, {
-        onSuccess: () => {
-          router.push('/signin');
-        },
-      });
-    }
-  };
-
-  const nextStep = () => {
-    if (formData.password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
-      return;
-    }
-    if (validate()) {
-      setPasswordError('');
-      setStep(step + 1);
-    }
-  };
-  const prevStep = () => setStep(step - 1);
-
-  const progress = (step / 2) * 100;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="relative flex flex-col w-full max-w-4xl m-6 bg-white shadow-2xl rounded-2xl md:flex-row md:space-y-0">
-        {/* Left side */}
-        <div className="flex flex-col justify-center w-full p-8 md:p-14">
-          <div className="mb-8">
-            <span className="mb-3 text-4xl font-bold">Create Your Account</span>
-            <p className="font-light text-gray-500 mt-2">
-              Let&apos;s get you started.
-            </p>
-          </div>
+    <motion.div
+      layout
+      className="relative w-full lg:w-[480px] bg-white border border-gray-100 shadow-2xl rounded-3xl overflow-hidden"
+    >
+      {/* Header */}
+      <div className="text-center py-6 border-b border-gray-100 bg-white">
+        <h1 className="text-2xl font-bold text-gray-800">Create your account</h1>
+        <p className="text-sm text-gray-500 mt-1">Choose how you want to join Loyalty CardX</p>
+      </div>
 
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-8">
-            <div
-              className="bg-orange-600 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
+      {/* FORM AREA */}
+      <motion.div
+        layout
+        className="relative p-6 md:p-8 min-h-[540px] flex flex-col items-center justify-start"
+      >
+        <AnimatePresence mode="wait">
+          {/* Step 1 — Choose Type */}
+          {!selectedType && (
+            <motion.div
+              key="choose"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={containerVariants}
+              transition={{ duration: 0.4 }}
+              className="text-center w-full flex flex-col items-center justify-center flex-1"
+            >
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">Get Started</h2>
+              <p className="text-gray-500 text-sm mb-8">
+                Select your role below to begin your journey
+              </p>
 
-          <form onSubmit={handleSubmit}>
-            {step === 1 && (
-              <div>
-                <h3 className="mb-4 text-xl font-semibold">Account Details</h3>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Business Name</span>
-                  <input
-                    type="text"
-                    name="name"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Email Address</span>
-                  <input
-                    type="email"
-                    name="email"
-                    className={`w-full p-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Password</span>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      className={`w-full p-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md placeholder:font-light`}
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(false)} />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowPassword(true)} />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Confirm Password</span>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(false)} />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400 cursor-pointer" onClick={() => setShowConfirmPassword(true)} />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+              <div className="flex flex-col gap-4 w-full">
                 <button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={formData.password !== confirmPassword}
-                  className="w-full bg-orange-600 text-white p-2 mt-4 rounded-lg hover:bg-orange-700 disabled:bg-orange-300"
+                  onClick={() => setSelectedType("customer")}
+                  className="flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-xl transition shadow-sm"
                 >
-                  Next
+                  <User size={20} />
+                  Sign up as Customer
+                </button>
+
+                <button
+                  onClick={() => setSelectedType("business")}
+                  className="flex items-center justify-center gap-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition shadow-sm"
+                >
+                  <Building2 size={20} />
+                  Sign up as Business
                 </button>
               </div>
-            )}
+            </motion.div>
+          )}
 
-            {step === 2 && (
-              <div>
-                <h3 className="mb-4 text-xl font-semibold">Business Details</h3>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Phone Number</span>
-                  <input
-                    type="text"
-                    name="phone"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Address</span>
-                  <input
-                    type="text"
-                    name="address"
-                    className="w-full p-2 border border-gray-300 rounded-md placeholder:font-light"
-                    value={formData.address}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="py-3">
-                  <span className="mb-2 text-md">Sector</span>
-                  <SectorSelect
-                    value={formData.sectorId}
-                    onChange={(value) => setFormData({ ...formData, sectorId: value })}
-                  />
-                </div>
-                <div className="flex justify-between mt-4">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="w-1/2 mr-2 bg-gray-300 text-black p-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-1/2 ml-2 bg-orange-600 text-white p-2 rounded-lg hover:bg-orange-700 disabled:bg-orange-300"
-                  >
-                    {isPending ? 'Signing Up...' : 'Sign Up'}
-                  </button>
-                </div>
+          {/* Step 2 — Customer Form */}
+          {selectedType === "customer" && (
+            <motion.div
+              key="customer"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={containerVariants}
+              transition={{ duration: 0.5 }}
+              layout
+              className="w-full flex flex-col flex-1"
+            >
+              <button
+                onClick={() => setSelectedType(null)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-4"
+              >
+                <ArrowLeft size={18} /> Back
+              </button>
+
+              {/* Scrollable Form */}
+              <div className="overflow-y-auto max-h-[500px] pr-2 custom-scroll">
+                <CustomerSignupPage />
               </div>
-            )}
-          </form>
+            </motion.div>
+          )}
 
-          <div className="text-center text-gray-400 mt-8">
-            Already have an account?
-            <a href="/signin" className="font-bold text-black ml-1"> Sign in</a>
-          </div>
-        </div>
-        {/* Right side */}
-        <div className="relative md:w-1/2">
-          <Image
-            src="https://images.unsplash.com/photo-1527689368864-3a821dbccc34?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
-            alt="img"
-            className="w-full h-full hidden rounded-r-2xl md:block object-cover"
-            width={400}
-            height={600}
-          />
-        </div>
+          {/* Step 3 — Business Form */}
+          {selectedType === "business" && (
+            <motion.div
+              key="business"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={containerVariants}
+              transition={{ duration: 0.5 }}
+              layout
+              className="w-full flex flex-col flex-1"
+            >
+              <button
+                onClick={() => setSelectedType(null)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-4"
+              >
+                <ArrowLeft size={18} /> Back
+              </button>
+
+              {/* Scrollable Form */}
+              <div className="overflow-y-auto max-h-[500px] pr-2 custom-scroll">
+                <BusinessSignupForm />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Footer */}
+      <div className="border-t border-gray-100 bg-white text-center py-5 space-y-2">
+        <p className="text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="text-orange-500 hover:underline font-medium"
+          >
+            Log in
+          </Link>
+        </p>
+        <p className="text-xs text-gray-400 max-w-sm mx-auto">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="text-orange-500 hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-orange-500 hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
+    </motion.div>
+  );
+}
+
+export default function SignupLayout() {
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center bg-white p-4 md:p-8">
+      {/* LEFT — Intro Section */}
+      <div className="hidden lg:flex flex-col justify-center items-start w-1/2 px-12 space-y-6">
+        <h1 className="text-4xl font-extrabold text-orange-600">Loyalty CardX</h1>
+        <p className="text-gray-600 text-lg leading-relaxed max-w-md">
+          Earn rewards, grow loyalty, and connect smarter.
+          Join as a <span className="text-orange-500 font-semibold">Customer</span> or{" "}
+          <span className="text-orange-500 font-semibold">Business</span> — the choice is yours 🚀
+        </p>
+        <div className="h-1 w-24 bg-orange-400 rounded-full"></div>
+      </div>
+
+      {/* RIGHT — Auth Card */}
+      <Suspense fallback={<div className="w-full lg:w-[480px] h-[600px] bg-white rounded-3xl animate-pulse" />}>
+        <SignupCard />
+      </Suspense>
+
+      {/* 🌈 Custom Scrollbar Styling */}
+      <style jsx global>{`
+        .custom-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: #f9f9f9;
+          border-radius: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: #f97316;
+          border-radius: 8px;
+          transition: background 0.3s ease;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: #ea580c;
+        }
+      `}</style>
     </div>
   );
-};
-
-export default SignUpPage;
+}

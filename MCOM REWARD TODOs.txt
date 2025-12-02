@@ -1,0 +1,13 @@
+FRANK - EXPECTED DELIVERY TIME (1hr 20 mins)
+1. FIX THE PRICING AND PAYMENT (FRONTEND) - FRANK (20 mins)
+
+2. The Nav Bar is not supposed to be showing in a dashboard. FRANK (10 MINS)
+
+3. After the analytics inside my wallet page (customer dashboard) if they've not joined any Campaign before, there should be a Button that says Join Campaign and it should take them to where they see the campaign(/campaigns) within their level. (10 MINUTES)
+
+4. Next Tab should be My Campaigns when they click on it they should see the list of their Campaign and if they've not joined any before they should see Information and Button that tells them to Start Earning by joining Campaigns - FRANK (10 minutes)
+
+5. If they have some Campaigns already it should they should see the list and a button for them to Browse to join more Campaigns. FRANK (15 minutes)
+
+6. My Campaign is overlapping with the Nav Bar - same with Wishlist. FRANK (10 minutes)
+7. Clicking on Gold Member on the top bar takes me to the Business Dashboard. FRANK (disable the button for now) (5min)

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, Landmark, TrendingUp, Star } from 'lucide-react';
+import { PlusCircle, CheckCircle, Landmark, TrendingUp } from 'lucide-react';
 import {
   mockEscrows,
   mockPayoutRequests,
@@ -17,9 +17,10 @@ import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
-import { useGetTiers, useDeleteTier, useGetPaymentHistory } from '@/services/financials';
-import { PaymentHistoryItem } from '@/services/financials/types';
+import { useGetTiers, useDeleteTier, useGetPaymentHistory, useGetPointPackages, useDeletePointPackage } from '@/services/financials';
+import { PaymentHistoryItem, PointPackage } from '@/services/financials/types';
 import { Tier } from '@/services/financials/types';
+import { AddEditPointPackageModal } from '@/components/admin/financials/AddEditPointPackageModal';
 
 export default function FinancialsPage() {
   const { data: paymentHistory, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory();
@@ -28,6 +29,9 @@ export default function FinancialsPage() {
 
   const { data: plans, isLoading: isLoadingPlans, error: plansError } = useGetTiers();
   const deleteTierMutation = useDeleteTier();
+
+  const { data: pointPackages, isLoading: isLoadingPointPackages, error: pointPackagesError } = useGetPointPackages();
+  const deletePointPackageMutation = useDeletePointPackage();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -50,6 +54,10 @@ export default function FinancialsPage() {
   const [showAddEditPlanModal, setShowAddEditPlanModal] = useState(false);
   const [currentEditPlan, setCurrentEditPlan] = useState<Tier | undefined>(undefined);
 
+  // State for Add/Edit Point Package Modal
+  const [showAddEditPointPackageModal, setShowAddEditPointPackageModal] = useState(false);
+  const [currentEditPointPackage, setCurrentEditPointPackage] = useState<PointPackage | undefined>(undefined);
+
   const handleAddEditPlan = (plan?: Tier) => {
     setCurrentEditPlan(plan);
     setShowAddEditPlanModal(true);
@@ -70,6 +78,28 @@ export default function FinancialsPage() {
     } catch (error) {
       handleShowFeedback("Error", `There was an error deleting plan ${planId}.`, 'OK');
     }
+  };
+
+  const handleAddEditPointPackage = (pkg?: PointPackage) => {
+    setCurrentEditPointPackage(pkg);
+    setShowAddEditPointPackageModal(true);
+  };
+
+  const handleSavePointPackage = (savedPackage: PointPackage) => {
+      setShowAddEditPointPackageModal(false);
+      handleShowFeedback(
+        currentEditPointPackage ? "Package Updated" : "Package Added",
+        `Point Package "${savedPackage.name}" has been successfully ${currentEditPointPackage ? 'updated' : 'added'}.`
+      );
+  };
+
+  const handleDeletePointPackage = async (packageId: string) => {
+      try {
+        await deletePointPackageMutation.mutateAsync(packageId);
+        handleShowFeedback("Package Deleted", `Point Package ${packageId} has been deleted.`);
+      } catch (error) {
+        handleShowFeedback("Error", `There was an error deleting package ${packageId}.`, 'OK');
+      }
   };
 
   const handleEscrowAction = (escrowId: string, action: 'released' | 'refunded') => {
@@ -146,6 +176,7 @@ export default function FinancialsPage() {
           <TabsTrigger value="escrow-management">Escrow Management</TabsTrigger>
           <TabsTrigger value="subscription-plans">Subscription Plans</TabsTrigger>
           <TabsTrigger value="payout-requests">Payout Requests</TabsTrigger>
+          <TabsTrigger value="point-packages">Point Packages</TabsTrigger>
         </TabsList>
 
         {/* Payment History Tab */}
@@ -316,6 +347,51 @@ export default function FinancialsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* Point Packages Tab */}
+        <TabsContent value="point-packages">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Point Packages</CardTitle>
+                <Button onClick={() => handleAddEditPointPackage()}><PlusCircle className="mr-2 h-4 w-4" /> Create New Package</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Points</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Tiers</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingPointPackages && <TableRow><TableCell colSpan={6}>Loading packages...</TableCell></TableRow>}
+                  {pointPackagesError && <TableRow><TableCell colSpan={6}>Error loading packages.</TableCell></TableRow>}
+                  {pointPackages?.map((pkg) => (
+                    <TableRow key={pkg.id}>
+                      <TableCell>{pkg.name}</TableCell>
+                      <TableCell>{pkg.points}</TableCell>
+                      <TableCell>£{pkg.price.toFixed(2)}</TableCell>
+                      <TableCell>{pkg.tiers.map(t => t.name).join(', ') || 'All'}</TableCell>
+                      <TableCell><Badge variant={pkg.is_active ? 'default' : 'secondary'}>{pkg.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                            <Button size="sm" onClick={() => handleAddEditPointPackage(pkg)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeletePointPackage(pkg.id)}>Delete</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <AddEditPlanModal
@@ -323,6 +399,14 @@ export default function FinancialsPage() {
         onClose={() => setShowAddEditPlanModal(false)}
         initialData={currentEditPlan}
         onSave={handleSavePlan}
+        onShowFeedback={handleShowFeedback}
+      />
+
+      <AddEditPointPackageModal
+        isOpen={showAddEditPointPackageModal}
+        onClose={() => setShowAddEditPointPackageModal(false)}
+        initialData={currentEditPointPackage}
+        onSave={handleSavePointPackage}
         onShowFeedback={handleShowFeedback}
       />
 

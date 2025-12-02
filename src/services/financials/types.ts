@@ -1,4 +1,3 @@
-
 export interface TierQuotas {
   maxActiveCampaigns: number;
   maxActiveRewards: number;
@@ -140,4 +139,37 @@ export interface PaymentHistoryItem {
   transactionId: string;
   status: string;
   membership: Membership;
+}
+
+export interface PointPackage {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  price: number;
+  currency: string;
+  tiers: Tier[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PointPackageCreateInput {
+  name: string;
+  description?: string;
+  points: number;
+  price: number;
+  currency?: string;
+  tier_ids: string[];
+  is_active?: boolean;
+}
+
+export interface PointPackageUpdateInput {
+  name?: string;
+  description?: string;
+  points?: number;
+  price?: number;
+  currency?: string;
+  tier_ids?: string[];
+  is_active?: boolean;
 }

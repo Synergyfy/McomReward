@@ -18,6 +18,69 @@ export interface Tier {
     qrCodeCount: number;
     description?: string;
     includesNfc?: boolean;
+    configuration?: TierConfiguration;
+}
+
+export interface TierConfiguration {
+    quotas?: TierQuotas;
+    featureFlags?: TierFeatureFlags;
+    pro?: TierProgressionLevel;
+    pro_plus?: TierProgressionLevel;
+}
+
+export interface TierProgressionLevel {
+    conditions: TierConditions;
+    benefits: TierBenefits;
+}
+
+export interface TierConditions {
+    minCampaignsCreated?: number;
+    minRewardsCreated?: number;
+    minPointsUsed?: number;
+    minCustomerScans?: number;
+    minParticipants?: number;
+    minTasksCompleted?: number;
+    minPurchases?: number;
+    minDaysActive?: number;
+    profileCompleted?: boolean;
+    kycVerified?: boolean;
+    minCustomerInteractions?: number;
+    minReviews?: number;
+    minRedeemedRewards?: number;
+    minRevenue?: number;
+}
+
+export interface TierBenefits {
+    quotas?: TierQuotas;
+    featureFlags?: TierFeatureFlags;
+    bonusPoints?: number;
+    unlockNextTierPreview?: {
+        percentNextTierPoints?: number;
+        additionalTeamMembers?: number;
+        analytics?: boolean;
+        segmentation?: boolean;
+    };
+}
+
+export interface TierQuotas {
+    maxActiveCampaigns?: number;
+    maxActiveRewards?: number;
+    maxRewardsPerCampaign?: number;
+    monthlyPointsAllowance?: number;
+    maxTeamMembers?: number;
+}
+
+export interface TierFeatureFlags {
+    canCreateCampaignFromScratch?: boolean;
+    canEditAdminTemplates?: boolean;
+    hasAccessToAdvancedAnalytics?: boolean;
+    hasAccessToCRM?: boolean;
+    canUpdateReward?: boolean;
+}
+
+export interface UpdateTierProgressionDto {
+    pro?: TierProgressionLevel;
+    pro_plus?: TierProgressionLevel;
 }
 
 export enum PlanType {

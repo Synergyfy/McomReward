@@ -19,15 +19,16 @@ export default function AdminBusinessUsersPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Map API data to BusinessUser type
+  // Map API data to BusinessUser type
   const businessUsers: BusinessUser[] = response?.data.map((business) => ({
     id: business.id,
     name: business.name,
     email: business.email,
-    tier: business.tier as BusinessUser['tier'], // Casting assuming API returns valid values
+    tier: business.tier || '-', // Handle null tier
     sector: business.sector,
-    activityStatus: business.activityStatus as BusinessUser['activityStatus'],
-    campaignsCreated: business.campaignsCreated,
-    rewardsAttached: business.rewardsAttached,
+    activityStatus: (business.activityStatus as 'Active' | 'Disabled') || 'Active',
+    campaignsCreated: business.campaignsCreated || 0, // Default to 0 if missing
+    rewardsAttached: business.rewardsAttached || 0, // Default to 0 if missing
     pointsBalance: business.pointsBalance,
     memberSince: new Date(business.memberSince),
   })) || [];
@@ -77,70 +78,70 @@ export default function AdminBusinessUsersPage() {
     const ellipsis = <MoreHorizontal className="h-4 w-4" />;
 
     if (totalPages <= maxVisiblePages + 2) {
-        for (let i = 1; i <= totalPages; i++) {
-            items.push(
-                <Button
-                    key={i}
-                    variant={page === i ? "default" : "outline"}
-                    size="icon"
-                    className="w-8 h-8"
-                    onClick={() => setPage(i)}
-                >
-                    {i}
-                </Button>
-            );
-        }
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <Button
+            key={i}
+            variant={page === i ? "default" : "outline"}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => setPage(i)}
+          >
+            {i}
+          </Button>
+        );
+      }
     } else {
-        // Always show first page
+      // Always show first page
+      items.push(
+        <Button
+          key={1}
+          variant={page === 1 ? "default" : "outline"}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => setPage(1)}
+        >
+          1
+        </Button>
+      );
+
+      if (page > 3) {
+        items.push(<div key="start-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
+      }
+
+      const startPage = Math.max(2, page - 1);
+      const endPage = Math.min(totalPages - 1, page + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
         items.push(
-            <Button
-                key={1}
-                variant={page === 1 ? "default" : "outline"}
-                size="icon"
-                className="w-8 h-8"
-                onClick={() => setPage(1)}
-            >
-                1
-            </Button>
+          <Button
+            key={i}
+            variant={page === i ? "default" : "outline"}
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => setPage(i)}
+          >
+            {i}
+          </Button>
         );
+      }
 
-        if (page > 3) {
-            items.push(<div key="start-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
-        }
+      if (page < totalPages - 2) {
+        items.push(<div key="end-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
+      }
 
-        const startPage = Math.max(2, page - 1);
-        const endPage = Math.min(totalPages - 1, page + 1);
-
-        for (let i = startPage; i <= endPage; i++) {
-            items.push(
-                <Button
-                    key={i}
-                    variant={page === i ? "default" : "outline"}
-                    size="icon"
-                    className="w-8 h-8"
-                    onClick={() => setPage(i)}
-                >
-                    {i}
-                </Button>
-            );
-        }
-
-        if (page < totalPages - 2) {
-             items.push(<div key="end-ellipsis" className="flex items-center justify-center w-8 h-8 text-muted-foreground">{ellipsis}</div>);
-        }
-
-        // Always show last page
-        items.push(
-            <Button
-                key={totalPages}
-                variant={page === totalPages ? "default" : "outline"}
-                size="icon"
-                className="w-8 h-8"
-                onClick={() => setPage(totalPages)}
-            >
-                {totalPages}
-            </Button>
-        );
+      // Always show last page
+      items.push(
+        <Button
+          key={totalPages}
+          variant={page === totalPages ? "default" : "outline"}
+          size="icon"
+          className="w-8 h-8"
+          onClick={() => setPage(totalPages)}
+        >
+          {totalPages}
+        </Button>
+      );
     }
 
     return items;
@@ -166,11 +167,11 @@ export default function AdminBusinessUsersPage() {
             onViewDetails={handleViewDetails}
           />
         </div>
-        
+
         {/* Pagination Controls */}
         <div className="flex items-center justify-between mt-4 border-t pt-4">
           <div className="text-sm text-gray-500">
-             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, response?.total || 0)} of {response?.total || 0} entries
+            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, response?.total || 0)} of {response?.total || 0} entries
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -182,9 +183,9 @@ export default function AdminBusinessUsersPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center space-x-1">
-                {renderPaginationItems()}
+              {renderPaginationItems()}
             </div>
 
             <Button

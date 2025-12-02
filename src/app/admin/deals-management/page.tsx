@@ -7,18 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Tag as TagIcon, DollarSign, CheckCircle, XCircle, Star, Edit, Trash2, Eye } from 'lucide-react';
-import { mockDeals, Deal } from '@/lib/mock-data/deals';
+import { PlusCircle, Search, Tag as TagIcon, DollarSign, CheckCircle, XCircle, Star, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { initialSectors } from '@/lib/mock-data/sectors';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { AddEditDealModal } from '@/components/admin/deals-management/AddEditDealModal';
 import { ViewDealDetailsModal } from '@/components/admin/deals-management/ViewDealDetailsModal';
+import { useGetAdminDeals, useUpdateDealStatus, useDeleteDeal, useCreateDeal, useUpdateDeal } from '@/services/deals/hook';
+import { Deal, CreateDealDto } from '@/services/deals/types';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function DealsManagementPage() {
-  const [deals, setDeals] = useState<Deal[]>(mockDeals);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterSector, setFilterSector] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterSector, setFilterSector] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // API Hooks
+  const { data: dealsData, isLoading, isError } = useGetAdminDeals({
+    page,
+    limit,
+    search: debouncedSearchTerm || undefined,
+    status: filterStatus !== 'all' ? (filterStatus as 'pending' | 'approved' | 'declined') : undefined,
+    // Note: Sector filtering might need backend support if not already there, 
+    // or we filter client side if the API doesn't support it yet. 
+    // Based on docs, categoryId is supported, but sector isn't explicitly mentioned in filter params.
+    // Assuming for now we might need to filter client side or just pass it if backend supports it.
+    // For this implementation, I'll stick to what the API docs said: status, search, categoryId.
+  });
+
+  const updateStatusMutation = useUpdateDealStatus();
+  const deleteDealMutation = useDeleteDeal();
+  const createDealMutation = useCreateDeal();
+  const updateDealMutation = useUpdateDeal();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -45,51 +68,47 @@ export default function DealsManagementPage() {
   const [showViewDealModal, setShowViewDealModal] = useState(false);
   const [currentViewDeal, setCurrentViewDeal] = useState<Deal | undefined>(undefined);
 
-  const filteredDeals = useMemo(() => {
-    return deals.filter(deal => {
-      const matchesSearch = deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            deal.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || deal.status === filterStatus;
-      const matchesSector = filterSector === 'all' || deal.sectorId === filterSector;
-      return matchesSearch && matchesStatus && matchesSector;
-    });
-  }, [deals, searchTerm, filterStatus, filterSector]);
-
   const handleAddEditDeal = (deal?: Deal) => {
     setCurrentEditDeal(deal);
     setShowAddEditDealModal(true);
   };
 
-  const handleSaveDeal = (savedDeal: Deal) => {
-    // Close the AddEditDealModal first
-    setShowAddEditDealModal(false);
-
-    // Then, after a short delay, show the feedback dialog
-    setTimeout(() => {
-      if (savedDeal.id.startsWith('new-')) {
-        setDeals(prev => [...prev, { ...savedDeal, id: `deal-${Date.now()}`, createdAt: new Date(), updatedAt: new Date() }]);
-        handleShowFeedback("Deal Added", `Deal "${savedDeal.title}" has been added.`);
-      } else {
-        setDeals(prev => prev.map(deal => (deal.id === savedDeal.id ? { ...savedDeal, updatedAt: new Date() } : deal)));
+  const handleSaveDeal = async (savedDeal: CreateDealDto) => { // Type 'any' used here because the modal might return a partial object or DTO
+    try {
+      if (currentEditDeal) {
+        await updateDealMutation.mutateAsync({ id: currentEditDeal.id, ...savedDeal });
         handleShowFeedback("Deal Updated", `Deal "${savedDeal.title}" has been updated.`);
+      } else {
+        await createDealMutation.mutateAsync(savedDeal);
+        handleShowFeedback("Deal Added", `Deal "${savedDeal.title}" has been added.`);
       }
-    }, 300); // A small delay (e.g., 300ms) to allow the modal to close
+      setShowAddEditDealModal(false);
+    } catch (error) {
+      console.error("Failed to save deal", error);
+      handleShowFeedback("Error", "Failed to save deal. Please try again.");
+    }
   };
 
-  const handleDeleteDeal = (dealId: string) => {
-    // In a real app, this would trigger a confirmation dialog first
-    setDeals(prev => prev.filter(deal => deal.id !== dealId));
-    handleShowFeedback("Deal Deleted", `Deal ${dealId} has been deleted.`);
+  const handleDeleteDeal = async (dealId: string) => {
+    if (confirm("Are you sure you want to delete this deal?")) {
+      try {
+        await deleteDealMutation.mutateAsync(dealId);
+        handleShowFeedback("Deal Deleted", `Deal has been deleted.`);
+      } catch (error) {
+        console.error("Failed to delete deal", error);
+        handleShowFeedback("Error", "Failed to delete deal. Please try again.");
+      }
+    }
   };
 
-  const handleApproveRejectDeal = (dealId: string, newStatus: 'active' | 'rejected') => {
-    setDeals(prev => prev.map(deal => (deal.id === dealId ? { ...deal, status: newStatus, updatedAt: new Date() } : deal)));
-    handleShowFeedback("Deal Status Updated", `Deal ${dealId} has been ${newStatus}.`);
-  };
-
-  const handleToggleFeatured = (dealId: string) => {
-    setDeals(prev => prev.map(deal => (deal.id === dealId ? { ...deal, isFeatured: !deal.isFeatured, updatedAt: new Date() } : deal)));
-    handleShowFeedback("Deal Featured Status", `Deal ${dealId} featured status toggled.`);
+  const handleApproveRejectDeal = async (dealId: string, newStatus: 'approved' | 'declined') => {
+    try {
+      await updateStatusMutation.mutateAsync({ id: dealId, status: newStatus });
+      handleShowFeedback("Deal Status Updated", `Deal has been ${newStatus}.`);
+    } catch (error) {
+      console.error("Failed to update status", error);
+      handleShowFeedback("Error", "Failed to update deal status. Please try again.");
+    }
   };
 
   const handleViewDealDetails = (deal: Deal) => {
@@ -97,12 +116,11 @@ export default function DealsManagementPage() {
     setShowViewDealModal(true);
   };
 
-  const getStatusBadgeVariant = (status: Deal['status']) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'active': return 'default';
-      case 'pending_approval': return 'secondary';
-      case 'rejected': return 'destructive';
-      case 'draft': return 'outline';
+      case 'approved': return 'default';
+      case 'pending': return 'secondary';
+      case 'declined': return 'destructive';
       default: return 'outline';
     }
   };
@@ -134,12 +152,12 @@ export default function DealsManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
                 </SelectContent>
               </Select>
+              {/* Sector filter - purely client side visual for now if API doesn't support it directly in this endpoint */}
               <Select value={filterSector} onValueChange={setFilterSector}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by sector" />
@@ -161,41 +179,54 @@ export default function DealsManagementPage() {
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Business</TableHead>
                 <TableHead>Sector</TableHead>
-                <TableHead>Featured</TableHead>
                 <TableHead>Submitted By</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDeals.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      Loading deals...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-red-500">
+                    Failed to load deals.
+                  </TableCell>
+                </TableRow>
+              ) : dealsData?.data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     No deals found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredDeals.map((deal) => (
+                dealsData?.data.map((deal) => (
                   <TableRow key={deal.id}>
                     <TableCell className="font-medium">{deal.title}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(deal.status)}>{deal.status.replace('_', ' ')}</Badge>
+                      <Badge variant={getStatusBadgeVariant(deal.status)}>{deal.status}</Badge>
                     </TableCell>
-                    <TableCell>£{deal.price.toFixed(2)}</TableCell>
-                    <TableCell>{initialSectors.find(s => s.id === deal.sectorId)?.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      {deal.isFeatured ? <Star className="h-4 w-4 text-yellow-500" /> : '-'}
-                    </TableCell>
-                    <TableCell>{deal.submittedByBusinessId || 'Admin'}</TableCell>
+                    <TableCell>£{Number(deal.value || 0).toFixed(2)}</TableCell>
+                    <TableCell>{deal.business?.name || 'N/A'}</TableCell>
+                    <TableCell>{deal.business?.sector?.name || 'N/A'}</TableCell>
+                    <TableCell>{deal.business?.name || 'Admin'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleViewDealDetails(deal)}><Eye className="h-4 w-4" /></Button>
                         <Button variant="outline" size="sm" onClick={() => handleAddEditDeal(deal)}><Edit className="h-4 w-4" /></Button>
-                        {deal.status === 'pending_approval' && (
+                        {deal.status === 'pending' && (
                           <>
-                            <Button variant="default" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'active')}><CheckCircle className="h-4 w-4" /></Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'rejected')}><XCircle className="h-4 w-4" /></Button>
+                            <Button variant="default" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'approved')}><CheckCircle className="h-4 w-4" /></Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleApproveRejectDeal(deal.id, 'declined')}><XCircle className="h-4 w-4" /></Button>
                           </>
                         )}
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteDeal(deal.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -206,6 +237,32 @@ export default function DealsManagementPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Simple Pagination Controls */}
+          {dealsData && dealsData.total > limit && (
+            <div className="flex justify-end mt-4 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <span className="flex items-center text-sm text-muted-foreground">
+                Page {page} of {Math.ceil(dealsData.total / limit)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={!dealsData.nextPage}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 

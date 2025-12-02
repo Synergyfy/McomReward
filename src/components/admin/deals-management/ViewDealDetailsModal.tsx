@@ -8,21 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'; // Import Card components
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Deal } from '@/lib/mock-data/deals';
-import { initialSectors } from '@/lib/mock-data/sectors';
+import { Deal } from '@/services/deals/types';
 import {
   Tag as TagIcon,
   DollarSign,
   Building,
   Calendar,
-  Info, // For description
-  CheckCircle, // For featured
-  Eye, // For visibility rules
-  Clock, // For created/updated at
-  Briefcase, // For sector
-  User // For submitted by
+  Info,
+  CheckCircle,
+  Clock,
+  Briefcase,
+  FileText
 } from 'lucide-react';
 
 interface ViewDealDetailsModalProps {
@@ -38,14 +36,11 @@ export function ViewDealDetailsModal({
 }: ViewDealDetailsModalProps) {
   if (!deal) return null;
 
-  const sectorName = initialSectors.find(s => s.id === deal.sectorId)?.name || 'N/A';
-
-  const getStatusBadgeVariant = (status: Deal['status']) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'active': return 'default';
-      case 'pending_approval': return 'secondary';
-      case 'rejected': return 'destructive';
-      case 'draft': return 'outline';
+      case 'approved': return 'default';
+      case 'pending': return 'secondary';
+      case 'declined': return 'destructive';
       default: return 'outline';
     }
   };
@@ -79,26 +74,24 @@ export function ViewDealDetailsModal({
                 </div>
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Price:</span>
-                  <span className="text-gray-700">${deal.price.toFixed(2)}</span>
+                  <span className="font-medium">Value:</span>
+                  <span className="text-gray-700">£{Number(deal.value || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Sector:</span>
-                  <span className="text-gray-700">{sectorName}</span>
+                  <span className="font-medium">Category:</span>
+                  <span className="text-gray-700">{deal.category?.name || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Featured:</span>
-                  <span className="text-gray-700">{deal.isFeatured ? 'Yes' : 'No'}</span>
+                  <span className="font-medium">Approved:</span>
+                  <span className="text-gray-700">{deal.isApproved ? 'Yes' : 'No'}</span>
                 </div>
-                {deal.submittedByBusinessId && (
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Submitted By:</span>
-                    <span className="text-gray-700">{deal.submittedByBusinessId}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Business:</span>
+                  <span className="text-gray-700">{deal.business?.name || 'N/A'}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -115,11 +108,23 @@ export function ViewDealDetailsModal({
             </CardContent>
           </Card>
 
-          {/* Status & Rules Card */}
+           {/* Terms Card */}
+           <Card className="shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" /> Terms & Conditions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700 whitespace-pre-wrap">{deal.termsAndConditions}</p>
+            </CardContent>
+          </Card>
+
+          {/* Status & Dates Card */}
           <Card className="shadow-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Eye className="h-5 w-5 text-muted-foreground" /> Status & Visibility
+                <Clock className="h-5 w-5 text-muted-foreground" /> Status & Timeline
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -127,37 +132,27 @@ export function ViewDealDetailsModal({
                 <div className="flex items-center gap-2">
                   <TagIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Status:</span>
-                  <Badge variant={getStatusBadgeVariant(deal.status)}>{deal.status.replace('_', ' ')}</Badge>
+                  <Badge variant={getStatusBadgeVariant(deal.status)}>{deal.status}</Badge>
                 </div>
-                {deal.visibilityRules && (
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Visibility Rules:</span>
-                    <span className="text-gray-700">{deal.visibilityRules}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timestamps Card */}
-          <Card className="shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" /> Timestamps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                 <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Active:</span>
+                  <span className="text-gray-700">{deal.isActive ? 'Yes' : 'No'}</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Start Date:</span>
+                  <span className="text-gray-700">{deal.startDate ? new Date(deal.startDate).toLocaleDateString() : 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">End Date:</span>
+                  <span className="text-gray-700">{deal.endDate ? new Date(deal.endDate).toLocaleDateString() : 'N/A'}</span>
+                </div>
+                 <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Created At:</span>
-                  <span className="text-gray-700">{deal.createdAt.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Last Updated:</span>
-                  <span className="text-gray-700">{deal.updatedAt.toLocaleString()}</span>
+                  <span className="text-gray-700">{new Date(deal.createdAt).toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>

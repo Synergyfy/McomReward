@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import {
     Tier,
@@ -9,7 +9,8 @@ import {
     PayPalInitiateRequest,
     PayPalInitiateResponse,
     PayPalVerifyRequest,
-    PayPalVerifyResponse
+    PayPalVerifyResponse,
+    UpdateTierProgressionDto
 } from './types';
 
 const PAYMENT_QUERY_KEY = 'payment';
@@ -23,6 +24,21 @@ export const useGetTiers = () => {
     return useQuery({
         queryKey: [PAYMENT_QUERY_KEY, 'tiers'],
         queryFn: getTiers,
+    });
+};
+
+const updateTierProgression = async ({ id, payload }: { id: string; payload: UpdateTierProgressionDto }): Promise<Tier> => {
+    const { data } = await api.patch<Tier>(`/tier/${id}/progression`, payload);
+    return data;
+};
+
+export const useUpdateTierProgression = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: updateTierProgression,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [PAYMENT_QUERY_KEY, 'tiers'] });
+        },
     });
 };
 

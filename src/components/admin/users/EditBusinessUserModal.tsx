@@ -104,7 +104,7 @@ export function EditBusinessUserModal({
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
-                {['Active', 'Suspended', 'Inactive'].map((status) => (
+                {['Active', 'Disabled'].map((status) => (
                   <SelectItem key={status} value={status}>{status}</SelectItem>
                 ))}
               </SelectContent>

@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useCreateTier, useUpdateTier } from '@/services/financials';
-import { Tier, TierConfiguration, TierVariant, TierQuotas, TierFeatureFlags, TierProgressBonuses } from '@/services/financials/types';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { Tier, TierConfiguration, TierQuotas, TierFeatureFlags, TierProgressBonuses, SeasonalVariant, ProgressionLevel, ProgressionConditions, ProgressionBenefits } from '@/services/financials/types';
+import { PlusCircle, Trash2, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface AddEditPlanModalProps {
   isOpen: boolean;
@@ -40,8 +42,6 @@ const defaultConfiguration: TierConfiguration = {
     trusted_campaign_bonus: 0,
     partner_campaign_bonus: 0,
   },
-  enablePro: false,
-  enableProPlus: false,
 };
 
 export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowFeedback }: AddEditPlanModalProps) {
@@ -89,9 +89,13 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
           quotas: { ...defaultConfiguration.quotas, ...config.quotas },
           featureFlags: normalizedFlags,
           progressBonuses: normalizedBonuses,
-          // Recursively normalize variants if they exist
-          pro: config.pro ? { ...config.pro, featureFlags: { ...config.pro.featureFlags, hasAccessToCRM: config.pro.featureFlags?.hasAccessToCrm ?? config.pro.featureFlags?.hasAccessToCRM }, progressBonuses: { ...config.pro.progressBonuses, active_campaign_bonus: config.pro.progressBonuses?.activeCampaignBonus ?? config.pro.progressBonuses?.active_campaign_bonus, trusted_campaign_bonus: config.pro.progressBonuses?.trustedCampaignBonus ?? config.pro.progressBonuses?.trusted_campaign_bonus, partner_campaign_bonus: config.pro.progressBonuses?.partnerCampaignBonus ?? config.pro.progressBonuses?.partner_campaign_bonus } } : undefined,
-          pro_plus: config.pro_plus ? { ...config.pro_plus, featureFlags: { ...config.pro_plus.featureFlags, hasAccessToCRM: config.pro_plus.featureFlags?.hasAccessToCrm ?? config.pro_plus.featureFlags?.hasAccessToCRM }, progressBonuses: { ...config.pro_plus.progressBonuses, active_campaign_bonus: config.pro_plus.progressBonuses?.activeCampaignBonus ?? config.pro_plus.progressBonuses?.active_campaign_bonus, trusted_campaign_bonus: config.pro_plus.progressBonuses?.trustedCampaignBonus ?? config.pro_plus.progressBonuses?.trusted_campaign_bonus, partner_campaign_bonus: config.pro_plus.progressBonuses?.partnerCampaignBonus ?? config.pro_plus.progressBonuses?.partner_campaign_bonus } } : undefined,
+          // Ensure pro/pro_plus/seasonal are preserved if they exist
+          pro: config.pro,
+          pro_plus: config.pro_plus,
+          winter: config.winter,
+          summer: config.summer,
+          autumn: config.autumn,
+          spring: config.spring,
         };
       };
 
@@ -167,10 +171,17 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     }));
   };
 
-  const updateVariant = (variantName: 'pro' | 'pro_plus', variantData: TierVariant) => {
+  const updateProgressionLevel = (level: 'pro' | 'pro_plus', data: ProgressionLevel) => {
     setConfiguration(prev => ({
       ...prev,
-      [variantName]: variantData
+      [level]: data
+    }));
+  };
+
+  const updateSeasonalVariant = (season: 'winter' | 'summer' | 'autumn' | 'spring', variantData: SeasonalVariant) => {
+    setConfiguration(prev => ({
+      ...prev,
+      [season]: variantData
     }));
   };
 
@@ -182,36 +193,38 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Basic Details</TabsTrigger>
             <TabsTrigger value="configuration">Configuration</TabsTrigger>
-            <TabsTrigger value="variants">Variants (Pro/Pro+)</TabsTrigger>
+            <TabsTrigger value="progression">Progression (Pro/Pro+)</TabsTrigger>
+            <TabsTrigger value="seasonal">Seasonal</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 py-4">
             <div>
-              <Label htmlFor="name">Plan Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <LabelWithTooltip label="Plan Name" tooltip="The public name of the subscription plan (e.g., 'Bronze', 'Gold')." />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Gold Plan" />
+              <p className="text-sm text-muted-foreground mt-1">This name will be displayed to users during checkout.</p>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="monthlyPrice">Monthly Price</Label>
-                <Input id="monthlyPrice" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
+                <LabelWithTooltip label="Monthly Price" tooltip="The cost of the plan billed monthly." />
+                <Input id="monthlyPrice" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} placeholder="0.00" />
               </div>
               <div>
-                <Label htmlFor="quaterlyPrice">Quarterly Price</Label>
-                <Input id="quaterlyPrice" type="number" value={quaterlyPrice} onChange={(e) => setQuaterlyPrice(e.target.value)} />
+                <LabelWithTooltip label="Quarterly Price" tooltip="The cost of the plan billed every 3 months." />
+                <Input id="quaterlyPrice" type="number" value={quaterlyPrice} onChange={(e) => setQuaterlyPrice(e.target.value)} placeholder="0.00" />
               </div>
               <div>
-                <Label htmlFor="annualPrice">Annual Price</Label>
-                <Input id="annualPrice" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} />
+                <LabelWithTooltip label="Annual Price" tooltip="The cost of the plan billed yearly." />
+                <Input id="annualPrice" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} placeholder="0.00" />
               </div>
             </div>
             <div>
-              <Label>Features (Display Only)</Label>
+              <LabelWithTooltip label="Features (Display Only)" tooltip="List of features to display on the pricing card. These are for display purposes only and do not affect functionality." />
               {features.map((feature, index) => (
                 <div key={index} className="flex items-center gap-2 mb-2">
-                  <Input value={feature} onChange={(e) => handleFeatureChange(index, e.target.value)} />
+                  <Input value={feature} onChange={(e) => handleFeatureChange(index, e.target.value)} placeholder="e.g. Advanced Analytics" />
                   <Button variant="destructive" size="icon" onClick={() => removeFeature(index)} disabled={features.length === 1}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -229,51 +242,45 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
             <ProgressBonusesSection bonuses={configuration.progressBonuses || {}} onChange={updateProgressBonus} />
           </TabsContent>
 
-          <TabsContent value="variants" className="space-y-6 py-4">
+          <TabsContent value="progression" className="space-y-6 py-4">
             <Accordion type="multiple" className="w-full">
               <AccordionItem value="pro">
-                <AccordionTrigger>
-                  <div className="flex items-center gap-4">
-                    <span>Pro Variant</span>
-                    <Switch
-                      checked={configuration.enablePro}
-                      onCheckedChange={(checked) => setConfiguration(prev => ({ ...prev, enablePro: checked }))}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </AccordionTrigger>
+                <AccordionTrigger>Pro Level</AccordionTrigger>
                 <AccordionContent>
-                  {configuration.enablePro && (
-                    <VariantSection
-                      variant={configuration.pro || {}}
-                      onChange={(v) => updateVariant('pro', v)}
-                      title="Pro"
-                    />
-                  )}
+                  <ProgressionLevelSection
+                    level={configuration.pro || { conditions: {}, benefits: {} }}
+                    onChange={(data) => updateProgressionLevel('pro', data)}
+                    title="Pro"
+                  />
                 </AccordionContent>
               </AccordionItem>
-
               <AccordionItem value="pro_plus">
-                <AccordionTrigger>
-                  <div className="flex items-center gap-4">
-                    <span>Pro Plus Variant</span>
-                    <Switch
-                      checked={configuration.enableProPlus}
-                      onCheckedChange={(checked) => setConfiguration(prev => ({ ...prev, enableProPlus: checked }))}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </AccordionTrigger>
+                <AccordionTrigger>Pro Plus Level</AccordionTrigger>
                 <AccordionContent>
-                  {configuration.enableProPlus && (
-                    <VariantSection
-                      variant={configuration.pro_plus || {}}
-                      onChange={(v) => updateVariant('pro_plus', v)}
-                      title="Pro Plus"
-                    />
-                  )}
+                  <ProgressionLevelSection
+                    level={configuration.pro_plus || { conditions: {}, benefits: {} }}
+                    onChange={(data) => updateProgressionLevel('pro_plus', data)}
+                    title="Pro Plus"
+                  />
                 </AccordionContent>
               </AccordionItem>
+            </Accordion>
+          </TabsContent>
+
+          <TabsContent value="seasonal" className="space-y-6 py-4">
+            <Accordion type="multiple" className="w-full">
+              {['winter', 'summer', 'autumn', 'spring'].map((season) => (
+                <AccordionItem value={season} key={season}>
+                  <AccordionTrigger className="capitalize">{season} Variant</AccordionTrigger>
+                  <AccordionContent>
+                    <SeasonalVariantSection
+                      variant={configuration[season as keyof TierConfiguration] as SeasonalVariant || {}}
+                      onChange={(v) => updateSeasonalVariant(season as 'winter' | 'summer' | 'autumn' | 'spring', v)}
+                      title={season.charAt(0).toUpperCase() + season.slice(1)}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
             </Accordion>
           </TabsContent>
         </Tabs>
@@ -289,7 +296,62 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   );
 }
 
-// Helper Components
+function InputWithUnlimitedCheckbox({ value, onChange, placeholder }: { value: number | undefined, onChange: (value: number) => void, placeholder?: string }) {
+  const isUnlimited = value === -1;
+
+  const handleCheckboxChange = (checked: boolean) => {
+    if (checked) {
+      onChange(-1);
+    } else {
+      onChange(0); // Reset to 0 or some default when unchecked
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value);
+    if (!isNaN(newValue)) {
+      onChange(newValue);
+    } else {
+      onChange(0);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center space-x-2">
+        <Checkbox id={`unlimited-${Math.random()}`} checked={isUnlimited} onCheckedChange={handleCheckboxChange} />
+        <label htmlFor={`unlimited-${Math.random()}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          Unlimited
+        </label>
+      </div>
+      <Input
+        type="number"
+        value={isUnlimited ? '' : (value ?? '')}
+        onChange={handleInputChange}
+        placeholder={isUnlimited ? 'Unlimited' : placeholder}
+        disabled={isUnlimited}
+      />
+    </div>
+  );
+}
+
+function LabelWithTooltip({ label, tooltip }: { label: string, tooltip: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-1.5">
+      <Label>{label}</Label>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-xs">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+}
 
 function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onChange: (key: keyof TierQuotas, value: number) => void }) {
   return (
@@ -297,25 +359,23 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
       <h3 className="font-semibold text-lg">Quotas</h3>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="maxActiveCampaigns">Max Active Campaigns (-1 for unlimited)</Label>
-          <Input
-            type="number"
-            value={quotas.maxActiveCampaigns ?? ''}
-            onChange={(e) => onChange('maxActiveCampaigns', parseInt(e.target.value))}
+          <LabelWithTooltip label="Max Active Campaigns" tooltip="The maximum number of campaigns a business can have active simultaneously. Check 'Unlimited' to set to -1." />
+          <InputWithUnlimitedCheckbox
+            value={quotas.maxActiveCampaigns}
+            onChange={(val) => onChange('maxActiveCampaigns', val)}
             placeholder="Inherit"
           />
         </div>
         <div>
-          <Label htmlFor="maxActiveRewards">Max Active Rewards (-1 for unlimited)</Label>
-          <Input
-            type="number"
-            value={quotas.maxActiveRewards ?? ''}
-            onChange={(e) => onChange('maxActiveRewards', parseInt(e.target.value))}
+          <LabelWithTooltip label="Max Active Rewards" tooltip="The maximum number of active rewards a business can have. Check 'Unlimited' to set to -1." />
+          <InputWithUnlimitedCheckbox
+            value={quotas.maxActiveRewards}
+            onChange={(val) => onChange('maxActiveRewards', val)}
             placeholder="Inherit"
           />
         </div>
         <div>
-          <Label htmlFor="maxRewardsPerCampaign">Max Rewards Per Campaign</Label>
+          <LabelWithTooltip label="Max Rewards Per Campaign" tooltip="The maximum number of rewards that can be attached to a single campaign." />
           <Input
             type="number"
             value={quotas.maxRewardsPerCampaign ?? ''}
@@ -324,7 +384,7 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
           />
         </div>
         <div>
-          <Label htmlFor="monthlyPointsAllowance">Monthly Points Allowance</Label>
+          <LabelWithTooltip label="Monthly Points Allowance" tooltip="The amount of system points credited to the business each month." />
           <Input
             type="number"
             value={quotas.monthlyPointsAllowance ?? ''}
@@ -333,11 +393,10 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
           />
         </div>
         <div>
-          <Label htmlFor="maxTeamMembers">Max Team Members (-1 for unlimited)</Label>
-          <Input
-            type="number"
-            value={quotas.maxTeamMembers ?? ''}
-            onChange={(e) => onChange('maxTeamMembers', parseInt(e.target.value))}
+          <LabelWithTooltip label="Max Team Members" tooltip="The maximum number of team members (staff) a business can have. Check 'Unlimited' to set to -1." />
+          <InputWithUnlimitedCheckbox
+            value={quotas.maxTeamMembers}
+            onChange={(val) => onChange('maxTeamMembers', val)}
             placeholder="Inherit"
           />
         </div>
@@ -353,26 +412,31 @@ function FeatureFlagsSection({ flags, onChange }: { flags: Partial<TierFeatureFl
       <div className="grid grid-cols-2 gap-4">
         <FeatureFlagToggle
           label="Create Custom Campaigns"
+          tooltip="If enabled, the business can create custom campaigns. If disabled, they must use Admin-created templates."
           checked={flags.canCreateCampaignFromScratch}
           onChange={(v) => onChange('canCreateCampaignFromScratch', v)}
         />
         <FeatureFlagToggle
           label="Edit Admin Templates"
+          tooltip="If enabled, the business can modify the details of a template. If disabled, the template is read-only."
           checked={flags.canEditAdminTemplates}
           onChange={(v) => onChange('canEditAdminTemplates', v)}
         />
         <FeatureFlagToggle
           label="Advanced Analytics Access"
+          tooltip="Grants access to detailed analytics dashboards."
           checked={flags.hasAccessToAdvancedAnalytics}
           onChange={(v) => onChange('hasAccessToAdvancedAnalytics', v)}
         />
         <FeatureFlagToggle
           label="CRM Access"
+          tooltip="Grants access to Customer Relationship Management features."
           checked={flags.hasAccessToCRM}
           onChange={(v) => onChange('hasAccessToCRM', v)}
         />
         <FeatureFlagToggle
           label="Update Rewards"
+          tooltip="If enabled, the business can edit their existing rewards."
           checked={flags.canUpdateReward}
           onChange={(v) => onChange('canUpdateReward', v)}
         />
@@ -381,10 +445,22 @@ function FeatureFlagsSection({ flags, onChange }: { flags: Partial<TierFeatureFl
   );
 }
 
-function FeatureFlagToggle({ label, checked, onChange }: { label: string, checked?: boolean, onChange: (v: boolean) => void }) {
+function FeatureFlagToggle({ label, tooltip, checked, onChange }: { label: string, tooltip: string, checked?: boolean, onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between space-x-2">
-      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Label>{label}</Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <Switch checked={checked || false} onCheckedChange={onChange} />
     </div>
   );
@@ -396,7 +472,7 @@ function ProgressBonusesSection({ bonuses, onChange }: { bonuses: Partial<TierPr
       <h3 className="font-semibold text-lg">Progress Bonuses (Extra Campaigns)</h3>
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label>Active Level Bonus</Label>
+          <LabelWithTooltip label="Active Level Bonus" tooltip="Bonus campaigns allowed when business reaches 'Active' status." />
           <Input
             type="number"
             value={bonuses['active_campaign_bonus'] ?? ''}
@@ -405,7 +481,7 @@ function ProgressBonusesSection({ bonuses, onChange }: { bonuses: Partial<TierPr
           />
         </div>
         <div>
-          <Label>Trusted Level Bonus</Label>
+          <LabelWithTooltip label="Trusted Level Bonus" tooltip="Bonus campaigns allowed when business reaches 'Trusted' status." />
           <Input
             type="number"
             value={bonuses['trusted_campaign_bonus'] ?? ''}
@@ -414,7 +490,7 @@ function ProgressBonusesSection({ bonuses, onChange }: { bonuses: Partial<TierPr
           />
         </div>
         <div>
-          <Label>Partner Level Bonus</Label>
+          <LabelWithTooltip label="Partner Level Bonus" tooltip="Bonus campaigns allowed when business reaches 'Partner' status." />
           <Input
             type="number"
             value={bonuses['partner_campaign_bonus'] ?? ''}
@@ -427,7 +503,101 @@ function ProgressBonusesSection({ bonuses, onChange }: { bonuses: Partial<TierPr
   );
 }
 
-function VariantSection({ variant, onChange, title }: { variant: TierVariant, onChange: (v: TierVariant) => void, title: string }) {
+function ProgressionLevelSection({ level, onChange, title }: { level: ProgressionLevel, onChange: (v: ProgressionLevel) => void, title: string }) {
+  const updateCondition = (key: keyof ProgressionConditions, value: number | boolean) => {
+    onChange({
+      ...level,
+      conditions: { ...level.conditions, [key]: value }
+    });
+  };
+
+  const updateBenefitQuota = (key: keyof TierQuotas, value: number) => {
+    onChange({
+      ...level,
+      benefits: {
+        ...level.benefits,
+        quotas: { ...level.benefits.quotas, [key]: value }
+      }
+    });
+  };
+
+  const updateBenefitFlag = (key: keyof TierFeatureFlags, value: boolean) => {
+    onChange({
+      ...level,
+      benefits: {
+        ...level.benefits,
+        featureFlags: { ...level.benefits.featureFlags, [key]: value }
+      }
+    });
+  };
+
+  const updateBonusPoints = (value: number) => {
+    onChange({
+      ...level,
+      benefits: { ...level.benefits, bonusPoints: value }
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="border p-4 rounded-md space-y-4">
+        <h3 className="font-semibold text-lg">{title} Unlock Conditions</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <LabelWithTooltip label="Min Campaigns Created" tooltip="Minimum total campaigns created to unlock this level." />
+            <Input type="number" value={level.conditions.minCampaignsCreated ?? ''} onChange={(e) => updateCondition('minCampaignsCreated', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Rewards Created" tooltip="Minimum total rewards created to unlock this level." />
+            <Input type="number" value={level.conditions.minRewardsCreated ?? ''} onChange={(e) => updateCondition('minRewardsCreated', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Points Used" tooltip="Minimum total points distributed/redeemed to unlock this level." />
+            <Input type="number" value={level.conditions.minPointsUsed ?? ''} onChange={(e) => updateCondition('minPointsUsed', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Customer Scans" tooltip="Minimum number of QR/NFC scans received to unlock this level." />
+            <Input type="number" value={level.conditions.minCustomerScans ?? ''} onChange={(e) => updateCondition('minCustomerScans', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Participants" tooltip="Minimum number of unique participants engaged to unlock this level." />
+            <Input type="number" value={level.conditions.minParticipants ?? ''} onChange={(e) => updateCondition('minParticipants', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Customer Interactions" tooltip="Total interactions (scans + redemptions) required to unlock this level." />
+            <Input type="number" value={level.conditions.minCustomerInteractions ?? ''} onChange={(e) => updateCondition('minCustomerInteractions', parseInt(e.target.value))} />
+          </div>
+          <div>
+            <LabelWithTooltip label="Min Days Active" tooltip="Days since registration required to unlock this level." />
+            <Input type="number" value={level.conditions.minDaysActive ?? ''} onChange={(e) => updateCondition('minDaysActive', parseInt(e.target.value))} />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch checked={level.conditions.profileCompleted || false} onCheckedChange={(v) => updateCondition('profileCompleted', v)} />
+            <LabelWithTooltip label="Profile Completed" tooltip="Requires the business profile to be fully filled." />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch checked={level.conditions.kycVerified || false} onCheckedChange={(v) => updateCondition('kycVerified', v)} />
+            <LabelWithTooltip label="KYC Verified" tooltip="Requires KYC documents to be verified." />
+          </div>
+        </div>
+      </div>
+
+      <div className="border p-4 rounded-md space-y-4">
+        <h3 className="font-semibold text-lg">{title} Benefits</h3>
+        <div className="space-y-4">
+          <div>
+            <LabelWithTooltip label="Bonus Points" tooltip="One-time or monthly bonus points added to allowance when this level is reached." />
+            <Input type="number" value={level.benefits.bonusPoints ?? ''} onChange={(e) => updateBonusPoints(parseInt(e.target.value))} />
+          </div>
+          <QuotasSection quotas={level.benefits.quotas || {}} onChange={updateBenefitQuota} />
+          <FeatureFlagsSection flags={level.benefits.featureFlags || {}} onChange={updateBenefitFlag} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeasonalVariantSection({ variant, onChange, title }: { variant: SeasonalVariant, onChange: (v: SeasonalVariant) => void, title: string }) {
   const updateQuota = (key: keyof TierQuotas, value: number) => {
     onChange({
       ...variant,
@@ -449,7 +619,7 @@ function VariantSection({ variant, onChange, title }: { variant: TierVariant, on
     });
   };
 
-  const updatePricing = (key: keyof TierVariant, value: string | number) => {
+  const updatePricing = (key: keyof SeasonalVariant, value: string | number) => {
     onChange({
       ...variant,
       [key]: value
@@ -459,33 +629,19 @@ function VariantSection({ variant, onChange, title }: { variant: TierVariant, on
   return (
     <div className="space-y-6">
       <div className="border p-4 rounded-md space-y-4">
-        <h3 className="font-semibold text-lg">{title} Pricing</h3>
+        <h3 className="font-semibold text-lg">{title} Configuration</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Monthly Price</Label>
-            <Input type="number" value={variant.monthly_price ?? ''} onChange={(e) => updatePricing('monthly_price', parseFloat(e.target.value))} />
+            <LabelWithTooltip label="Price" tooltip="The specific price for this seasonal variant." />
+            <Input type="number" value={variant.price ?? ''} onChange={(e) => updatePricing('price', parseFloat(e.target.value))} />
           </div>
           <div>
-            <Label>Stripe Monthly ID</Label>
-            <Input value={variant.stripe_monthly_price_id ?? ''} onChange={(e) => updatePricing('stripe_monthly_price_id', e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Quarterly Price</Label>
-            <Input type="number" value={variant.quaterly_price ?? ''} onChange={(e) => updatePricing('quaterly_price', parseFloat(e.target.value))} />
+            <LabelWithTooltip label="Stripe Price ID" tooltip="The Stripe Price ID for this seasonal variant." />
+            <Input value={variant.stripe_price_id ?? ''} onChange={(e) => updatePricing('stripe_price_id', e.target.value)} />
           </div>
           <div>
-            <Label>Stripe Quarterly ID</Label>
-            <Input value={variant.stripe_quarterly_price_id ?? ''} onChange={(e) => updatePricing('stripe_quarterly_price_id', e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Annual Price</Label>
-            <Input type="number" value={variant.annual_price ?? ''} onChange={(e) => updatePricing('annual_price', parseFloat(e.target.value))} />
-          </div>
-          <div>
-            <Label>Stripe Annual ID</Label>
-            <Input value={variant.stripe_annual_price_id ?? ''} onChange={(e) => updatePricing('stripe_annual_price_id', e.target.value)} />
+            <LabelWithTooltip label="PayPal Plan ID" tooltip="The PayPal Plan ID for this seasonal variant." />
+            <Input value={variant.paypal_plan_id ?? ''} onChange={(e) => updatePricing('paypal_plan_id', e.target.value)} />
           </div>
         </div>
       </div>

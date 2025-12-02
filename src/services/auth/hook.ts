@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { setBearerToken } from '../api';
+import api, { setBearerToken, removeBearerToken } from '../api';
 import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse } from './types';
 import Cookies from 'js-cookie';
 
@@ -9,7 +9,7 @@ const removeTokens = () => {
   Cookies.remove('refresh');
   localStorage.removeItem('authToken'); // Assuming this was also a token storage
   sessionStorage.clear(); // Clear any session storage
-  setBearerToken(null); // Clear bearer token from API instance
+  removeBearerToken(); // Clear bearer token from API instance
 };
 
 // Admin Login

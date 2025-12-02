@@ -2,9 +2,9 @@ export type BusinessUser = {
   id: string;
   name: string;
   email: string;
-  tier: 'Starter' | 'Active' | 'Trusted' | 'Partner';
+  tier: string;
   sector: string; // e.g., 'Food & Dining', 'Fashion & Beauty'
-  activityStatus: 'Active' | 'Suspended' | 'Inactive';
+  activityStatus: 'Active' | 'Disabled';
   campaignsCreated: number;
   rewardsAttached: number;
   pointsBalance: number;
@@ -56,7 +56,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'support@wellness.com',
     tier: 'Active',
     sector: 'Health & Wellness',
-    activityStatus: 'Suspended',
+    activityStatus: 'Disabled',
     campaignsCreated: 2,
     rewardsAttached: 1,
     pointsBalance: 1000,
@@ -68,7 +68,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'hello@startups.com',
     tier: 'Starter',
     sector: 'Technology',
-    activityStatus: 'Inactive',
+    activityStatus: 'Disabled',
     campaignsCreated: 0,
     rewardsAttached: 0,
     pointsBalance: 0,

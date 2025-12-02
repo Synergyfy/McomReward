@@ -113,7 +113,7 @@ export function ViewUserDetailsModal({
                     <div className="flex items-center gap-2">
                       <Activity className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Activity Status:</span>
-                      <Badge variant={user.activityStatus === 'Active' ? 'default' : user.activityStatus === 'Suspended' ? 'destructive' : 'secondary'}>
+                      <Badge variant={user.activityStatus === 'Active' ? 'default' : user.activityStatus === 'Disabled' ? 'destructive' : 'secondary'}>
                         {user.activityStatus}
                       </Badge>
                     </div>

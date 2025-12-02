@@ -42,6 +42,7 @@ export interface Deal {
   endDate: Date;
   termsAndConditions: string;
   status: 'pending' | 'approved' | 'declined';
+  isApproved: boolean;
   isActive: boolean;
   category?: {
     id: string;
@@ -50,9 +51,21 @@ export interface Deal {
   business: {
     id: string;
     name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    website?: string;
+    sector?: {
+      id: string;
+      name: string;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UpdateDealStatusDto {
+  status: 'approved' | 'declined' | 'pending';
 }
 
 export interface PaginatedDealsResponse {

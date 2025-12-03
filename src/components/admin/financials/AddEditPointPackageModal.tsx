@@ -19,21 +19,26 @@ import { AxiosError } from 'axios';
 const pointPackageSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  points: z.coerce.number().int().min(1, 'Points must be a positive integer'),
-  price: z.coerce.number().min(0, 'Price cannot be negative'),
+  points: z.string()
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val) && Number.isInteger(val) && val >= 1, {
+      message: 'Points must be a positive integer',
+    }),
+  price: z.string()
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val) && val >= 0, {
+      message: 'Price cannot be negative',
+    }),
   currency: z.string().optional(),
   tier_ids: z.array(z.string()).optional(),
   is_active: z.boolean().optional(),
 });
 
-interface PointPackageFormData {
-  name: string;
-  description?: string;
-  points: string | number;
-  price: string | number;
-  currency?: string;
-  tier_ids?: string[];
-  is_active?: boolean;
+type PointPackageOutput = z.infer<typeof pointPackageSchema>;
+
+interface FormInput extends Omit<PointPackageOutput, 'points' | 'price'> {
+  points: string;
+  price: string;
 }
 
 interface AddEditPointPackageModalProps {
@@ -61,16 +66,16 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     register,
     reset,
     formState: { errors },
-  } = useForm<PointPackageFormData>({
+  } = useForm<FormInput, any, PointPackageOutput>({
     resolver: zodResolver(pointPackageSchema),
     defaultValues: {
       name: '',
       description: '',
-      points: 0,
-      price: 0,
-      currency: 'GBP', // Provide default in defaultValues
-      tier_ids: [],     // Provide default in defaultValues
-      is_active: true,  // Provide default in defaultValues
+      points: '0', // Default as string
+      price: '0',  // Default as string
+      currency: 'GBP',
+      tier_ids: [],
+      is_active: true,
     },
   });
 
@@ -80,18 +85,19 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
         reset({
             name: initialData.name,
             description: initialData.description,
-            points: initialData.points,
-            price: initialData.price,
+            points: String(initialData.points), // Convert to string for form input
+            price: String(initialData.price),   // Convert to string for form input
             currency: initialData.currency,
             tier_ids: initialData.tiers.map(t => t.id),
             is_active: initialData.is_active,
         });
-        } else {
+        }
+        else {
         reset({
             name: '',
             description: '',
-            points: 100,
-            price: 10,
+            points: '100', // Default as string
+            price: '10',   // Default as string
             currency: 'GBP',
             tier_ids: [],
             is_active: true,
@@ -100,7 +106,7 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     }
   }, [initialData, isOpen, reset]);
 
-  const onSubmit = async (data: PointPackageFormData) => {
+  const onSubmit = async (data: PointPackageOutput) => {
     try {
       let savedPackage: PointPackage;
       const payload: PointPackageCreateInput = {

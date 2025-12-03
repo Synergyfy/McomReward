@@ -17,23 +17,64 @@ import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
 import { toast } from 'sonner';
 
-interface BusinessHeaderProps {
-  onMenuClick: () => void;
+// TODO: Replace these with actual imported types (e.g., from services/business/types.ts, services/tiers/types.ts)
+interface BusinessProfileType {
+  id: string;
+  name: string;
+  email: string;
+  role?: string; // Assuming role might be part of it
 }
 
-export default function BusinessHeader({ onMenuClick }: BusinessHeaderProps) {
+interface SubscriptionType {
+  tier?: { name: string };
+  // Add other relevant properties from your Subscription type
+}
+
+interface MonthlyBalanceType {
+  remaining?: number;
+  monthlyLimit?: number;
+  used?: number;
+  // Add other relevant properties from your MonthlyBalance type
+}
+
+interface BusinessHeaderProps {
+  onMenuClick: () => void;
+  // Optional props for impersonation mode
+  profile?: BusinessProfileType;
+  subscription?: SubscriptionType;
+  monthlyBalance?: MonthlyBalanceType;
+  isLoading?: boolean; // Unified loading prop for impersonation
+  isError?: boolean; // Unified error prop for impersonation
+}
+
+export default function BusinessHeader({
+  onMenuClick,
+  profile: propProfile,
+  subscription: propSubscription,
+  monthlyBalance: propMonthlyBalance,
+  isLoading: propIsLoading,
+  isError: propIsError,
+}: BusinessHeaderProps) {
   const router = useRouter();
-  const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
-  const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
-  const { data: monthlyBalance, isLoading: isLoadingMonthlyBalance, isError: isErrorMonthlyBalance } = useGetBusinessMonthlyBalance();
-  const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout(); // Use the useLogout hook
+
+  // Conditionally use hooks or props
+  const { data: hookSubscription, isLoading: hookIsLoadingSubscription, isError: hookIsErrorSubscription } = useGetMySubscription();
+  const { data: hookProfile, isLoading: hookIsLoadingProfile, isError: hookIsErrorProfile } = useGetBusinessProfile();
+  const { data: hookMonthlyBalance, isLoading: hookIsLoadingMonthlyBalance, isError: hookIsErrorMonthlyBalance } = useGetBusinessMonthlyBalance();
+  const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
+
+  // Prioritize props data if provided
+  const subscription = propSubscription ?? hookSubscription;
+  const profile = propProfile ?? hookProfile;
+  const monthlyBalance = propMonthlyBalance ?? hookMonthlyBalance;
+
+  // Unify loading and error states
+  const isLoading = propIsLoading ?? (hookIsLoadingSubscription || hookIsLoadingProfile || hookIsLoadingMonthlyBalance);
+  const isError = propIsError ?? (hookIsErrorSubscription || hookIsErrorProfile || hookIsErrorMonthlyBalance);
 
   const tierName = subscription?.tier?.name;
   const userBadge = profile?.role;
   const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
-
-  const isLoading = isLoadingSubscription || isLoadingProfile || isLoadingMonthlyBalance;
-  const isError = isErrorSubscription || isErrorProfile || isErrorMonthlyBalance;
 
   const notificationsCount = 3; // Leaving as mock.
 

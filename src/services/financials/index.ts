@@ -92,16 +92,18 @@ export const useDeleteTier = () => {
 // Point Packages
 const POINT_PACKAGE_QUERY_KEY = 'point-packages';
 
-// Fetch all point packages
-const getPointPackages = async (): Promise<PointPackage[]> => {
-  const { data } = await api.get('/point-packages/admin');
+// Fetch all point packages with pagination
+const getPointPackages = async (page: number, limit: number): Promise<PointPackage[]> => {
+  const { data } = await api.get('/point-packages/admin', {
+    params: { page, limit },
+  });
   return data;
 };
 
-export const useGetPointPackages = () => {
+export const useGetPointPackages = (page: number, limit: number) => {
   return useQuery<PointPackage[], Error>({
-    queryKey: [POINT_PACKAGE_QUERY_KEY],
-    queryFn: getPointPackages,
+    queryKey: [POINT_PACKAGE_QUERY_KEY, page, limit],
+    queryFn: () => getPointPackages(page, limit),
   });
 };
 

@@ -30,127 +30,18 @@ export type ActionHandlers = {
   ) => void;
   onOpenEditBusinessUserModal: (user: BusinessUser) => void;
   onOpenEditConsumerUserModal: (user: ConsumerUser) => void;
-  onOpenViewUserDetailsModal: (user: BusinessUser | ConsumerUser) => void;
-  onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
-  onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void; // New handler
-  onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void; // New handler
-  onViewDetails: (userId: string) => void;
-};
-
-const ActionsCell = <T extends BusinessUser | ConsumerUser>({
-  row,
-  itemType,
-  handlers,
-}: {
-  row: Row<T>;
-  itemType: 'business' | 'consumer';
-  handlers: ActionHandlers;
-}) => {
-  const router = useRouter(); // Initialize useRouter
-  const item = row.original;
-
-  const handleAdjustPoints = (amount: number, reason: string) => {
-    handlers.onAdjustUserPoints(item.id, itemType, amount, reason);
-  };
-
-  const handleSuspend = () => {
-    handlers.onSuspendUser(item.id, itemType);
-  };
-
-  const handleDelete = () => {
-    handlers.onDeleteUser(item.id, itemType);
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => navigator.clipboard.writeText(item.id)}
-        >
-          Copy {itemType === 'business' ? 'Business' : 'Consumer'} ID
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {itemType === 'business' && ( // Only show "View Dashboard" for business users
-          <>
-            <DropdownMenuItem
-              onClick={() => router.push(`/admin/view-business/${item.id}`)}
-            >
-              View Dashboard
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handlers.onViewDetails(item.id)}
-            >
-              View Details
-            </DropdownMenuItem>
-          </>
-        )}
-        <DropdownMenuItem
-          onClick={() => {
-            if (itemType === 'business') {
-              handlers.onOpenEditBusinessUserModal(item as BusinessUser);
-            } else {
-              handlers.onOpenEditConsumerUserModal(item as ConsumerUser);
-            }
-          }}
-        >
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() =>
-            handlers.onOpenAdjustPointsModal(
-              item.name,
-              'pointsBalance' in item ? item.pointsBalance : item.points,
-              handleAdjustPoints
-            )
-          }
-        >
-          Adjust Points
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() =>
-            handlers.onOpenConfirmationDialog(
-              `Suspend ${item.name}?`,
-              `Are you sure you want to suspend ${item.name}'s account? They will not be able to log in.`,
-              handleSuspend,
-              'Suspend',
-              'Cancel'
-            )
-          }
-          className="text-yellow-600"
-        >
-          Suspend
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() =>
-            handlers.onOpenConfirmationDialog(
-              `Delete ${item.name}?`,
-              `Are you sure you want to permanently delete ${item.name}'s account? This action cannot be undone.`,
-              handleDelete,
-              'Delete',
-              'Cancel'
-            )
-          }
-          className="text-red-600"
-        >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+  onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
+  onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onViewDetails: (userId: string) => void; // This handler is now for navigation
 };
 
 // Reusable Action Column
 const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   itemType: 'business' | 'consumer',
-  handlers: ActionHandlers
-) => ColumnDef<T> = (itemType, handlers) => ({
+  handlers: ActionHandlers,
+  router: ReturnType<typeof useRouter>
+) => ColumnDef<T> = (itemType, handlers, router) => ({
   id: 'actions',
   cell: ({ row }) => {
     const item = row.original;
@@ -189,12 +80,19 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
                   View Details
                 </Link>
              </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              onClick={() => handlers.onOpenViewUserDetailsModal(item)}
-            >
-              View Details
-            </DropdownMenuItem>
+          ) : ( // Business user actions
+            <>
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/users/business/${item.id}`)}
+              >
+                View Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handlers.onViewDetails(item.id)} // This now triggers navigation
+              >
+                View Details
+              </DropdownMenuItem>
+            </>
           )}
           <DropdownMenuItem
             onClick={() => {
@@ -242,7 +140,7 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
                 'Cancel'
               )
             }
-            className="text-red-600"
+          className="text-red-600"
           >
             Delete
           </DropdownMenuItem>
@@ -253,7 +151,7 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
 });
 
 // Columns for Business Users
-export const createBusinessColumns = (handlers: ActionHandlers): ColumnDef<BusinessUser>[] => [
+export const createBusinessColumns = (handlers: ActionHandlers, router: ReturnType<typeof useRouter>): ColumnDef<BusinessUser>[] => [
   {
     accessorKey: 'name',
     header: 'Business Name',
@@ -296,11 +194,11 @@ export const createBusinessColumns = (handlers: ActionHandlers): ColumnDef<Busin
       return <div className="text-right font-medium">{formatted}</div>;
     }
   },
-  createActionColumn<BusinessUser>('business', handlers),
+  createActionColumn<BusinessUser>('business', handlers, router),
 ];
 
 // Columns for Consumer Users
-export const createConsumerColumns = (handlers: ActionHandlers): ColumnDef<ConsumerUser>[] => [
+export const createConsumerColumns = (handlers: ActionHandlers, router: ReturnType<typeof useRouter>): ColumnDef<ConsumerUser>[] => [
   {
     accessorKey: 'name',
     header: 'Consumer Name',
@@ -342,5 +240,5 @@ export const createConsumerColumns = (handlers: ActionHandlers): ColumnDef<Consu
       return <div className="text-right font-medium">{formatted}</div>;
     }
   },
-  createActionColumn<ConsumerUser>('consumer', handlers),
+  createActionColumn<ConsumerUser>('consumer', handlers, router),
 ];

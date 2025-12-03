@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation'; 
 import {
   ColumnDef,
   flexRender,
@@ -29,13 +30,14 @@ import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
 import { ActionHandlers } from './columns'; // Import ActionHandlers type
 
 interface DataTableProps<TData, TValue> {
-  columns: (handlers: ActionHandlers) => ColumnDef<TData, TValue>[]; // Updated signature
+  columns: (handlers: ActionHandlers, router: ReturnType<typeof useRouter>) => ColumnDef<TData, TValue>[];
   data: TData[];
   onUpdateUser: (updatedUser: BusinessUser | ConsumerUser) => void;
   onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void;
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
   onViewDetails: (userId: string) => void;
+  router: ReturnType<typeof useRouter>; // Add router prop
 }
 
 export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>({
@@ -46,6 +48,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
   onAdjustUserPoints,
   onSuspendUser,
   onViewDetails,
+  router,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
@@ -137,13 +140,14 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
       onAdjustUserPoints: onAdjustUserPoints,
       onSuspendUser: onSuspendUser,
     };
-    return columns(handlers); // Pass the single handlers object
+    return columns(handlers, router); // Pass the single handlers object AND router
   }, [
     columns,
     onViewDetails,
     onDeleteUser,
     onAdjustUserPoints,
     onSuspendUser,
+    router, // Add router to the dependency array
   ]);
 
 

@@ -16,7 +16,7 @@ interface BusinessUserDetailsModalProps {
   onClose: () => void;
 }
 
-export const BusinessUserDetailsModal = ({ businessId, isOpen, onClose }: BusinessUserDetailsModalModalProps) => {
+export const BusinessUserDetailsModal = ({ businessId, isOpen, onClose }: BusinessUserDetailsModalProps) => {
   const { data: business, isLoading, isError } = useAdminBusinessById(businessId);
 
   return (

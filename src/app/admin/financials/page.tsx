@@ -30,7 +30,7 @@ export default function FinancialsPage() {
   const { data: plans, isLoading: isLoadingPlans, error: plansError } = useGetTiers();
   const deleteTierMutation = useDeleteTier();
 
-  const { data: pointPackages, isLoading: isLoadingPointPackages, error: pointPackagesError } = useGetPointPackages();
+  const { data: pointPackages, isLoading: isLoadingPointPackages, error: pointPackagesError } = useGetPointPackages(1, 10);
   const deletePointPackageMutation = useDeletePointPackage();
 
   // State for Feedback Dialog
@@ -133,9 +133,7 @@ export default function FinancialsPage() {
   // Determine the actual array of point packages to render
   const packagesToRender: PointPackage[] = Array.isArray(pointPackages)
     ? pointPackages
-    : (pointPackages && typeof pointPackages === 'object' && 'data' in pointPackages && Array.isArray((pointPackages as any).data))
-      ? (pointPackages as any).data as PointPackage[]
-      : [];
+    : [];
 
   return (
     <div className="space-y-8">
@@ -378,23 +376,37 @@ export default function FinancialsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoadingPointPackages && <TableRow><TableCell colSpan={6}>Loading packages...</TableCell></TableRow>}
-                  {pointPackagesError && <TableRow><TableCell colSpan={6}>Error loading packages.</TableCell></TableRow>}
-                  {packagesToRender.map((pkg: PointPackage) => (
-                    <TableRow key={pkg.id}>
-                      <TableCell>{pkg.name}</TableCell>
-                      <TableCell>{pkg.points}</TableCell>
-                      <TableCell>£{parseFloat(pkg.price as any).toFixed(2)}</TableCell>
-                      <TableCell>{pkg.tiers.map((t: Tier) => t.name).join(', ') || 'All'}</TableCell>
-                      <TableCell><Badge variant={pkg.is_active ? 'default' : 'secondary'}>{pkg.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                            <Button size="sm" onClick={() => handleAddEditPointPackage(pkg)}>Edit</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDeletePointPackage(pkg.id)}>Delete</Button>
-                        </div>
+                  {isLoadingPointPackages ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>Loading packages...</TableCell>
+                    </TableRow>
+                  ) : pointPackagesError ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>Error loading packages.</TableCell>
+                    </TableRow>
+                  ) : packagesToRender.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No packages found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    packagesToRender.map((pkg: PointPackage) => (
+                      <TableRow key={pkg.id}>
+                        <TableCell>{pkg.name}</TableCell>
+                        <TableCell>{pkg.points}</TableCell>
+                        <TableCell>£{pkg.price.toFixed(2)}</TableCell>
+                        <TableCell>{pkg.tiers.map((t: Tier) => t.name).join(', ') || 'All'}</TableCell>
+                        <TableCell><Badge variant={pkg.is_active ? 'default' : 'secondary'}>{pkg.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                              <Button size="sm" onClick={() => handleAddEditPointPackage(pkg)}>Edit</Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeletePointPackage(pkg.id)}>Delete</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

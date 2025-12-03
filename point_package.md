@@ -66,7 +66,6 @@ interface PointPackage {
 
 Partial of `CreatePointPackageDto`. All fields are optional.
 
-### Get All Packages
 
 **Endpoint:** `GET /point-packages/admin`
 

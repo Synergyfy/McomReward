@@ -26,18 +26,37 @@ import TierBadge from '../../ui/tierBadge';
 import { motion } from 'framer-motion';
 import { useGetBusinessProfile } from '@/services/business/hook';
 
+// TODO: Replace this with actual imported type (e.g., from services/business/types.ts)
+interface BusinessProfileType {
+  id: string;
+  name: string;
+  email: string;
+  role?: string; // Assuming role might be part of it
+}
 
 interface BusinessSidebarProps {
   isOpen: boolean;
+  profile?: BusinessProfileType; // Optional prop for impersonation
+  isLoading?: boolean; // Optional prop for unified loading state
 }
 
-export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
+export default function BusinessSidebar({
+  isOpen,
+  profile: propProfile,
+  isLoading: propIsLoading,
+}: BusinessSidebarProps) {
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [isCampaignsOpen, setIsCampaignsOpen] = useState(false)
   const [ isVouchersOpen, setIsVouchersOpen] = useState (false);
   const [isMyAssetsOpen, setIsMyAssetsOpen] = useState(false);
   const linkClasses = useLinkClasses();
-  const { data: profile, isLoading } = useGetBusinessProfile();
+
+  // Conditionally use hook or prop
+  const { data: hookProfile, isLoading: hookIsLoadingProfile } = useGetBusinessProfile();
+
+  // Prioritize prop data if provided
+  const profile = propProfile ?? hookProfile;
+  const isLoading = propIsLoading ?? hookIsLoadingProfile;
 
   return (
     <div
@@ -55,7 +74,7 @@ export default function BusinessSidebar({ isOpen }: BusinessSidebarProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-3xl font-semibold text-orange-500 mb-6"
               >
-                {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'} 
+                {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'}
               </motion.h1>
       </div>
 

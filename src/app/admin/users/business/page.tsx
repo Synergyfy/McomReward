@@ -1,24 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { UserDataTable } from '@/components/admin/users/UserDataTable';
 import { createBusinessColumns } from '@/components/admin/users/columns';
 import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
 import { useAdminBusinesses } from '@/services/admin/hook';
 import { Loader2, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BusinessUserDetailsModal } from '@/components/admin/users/BusinessUserDetailsModal';
 
 export default function AdminBusinessUsersPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const { data: response, isLoading, isError } = useAdminBusinesses(page, limit);
 
-  // State for Business Details Modal
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-
-  // Map API data to BusinessUser type
   // Map API data to BusinessUser type
   const businessUsers: BusinessUser[] = response?.data.map((business) => ({
     id: business.id,
@@ -50,8 +46,7 @@ export default function AdminBusinessUsersPage() {
   };
 
   const handleViewDetails = (userId: string) => {
-    setSelectedBusinessId(userId);
-    setIsDetailsModalOpen(true);
+    router.push(`/admin/users/business/${userId}`);
   };
 
   if (isLoading) {
@@ -165,6 +160,7 @@ export default function AdminBusinessUsersPage() {
             onAdjustUserPoints={handleAdjustUserPoints}
             onSuspendUser={handleSuspendUser}
             onViewDetails={handleViewDetails}
+            router={router}
           />
         </div>
 
@@ -200,11 +196,6 @@ export default function AdminBusinessUsersPage() {
           </div>
         </div>
       </div>
-      <BusinessUserDetailsModal
-        businessId={selectedBusinessId}
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-      />
     </div>
   );
 }

@@ -153,7 +153,14 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
-    router.push('/admin/campaigns/list'); // Updated path to likely correct one based on file structure
+
+    // Check if we are in a tour (this is a bit hacky, normally we'd pass a prop, but for speed/minimalism)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tour') === 'true') {
+        router.push('/admin/users/business?tour=true');
+    } else {
+        router.push('/admin/campaigns/list');
+    }
   };
 
   const selectedRewards = mockRewards.filter(r => formData.rewardIds.includes(r.id));
@@ -215,7 +222,7 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
 
           <div className="flex justify-between mt-6">
             <Button variant="outline" onClick={onBack} disabled={isCreating || isUploading}>Back</Button>
-            <Button onClick={handleCreateCampaign} disabled={isCreating || isUploading}>
+            <Button id="campaign-submit-btn" onClick={handleCreateCampaign} disabled={isCreating || isUploading}>
               {isUploading ? 'Uploading Images...' : isCreating ? 'Creating...' : 'Create Campaign'}
             </Button>
           </div>
@@ -226,7 +233,9 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Campaign Created Successfully!</AlertDialogTitle>
             <AlertDialogDescription>
-              Your new campaign has been created.
+              Your new campaign has been created. <br /><br />
+              <strong>What's Next?</strong><br />
+              You might want to add staff members to help manage this campaign.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

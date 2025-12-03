@@ -28,6 +28,7 @@ import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlis
 import { CreateCampaignPayload, CampaignResponse } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
+import { useGuide } from '@/context/GuideContext';
 
 interface StepProps {
   onBack: () => void;
@@ -35,6 +36,7 @@ interface StepProps {
 
 export default function StepReviewAndCreate({ onBack }: StepProps) {
   const router = useRouter();
+  const { startGuide } = useGuide();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail');
@@ -210,7 +212,14 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
-    router.push('/dashboard/campaigns');
+    // Check if we are in a tour
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tour') === 'true') {
+        startGuide('BUSINESS_STAFF');
+        router.push('/dashboard/staff?tour=true');
+    } else {
+        router.push('/dashboard/campaigns');
+    }
   };
 
   return (

@@ -86,20 +86,20 @@ export default function FinancialsPage() {
   };
 
   const handleSavePointPackage = (savedPackage: PointPackage) => {
-      setShowAddEditPointPackageModal(false);
-      handleShowFeedback(
-        currentEditPointPackage ? "Package Updated" : "Package Added",
-        `Point Package "${savedPackage.name}" has been successfully ${currentEditPointPackage ? 'updated' : 'added'}.`
-      );
+    setShowAddEditPointPackageModal(false);
+    handleShowFeedback(
+      currentEditPointPackage ? "Package Updated" : "Package Added",
+      `Point Package "${savedPackage.name}" has been successfully ${currentEditPointPackage ? 'updated' : 'added'}.`
+    );
   };
 
   const handleDeletePointPackage = async (packageId: string) => {
-      try {
-        await deletePointPackageMutation.mutateAsync(packageId);
-        handleShowFeedback("Package Deleted", `Point Package ${packageId} has been deleted.`);
-      } catch (error) {
-        handleShowFeedback("Error", `There was an error deleting package ${packageId}.`, 'OK');
-      }
+    try {
+      await deletePointPackageMutation.mutateAsync(packageId);
+      handleShowFeedback("Package Deleted", `Point Package ${packageId} has been deleted.`);
+    } catch (error) {
+      handleShowFeedback("Error", `There was an error deleting package ${packageId}.`, 'OK');
+    }
   };
 
   const handleEscrowAction = (escrowId: string, action: 'released' | 'refunded') => {
@@ -353,7 +353,7 @@ export default function FinancialsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Point Packages Tab */}
         <TabsContent value="point-packages">
           <Card>
@@ -395,13 +395,13 @@ export default function FinancialsPage() {
                       <TableRow key={pkg.id}>
                         <TableCell>{pkg.name}</TableCell>
                         <TableCell>{pkg.points}</TableCell>
-                        <TableCell>£{pkg.price.toFixed(2)}</TableCell>
+                        <TableCell>£{parseFloat(pkg.price).toFixed(2)}</TableCell>
                         <TableCell>{pkg.tiers.map((t: Tier) => t.name).join(', ') || 'All'}</TableCell>
-                        <TableCell><Badge variant={pkg.is_active ? 'default' : 'secondary'}>{pkg.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                        <TableCell><Badge variant={pkg.isActive ? 'default' : 'secondary'}>{pkg.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                              <Button size="sm" onClick={() => handleAddEditPointPackage(pkg)}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleDeletePointPackage(pkg.id)}>Delete</Button>
+                            <Button size="sm" onClick={() => handleAddEditPointPackage(pkg)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeletePointPackage(pkg.id)}>Delete</Button>
                           </div>
                         </TableCell>
                       </TableRow>

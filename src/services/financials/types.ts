@@ -1,3 +1,14 @@
+// Paginated response wrapper
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  next: number | null;
+  previous: number | null;
+}
+
 export interface TierQuotas {
   maxActiveCampaigns: number;
   maxActiveRewards: number;
@@ -147,12 +158,13 @@ export interface PointPackage {
   name: string;
   description: string;
   points: number;
-  price: number;
+  price: string; // Backend returns price as string
   currency: string;
   tiers: Tier[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isActive: boolean; // Changed from is_active to match backend
+  createdAt: string; // Changed from created_at to match backend
+  updatedAt: string; // Changed from updated_at to match backend
+  deletedAt: string | null;
 }
 
 export interface PointPackageCreateInput {
@@ -161,8 +173,8 @@ export interface PointPackageCreateInput {
   points: number;
   price: number;
   currency?: string;
-  tier_ids: string[];
-  is_active?: boolean;
+  tier_ids: string[]; // Keep snake_case for API input
+  is_active?: boolean; // Keep snake_case for API input
 }
 
 export interface PointPackageUpdateInput {
@@ -171,6 +183,6 @@ export interface PointPackageUpdateInput {
   points?: number;
   price?: number;
   currency?: string;
-  tier_ids?: string[];
-  is_active?: boolean;
+  tier_ids?: string[]; // Keep snake_case for API input
+  is_active?: boolean; // Keep snake_case for API input
 }

@@ -7,13 +7,25 @@ import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
 import { useAdminBusinesses } from '@/services/admin/hook';
 import { Loader2, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'next/navigation';
+import { useGuide } from '@/context/GuideContext';
+import { Suspense, useEffect } from 'react';
 
-export default function AdminBusinessUsersPage() {
+function BusinessUsersContent() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const { data: response, isLoading, isError } = useAdminBusinesses(page, limit);
 
-  // Map API data to BusinessUser type
+  const searchParams = useSearchParams();
+  const shouldStartTour = searchParams.get('tour') === 'true';
+  const { startGuide } = useGuide();
+
+  useEffect(() => {
+    if (shouldStartTour) {
+        startGuide('STAFF');
+    }
+  }, [shouldStartTour, startGuide]);
+
   // Map API data to BusinessUser type
   const businessUsers: BusinessUser[] = response?.data.map((business) => ({
     id: business.id,
@@ -146,7 +158,7 @@ export default function AdminBusinessUsersPage() {
       </div>
       <div className="p-6 border rounded-lg bg-white shadow-sm flex flex-col min-h-[600px]">
         <h2 className="text-xl font-semibold mb-4">Business User Data Table</h2>
-        <div className="flex-grow">
+        <div className="flex-grow" id="business-table">
           <UserDataTable
             columns={createBusinessColumns}
             data={businessUsers}
@@ -190,5 +202,13 @@ export default function AdminBusinessUsersPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminBusinessUsersPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BusinessUsersContent />
+    </Suspense>
   );
 }

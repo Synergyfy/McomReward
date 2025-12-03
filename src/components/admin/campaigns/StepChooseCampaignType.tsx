@@ -31,7 +31,7 @@ export default function StepChooseCampaignType({ onNext }: StepProps) {
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-gray-600">Select the type of campaign you want to create:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" id="campaign-type-selection">
           {campaignTypes.map((type) => (
             <div
               key={type.value}

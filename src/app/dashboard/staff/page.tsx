@@ -5,10 +5,22 @@ import { useRouter } from 'next/navigation';
 import { useGetAllStaff, useDeleteStaff } from '@/services/staff/hook';
 import { Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
+import { useGuide } from '@/context/GuideContext';
+import { useEffect, Suspense } from 'react';
 
-const AllStaffPage = () => {
+function AllStaffContent() {
   const router = useRouter();
   const { data: staff, isLoading, isError, error } = useGetAllStaff();
+  const searchParams = useSearchParams();
+  const shouldStartTour = searchParams.get('tour') === 'true';
+  const { startGuide } = useGuide();
+
+  useEffect(() => {
+    if (shouldStartTour) {
+        startGuide('BUSINESS_STAFF');
+    }
+  }, [shouldStartTour, startGuide]);
   const { mutate: deleteStaff } = useDeleteStaff();
 
   const handleDelete = (id: string) => {
@@ -93,4 +105,10 @@ const AllStaffPage = () => {
   );
 };
 
-export default AllStaffPage;
+export default function AllStaffPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AllStaffContent />
+    </Suspense>
+  );
+}

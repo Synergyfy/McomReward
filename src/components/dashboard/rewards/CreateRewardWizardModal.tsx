@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Reward } from '@/services/business-reward/types';
+import { useGuide } from '@/context/GuideContext';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const router = useRouter();
   const [step, setStep] = useState(1);
   const totalSteps = 2;
+  const { goToStep, startGuide } = useGuide();
 
   // Step 1: Details
   const [name, setName] = useState(reward?.title || '');
@@ -77,6 +79,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const handleNext = () => {
     if (step === 1 && isStep1Valid) {
       setStep(2);
+      goToStep(1);
     }
   };
 
@@ -100,6 +103,11 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
     onSave(rewardData);
     onClose();
+    // Prompt next guide
+    if (!isEditMode) {
+        startGuide('BUSINESS_CAMPAIGN');
+        router.push('/dashboard/campaigns/create?tour=true');
+    }
   };
 
   const progressValue = (step / totalSteps) * 100;

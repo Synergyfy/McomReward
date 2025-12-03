@@ -16,10 +16,20 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { useGuide } from '@/context/GuideContext';
+import { useEffect } from 'react';
 
 export default function VouchersPage() {
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const { startGuide } = useGuide();
+
+  // Check if there are no vouchers, might be a good time to start guide?
+  // Or maybe on mount if param is set.
+  // The user requested "includes creating campaigns vouchers staffs rewards".
+  // Assuming if they land here they might want to know how to create one.
+  // I'll add a 'Create Voucher' button which triggers the guide if clicked (and opens modal/page).
+  // Or just on mount.
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -85,8 +95,23 @@ export default function VouchersPage() {
       <div className="max-w-6xl mx-auto">
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div className="flex justify-between items-center w-full md:w-auto">
+             <h1 className="text-3xl font-bold text-gray-900 mr-4">Vouchers</h1>
+             <button
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 md:hidden"
+                onClick={() => startGuide('VOUCHER')}
+             >
+                + Create
+             </button>
+          </div>
 
           <div className="flex items-center gap-3">
+             <button
+                className="hidden md:block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 mr-4"
+                onClick={() => startGuide('VOUCHER')}
+             >
+                + Create Voucher
+             </button>
             {/* Search Bar */}
             <div className="relative mt-4 md:mt-6">
               <Search className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />

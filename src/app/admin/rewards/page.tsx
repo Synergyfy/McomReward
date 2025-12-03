@@ -79,6 +79,7 @@ export default function AdminRewardsPage() {
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [selectedReward, setSelectedReward] = useState<RewardResponse | null>(null);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
+  const [startTour, setStartTour] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10); // You can adjust the limit as needed
@@ -110,6 +111,7 @@ export default function AdminRewardsPage() {
   const handleCreate = () => {
     setModalMode('create');
     setSelectedReward(null);
+    setStartTour(true);
     setIsModalOpen(true);
   };
 
@@ -293,6 +295,7 @@ export default function AdminRewardsPage() {
           onClose={() => setIsModalOpen(false)}
           mode={modalMode}
           reward={selectedReward}
+          startTour={startTour}
         />
 
         {/* Delete Confirmation Dialog */}

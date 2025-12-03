@@ -13,9 +13,25 @@ import StepConfigureFooter from '@/components/dashboard/campaigns/StepConfigureF
 import StepAddDistributionChannels from '@/components/dashboard/campaigns/StepAddDistributionChannels';
 import StepCampaignScheduling from '@/components/dashboard/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/dashboard/campaigns/StepReviewAndCreate';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useGuide } from '@/context/GuideContext';
+import { useEffect, Suspense } from 'react';
 
-export default function CreateCampaignPage() {
+function CreateCampaignContent() {
   const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const shouldStartTour = searchParams.get('tour') === 'true';
+  const { startGuide, goToStep } = useGuide();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (shouldStartTour) {
+        startGuide('BUSINESS_CAMPAIGN');
+        if (currentStep === 1) goToStep(0);
+        else if (currentStep === 2) goToStep(1);
+        else if (currentStep === 9) goToStep(2);
+    }
+  }, [shouldStartTour, startGuide, currentStep, goToStep]);
 
   const totalSteps = 9; // Updated total steps
 
@@ -65,5 +81,13 @@ export default function CreateCampaignPage() {
         </div>
       </div>
     </CampaignFormProvider>
+  );
+}
+
+export default function CreateCampaignPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateCampaignContent />
+    </Suspense>
   );
 }

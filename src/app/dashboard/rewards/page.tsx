@@ -20,6 +20,7 @@ import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import { ChevronLeft, ChevronRight, MoreHorizontal, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { useGuide } from '@/context/GuideContext';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
@@ -191,11 +192,15 @@ export default function BusinessRewardsPage() {
 
   const { mutate: updateBusinessReward } = useUpdateBusinessReward();
   const [editingBusinessRewardId, setEditingBusinessRewardId] = useState<string | null>(null);
+  const { startGuide } = useGuide();
 
   const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
     setEditingReward(reward);
     setIsCreateModalOpen(true);
-  }, []);
+    if (!reward) {
+        startGuide('BUSINESS_REWARD');
+    }
+  }, [startGuide]);
 
   const handleOpenClaimModal = useCallback(() => {
     setIsClaimModalOpen(true);

@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import {
   useGetBusinessRewards,
+  useGetAllRewards,
   useUpdateBusinessReward,
+  useCreateBusinessReward,
 } from '@/services/business-reward/hooks';
-import { BusinessReward, Reward, PaginationMeta } from '@/services/business-reward/types';
+import { BusinessReward, Reward, PaginationMeta, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import LoadingSpinner from '@/components/ui/Loading';
 import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
 import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRewardModal';
@@ -182,6 +184,7 @@ export default function BusinessRewardsPage() {
   } = useGetBusinessRewards(businessRewardsPage, limit);
 
   const { mutate: updateBusinessReward } = useUpdateBusinessReward();
+  const { mutateAsync: createBusinessReward } = useCreateBusinessReward();
   const [editingBusinessRewardId, setEditingBusinessRewardId] = useState<string | null>(null);
 
   const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
@@ -209,7 +212,7 @@ export default function BusinessRewardsPage() {
     }
   }, [handleOpenCreateModal]);
 
-  const handleSaveReward = useCallback((rewardData: Reward) => {
+  const handleSaveReward = useCallback(async (rewardData: Reward) => {
     if (editingBusinessRewardId) {
       updateBusinessReward({
         rewardId: editingBusinessRewardId,
@@ -241,13 +244,30 @@ export default function BusinessRewardsPage() {
         }
       });
     } else {
-      // This is a mock implementation for create.
-      // In a real application, you would handle the save logic here.
-      console.log('Saving reward:', rewardData);
-      setIsCreateModalOpen(false);
-      setIsEditClaimedModalOpen(false);
+      try {
+        const payload: CreateBusinessRewardDto = {
+          title: rewardData.title,
+          description: rewardData.description,
+          point_required: rewardData.pointsRequired,
+          image: rewardData.image,
+          quantity: rewardData.quantity,
+          disabled: rewardData.disabled,
+          reward_type: 'voucher', // Defaulting to voucher as per typical flow, or could be dynamic
+          status: RewardStatus.ACTIVE,
+        };
+
+        await createBusinessReward(payload);
+        toast.success('Reward created successfully');
+        setIsCreateModalOpen(false);
+      } catch (error) {
+        console.error("Error creating reward:", error);
+        const axiosError = error as AxiosError<{ message: string }>;
+        const errorMessage = axiosError?.response?.data?.message || 'Failed to create reward';
+        toast.error(errorMessage);
+        throw error;
+      }
     }
-  }, [editingBusinessRewardId, updateBusinessReward]);
+  }, [editingBusinessRewardId, updateBusinessReward, createBusinessReward]);
 
   const handleEditBusinessReward = useCallback((businessReward: BusinessReward) => {
     setEditingBusinessRewardId(businessReward.id);

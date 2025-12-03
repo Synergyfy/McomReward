@@ -12,28 +12,32 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Reward } from '@/services/business-reward/types';
+import { useUploadToCloudinary } from '@/services/upload/hook';
+import { toast } from 'sonner';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   reward?: Reward | null;
-  onSave: (rewardData: Reward) => void;
+  onSave: (rewardData: Reward) => Promise<void> | void;
 }
 
 export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSave }: CreateRewardWizardModalProps) {
   const router = useRouter();
+  const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
   const [step, setStep] = useState(1);
   const totalSteps = 2;
 
   // Step 1: Details
   const [name, setName] = useState(reward?.title || '');
   const [description, setDescription] = useState(reward?.description || '');
-  const [value, setValue] = useState<number | string>(reward?.value || 0);
+  // const [value, setValue] = useState<number | string>(reward?.value || 0); // Removed Value
   const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
   const [quantity, setQuantity] = useState<number | string>(reward?.quantity || 0);
   const [disabled, setDisabled] = useState<boolean>(reward?.disabled || false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -43,12 +47,13 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setStep(1);
     setName(reward?.title || '');
     setDescription(reward?.description || '');
-    setValue(reward?.value || 0);
+    // setValue(reward?.value || 0);
     setPointsRequired(reward?.pointsRequired || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
     setQuantity(reward?.quantity || 0);
     setErrors({});
+    setIsSubmitting(false);
   };
 
   useEffect(() => {
@@ -66,11 +71,11 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
-    if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
+    // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
     if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [name, description, value, pointsRequired, selectedFile, isEditMode]);
+  }, [name, description, pointsRequired, selectedFile, isEditMode]); // Removed value dependency
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -84,23 +89,38 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = () => {
-    const rewardData: Reward = {
-      id: reward?.id || new Date().toISOString(),
-      title: name,
-      description,
-      value: Number(value),
-      pointsRequired: Number(pointsRequired),
-      maxPoints: Number(pointsRequired), // Assuming maxPoints defaults to pointsRequired for user-created rewards
-      image: imagePreviewUrl || '',
-      quantity: Number(quantity),
-      disabled,
-      createdAt: reward?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    let imageUrl = imagePreviewUrl || '';
 
-    onSave(rewardData);
-    onClose();
+    try {
+      if (selectedFile) {
+        const uploadResult = await uploadToCloudinary({ file: selectedFile, folder: 'rewards' });
+        imageUrl = uploadResult.secure_url;
+      }
+
+      const rewardData: Reward = {
+        id: reward?.id || new Date().toISOString(),
+        title: name,
+        description,
+        value: 0, // Value removed from UI, defaulting to 0
+        pointsRequired: Number(pointsRequired),
+        maxPoints: Number(pointsRequired),
+        image: imageUrl,
+        quantity: Number(quantity),
+        disabled,
+        createdAt: reward?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await onSave(rewardData);
+      onClose();
+    } catch (error) {
+      console.error("Error creating reward:", error);
+      toast.error('Failed to create reward. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const progressValue = (step / totalSteps) * 100;
@@ -126,10 +146,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="value" className="block text-sm font-medium mb-1">Value (£)</label>
-                <Input id="value" type="number" placeholder="0" value={value} onChange={(e) => setValue(e.target.value === '' ? '' : Number(e.target.value))} />
-              </div>
+              {/* Removed Value Input */}
               <div>
                 <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
                 <Input id="points" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
@@ -182,10 +199,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
               <CardContent>
                 <p className="text-sm text-gray-600 mb-3">{description}</p>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Value:</span>
-                    <span>£{value}</span>
-                  </div>
+                  {/* Removed Value Display */}
                   <div className="flex justify-between">
                     <span className="font-medium">Points:</span>
                     <span>{pointsRequired}</span>
@@ -201,7 +215,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         )}
 
         <div className="flex justify-between">
-          <Button variant="outline" onClick={handleBack} disabled={step === 1}>
+          <Button variant="outline" onClick={handleBack} disabled={step === 1 || isSubmitting}>
             Back
           </Button>
           {step < totalSteps ? (
@@ -209,8 +223,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmit}>
-              {isEditMode ? 'Update Reward' : 'Create Reward'}
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : (isEditMode ? 'Update Reward' : 'Create Reward')}
             </Button>
           )}
         </div>

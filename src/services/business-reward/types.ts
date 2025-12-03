@@ -51,6 +51,13 @@ export interface GetBusinessRewardsResponse extends PaginationMeta {
 export interface CreateBusinessRewardDto {
   quantity?: number;
   point_required: number;
+  title?: string;
+  description?: string;
+  image?: string;
+  expiry_datetime?: Date;
+  status?: RewardStatus;
+  reward_type?: string;
+  disabled?: boolean;
 }
 
 export enum RewardStatus {

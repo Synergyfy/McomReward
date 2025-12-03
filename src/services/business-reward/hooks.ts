@@ -51,6 +51,25 @@ export const useGetUnaddedRewards = (page: number, limit: number) => {
   });
 };
 
+const createBusinessReward = async (payload: CreateBusinessRewardDto) => {
+  const { data } = await api.post<BusinessReward>(
+    `/rewards/business/rewards/create`,
+    payload
+  );
+  return data;
+};
+
+export const useCreateBusinessReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createBusinessReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['businessRewards'] });
+      queryClient.invalidateQueries({ queryKey: ['unaddedRewards'] });
+    },
+  });
+};
+
 const addBusinessReward = async (
   rewardId: string,
   payload: CreateBusinessRewardDto

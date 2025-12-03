@@ -36,6 +36,7 @@ const defaultConfiguration: TierConfiguration = {
     hasAccessToAdvancedAnalytics: false,
     hasAccessToCRM: false,
     canUpdateReward: false,
+    canCreateRewardFromScratch: false,
   },
   progressBonuses: {
     active_campaign_bonus: 0,
@@ -439,6 +440,12 @@ function FeatureFlagsSection({ flags, onChange }: { flags: Partial<TierFeatureFl
           tooltip="If enabled, the business can edit their existing rewards."
           checked={flags.canUpdateReward}
           onChange={(v) => onChange('canUpdateReward', v)}
+        />
+        <FeatureFlagToggle
+          label="Create Custom Rewards"
+          tooltip="If enabled, the business can create custom rewards. If disabled, they must use Admin-created templates."
+          checked={flags.canCreateRewardFromScratch}
+          onChange={(v) => onChange('canCreateRewardFromScratch', v)}
         />
       </div>
     </div>

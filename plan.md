@@ -1,42 +1,39 @@
- Here is the best practice plan:
+# Plan for Implementing Business Point Packages Feature
 
-  Phase 1: Create the Admin View Page for a Business
-   1. Create New Page File: Create a new page at src/app/admin/users/business/[id]/page.tsx. This dynamic route
-      will be responsible for displaying the impersonated dashboard for the business with the given id.
-   2. Cleanup: Delete the entire src/app/admin/view-business directory you created. It's based on a flawed
-      premise and will be replaced.
+This document outlines the steps to implement the feature allowing businesses to purchase point packages.
 
-  Phase 2: Implement Data Fetching
-   1. Use Admin-Specific Hooks: On the new [id]/page.tsx, use existing or new admin-specific data hooks that
-      accept the business id from the URL.
-       * You already have useAdminBusinesses. We will need a useAdminBusinessDetails(id: string) hook to fetch
-         detailed information for a single business.
-       * We will also need hooks like useAdminBusinessCampaigns(id: string, page: number, limit: number) to fetch
-         lists of campaigns for that specific business.
-   2. Fetch All Necessary Data: On this page, call all the hooks required to get the data needed to populate the
-      dashboard view (e.g., business details, campaign list, rewards data, analytics).
+## 1. Create `plan.md`
 
-  Phase 3: Build the "Impersonation" UI
-   1. Re-create the Layout: Inside src/app/admin/users/business/[id]/page.tsx, build a UI that mimics the
-      business dashboard. This involves:
-       * Adding a prominent header that clearly states "Viewing as [Business Name]" and includes an "Exit User
-         View" button that navigates the admin back to /admin/users/business.
-       * Using the BusinessSidebar and BusinessHeader components, passing the fetched business data into them as
-         props to make them display correctly.
-   2. Re-use Dashboard Components: Import and use the individual components from the real business dashboard
-      (e.g., CampaignsTable, AnalyticsChart).
-   3. Pass Data as Props: Pass the data fetched by your admin hooks down into these re-used components as props.
-      This is the crucial step that disconnects the UI from the original, flawed data-fetching logic. The
-      components will simply render the data you give them.
+- **Task**: Create this `plan.md` file.
+- **Status**: Completed.
 
-  Phase 4: Update the Admin Business List UI
-   1. Modify the Action Button: In src/app/admin/users/business/page.tsx, find the UserDataTable component. The
-      onViewDetails prop currently opens a modal.
-   2. Change `onViewDetails` to Navigate: Modify the handleViewDetails function. Instead of opening a modal, it
-      will use Next.js's useRouter to navigate to the new dynamic page:
-      router.push(/admin/users/business/${userId});.
-   3. Update Column Definitions: Ensure the "Actions" column in createBusinessColumns calls this new navigation
-      logic. I will need to check src/components/admin/users/columns.tsx for this.
+## 2. Update Types (`src/services/payment/types.ts`)
 
-  This approach is secure, scalable, and follows best practices. It leverages the power of your admin-level API
-  endpoints and re-uses UI components without duplicating complex and context-dependent page logic.
+- **Task**: Define the necessary TypeScript interfaces based on the API documentation in `point_package.md`.
+  - `PointPackage`
+  - `BuyPackageDto`
+  - `ConfirmPurchaseDto`
+  - `BusinessPointPackage`
+- **Status**: Pending.
+
+## 3. Update Hooks (`src/services/payment/hook.ts`)
+
+- **Task**: Implement React Query hooks for interacting with the point package endpoints.
+  - `useGetAvailablePointPackages`: To fetch available packages for a business (`GET /point-packages/business/available`).
+  - `useBuyPointPackage`: To initiate a purchase with Stripe or PayPal (`POST /point-packages/business/buy`).
+  - `useConfirmPointPackagePurchase`: To confirm a successful payment (`POST /point-packages/business/confirm-purchase`).
+- **Status**: Pending.
+
+## 4. Create New UI Component (`src/components/pricing/PointPackages.tsx`)
+
+- **Task**: Develop a new React component to display the point packages.
+  - Fetch and display packages using the `useGetAvailablePointPackages` hook.
+  - Include a "Buy Now" button for each package.
+  - On "Buy Now" click, open a modal for payment selection (Stripe/PayPal).
+  - The payment modal will integrate with the payment hooks and existing payment components (`stripe-payment-form.tsx`, `paypal-button.tsx`).
+- **Status**: Pending.
+
+## 5. Integrate Component into Pricing Page (`src/app/(others)/pricing/page.tsx`)
+
+- **Task**: Import and render the new `PointPackages.tsx` component within the main pricing page, immediately after the existing `<PricingCards />` component.
+- **Status**: Pending.

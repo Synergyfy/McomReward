@@ -11,6 +11,7 @@ import FooterCTA from "@/components/pricing/footer-cta"
 import ChatbotFab from "@/components/chatbot/ChatbotFab"
 import ChatbotPanel from "@/components/chatbot/ChatbotPanel"
 import ProductOwnerCTA from "@/components/pricing/product-owner-cta" // Import the new component
+import PointPackages from "@/components/pricing/PointPackages" // Import the new PointPackages component
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"quarterly" | "annual">("quarterly")
@@ -29,6 +30,11 @@ export default function PricingPage() {
 
       <section id="plans" className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
         <PricingCards billingCycle={billingCycle} />
+      </section>
+      
+      {/* New section for Point Packages */}
+      <section id="point-packages" className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
+        <PointPackages />
       </section>
 
       {!showFullPage && (

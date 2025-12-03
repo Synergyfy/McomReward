@@ -10,7 +10,11 @@ import {
     PayPalInitiateResponse,
     PayPalVerifyRequest,
     PayPalVerifyResponse,
-    UpdateTierProgressionDto
+    UpdateTierProgressionDto,
+    PointPackage,
+    BuyPackageDto,
+    ConfirmPurchaseDto,
+    BusinessPointPackage
 } from './types';
 
 const PAYMENT_QUERY_KEY = 'payment';
@@ -86,4 +90,53 @@ export const usePayPalVerify = () => {
     return useMutation({
         mutationFn: verifyPayPalPayment,
     });
+};
+
+// Point Package Hooks
+const getAvailablePointPackages = async (): Promise<PointPackage[]> => {
+  const { data } = await api.get<PointPackage[]>('/point-packages/business/available');
+  return data;
+};
+
+export const useGetAvailablePointPackages = () => {
+  return useQuery({
+    queryKey: [PAYMENT_QUERY_KEY, 'availablePointPackages'],
+    queryFn: getAvailablePointPackages,
+  });
+};
+
+const buyPointPackage = async (payload: BuyPackageDto): Promise<{ clientSecret?: string; approvalUrl?: string; orderId?: string }> => {
+  const { data } = await api.post<{ clientSecret?: string; approvalUrl?: string; orderId?: string }>('/point-packages/business/buy', payload);
+  return data;
+};
+
+export const useBuyPointPackage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: buyPointPackage,
+    onSuccess: () => {
+      // Invalidate queries that show available packages or user's point balance
+      queryClient.invalidateQueries({ queryKey: [PAYMENT_QUERY_KEY, 'availablePointPackages'] });
+      // Potentially invalidate user's wallet/balance query if one exists
+      // queryClient.invalidateQueries({ queryKey: ['userWallet'] });
+    },
+  });
+};
+
+const confirmPointPackagePurchase = async (payload: ConfirmPurchaseDto): Promise<BusinessPointPackage> => {
+  const { data } = await api.post<BusinessPointPackage>('/point-packages/business/confirm-purchase', payload);
+  return data;
+};
+
+export const useConfirmPointPackagePurchase = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: confirmPointPackagePurchase,
+    onSuccess: () => {
+      // Invalidate queries that show user's purchased packages or point balance
+      queryClient.invalidateQueries({ queryKey: [PAYMENT_QUERY_KEY, 'myPackages'] });
+      // Potentially invalidate user's wallet/balance query if one exists
+      // queryClient.invalidateQueries({ queryKey: ['userWallet'] });
+    },
+  });
 };

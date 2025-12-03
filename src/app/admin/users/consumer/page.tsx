@@ -141,6 +141,11 @@ export default function AdminConsumerUsersPage() {
     return items;
   };
 
+  const handleViewDetails = (userId: string) => {
+    // Implement view details logic, e.g., navigate to a user detail page
+    console.log('View details for user', userId);
+  };
+
   return (
     <div className="p-4 md:p-6 2xl:p-10">
       <div className="mb-8">
@@ -157,6 +162,7 @@ export default function AdminConsumerUsersPage() {
             onDeleteUser={handleDeleteUser}
             onAdjustUserPoints={handleAdjustUserPoints}
             onSuspendUser={handleSuspendUser}
+            onViewDetails={handleViewDetails}
           />
         </div>
         

@@ -16,7 +16,6 @@ import PublicRewardCard from '@/components/rewards/PublicRewardCard';
 
 interface PageProps {
   params: Promise<{ campaignId: string }>;
-  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 export default function CampaignDetailPage({ params }: PageProps) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -31,14 +31,19 @@ interface CampaignPerformance {
   }[];
 }
 
-export default function CampaignPerformancePage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ campaignId: string }>;
+}
+
+export default function CampaignPerformancePage({ params }: PageProps) {
+  const { campaignId } = use(params);
   const [data, setData] = useState<CampaignPerformance | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPerformance = async () => {
       try {
-        const res = await api.get(`/campaigns/${params.id}/performance`);
+        const res = await api.get(`/campaigns/${campaignId}/performance`);
         setData(res.data);
       } catch (error) {
         console.error(error);
@@ -48,7 +53,7 @@ export default function CampaignPerformancePage({ params }: { params: { id: stri
       }
     };
     fetchPerformance();
-  }, [params.id]);
+  }, [campaignId]);
 
   if (loading)
     return (

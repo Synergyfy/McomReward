@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QrCode, Tag, Users, Building, MapPin, Clock, Calendar, History, Scan } from 'lucide-react';
@@ -8,13 +8,13 @@ import { mockPlaques, Plaque } from '@/lib/mock-data/plaques';
 import { notFound } from 'next/navigation';
 
 interface PlaqueDetailsPageProps {
-  params: {
+  params: Promise<{
     plaqueId: string;
-  };
+  }>;
 }
 
 export default function PlaqueDetailsPage({ params }: PlaqueDetailsPageProps) {
-  const { plaqueId } = params;
+  const { plaqueId } = use(params);
   const plaque = mockPlaques.find(p => p.id === plaqueId);
 
   if (!plaque) {

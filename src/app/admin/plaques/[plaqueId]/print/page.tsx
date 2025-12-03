@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { QrCode, Printer, Download } from 'lucide-react';
 import { mockPlaques } from '@/lib/mock-data/plaques';
@@ -8,13 +8,13 @@ import { notFound } from 'next/navigation';
 import html2canvas from 'html2canvas'; // For downloading as image
 
 interface PlaquePrintViewPageProps {
-  params: {
+  params: Promise<{
     plaqueId: string;
-  };
+  }>;
 }
 
 export default function PlaquePrintViewPage({ params }: PlaquePrintViewPageProps) {
-  const { plaqueId } = params;
+  const { plaqueId } = use(params);
   const plaque = mockPlaques.find(p => p.id === plaqueId);
   const printRef = useRef<HTMLDivElement>(null);
 

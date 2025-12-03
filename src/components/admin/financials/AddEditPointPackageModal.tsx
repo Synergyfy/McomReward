@@ -21,12 +21,20 @@ const pointPackageSchema = z.object({
   description: z.string().optional(),
   points: z.coerce.number().int().min(1, 'Points must be a positive integer'),
   price: z.coerce.number().min(0, 'Price cannot be negative'),
-  currency: z.string().default('GBP'),
-  tier_ids: z.array(z.string()).default([]),
-  is_active: z.boolean().default(true),
+  currency: z.string().optional(),
+  tier_ids: z.array(z.string()).optional(),
+  is_active: z.boolean().optional(),
 });
 
-type PointPackageFormData = z.infer<typeof pointPackageSchema>;
+interface PointPackageFormData {
+  name: string;
+  description?: string;
+  points: number;
+  price: number;
+  currency?: string;
+  tier_ids?: string[];
+  is_active?: boolean;
+}
 
 interface AddEditPointPackageModalProps {
   isOpen: boolean;
@@ -54,15 +62,15 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     reset,
     formState: { errors },
   } = useForm<PointPackageFormData>({
-    resolver: zodResolver(pointPackageSchema),
+    resolver: zodResolver(pointPackageSchema as z.ZodSchema<PointPackageFormData>),
     defaultValues: {
       name: '',
       description: '',
       points: 0,
       price: 0,
-      currency: 'GBP',
-      tier_ids: [],
-      is_active: true,
+      currency: 'GBP', // Provide default in defaultValues
+      tier_ids: [],     // Provide default in defaultValues
+      is_active: true,  // Provide default in defaultValues
     },
   });
 

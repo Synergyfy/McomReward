@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { PointPackage, PaymentProvider } from '@/services/payment/types';
+import { PointPackage, PaymentProvider, PayPalVerifyResponse } from '@/services/payment/types';
 import { useBuyPointPackage, useConfirmPointPackagePurchase } from '@/services/payment/hook';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/components/stripe-provider';
@@ -98,7 +98,7 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
     );
   };
 
-  const handlePayPalPaymentSuccess = (details: any, transactionId: string) => {
+  const handlePayPalPaymentSuccess = (details: PayPalVerifyResponse, transactionId: string) => {
     // PayPalButton already handles capture and can return details.
     // If capture is done externally or needs another verification step:
     if (!pointPackage) return;

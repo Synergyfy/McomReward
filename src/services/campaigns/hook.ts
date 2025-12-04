@@ -257,13 +257,13 @@ export const useGetParticipantActivity = (participantId: string, page: number = 
 };
 
 // Get Campaign By ID
-const getCampaignById = async (id: string, businessId?: string): Promise<CampaignResponse> => {
-  const { data } = await api.get<CampaignResponse>(`/campaigns/${id}`, { params: { businessId } });
+const getCampaignById = async (id: string, businessId?: string): Promise<CampaignResponse | BusinessCampaign> => {
+  const { data } = await api.get<CampaignResponse | BusinessCampaign>(`/campaigns/${id}`, { params: { businessId } });
   return data;
 };
 
 export const useGetCampaignById = (id: string, businessId?: string) => {
-  return useQuery({
+  return useQuery<CampaignResponse | BusinessCampaign>({
     queryKey: [CAMPAIGNS_QUERY_KEY, id, businessId],
     queryFn: () => getCampaignById(id, businessId),
     enabled: !!id,

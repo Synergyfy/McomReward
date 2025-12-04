@@ -8,34 +8,72 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import Image from "next/image";
 import {
     Calendar, Tag, Info, Gift, Users, Trophy,
-    LayoutTemplate, Palette, Phone, Mail, Globe,
-    CreditCard, Coins, Type
+    LayoutTemplate, Palette, Phone, Mail,
+    Coins
 } from "lucide-react";
 import LoadingSpinner from '@/components/ui/Loading';
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
+import { CampaignResponse, BusinessCampaign } from '@/services/campaigns/types';
+
+// Type guard to determine if the campaign is a BusinessCampaign
+const isBusinessCampaign = (campaign: CampaignResponse | BusinessCampaign): campaign is BusinessCampaign => {
+  return (campaign as BusinessCampaign).campaign_type !== undefined; // BusinessCampaign uses snake_case
+};
 
 export default function CustomerCampaignOverviewPage() {
     const params = useParams();
     const { campaignId } = params;
 
-    const { data: campaign, isLoading, isError } = useGetCampaignById(campaignId as string);
+    const { data: campaignData, isLoading, isError } = useGetCampaignById(campaignId as string);
 
     if (isLoading) {
         return <LoadingSpinner />;
     }
 
+    const campaign = campaignData as (CampaignResponse | BusinessCampaign);
+
     if (isError || !campaign) {
         return <p className="text-center text-lg text-red-500 py-20">Campaign not found.</p>;
     }
+
+    // Safely access properties based on campaign type
+    const bannerImageUrl = isBusinessCampaign(campaign) ? campaign.banner_url : campaign.bannerUrl;
+    const logoImageUrl = isBusinessCampaign(campaign) ? campaign.logo_url : campaign.logoUrl;
+    const campaignName = campaign.name; // Both have .name
+    const campaignType = isBusinessCampaign(campaign) ? campaign.campaign_type : campaign.campaignType;
+    const campaignMessage = isBusinessCampaign(campaign) ? campaign.campaign_message : campaign.campaignMessage;
+    const startDate = isBusinessCampaign(campaign) ? campaign.start_date : campaign.startDate;
+    const endDate = isBusinessCampaign(campaign) ? campaign.end_date : campaign.endDate;
+    const audienceType = isBusinessCampaign(campaign) ? campaign.audience_type : campaign.audienceType;
+    const quantity = campaign.quantity;
+    const ctaText = isBusinessCampaign(campaign) ? campaign.cta_text : campaign.ctaText;
+    const rewardType = isBusinessCampaign(campaign) ? campaign.reward_type : campaign.rewardType;
+    const signUpPoint = isBusinessCampaign(campaign) ? campaign.signUpPoint : campaign.signUpPoint;
+    const regularPointsThreshold = isBusinessCampaign(campaign) ? campaign.regular_points_threshold : campaign.regularPointsThreshold;
+    const matchingPointsThreshold = isBusinessCampaign(campaign) ? campaign.matching_points_threshold : campaign.matchingPointsThreshold;
+    const matchingPointsDisabledByAdmin = isBusinessCampaign(campaign) ? campaign.matching_points_disabled_by_admin : campaign.matchingPointsDisabledByAdmin;
+    const earnPointPageTitle = isBusinessCampaign(campaign) ? campaign.earn_point_page_title : campaign.earnPointPageTitle;
+    const earnPointPageDescription = isBusinessCampaign(campaign) ? campaign.earn_point_page_description : campaign.earnPointPageDescription;
+    const redeemRewardPageTitle = isBusinessCampaign(campaign) ? campaign.redeem_reward_page_title : campaign.redeemRewardPageTitle;
+    const redeemRewardPageDescription = isBusinessCampaign(campaign) ? campaign.redeem_reward_page_description : campaign.redeemRewardPageDescription;
+    const contactUsPageTitle = isBusinessCampaign(campaign) ? campaign.contact_us_page_title : campaign.contactUsPageTitle;
+    const contactUsPageDescription = isBusinessCampaign(campaign) ? campaign.contact_us_page_description : campaign.contactUsPageDescription;
+    const contactEmail = isBusinessCampaign(campaign) ? campaign.contact_email : campaign.contactEmail;
+    const contactPhoneNumber = isBusinessCampaign(campaign) ? campaign.contact_phone_number : campaign.contactPhoneNumber;
+    const footerText = isBusinessCampaign(campaign) ? campaign.footer_text : campaign.footerText;
+    const rewardsList = campaign.rewards || []; // Both have rewards array
+
+    // Fallback image if bannerUrl is missing or fails
+    const bannerImage = bannerImageUrl || 'https://via.placeholder.com/1920x600?text=No+Banner';
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 pb-20">
             {/* Hero Section */}
             <div className="relative h-[400px] w-full overflow-hidden group">
                 <Image
-                    src={campaign.bannerUrl || 'https://via.placeholder.com/1920x600?text=No+Banner'}
-                    alt={campaign.name}
+                    src={bannerImage}
+                    alt={campaignName || 'Campaign Banner'}
                     layout="fill"
                     objectFit="cover"
                     className="brightness-50 transition-transform duration-700 group-hover:scale-105"
@@ -44,9 +82,9 @@ export default function CustomerCampaignOverviewPage() {
                     <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-end md:items-center gap-8">
                         {/* Logo Overlay */}
                         <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white">
-                            {campaign.logoUrl ? (
+                            {logoImageUrl ? (
                                 <Image
-                                    src={campaign.logoUrl}
+                                    src={logoImageUrl}
                                     alt="Campaign Logo"
                                     layout="fill"
                                     objectFit="cover"
@@ -61,7 +99,7 @@ export default function CustomerCampaignOverviewPage() {
                         <div className="flex-1 text-white">
                             <div className="flex flex-wrap items-center gap-3 mb-3">
                                 <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
-                                    {campaign.campaignType?.replace('_', ' ')}
+                                    {campaignType?.replace('_', ' ') || 'Campaign'}
                                 </Badge>
                                 {campaign.disabled && (
                                     <Badge variant="destructive" className="px-3 py-1 text-sm uppercase tracking-wide">
@@ -70,10 +108,10 @@ export default function CustomerCampaignOverviewPage() {
                                 )}
                             </div>
                             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-3 drop-shadow-xl">
-                                {campaign.name}
+                                {campaignName}
                             </h1>
                             <p className="text-lg text-gray-200 max-w-2xl line-clamp-2">
-                                {campaign.campaignMessage}
+                                {campaignMessage || 'Join this exclusive campaign to earn rewards!'}
                             </p>
                         </div>
 
@@ -84,7 +122,7 @@ export default function CustomerCampaignOverviewPage() {
                                 <Button
                                     className="shadow-lg text-lg px-8 py-6 transition-transform hover:scale-105 bg-orange-600 hover:bg-orange-700 text-white"
                                 >
-                                    {campaign.ctaText || 'Claim Reward'}
+                                    {ctaText || 'Claim Reward'}
                                 </Button>
                             </div>
                         </div>
@@ -103,7 +141,7 @@ export default function CustomerCampaignOverviewPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Start Date</p>
-                                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.startDate).toLocaleDateString()}</p>
+                                <p className="text-sm font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -114,7 +152,7 @@ export default function CustomerCampaignOverviewPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">End Date</p>
-                                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.endDate).toLocaleDateString()}</p>
+                                <p className="text-sm font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -125,7 +163,7 @@ export default function CustomerCampaignOverviewPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Audience</p>
-                                <p className="text-sm font-semibold text-gray-900 capitalize">{campaign.audienceType}</p>
+                                <p className="text-sm font-semibold text-gray-900 capitalize">{audienceType}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -136,7 +174,7 @@ export default function CustomerCampaignOverviewPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Quantity</p>
-                                <p className="text-sm font-semibold text-gray-900">{campaign.quantity > 0 ? campaign.quantity : 'Unlimited'}</p>
+                                <p className="text-sm font-semibold text-gray-900">{quantity > 0 ? quantity : 'Unlimited'}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -158,21 +196,21 @@ export default function CustomerCampaignOverviewPage() {
                             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Reward Type</p>
-                                    <p className="font-medium text-gray-900 capitalize">{campaign.rewardType}</p>
+                                    <p className="font-medium text-gray-900 capitalize">{rewardType}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Sign Up Bonus</p>
-                                    <p className="font-medium text-gray-900">{campaign.signUpPoint} Points</p>
+                                    <p className="font-medium text-gray-900">{signUpPoint} Points</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Regular Threshold</p>
-                                    <p className="font-medium text-gray-900">{campaign.regularPointsThreshold} Points</p>
+                                    <p className="font-medium text-gray-900">{regularPointsThreshold} Points</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Matching Threshold</p>
                                     <div className="flex items-center gap-2">
-                                        <p className="font-medium text-gray-900">{campaign.matchingPointsThreshold} Points</p>
-                                        {campaign.matchingPointsDisabledByAdmin && (
+                                        <p className="font-medium text-gray-900">{matchingPointsThreshold} Points</p>
+                                        {matchingPointsDisabledByAdmin && (
                                             <Badge variant="outline" className="text-xs text-red-500 border-red-200">Disabled by Admin</Badge>
                                         )}
                                     </div>
@@ -204,11 +242,11 @@ export default function CustomerCampaignOverviewPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                                            <p className="text-sm text-gray-800">{campaign.earnPointPageTitle || '-'}</p>
+                                            <p className="text-sm text-gray-800">{earnPointPageTitle || '-'}</p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.earnPointPageDescription || '-' }} />
+                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: earnPointPageDescription || '-' }} />
                                         </div>
                                     </div>
                                 </div>
@@ -228,11 +266,11 @@ export default function CustomerCampaignOverviewPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                                            <p className="text-sm text-gray-800">{campaign.redeemRewardPageTitle || '-'}</p>
+                                            <p className="text-sm text-gray-800">{redeemRewardPageTitle || '-'}</p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.redeemRewardPageDescription || '-' }} />
+                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: redeemRewardPageDescription || '-' }} />
                                         </div>
                                     </div>
                                 </div>
@@ -252,21 +290,21 @@ export default function CustomerCampaignOverviewPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Title</p>
-                                            <p className="text-sm text-gray-800">{campaign.contactUsPageTitle || '-'}</p>
+                                            <p className="text-sm text-gray-800">{contactUsPageTitle || '-'}</p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 uppercase font-bold mb-1">Description</p>
-                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: campaign.contactUsPageDescription || '-' }} />
+                                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: contactUsPageDescription || '-' }} />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Mail className="w-4 h-4 text-gray-400" />
-                                            {campaign.contactEmail || 'No Email'}
+                                            {contactEmail || 'No Email'}
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Phone className="w-4 h-4 text-gray-400" />
-                                            {campaign.contactPhoneNumber || 'No Phone'}
+                                            {contactPhoneNumber || 'No Phone'}
                                         </div>
                                     </div>
                                 </div>
@@ -289,20 +327,20 @@ export default function CustomerCampaignOverviewPage() {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Background Color</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: campaign.backgroundColor }}></div>
-                                        <span className="text-xs font-mono text-gray-500">{campaign.backgroundColor}</span>
+                                        <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: isBusinessCampaign(campaign) ? campaign.background_color : campaign.backgroundColor }}></div>
+                                        <span className="text-xs font-mono text-gray-500">{isBusinessCampaign(campaign) ? campaign.background_color : campaign.backgroundColor}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Text Color</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: campaign.textColor }}></div>
-                                        <span className="text-xs font-mono text-gray-500">{campaign.textColor}</span>
+                                        <div className="w-6 h-6 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: isBusinessCampaign(campaign) ? campaign.text_color : campaign.textColor }}></div>
+                                        <span className="text-xs font-mono text-gray-500">{isBusinessCampaign(campaign) ? campaign.text_color : campaign.textColor}</span>
                                     </div>
                                 </div>
                                 <div className="pt-4 border-t border-gray-100">
                                     <p className="text-xs text-gray-500 uppercase font-bold mb-2">Footer Text</p>
-                                    <p className="text-sm text-gray-700 italic">"{campaign.footerText || 'No footer text'}"</p>
+                                    <p className="text-sm text-gray-700 italic">"{footerText || 'No footer text'}"</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -310,11 +348,11 @@ export default function CustomerCampaignOverviewPage() {
                         {/* Rewards List */}
                         <div className="space-y-4">
                             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <Gift className="w-5 h-5 text-orange-600" /> Rewards ({campaign.rewards?.length || 0})
+                                <Gift className="w-5 h-5 text-orange-600" /> Rewards ({rewardsList?.length || 0})
                             </h3>
-                            {campaign.rewards && campaign.rewards.length > 0 ? (
+                            {rewardsList && rewardsList.length > 0 ? (
                                 <div className="space-y-4">
-                                    {campaign.rewards.map((reward, index) => (
+                                    {rewardsList.map((reward, index) => (
                                         <Card key={index} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
                                             <div className="flex h-24">
                                                 <div className="w-24 relative shrink-0 bg-gray-100">

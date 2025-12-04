@@ -1,5 +1,7 @@
 
 
+import { BusinessReward } from '../business-reward/types';
+
 export interface UpdateCampaignPayload extends Partial<CreateCampaignPayload> {
   // reward_ids for claimed campaigns (Admin Rewards)
   reward_ids?: string[];
@@ -102,6 +104,14 @@ export enum CampaignType {
 export enum AudienceType {
   ALL = 'all',
   MEMBERS = 'members',
+  BADGE_LEVEL = 'badge_level',
+  TARGET_WISHLIST = 'target_wishlist',
+}
+
+export enum RewardType {
+  REGULAR = 'regular',
+  MATCHING = 'matching',
+  BOTH = 'both',
 }
 
 export interface Reward {
@@ -151,17 +161,17 @@ export interface BusinessCampaign {
   // --- Relations ---
   business: Business; 
   campaign?: { id: string }; // Null for campaigns created from scratch
-  businessRewards?: any[]; // The linked business rewards (using any[] as generic for now or specific BusinessReward type if available)
+  businessRewards: BusinessReward[]; // The linked business rewards
   rewards: Reward[]; // Admin rewards
   
   // --- Copied/Set Fields ---
   name: string;
-  campaign_type: string; // Map to CampaignType enum
+  campaign_type: CampaignType; // Map to CampaignType enum
   campaign_message: string;
   start_date: string;
   end_date: string;
   quantity: number;
-  audience_type: string; // Map to AudienceType enum
+  audience_type: AudienceType; // Map to AudienceType enum
   banner_url: string;
   logo_url: string;
   cta_text: string;
@@ -171,7 +181,7 @@ export interface BusinessCampaign {
   background_color: string;
   
   signUpPoint: number;
-  reward_type: string; // Map to RewardType enum
+  reward_type: RewardType; // Map to RewardType enum
   regular_points_threshold: number;
   matching_points_threshold: number;
   

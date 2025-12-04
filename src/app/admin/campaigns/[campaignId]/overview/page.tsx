@@ -11,16 +11,24 @@ import LoadingSpinner from '@/components/ui/Loading';
 import PublicRewardCard from '@/components/rewards/PublicRewardCard';
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
+import { CampaignResponse, BusinessCampaign } from '@/services/campaigns/types';
+
+// Type guard to determine if the campaign is a BusinessCampaign
+const isBusinessCampaign = (campaign: CampaignResponse | BusinessCampaign): campaign is BusinessCampaign => {
+  return (campaign as BusinessCampaign).campaign_type !== undefined;
+};
 
 export default function CampaignOverviewPage() {
   const params = useParams();
   const { campaignId } = params;
 
-  const { data: campaign, isLoading, isError } = useGetCampaignById(campaignId as string);
+  const { data: campaignData, isLoading, isError } = useGetCampaignById(campaignId as string);
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
+
+  const campaign = campaignData as (CampaignResponse | BusinessCampaign);
 
   if (isError || !campaign) {
     return (
@@ -37,8 +45,18 @@ export default function CampaignOverviewPage() {
     );
   }
 
+  // Safely access properties based on campaign type
+  const bannerImageUrl = isBusinessCampaign(campaign) ? campaign.banner_url : campaign.bannerUrl;
+  const logoImageUrl = isBusinessCampaign(campaign) ? campaign.logo_url : campaign.logoUrl;
+  const campaignTypeName = isBusinessCampaign(campaign) ? campaign.campaign_type : campaign.campaignType;
+  const campaignMessage = isBusinessCampaign(campaign) ? campaign.campaign_message : campaign.campaignMessage;
+  const startDate = isBusinessCampaign(campaign) ? campaign.start_date : campaign.startDate;
+  const endDate = isBusinessCampaign(campaign) ? campaign.end_date : campaign.endDate;
+  const audienceType = isBusinessCampaign(campaign) ? campaign.audience_type : campaign.audienceType;
+  const quantity = campaign.quantity;
+
   // Fallback image if bannerUrl is missing or fails
-  const bannerImage = campaign.bannerUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+  const bannerImage = bannerImageUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-24">
@@ -56,9 +74,9 @@ export default function CampaignOverviewPage() {
           <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-end md:items-center gap-8">
             {/* Logo Overlay */}
             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white">
-              {campaign.logoUrl ? (
+              {logoImageUrl ? (
                 <Image
-                  src={campaign.logoUrl}
+                  src={logoImageUrl}
                   alt="Campaign Logo"
                   layout="fill"
                   objectFit="cover"
@@ -73,11 +91,11 @@ export default function CampaignOverviewPage() {
             <div className="flex-1 text-white">
               <div className="flex flex-wrap items-center gap-3 mb-3">
                 <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 text-sm uppercase tracking-wide">
-                  {campaign.campaignType?.replace('_', ' ') || 'Campaign'}
+                  {campaignTypeName?.replace('_', ' ') || 'Campaign'}
                 </Badge>
-                {campaign.audienceType && (
+                {audienceType && (
                   <Badge variant="secondary" className="px-3 py-1 text-sm uppercase tracking-wide bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-sm">
-                    {campaign.audienceType}
+                    {audienceType}
                   </Badge>
                 )}
                 {campaign.disabled && (
@@ -90,7 +108,7 @@ export default function CampaignOverviewPage() {
                 {campaign.name}
               </h1>
               <p className="text-lg md:text-xl text-gray-200 max-w-2xl line-clamp-2 drop-shadow-md">
-                {campaign.campaignMessage || 'Join this exclusive campaign to earn rewards!'}
+                {campaignMessage || 'Join this exclusive campaign to earn rewards!'}
               </p>
             </div>
 
@@ -120,7 +138,7 @@ export default function CampaignOverviewPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Start Date</p>
-                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.startDate).toLocaleDateString()}</p>
+                <p className="text-sm font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</p>
               </div>
             </CardContent>
           </Card>
@@ -131,7 +149,7 @@ export default function CampaignOverviewPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">End Date</p>
-                <p className="text-sm font-semibold text-gray-900">{new Date(campaign.endDate).toLocaleDateString()}</p>
+                <p className="text-sm font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</p>
               </div>
             </CardContent>
           </Card>
@@ -142,7 +160,7 @@ export default function CampaignOverviewPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Audience</p>
-                <p className="text-sm font-semibold text-gray-900 capitalize">{campaign.audienceType}</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">{audienceType}</p>
               </div>
             </CardContent>
           </Card>
@@ -154,7 +172,7 @@ export default function CampaignOverviewPage() {
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Availability</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {campaign.quantity > 0 ? `${campaign.quantity} Spots` : 'Unlimited'}
+                  {quantity > 0 ? `${quantity} Spots` : 'Unlimited'}
                 </p>
               </div>
             </CardContent>
@@ -173,10 +191,10 @@ export default function CampaignOverviewPage() {
               </h2>
               <div className="prose prose-lg text-gray-600 max-w-none leading-relaxed">
                 {/* Render HTML if it looks like HTML, otherwise just text */}
-                {/<[a-z][\s\S]*>/i.test(campaign.campaignMessage) ? (
-                  <div dangerouslySetInnerHTML={{ __html: campaign.campaignMessage }} />
+                {/<[a-z][\s\S]*>/i.test(campaignMessage) ? (
+                  <div dangerouslySetInnerHTML={{ __html: campaignMessage }} />
                 ) : (
-                  <p>{campaign.campaignMessage}</p>
+                  <p>{campaignMessage}</p>
                 )}
               </div>
             </section>
@@ -210,8 +228,9 @@ export default function CampaignOverviewPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div >
       </div >
     </div >
   );
 }
+

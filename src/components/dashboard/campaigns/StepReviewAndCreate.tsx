@@ -25,7 +25,7 @@ import ContactUsPagePreview from './previews/ContactUsPagePreview';
 import FooterPreview from './previews/FooterPreview';
 import { useCreateCampaign, useUpdateCampaign } from '@/services/campaigns/hook';
 import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlist';
-import { CreateCampaignPayload, CampaignResponse } from '@/services/campaigns/types';
+import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
 
@@ -172,7 +172,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
 
       if (campaignId) {
         // Update existing campaign
-        const updatePayload: any = { ...commonPayload };
+        const updatePayload: UpdateCampaignPayload = { ...commonPayload };
         
         if (isClaimed) {
            // Claimed campaigns (Admin Templates) must use reward_ids

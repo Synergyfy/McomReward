@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { CampaignFormProvider, useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetCampaignById } from '@/services/campaigns/hook';
 import { Loader2 } from 'lucide-react';
+import { CampaignResponse, BusinessCampaign } from '@/services/campaigns/types';
 
 import StepChooseCampaignType from '@/components/dashboard/campaigns/StepChooseCampaignType';
 import StepSetCampaignDetails from '@/components/dashboard/campaigns/StepSetCampaignDetails';
@@ -28,10 +29,14 @@ function EditCampaignContent() {
   const { data: campaignData, isLoading, isError } = useGetCampaignById(campaignId);
 
   // Determine if it's a claimed campaign
-  // Type assertion or checking for property existence because useGetCampaignById returns CampaignResponse (camelCase)
-  // but API might return BusinessCampaign (snake_case) structure as per new docs.
-  const campaign = campaignData as any;
-  const isClaimed = !!(campaign?.campaign);
+  const campaign = campaignData as (CampaignResponse | BusinessCampaign);
+  // Check for 'campaign' property which exists on BusinessCampaign (claimed) but is optional/undefined on CampaignResponse
+  const isClaimed = !!((campaign as BusinessCampaign)?.campaign); // Retain original logic to determine if it's a claimed campaign
+
+  // Type guard to determine if the campaign is a BusinessCampaign
+  const isBusinessCampaign = (campaign: CampaignResponse | BusinessCampaign): campaign is BusinessCampaign => {
+    return (campaign as BusinessCampaign).campaign_type !== undefined;
+  };
 
   useEffect(() => {
     if (campaign && !dataLoaded) {
@@ -48,40 +53,41 @@ function EditCampaignContent() {
         'target_wishlist': 'wishlist_target'
       };
 
-      // Handle snake_case vs camelCase
-      const campaignType = campaign.campaign_type || campaign.campaignType || '';
-      const audienceTypeStr = campaign.audience_type || campaign.audienceType || '';
+      const currentCampaign = campaign; // Use a local variable to leverage the type guard
+      
+      const campaignType = isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_type : currentCampaign.campaignType || '';
+      const audienceTypeStr = isBusinessCampaign(currentCampaign) ? currentCampaign.audience_type : currentCampaign.audienceType || '';
       const audienceTypes = audienceTypeStr
         ? audienceTypeStr.split(',').map((t: string) => reverseAudienceTypeMap[t.trim()] || t.trim())
         : [];
       
-      const rewards = campaign.businessRewards || campaign.rewards || [];
+      const rewards = isBusinessCampaign(currentCampaign) ? currentCampaign.businessRewards : currentCampaign.rewards || [];
 
       updateFormData({
-        campaignName: campaign.name,
+        campaignName: currentCampaign.name,
         campaignType: reverseCampaignTypeMap[campaignType] || campaignType,
-        campaignMessage: campaign.campaign_message || campaign.campaignMessage,
-        startDate: (campaign.start_date || campaign.startDate) ? new Date(campaign.start_date || campaign.startDate) : undefined,
-        endDate: (campaign.end_date || campaign.endDate) ? new Date(campaign.end_date || campaign.endDate) : undefined,
-        rewardsAvailable: campaign.quantity,
+        campaignMessage: isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_message : currentCampaign.campaignMessage,
+        startDate: (isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate) ? new Date(isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate) : undefined,
+        endDate: (isBusinessCampaign(currentCampaign) ? currentCampaign.end_date : currentCampaign.endDate) ? new Date(isBusinessCampaign(currentCampaign) ? currentCampaign.end_date : currentCampaign.endDate) : undefined,
+        rewardsAvailable: currentCampaign.quantity,
         audienceType: audienceTypes,
-        imageUrl: campaign.banner_url || campaign.bannerUrl,
-        logoUrl: campaign.logo_url || campaign.logoUrl,
-        ctaButtonText: (campaign.cta_text || campaign.ctaText) as any,
-        ctaBgColor: campaign.cta_background_color || campaign.ctaBackgroundColor,
-        ctaTextColor: campaign.cta_text_color || campaign.ctaTextColor,
-        bgColorTextColor: campaign.text_color || campaign.textColor,
-        bgColor: campaign.background_color || campaign.backgroundColor,
-        earnTitle: campaign.earn_point_page_title || campaign.earnPointPageTitle,
-        earnText: campaign.earn_point_page_description || campaign.earnPointPageDescription,
-        redeemTitle: campaign.redeem_reward_page_title || campaign.redeemRewardPageTitle,
-        redeemText: campaign.redeem_reward_page_description || campaign.redeemRewardPageDescription,
-        contactTitle: campaign.contact_us_page_title || campaign.contactUsPageTitle,
-        contactText: campaign.contact_us_page_description || campaign.contactUsPageDescription,
-        contactEmail: campaign.contact_email || campaign.contactEmail,
-        contactPhone: campaign.contact_phone_number || campaign.contactPhoneNumber,
-        footerText: campaign.footer_text || campaign.footerText,
-        rewardIds: rewards.map((r: any) => r.id),
+        imageUrl: isBusinessCampaign(currentCampaign) ? currentCampaign.banner_url : currentCampaign.bannerUrl,
+        logoUrl: isBusinessCampaign(currentCampaign) ? currentCampaign.logo_url : currentCampaign.logoUrl,
+        ctaButtonText: (isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text : currentCampaign.ctaText) as 'Claim Reward' | 'Join Now' | 'Refer & Earn',
+        ctaBgColor: isBusinessCampaign(currentCampaign) ? currentCampaign.cta_background_color : currentCampaign.ctaBackgroundColor,
+        ctaTextColor: isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text_color : currentCampaign.ctaTextColor,
+        bgColorTextColor: isBusinessCampaign(currentCampaign) ? currentCampaign.text_color : currentCampaign.textColor,
+        bgColor: isBusinessCampaign(currentCampaign) ? currentCampaign.background_color : currentCampaign.backgroundColor,
+        earnTitle: isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_title : currentCampaign.earnPointPageTitle,
+        earnText: isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_description : currentCampaign.earnPointPageDescription,
+        redeemTitle: isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_title : currentCampaign.redeemRewardPageTitle,
+        redeemText: isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_description : currentCampaign.redeemRewardPageDescription,
+        contactTitle: isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_title : currentCampaign.contactUsPageTitle,
+        contactText: isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_description : currentCampaign.contactUsPageDescription,
+        contactEmail: isBusinessCampaign(currentCampaign) ? currentCampaign.contact_email : currentCampaign.contactEmail,
+        contactPhone: isBusinessCampaign(currentCampaign) ? currentCampaign.contact_phone_number : currentCampaign.contactPhoneNumber,
+        footerText: isBusinessCampaign(currentCampaign) ? currentCampaign.footer_text : currentCampaign.footerText,
+        rewardIds: rewards.map((r: { id: string }) => r.id),
       });
       setDataLoaded(true);
     }

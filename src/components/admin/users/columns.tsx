@@ -144,7 +144,6 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   handlers: ActionHandlers
 ) => ColumnDef<T> = (itemType, handlers) => ({
   id: 'actions',
-<<<<<<< HEAD
   cell: ({ row }) => {
     const item = row.original;
 
@@ -243,11 +242,6 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
       </DropdownMenu>
     );
   },
-=======
-  cell: ({ row }) => (
-    <ActionsCell row={row} itemType={itemType} handlers={handlers} />
-  ),
->>>>>>> dd228205946fff2bf5c945af1d9382da4a82dc7f
 });
 
 // Columns for Business Users

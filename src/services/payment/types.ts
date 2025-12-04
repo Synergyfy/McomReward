@@ -141,3 +141,8 @@ export interface PointPackageListResponse {
     limit: number;
     totalPages: number;
 }
+
+export enum PaymentProvider {
+    STRIPE = 'stripe',
+    PAYPAL = 'paypal',
+}

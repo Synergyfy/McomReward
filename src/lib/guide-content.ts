@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 
 export interface GuideStep {
     title: string;
@@ -42,14 +41,4 @@ export const GUIDE_CONTENT: Record<string, GuideStep[]> = {
     'REWARD': REWARD_CREATION_STEPS,
     'CAMPAIGN': CAMPAIGN_CREATION_STEPS,
     'STAFF': STAFF_CREATION_STEPS
-=======
-export type GuideStep = 'PROFILE' | 'REWARD' | 'CAMPAIGN' | 'STAFF' | 'COMPLETED';
-
-export const GUIDE_CONTENT: Record<GuideStep, string> = {
-  PROFILE: "Welcome! To get started, please go to your Business Profile and complete your details (Address, Phone, etc).",
-  REWARD: "Great job! Now, navigate to the Rewards section and create your first reward for your customers.",
-  CAMPAIGN: "Next, go to Campaigns and launch a new campaign to engage your audience.",
-  STAFF: "Almost there! Manage your team by adding Staff members to help run your business.",
-  COMPLETED: "You're all set! You've completed the setup guide.",
->>>>>>> 94f632025b569a210ba0ec32f6615fdfeaf4c930
 };

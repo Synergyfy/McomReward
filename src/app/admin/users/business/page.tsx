@@ -12,17 +12,12 @@ import { useSearchParams } from 'next/navigation';
 import { useGuide } from '@/context/GuideContext';
 import { Suspense, useEffect } from 'react';
 
-<<<<<<< HEAD
 function BusinessUsersContent() {
-=======
-export default function AdminBusinessUsersPage() {
   const router = useRouter();
->>>>>>> 94f632025b569a210ba0ec32f6615fdfeaf4c930
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const { data: response, isLoading, isError } = useAdminBusinesses(page, limit);
 
-<<<<<<< HEAD
   const searchParams = useSearchParams();
   const shouldStartTour = searchParams.get('tour') === 'true';
   const { startGuide } = useGuide();
@@ -33,8 +28,6 @@ export default function AdminBusinessUsersPage() {
     }
   }, [shouldStartTour, startGuide]);
 
-=======
->>>>>>> 94f632025b569a210ba0ec32f6615fdfeaf4c930
   // Map API data to BusinessUser type
   const businessUsers: BusinessUser[] = response?.data.map((business) => ({
     id: business.id,

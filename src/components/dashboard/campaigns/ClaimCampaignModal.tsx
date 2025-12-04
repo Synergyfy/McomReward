@@ -1,24 +1,24 @@
-
 'use client';
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
-import { templateCampaigns, CampaignTemplate } from '@/lib/mock-data/template-campaigns';
+import Link from 'next/link';
+import { PublicCampaignResponse } from '@/services/campaigns/types';
 
 interface ClaimCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectTemplate: (template: CampaignTemplate) => void;
+  claimableCampaigns: PublicCampaignResponse[];
   onCreateFromScratch: () => void;
 }
 
 export default function ClaimCampaignModal({
   isOpen,
   onClose,
-  onSelectTemplate,
+  claimableCampaigns,
   onCreateFromScratch,
 }: ClaimCampaignModalProps) {
   return (
@@ -27,38 +27,46 @@ export default function ClaimCampaignModal({
         <DialogHeader>
           <DialogTitle>Create a New Campaign</DialogTitle>
           <DialogDescription>
-            Select a ready-to-use template or build one from scratch to engage your customers.
+            Select a ready-to-use campaign or build one from scratch to engage your customers.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-grow overflow-y-auto p-1 space-y-6">
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Choose a Template</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Available Campaigns</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {templateCampaigns.map((template) => (
-                <Card key={template.id} className="flex flex-col hover:shadow-md transition-shadow">
+              {claimableCampaigns.map((campaign) => (
+                <Card key={campaign.id} className="flex flex-col hover:shadow-md transition-shadow">
                   <CardHeader className="p-0">
-                    <div className="relative w-full h-32">
-                      <Image
-                        src={template.imageUrl}
-                        alt={template.title}
-                        layout="fill"
-                        objectFit="cover"
-                        className="rounded-t-lg"
-                      />
+                    <div className="relative w-full h-32 bg-gray-200">
+                      {(campaign.banner_url || campaign.bannerUrl) ? (
+                        <Image
+                          src={campaign.banner_url || campaign.bannerUrl || ''}
+                          alt={campaign.name}
+                          layout="fill"
+                          objectFit="cover"
+                          className="rounded-t-lg"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400">
+                           No Image
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 flex-grow">
-                    <h4 className="font-bold">{template.title}</h4>
-                    <p className="text-xs text-gray-600 mt-1 h-12 overflow-hidden">{template.description}</p>
+                    <h4 className="font-bold">{campaign.name}</h4>
+                    <p className="text-xs text-gray-600 mt-1 h-12 overflow-hidden">{campaign.campaign_message}</p>
                   </CardContent>
                   <CardFooter className="p-4">
                     <Button
+                      asChild
                       variant="outline"
                       className="w-full"
-                      onClick={() => onSelectTemplate(template)}
                     >
-                      Select & Customize
+                      <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>
+                        View Campaign
+                      </Link>
                     </Button>
                   </CardFooter>
                 </Card>

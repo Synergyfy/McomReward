@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import PlanComparisonCard from '@/components/dashboard/subscription/PlanComparisonCard';
 import BillingHistoryTable from '@/components/dashboard/subscription/BillingHistoryTable';
+import DashboardPointPackages from '@/components/dashboard/subscription/DashboardPointPackages';
 import { useGetTiers, useGetMySubscription, useGetBillingHistory } from '@/services/tiers/hook';
 import { TierResponse } from '@/services/tiers/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -58,7 +59,7 @@ export default function SubscriptionPage() {
     const billingCycle = planFrequency === 'annually' ? 'annual' : 'quarterly';
     router.push(`/checkout?plan=${plan.name}&billing=${billingCycle}`);
   };
-  
+
   const handleFrequencyChange = (value: PlanFrequency) => {
     setPlanFrequency(value);
   };
@@ -89,7 +90,7 @@ export default function SubscriptionPage() {
             <p className="text-lg font-semibold">
               {subscription.planType === 'monthly' && currentSubscriptionTier.monthlyPrice && `£${currentSubscriptionTier.monthlyPrice}/mo`}
               {subscription.planType === 'quarterly' && currentSubscriptionTier.quaterlyPrice && `£${currentSubscriptionTier.quaterlyPrice}/qu`}
-              {subscription.planType === 'annually' && currentSubscriptionTier.annualPrice &&`£${currentSubscriptionTier.annualPrice}/yr`}
+              {subscription.planType === 'annually' && currentSubscriptionTier.annualPrice && `£${currentSubscriptionTier.annualPrice}/yr`}
             </p>
             <p className="text-sm text-gray-600">Next renewal date: {new Date(subscription.expiresAt).toLocaleDateString()}</p>
           </CardContent>
@@ -99,31 +100,36 @@ export default function SubscriptionPage() {
       {/* Plan Comparison Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Compare Plans</h2>
-            <RadioGroup
-                defaultValue="monthly"
-                onValueChange={handleFrequencyChange}
-                className="flex space-x-4"
-            >
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="monthly" />
-                    <Label htmlFor="monthly">Monthly</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="quarterly" id="quarterly" />
-                    <Label htmlFor="quarterly">Quarterly</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="annually" id="annually" />
-                    <Label htmlFor="annually">Annually</Label>
-                </div>
-            </RadioGroup>
+          <h2 className="text-2xl font-bold">Compare Plans</h2>
+          <RadioGroup
+            defaultValue="monthly"
+            onValueChange={handleFrequencyChange}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="monthly" id="monthly" />
+              <Label htmlFor="monthly">Monthly</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="quarterly" id="quarterly" />
+              <Label htmlFor="quarterly">Quarterly</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="annually" id="annually" />
+              <Label htmlFor="annually">Annually</Label>
+            </div>
+          </RadioGroup>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map(plan => (
             <PlanComparisonCard key={plan.id} plan={plan} onChoosePlan={handleChoosePlan} />
           ))}
         </div>
+      </div>
+
+      {/* Point Packages Section */}
+      <div className="pt-8 border-t border-border">
+        <DashboardPointPackages />
       </div>
 
       {/* Billing History Section */}

@@ -18,6 +18,7 @@ export interface AdminBusiness {
   email: string;
   tier: string;
   sector: string;
+  referralCapacity: number;
   activityStatus: string;
   campaignsCreated: number;
   rewardsAttached: number;

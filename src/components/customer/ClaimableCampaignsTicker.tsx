@@ -1,93 +1,96 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Award, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Award } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useGetClaimableCampaigns } from '@/services/campaigns/hook';
+import { Card, CardContent } from '@/components/ui/card';
 
 export const ClaimableCampaignsTicker = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 10); // Fetch first 10 for the ticker
+  const { data: claimableCampaignsData, isLoading } = useGetClaimableCampaigns(1, 10);
 
   const availableCampaigns = claimableCampaignsData?.data || [];
+  const campaignsToShow = 3;
 
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % availableCampaigns.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + availableCampaigns.length) % availableCampaigns.length);
-  };
-
-  if (availableCampaigns.length === 0) {
-    return null; // Don't render the ticker if no campaigns are available
-  }
-
-  const visibleCampaigns = [
-    availableCampaigns[currentIndex],
-    availableCampaigns.length > 1 ? availableCampaigns[(currentIndex + 1) % availableCampaigns.length] : null
-  ].filter(Boolean);
-
-  return (
-    <>
-      <div className="my-8">
-        <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-1 rounded-2xl shadow-2xl">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <Award className="w-8 h-8 text-yellow-500 mr-3" />
-                <h3 className="text-2xl font-bold text-gray-800">Campaigns Ready to Claim!</h3>
-              </div>
-              <div className="relative">
-                <div className="overflow-hidden">
-                  <div className="flex -mx-2">
-                    {visibleCampaigns.map((campaign) => (
-                      <div key={campaign!.id} className="flex-shrink-0 w-full md:w-1/2 px-2">
-                        <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md border">
-                          <div className="flex flex-col overflow-hidden">
-                            <p className="font-bold text-gray-800 truncate">{campaign!.name}</p>
-                            <p className="text-sm text-gray-500">{campaign!.campaign_message}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            asChild
-                            className="bg-orange-600 hover:bg-orange-700 text-white ml-4 flex-shrink-0"
-                          >
-                            <Link href={`/dashboard/campaigns/preview/${campaign!.id}`}>
-                              Claim
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {availableCampaigns.length > 2 && ( // Only show navigation if more than 2 campaigns
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handlePrev}
-                      className="absolute top-1/2 -translate-y-1/2 left-[-1rem] bg-white/80 backdrop-blur-sm rounded-full shadow-md"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleNext}
-                      className="absolute top-1/2 -translate-y-1/2 right-[-1rem] bg-white/80 backdrop-blur-sm rounded-full shadow-md"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+  if (isLoading) {
+    return (
+      <div className="my-12 p-8 bg-gray-100 rounded-2xl">
+        <h3 className="text-3xl font-extrabold text-gray-900 flex items-center mb-6">
+          <Award className="w-10 h-10 text-yellow-400 mr-3 drop-shadow-md" />
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+            Hot Campaigns to Claim
+          </span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(campaignsToShow)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-lg h-80 animate-pulse" />
+          ))}
         </div>
       </div>
-    </>
+    );
+  }
+
+  if (availableCampaigns.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="my-12 p-8 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl shadow-inner-lg border border-gray-100">
+      <div className="flex justify-between items-center mb-6">
+          <div>
+              <h3 className="text-3xl font-extrabold text-gray-900 flex items-center">
+              <Award className="w-10 h-10 text-yellow-400 mr-3 drop-shadow-md" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+                  Hot Campaigns to Claim
+              </span>
+              </h3>
+              <p className="text-gray-600 mt-1">These popular campaigns are available for you to join right now!</p>
+          </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {availableCampaigns.slice(0, campaignsToShow).map((campaign) => (
+          <Card
+            key={campaign.id}
+            className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-0 overflow-hidden group"
+          >
+            <CardContent className="p-0">
+              <div className="relative h-40 w-full">
+                {campaign.banner_url || campaign.bannerUrl ? (
+                  <Image
+                    src={campaign.banner_url || campaign.bannerUrl || ''}
+                    alt={campaign.name}
+                    layout="fill"
+                    objectFit="cover"
+                    className="group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300"/>
+                )}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"/>
+              </div>
+              <div className="p-5">
+                <h4 className="font-bold text-lg text-gray-800 truncate group-hover:text-purple-600 transition-colors duration-300">
+                  {campaign.name}
+                </h4>
+                <p className="text-sm text-gray-500 mt-1 h-10 overflow-hidden">
+                  {campaign.campaign_message}
+                </p>
+                <Button
+                  size="lg"
+                  asChild
+                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                >
+                  <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>
+                    Claim Now
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 };

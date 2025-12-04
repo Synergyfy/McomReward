@@ -4,6 +4,7 @@ export type BusinessUser = {
   email: string;
   tier: string;
   sector: string; // e.g., 'Food & Dining', 'Fashion & Beauty'
+  referralCapacity: number;
   activityStatus: 'Active' | 'Disabled';
   campaignsCreated: number;
   rewardsAttached: number;
@@ -32,6 +33,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'contact@gourmetplace.com',
     tier: 'Partner',
     sector: 'Food & Dining',
+    referralCapacity: 50,
     activityStatus: 'Active',
     campaignsCreated: 12,
     rewardsAttached: 8,
@@ -44,6 +46,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'style@chicboutique.com',
     tier: 'Trusted',
     sector: 'Fashion & Beauty',
+    referralCapacity: 30,
     activityStatus: 'Active',
     campaignsCreated: 5,
     rewardsAttached: 10,
@@ -56,6 +59,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'support@wellness.com',
     tier: 'Active',
     sector: 'Health & Wellness',
+    referralCapacity: 20,
     activityStatus: 'Disabled',
     campaignsCreated: 2,
     rewardsAttached: 1,
@@ -68,6 +72,7 @@ export const mockBusinessUsers: BusinessUser[] = [
     email: 'hello@startups.com',
     tier: 'Starter',
     sector: 'Technology',
+    referralCapacity: 10,
     activityStatus: 'Disabled',
     campaignsCreated: 0,
     rewardsAttached: 0,

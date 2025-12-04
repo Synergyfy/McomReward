@@ -177,6 +177,13 @@ export const createBusinessColumns = (handlers: ActionHandlers, router: ReturnTy
     header: 'Sector',
   },
   {
+    accessorKey: 'referralCapacity',
+    header: 'Referral Capacity',
+    cell: ({ row }) => {
+      return <div className="text-right font-medium">{row.getValue('referralCapacity')}</div>;
+    }
+  },
+  {
     accessorKey: 'activityStatus',
     header: 'Status',
     cell: ({ row }) => {

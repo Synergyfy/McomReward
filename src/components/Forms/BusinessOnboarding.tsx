@@ -83,7 +83,7 @@ export default function BusinessOnboardingWizard() {
     try {
       await onboardBusiness(payload as CreateBusinessDto);
       toast.success("Business account created successfully!");
-      router.push("/pricing");
+      router.push("/dashboard/subscription");
     } catch (error) {
       toast.error("Failed to create business account. Please try again.");
       console.error("Onboarding error:", error);
@@ -105,9 +105,8 @@ export default function BusinessOnboardingWizard() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`h-2 w-12 rounded-full transition-all ${
-                  i <= step ? "bg-white" : "bg-orange-400"
-                }`}
+                className={`h-2 w-12 rounded-full transition-all ${i <= step ? "bg-white" : "bg-orange-400"
+                  }`}
               />
             ))}
           </div>

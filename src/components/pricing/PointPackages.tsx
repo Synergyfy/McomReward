@@ -1,31 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { useGetAvailablePointPackages } from '@/services/payment/hook';
-import { PointPackage } from '@/services/payment/types';
-import { Sparkles, DollarSign, Gem } from 'lucide-react';
-import BuyPointPackageModal from './BuyPointPackageModal';
+import { Sparkles, Zap, Info } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/Loading';
 
 const PointPackages: React.FC = () => {
   const { data: pointPackages, isLoading, isError } = useGetAvailablePointPackages();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<PointPackage | null>(null);
-
-  const handleBuyClick = (pkg: PointPackage) => {
-    setSelectedPackage(pkg);
-    setIsModalOpen(true);
-  };
-
-  const handlePurchaseSuccess = () => {
-    // Optionally refetch packages or update local state if needed
-    // Invalidate the query to refetch available packages
-    // queryClient.invalidateQueries(['availablePointPackages']);
-    // Also invalidate any user wallet balance queries
-    // queryClient.invalidateQueries(['userWallet']);
-  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -36,66 +17,183 @@ const PointPackages: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="container mx-auto py-16 px-4">
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-          Top Up Your Points
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-semibold text-sm mb-4">
+          <Zap className="h-4 w-4" />
+          Add-Ons Available
+        </div>
+        <h2 className="text-4xl font-bold text-foreground tracking-tight mb-4">
+          Point Packages
         </h2>
-        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-          Purchase additional point packages to reward your customers and boost your campaigns.
+        <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
+          Boost your campaigns with additional loyalty points. Purchase point packages anytime from your dashboard to reward your customers.
         </p>
       </div>
 
       {pointPackages && pointPackages.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {pointPackages.map((pkg) => (
-            <Card
-              key={pkg.id}
-              className="flex flex-col justify-between border-2 border-gray-200 hover:border-orange-500 transition-colors duration-300 shadow-lg rounded-xl"
-            >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto p-3 bg-orange-100 rounded-full w-fit mb-4">
-                  <Sparkles className="h-8 w-8 text-orange-600" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {pointPackages.map((pkg, index) => {
+            // Determine styling based on package size/price
+            const isPopular = index === 1; // Middle package is usually most popular
+            const isPremium = index === pointPackages.length - 1;
+
+            return (
+              <div
+                key={pkg.id}
+                className={`relative group rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${isPopular
+                    ? 'border-primary bg-gradient-to-br from-primary/5 to-primary/10'
+                    : isPremium
+                      ? 'border-purple-500/30 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20'
+                      : 'border-border bg-card'
+                  }`}
+              >
+                {/* Popular Badge */}
+                {isPopular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                      <Sparkles className="h-3 w-3" />
+                      MOST POPULAR
+                    </span>
+                  </div>
+                )}
+
+                {/* Premium Badge */}
+                {isPremium && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-lg">
+                      <Sparkles className="h-3 w-3" />
+                      BEST VALUE
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-8">
+                  {/* Icon */}
+                  <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6 ${isPopular
+                      ? 'bg-primary/20'
+                      : isPremium
+                        ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20'
+                        : 'bg-primary/10'
+                    }`}>
+                    <Sparkles className={`h-7 w-7 ${isPopular
+                        ? 'text-primary'
+                        : isPremium
+                          ? 'text-purple-600'
+                          : 'text-primary/70'
+                      }`} />
+                  </div>
+
+                  {/* Package Name */}
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    {pkg.name}
+                  </h3>
+
+                  {/* Description */}
+                  {pkg.description && (
+                    <p className="text-sm text-foreground/60 mb-6 min-h-[40px]">
+                      {pkg.description}
+                    </p>
+                  )}
+
+                  {/* Points Display */}
+                  <div className="mb-6 pb-6 border-b border-border/50">
+                    <div className="flex items-baseline gap-2">
+                      <span className={`text-5xl font-extrabold ${isPopular
+                          ? 'text-primary'
+                          : isPremium
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
+                            : 'text-foreground'
+                        }`}>
+                        {pkg.points.toLocaleString()}
+                      </span>
+                      <span className="text-lg font-medium text-foreground/60">
+                        points
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Price Display */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground/70">
+                        Package Price
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-foreground">
+                          {pkg.currency === 'GBP' ? '£' : '$'}
+                          {parseFloat(pkg.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Value Indicator */}
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${isPopular
+                        ? 'bg-primary/10'
+                        : isPremium
+                          ? 'bg-gradient-to-r from-purple-500/10 to-indigo-500/10'
+                          : 'bg-muted/50'
+                      }`}>
+                      <Info className={`h-4 w-4 flex-shrink-0 ${isPopular
+                          ? 'text-primary'
+                          : isPremium
+                            ? 'text-purple-600'
+                            : 'text-foreground/60'
+                        }`} />
+                      <span className="text-xs text-foreground/70">
+                        {(parseFloat(pkg.price) / pkg.points * 1000).toFixed(2)} {pkg.currency} per 1,000 points
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Availability Tiers (if available) */}
+                  {pkg.tiers && pkg.tiers.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-border/50">
+                      <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-2">
+                        Available for
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {pkg.tiers.slice(0, 3).map((tier) => (
+                          <span
+                            key={tier.id}
+                            className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-foreground/80"
+                          >
+                            {tier.name}
+                          </span>
+                        ))}
+                        {pkg.tiers.length > 3 && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-foreground/60">
+                            +{pkg.tiers.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <CardTitle className="text-3xl font-bold text-gray-800">{pkg.name}</CardTitle>
-                <CardDescription className="text-gray-500">{pkg.description || 'Flexible points for your loyalty program.'}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col items-center justify-center space-y-4">
-                <div className="flex items-center text-5xl font-extrabold text-orange-600">
-                  <Gem className="h-10 w-10 mr-2" />
-                  {pkg.points.toLocaleString()}
-                </div>
-                <p className="text-sm text-gray-500 uppercase tracking-wider">Loyalty Points</p>
-                <div className="flex items-baseline text-4xl font-bold text-gray-900 mt-4">
-                  <DollarSign className="h-8 w-8 text-gray-600 mr-1" />
-                  {parseFloat(pkg.price).toFixed(2)}
-                  <span className="text-lg font-medium text-gray-500 ml-1">{pkg.currency}</span>
-                </div>
-              </CardContent>
-              <div className="p-6 pt-0">
-                <Button
-                  onClick={() => handleBuyClick(pkg)}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 text-lg rounded-lg transition-all duration-300 transform hover:scale-105"
-                >
-                  Buy Now
-                </Button>
               </div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <h3 className="text-xl font-semibold text-gray-800">No Point Packages Available</h3>
-          <p className="mt-2 text-gray-600">Please check back later or contact support for more options.</p>
+        <div className="text-center py-16 bg-muted/30 rounded-2xl border-2 border-dashed border-border max-w-2xl mx-auto">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+            <Sparkles className="h-8 w-8 text-foreground/40" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">
+            No Point Packages Available
+          </h3>
+          <p className="text-foreground/60">
+            Point packages will be available soon. Check back later or contact support for more information.
+          </p>
         </div>
       )}
 
-      <BuyPointPackageModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        pointPackage={selectedPackage}
-        onPurchaseSuccess={handlePurchaseSuccess}
-      />
+      {/* Info Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-foreground/60">
+          💡 Point packages can be purchased from your dashboard after subscribing to a plan
+        </p>
+      </div>
     </div>
   );
 };

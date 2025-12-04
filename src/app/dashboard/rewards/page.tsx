@@ -240,7 +240,6 @@ export default function BusinessRewardsPage() {
           title: rewardData.title,
           description: rewardData.description,
           point_required: rewardData.pointsRequired,
-          value: rewardData.value,
           image: rewardData.image,
           quantity: rewardData.quantity,
           disabled: rewardData.disabled,

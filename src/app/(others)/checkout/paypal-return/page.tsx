@@ -27,7 +27,7 @@ function PayPalReturnContent() {
 
         // Call verify endpoint
         verifyPayment(
-            { transaction_id: token },
+            { transactionId: token },
             {
                 onSuccess: (data) => {
                     console.log("PayPal verification response:", data)

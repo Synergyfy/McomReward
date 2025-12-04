@@ -4,6 +4,8 @@ import BusinessSidebar from '@/components/dashboard/sidebar/index';
 import BusinessHeader from '@/components/dashboard/header';
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
+import { GuideProvider } from '@/context/GuideContext';
+import { FloatingGuide } from '@/components/Guide/FloatingGuide';
 
 export default function DashboardLayout({
   children,
@@ -15,8 +17,7 @@ export default function DashboardLayout({
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <>
-  
+    <GuideProvider>
       <div className="relative min-h-screen md:flex">
           
           {/* Mobile overlay */}
@@ -38,8 +39,9 @@ export default function DashboardLayout({
               {children}
             </main>
           </div>
+
+          <FloatingGuide />
     </div>
-      
- </>
+    </GuideProvider>
   );
 }

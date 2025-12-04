@@ -47,8 +47,10 @@ export function TierProgressionModal({
 
     const handleSave = () => {
         onSave({
-            pro: proConfig,
-            pro_plus: proPlusConfig,
+            configuration: {
+                pro: proConfig,
+                pro_plus: proPlusConfig,
+            }
         });
         // Do not close here, let the parent handle closing on success
     };

@@ -71,7 +71,6 @@ export interface UpdateBusinessRewardDto {
   title?: string;
   description?: string;
   image?: string;
-  value?: number;
   expiry_datetime?: Date;
   status?: RewardStatus;
   disabled?: boolean;

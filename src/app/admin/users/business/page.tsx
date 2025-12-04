@@ -22,6 +22,7 @@ export default function AdminBusinessUsersPage() {
     email: business.email,
     tier: business.tier || '-', // Handle null tier
     sector: business.sector,
+    referralCapacity: business.referralCapacity || 0,
     activityStatus: (business.activityStatus as 'Active' | 'Disabled') || 'Active',
     campaignsCreated: business.campaignsCreated || 0, // Default to 0 if missing
     rewardsAttached: business.rewardsAttached || 0, // Default to 0 if missing

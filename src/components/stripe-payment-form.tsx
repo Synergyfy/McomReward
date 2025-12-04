@@ -40,7 +40,7 @@ const StripePaymentForm = ({ onSuccess }: StripePaymentFormProps) => {
 
     if (paymentIntent && paymentIntent.status === 'succeeded') {
       verifyStripe(
-        { transaction_id: paymentIntent.id },
+        { transactionId: paymentIntent.id },
         {
           onSuccess: () => {
             onSuccess(paymentIntent.id);

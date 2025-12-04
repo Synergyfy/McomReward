@@ -42,10 +42,10 @@ const PointPackages: React.FC = () => {
               <div
                 key={pkg.id}
                 className={`relative group rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${isPopular
-                    ? 'border-primary bg-gradient-to-br from-primary/5 to-primary/10'
-                    : isPremium
-                      ? 'border-purple-500/30 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20'
-                      : 'border-border bg-card'
+                  ? 'border-primary bg-gradient-to-br from-primary/5 to-primary/10'
+                  : isPremium
+                    ? 'border-purple-500/30 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20'
+                    : 'border-border bg-card'
                   }`}
               >
                 {/* Popular Badge */}
@@ -71,16 +71,16 @@ const PointPackages: React.FC = () => {
                 <div className="p-8">
                   {/* Icon */}
                   <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6 ${isPopular
-                      ? 'bg-primary/20'
-                      : isPremium
-                        ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20'
-                        : 'bg-primary/10'
+                    ? 'bg-primary/20'
+                    : isPremium
+                      ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20'
+                      : 'bg-primary/10'
                     }`}>
                     <Sparkles className={`h-7 w-7 ${isPopular
-                        ? 'text-primary'
-                        : isPremium
-                          ? 'text-purple-600'
-                          : 'text-primary/70'
+                      ? 'text-primary'
+                      : isPremium
+                        ? 'text-purple-600'
+                        : 'text-primary/70'
                       }`} />
                   </div>
 
@@ -100,10 +100,10 @@ const PointPackages: React.FC = () => {
                   <div className="mb-6 pb-6 border-b border-border/50">
                     <div className="flex items-baseline gap-2">
                       <span className={`text-5xl font-extrabold ${isPopular
-                          ? 'text-primary'
-                          : isPremium
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
-                            : 'text-foreground'
+                        ? 'text-primary'
+                        : isPremium
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent'
+                          : 'text-foreground'
                         }`}>
                         {pkg.points.toLocaleString()}
                       </span>
@@ -129,16 +129,16 @@ const PointPackages: React.FC = () => {
 
                     {/* Value Indicator */}
                     <div className={`flex items-center gap-2 p-3 rounded-lg ${isPopular
-                        ? 'bg-primary/10'
-                        : isPremium
-                          ? 'bg-gradient-to-r from-purple-500/10 to-indigo-500/10'
-                          : 'bg-muted/50'
+                      ? 'bg-primary/10'
+                      : isPremium
+                        ? 'bg-gradient-to-r from-purple-500/10 to-indigo-500/10'
+                        : 'bg-muted/50'
                       }`}>
                       <Info className={`h-4 w-4 flex-shrink-0 ${isPopular
-                          ? 'text-primary'
-                          : isPremium
-                            ? 'text-purple-600'
-                            : 'text-foreground/60'
+                        ? 'text-primary'
+                        : isPremium
+                          ? 'text-purple-600'
+                          : 'text-foreground/60'
                         }`} />
                       <span className="text-xs text-foreground/70">
                         {(parseFloat(pkg.price) / pkg.points * 1000).toFixed(2)} {pkg.currency} per 1,000 points
@@ -146,29 +146,6 @@ const PointPackages: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Availability Tiers (if available) */}
-                  {pkg.tiers && pkg.tiers.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-border/50">
-                      <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-2">
-                        Available for
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {pkg.tiers.slice(0, 3).map((tier) => (
-                          <span
-                            key={tier.id}
-                            className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-foreground/80"
-                          >
-                            {tier.name}
-                          </span>
-                        ))}
-                        {pkg.tiers.length > 3 && (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-foreground/60">
-                            +{pkg.tiers.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );

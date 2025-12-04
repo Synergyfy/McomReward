@@ -10,6 +10,7 @@ import {
   useGetAllRewards,
   useUpdateBusinessReward,
   useCreateBusinessReward,
+  useRemoveBusinessReward,
 } from '@/services/business-reward/hooks';
 import { BusinessReward, Reward, PaginationMeta, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import LoadingSpinner from '@/components/ui/Loading';
@@ -18,9 +19,25 @@ import EditClaimedRewardModal from '@/components/dashboard/rewards/EditClaimedRe
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
@@ -172,6 +189,8 @@ export default function BusinessRewardsPage() {
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [isTierLimitModalOpen, setIsTierLimitModalOpen] = useState(false);
   const [tierLimitMessage, setTierLimitMessage] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [rewardToDelete, setRewardToDelete] = useState<BusinessReward | null>(null);
 
   // Pagination state
   const [businessRewardsPage, setBusinessRewardsPage] = useState(1);
@@ -185,6 +204,7 @@ export default function BusinessRewardsPage() {
 
   const { mutate: updateBusinessReward } = useUpdateBusinessReward();
   const { mutateAsync: createBusinessReward } = useCreateBusinessReward();
+  const { mutate: removeBusinessReward, isPending: isDeletingReward } = useRemoveBusinessReward();
   const [editingBusinessRewardId, setEditingBusinessRewardId] = useState<string | null>(null);
 
   const handleOpenCreateModal = useCallback((reward: Reward | null = null) => {
@@ -284,6 +304,28 @@ export default function BusinessRewardsPage() {
     handleOpenCreateModal(mergedReward);
   }, [handleOpenCreateModal]);
 
+  const handleDeleteClick = useCallback((businessReward: BusinessReward) => {
+    setRewardToDelete(businessReward);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!rewardToDelete) return;
+
+    removeBusinessReward(rewardToDelete.id, {
+      onSuccess: () => {
+        toast.success('Reward deleted successfully');
+        setDeleteDialogOpen(false);
+        setRewardToDelete(null);
+      },
+      onError: (error: Error) => {
+        const axiosError = error as AxiosError<{ message: string }>;
+        const errorMessage = axiosError?.response?.data?.message || 'Failed to delete reward';
+        toast.error(errorMessage);
+      },
+    });
+  }, [rewardToDelete, removeBusinessReward]);
+
   if (isLoadingBusinessRewards) {
     return <LoadingSpinner />;
   }
@@ -351,13 +393,32 @@ export default function BusinessRewardsPage() {
                           </div>
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditBusinessReward(businessReward)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditBusinessReward(businessReward)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(businessReward)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-grow">
@@ -425,6 +486,27 @@ export default function BusinessRewardsPage() {
           onClose={() => setIsTierLimitModalOpen(false)}
           message={tierLimitMessage}
         />
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Reward</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete &quot;{rewardToDelete?.title}&quot;? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingReward}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                disabled={isDeletingReward}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeletingReward ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div >
   );

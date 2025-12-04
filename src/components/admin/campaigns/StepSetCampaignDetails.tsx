@@ -18,10 +18,11 @@ import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetRewards } from '@/services/rewards/hook';
 import { useGetTiers } from '@/services/tiers/hook'; // Add this import
 
-interface RewardOption {
-    value: string;
-    label: string;
-}
+// COMMENTED OUT - Reward field (can be restored if needed)
+// interface RewardOption {
+//     value: string;
+//     label: string;
+// }
 
 interface StepProps {
     onNext: () => void;
@@ -46,16 +47,17 @@ const mockWishlistInsights = [
     },
 ];
 
-const selectErrorStyle: StylesConfig<RewardOption, true> = {
-    control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
-        ...(base as CSSObjectWithLabel),
-        borderColor: '#ef4444',
-        boxShadow: '0 0 0 1px #ef4444',
-        '&:hover': {
-            borderColor: '#ef4444',
-        },
-    }),
-};
+// COMMENTED OUT - Reward field styling
+// const selectErrorStyle: StylesConfig<RewardOption, true> = {
+//     control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
+//         ...(base as CSSObjectWithLabel),
+//         borderColor: '#ef4444',
+//         boxShadow: '0 0 0 1px #ef4444',
+//         '&:hover': {
+//             borderColor: '#ef4444',
+//         },
+//     }),
+// };
 
 export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const { formData, updateFormData } = useCampaignForm();
@@ -110,7 +112,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const isFormValid = () => {
         const {
             campaignName,
-            rewardIds,
+            // rewardIds,
             startDate,
             endDate,
             rewardsAvailable,
@@ -124,7 +126,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
         if (
             !campaignName.trim() ||
-            rewardIds.length === 0 ||
+            // rewardIds.length === 0 ||
             !startDate ||
             !endDate ||
             Number(rewardsAvailable) <= 0 ||
@@ -134,10 +136,10 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             return false;
         }
 
-        // Check if maxRewardsPerCampaign is enforced
-        if (maxRewardsPerCampaign && maxRewardsPerCampaign !== -1 && rewardIds.length > maxRewardsPerCampaign) {
-            return false;
-        }
+        // // Check if maxRewardsPerCampaign is enforced
+        // if (maxRewardsPerCampaign && maxRewardsPerCampaign !== -1 && rewardIds.length > maxRewardsPerCampaign) {
+        //     return false;
+        // }
 
         // Check if audienceType is empty
         if (audienceType.length === 0) {
@@ -157,7 +159,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         return true;
     };
 
-    const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
+    // const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
 
     return (
         <Card>
@@ -177,7 +179,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                         <p className="text-sm text-gray-500 mt-1">The name of your campaign, as it will be displayed to customers.</p>
                     </div>
 
-                    <div>
+                    {/* <div>
                         <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
                         <Select<RewardOption, true>
                             isMulti
@@ -202,7 +204,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                 </span>
                             )}
                         </p>
-                    </div>
+                    </div> */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

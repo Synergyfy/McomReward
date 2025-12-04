@@ -131,7 +131,7 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
       contact_email: formData.contactEmail || '',
       contact_phone_number: formData.contactPhone || '',
       footer_text: formData.footerText || '',
-      reward_ids: formData.rewardIds,
+      // reward_ids: formData.rewardIds,
     };
 
     console.log('Creating campaign with payload:', payload);

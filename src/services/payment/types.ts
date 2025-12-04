@@ -91,10 +91,10 @@ export interface PointPackage {
     points: number;
     price: string;
     currency: string;
-    tiers: Tier[]; // Array of Tier objects
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
 }
 
 export interface BuyPackageDto {
@@ -140,6 +140,8 @@ export interface PointPackageListResponse {
     page: number;
     limit: number;
     totalPages: number;
+    next: string | null;
+    previous: string | null;
 }
 
 export enum PaymentProvider {

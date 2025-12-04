@@ -21,6 +21,8 @@ import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import { ChevronLeft, ChevronRight, MoreHorizontal, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
+import { useGuide } from '@/context/GuideContext';
+import { GuideStep } from '@/lib/guide-content';
 
 const currentUser = {
   plan: 'white-label', // 'starter', 'co-branded', 'white-label'
@@ -164,6 +166,7 @@ const Pagination = ({
 };
 
 export default function BusinessRewardsPage() {
+  const { completeStep } = useGuide();
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isEditClaimedModalOpen, setIsEditClaimedModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -259,6 +262,7 @@ export default function BusinessRewardsPage() {
         await createBusinessReward(payload);
         toast.success('Reward created successfully');
         setIsCreateModalOpen(false);
+        completeStep(GuideStep.REWARD);
       } catch (error) {
         console.error("Error creating reward:", error);
         const axiosError = error as AxiosError<{ message: string }>;

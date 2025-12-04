@@ -8,6 +8,7 @@ import {
   PointPackage,
   PointPackageCreateInput,
   PointPackageUpdateInput,
+  PaginatedResponse,
 } from './types';
 
 
@@ -94,10 +95,11 @@ const POINT_PACKAGE_QUERY_KEY = 'point-packages';
 
 // Fetch all point packages with pagination
 const getPointPackages = async (page: number, limit: number): Promise<PointPackage[]> => {
-  const { data } = await api.get('/point-packages/admin', {
+  const { data } = await api.get<PaginatedResponse<PointPackage>>('/point-packages/admin', {
     params: { page, limit },
   });
-  return data;
+  // Extract the data array from the paginated response
+  return data.data;
 };
 
 export const useGetPointPackages = (page: number, limit: number) => {

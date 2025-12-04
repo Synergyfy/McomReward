@@ -89,7 +89,7 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
           price: String(initialData.price),   // Convert to string for form input
           currency: initialData.currency,
           tier_ids: initialData.tiers.map(t => t.id),
-          is_active: initialData.is_active,
+          is_active: initialData.isActive,
         });
       }
       else {

@@ -11,10 +11,9 @@ import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
 import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns } from '@/services/campaigns/hook';
+import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCampaigns } from '@/services/campaigns/hook';
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
-import { CampaignTemplate } from '@/lib/mock-data/template-campaigns';
 import { PublicCampaignResponse } from '@/services/campaigns/types';
 
 
@@ -168,6 +167,7 @@ export default function CampaignsListPage() {
 
   const { data: createdCampaignsData, isLoading: isLoadingCreated } = useGetMyCreatedCampaigns(createdPage, limit);
   const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(claimedPage, limit);
+  const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
 
   const handleCopyLink = (campaignId: string) => {
     const campaignUrl = `${window.location.origin}/campaigns/${campaignId}`;
@@ -185,11 +185,6 @@ export default function CampaignsListPage() {
   const handleCreateFromScratch = useCallback(() => {
     setIsClaimModalOpen(false);
     router.push('/dashboard/campaigns/create');
-  }, []);
-
-  const handleSelectTemplate = useCallback((template: CampaignTemplate) => {
-    setIsClaimModalOpen(false);
-    // TODO: Handle campaign creation from template
   }, []);
 
   const filterCampaigns = (campaigns: PublicCampaignResponse[] | undefined) => {
@@ -421,7 +416,7 @@ export default function CampaignsListPage() {
       <ClaimCampaignModal
         isOpen={isClaimModalOpen}
         onClose={() => setIsClaimModalOpen(false)}
-        onSelectTemplate={handleSelectTemplate}
+        claimableCampaigns={claimableCampaignsData?.data || []}
         onCreateFromScratch={handleCreateFromScratch}
       />
       <UpgradePlanModal

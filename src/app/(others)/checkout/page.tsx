@@ -28,6 +28,7 @@ function CheckoutContent() {
   const rawBilling = params.get("billing")
   const initialBilling: BillingCycle = rawBilling === "annual" ? "annual" : "quarterly"
   const initialCoupon = params.get("coupon") || ""
+  const isTrialMode = params.get("isTrial") === "true"
 
   const [plan, setPlan] = useState(initialPlan)
   const [billing, setBilling] = useState<BillingCycle>(initialBilling)
@@ -110,13 +111,14 @@ function CheckoutContent() {
       tier_id: tier.id,
       plan_type: planType,
       coupon_code: appliedCoupon?.code || "",
+      is_trial: isTrialMode, // Pass trial flag to backend
     };
 
     if (paymentProvider === PaymentProvider.STRIPE) {
       initiateStripe(paymentPayload, {
         onSuccess: (data) => {
           setClientSecret(data.clientSecret);
-          toast.success("Payment initiated!");
+          toast.success(isTrialMode ? "Trial initiated! No charge during trial period." : "Payment initiated!");
         },
         onError: (error) => {
           console.error("Stripe initiation failed:", error);
@@ -146,7 +148,14 @@ function CheckoutContent() {
 
   return (
     <main className="min-h-screen px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto py-16">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-8">Checkout</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold">Checkout</h1>
+        {isTrialMode && (
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 font-semibold text-sm">
+            🎉 Trial Mode - No Charge Now
+          </span>
+        )}
+      </div>
 
       <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
         <div className="flex items-center gap-4 mb-4">
@@ -292,11 +301,23 @@ function CheckoutContent() {
             <span>-£{discount}</span>
           </div>
         )}
+        {isTrialMode && (
+          <div className="flex items-center justify-between py-2 text-green-600 dark:text-green-400">
+            <span>Trial Period Discount</span>
+            <span>-£{final}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between py-2 text-xl font-bold border-t mt-2 pt-3">
-          <span>Total due {billing === "annual" ? "(per year)" : "(per quarter)"}</span>
-          <span>£{final}</span>
+          <span>Total due {isTrialMode ? "today" : billing === "annual" ? "(per year)" : "(per quarter)"}</span>
+          <span>£{isTrialMode ? "0.00" : final}</span>
         </div>
-        <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
+        {isTrialMode ? (
+          <p className="text-sm text-foreground/70 mt-3">
+            🎉 <strong>14-day free trial</strong> - Your card will be authorized but not charged. After the trial, you'll be billed £{final} {billing === "annual" ? "annually" : "quarterly"}.
+          </p>
+        ) : (
+          <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
+        )}
       </section>
 
       {paymentProvider === PaymentProvider.STRIPE && !clientSecret && (
@@ -308,7 +329,7 @@ function CheckoutContent() {
             className="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isProcessing ? 'Processing...' : 'Proceed to Payment'}
+            {isProcessing ? 'Processing...' : isTrialMode ? 'Start Free Trial' : 'Proceed to Payment'}
           </button>
         </div>
       )}

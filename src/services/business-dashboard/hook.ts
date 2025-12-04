@@ -6,7 +6,7 @@ const BUSINESS_DASHBOARD_QUERY_KEY = 'businessDashboard';
 
 // Get General Analytics
 const getGeneralAnalytics = async (businessId?: string): Promise<GeneralAnalyticsDto> => {
-  const { data } = await api.get<GeneralAnalyticsDto>('/analytics', { params: { businessId } });
+  const { data } = await api.get<GeneralAnalyticsDto>('/business/analytics', { params: { businessId } });
   return data;
 };
 
@@ -19,7 +19,7 @@ export const useGetGeneralAnalytics = (businessId?: string) => {
 
 // Get Chart Data
 const getChartData = async (params: ChartQueryDto): Promise<ChartResponseDto> => {
-  const { data } = await api.get<ChartResponseDto>('/analytics/chart', { params });
+  const { data } = await api.get<ChartResponseDto>('/business/analytics/chart', { params });
   return data;
 };
 

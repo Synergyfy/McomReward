@@ -28,6 +28,8 @@ import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlis
 import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
+import { useGuide } from '@/context/GuideContext';
+import { GuideStep } from '@/lib/guide-content';
 
 interface StepProps {
   onBack: () => void;
@@ -36,6 +38,7 @@ interface StepProps {
 }
 
 export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = false }: StepProps) {
+  const { completeStep } = useGuide();
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -209,6 +212,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
       }
 
       setShowSuccessDialog(true);
+      completeStep(GuideStep.CAMPAIGN);
     } catch (error) {
       console.error(campaignId ? "Failed to update campaign:" : "Failed to create campaign:", error);
       toast.error(campaignId ? "Failed to update campaign. Please try again." : "Failed to create campaign. Please try again.");

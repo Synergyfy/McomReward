@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
+import { useGuide } from '@/context/GuideContext';
+import { GuideStep } from '@/lib/guide-content';
 
 const AddStaffPage = () => {
+  const { completeStep } = useGuide();
   const router = useRouter();
   const { mutate: createStaff, isPending } = useCreateStaff();
   const [formData, setFormData] = useState<Omit<CreateStaffDto, 'avatar'>>({
@@ -98,6 +101,7 @@ const AddStaffPage = () => {
         onSuccess: () => {
           toast.success('Staff member created successfully');
           router.push('/dashboard/staff');
+          completeStep(GuideStep.STAFF);
         },
         onError: (error: Error | AxiosError<unknown>) => {
           // Check for the specific tier limit error message

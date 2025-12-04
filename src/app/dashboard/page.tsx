@@ -10,6 +10,7 @@ import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-das
 import { useGetMySubscription } from '@/services/tiers/hook';
 import Loader from "@/components/ui/loader";
 import { ChartQueryDto } from "@/services/business-dashboard/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
 
@@ -33,28 +34,26 @@ export default function BusinessDashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tierProgress = (subscription?.tier as any)?.progress || 0;
 
-  if (isAnalyticsLoading || isLoadingSubscription) {
-    return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
-  }
-
-  if (isAnalyticsError) {
-    return <div className="min-h-screen bg-white flex items-center justify-center text-red-500">Error loading analytics data.</div>;
-  }
-
   return (
     <div className="min-h-screen bg-white p-8">
+      {isAnalyticsError && (
+          <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">
+             Warning: Some analytics data could not be loaded.
+          </div>
+      )}
+
       {/* === Overview Stats === */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        <StatCard title="Total Customers" value={analyticsData?.totalCustomers ?? 0} icon={<Users className="text-orange-500" />} />
-        <StatCard title="Rewards Redeemed" value={analyticsData?.totalRewardsRedeemed ?? 0} icon={<Gift className="text-orange-500" />} />
-        <StatCard title="Total Campaigns" value={analyticsData?.totalCampaigns ?? 0} icon={<Megaphone className="text-orange-500" />} />
-        <StatCard title="Total Active Campaigns" value={analyticsData?.totalActiveCampaigns ?? 0} icon={<Flame className="text-orange-500" />} />
-        <StatCard title="Points Redeemed" value={analyticsData?.totalPointsRedeemed ?? 0} icon={<Percent className="text-orange-500" />} />
+        <StatCard loading={isAnalyticsLoading} title="Total Customers" value={analyticsData?.totalCustomers ?? 0} icon={<Users className="text-orange-500" />} />
+        <StatCard loading={isAnalyticsLoading} title="Rewards Redeemed" value={analyticsData?.totalRewardsRedeemed ?? 0} icon={<Gift className="text-orange-500" />} />
+        <StatCard loading={isAnalyticsLoading} title="Total Campaigns" value={analyticsData?.totalCampaigns ?? 0} icon={<Megaphone className="text-orange-500" />} />
+        <StatCard loading={isAnalyticsLoading} title="Total Active Campaigns" value={analyticsData?.totalActiveCampaigns ?? 0} icon={<Flame className="text-orange-500" />} />
+        <StatCard loading={isAnalyticsLoading} title="Points Redeemed" value={analyticsData?.totalPointsRedeemed ?? 0} icon={<Percent className="text-orange-500" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <TierProgress tier={{ name: tierName, progress: tierProgress }} />
-        <PointsSummary summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }} />
+        <TierProgress loading={isLoadingSubscription} tier={{ name: tierName, progress: tierProgress }} />
+        <PointsSummary loading={isAnalyticsLoading} summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }} />
       </div>
 
       {/* === Chart Section === */}
@@ -75,7 +74,11 @@ export default function BusinessDashboard() {
           </Select>
         </CardHeader>
         <CardContent>
-          {isChartLoading ? <Loader /> : isChartError ? <p className="text-red-500">Error loading chart data.</p> : (
+          {isChartLoading ? (
+            <div className="h-[300px] w-full flex items-center justify-center">
+                <Loader />
+            </div>
+          ) : isChartError ? <p className="text-red-500">Error loading chart data.</p> : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData?.data}>
                 <XAxis dataKey="date" stroke="#888" />
@@ -103,7 +106,13 @@ export default function BusinessDashboard() {
           <CardTitle>Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
+          {isAnalyticsLoading ? (
+             <div className="space-y-3">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+             </div>
+          ) : analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
             <ul className="space-y-3">
               {analyticsData.activeCampaigns.map((c, i) => (
                 <li key={i} className="flex justify-between items-center border-b pb-2">
@@ -124,7 +133,13 @@ export default function BusinessDashboard() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
+          {isAnalyticsLoading ? (
+              <div className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+              </div>
+          ) : analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
             <ul className="space-y-4">
               {analyticsData.lastTenActivities.map((a) => (
                 <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-0 last:pb-0">
@@ -156,56 +171,84 @@ export default function BusinessDashboard() {
   );
 }
 
-const StatCard = ({ title, value, icon }: { title: string; value: string | number; icon: React.ReactNode }) => (
+const StatCard = ({ title, value, icon, loading }: { title: string; value: string | number; icon: React.ReactNode; loading?: boolean }) => (
   <Card className="shadow-md border-none bg-white">
     <CardHeader className="flex flex-row justify-between items-center pb-2">
       <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
       {icon}
     </CardHeader>
     <CardContent>
-      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      {loading ? <Skeleton className="h-8 w-1/2" /> : <p className="text-2xl font-bold text-gray-800">{value}</p>}
     </CardContent>
   </Card>
 );
 
-const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) => (
+const TierProgress = ({ tier, loading }: { tier: { name: string; progress: number }; loading?: boolean }) => (
   <Card className="shadow-md border-none bg-white lg:col-span-1">
     <CardHeader>
       <CardTitle className="text-lg font-semibold">Business Tier</CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-orange-500 font-bold text-xl">{tier.name}</span>
-        <Star className="text-yellow-400 fill-yellow-400" />
-      </div>
-      <Progress value={tier.progress} className="w-full" />
-      <p className="text-sm text-gray-500 mt-2">{tier.progress}% to the next tier</p>
+      {loading ? (
+        <div className="space-y-3">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-4 w-full" />
+        </div>
+      ) : (
+      <>
+        <div className="flex items-center justify-between mb-2">
+            <span className="text-orange-500 font-bold text-xl">{tier.name}</span>
+            <Star className="text-yellow-400 fill-yellow-400" />
+        </div>
+        <Progress value={tier.progress} className="w-full" />
+        <p className="text-sm text-gray-500 mt-2">{tier.progress}% to the next tier</p>
+      </>
+      )}
     </CardContent>
   </Card>
 );
 
-const PointsSummary = ({ summary }: { summary: { earned: number; spent: number; matchingAvailable: number } }) => (
+const PointsSummary = ({ summary, loading }: { summary: { earned: number; spent: number; matchingAvailable: number }; loading?: boolean }) => (
   <Card className="shadow-md border-none bg-white lg:col-span-2">
     <CardHeader>
       <CardTitle className="text-lg font-semibold">Points Summary</CardTitle>
     </CardHeader>
-    <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-      <div>
-        <p className="text-sm text-gray-500">Earned</p>
-        <p className="text-2xl font-bold flex items-center justify-center gap-1 text-green-600">
-          <ArrowUp size={20} /> {summary.earned.toLocaleString()}
-        </p>
+    <CardContent>
+      {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+             <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-8 w-3/4" />
+             </div>
+             <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-8 w-3/4" />
+             </div>
+             <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-8 w-3/4" />
+             </div>
+          </div>
+      ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+        <div>
+            <p className="text-sm text-gray-500">Earned</p>
+            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-green-600">
+            <ArrowUp size={20} /> {summary.earned.toLocaleString()}
+            </p>
+        </div>
+        <div>
+            <p className="text-sm text-gray-500">Spent</p>
+            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-red-600">
+            <ArrowDown size={20} /> {summary.spent.toLocaleString()}
+            </p>
+        </div>
+        <div>
+            <p className="text-sm text-gray-500">Matching Available</p>
+            <p className="text-2xl font-bold text-blue-600">{summary.matchingAvailable.toLocaleString()}</p>
+        </div>
       </div>
-      <div>
-        <p className="text-sm text-gray-500">Spent</p>
-        <p className="text-2xl font-bold flex items-center justify-center gap-1 text-red-600">
-          <ArrowDown size={20} /> {summary.spent.toLocaleString()}
-        </p>
-      </div>
-      <div>
-        <p className="text-sm text-gray-500">Matching Available</p>
-        <p className="text-2xl font-bold text-blue-600">{summary.matchingAvailable.toLocaleString()}</p>
-      </div>
+      )}
     </CardContent>
   </Card>
 );

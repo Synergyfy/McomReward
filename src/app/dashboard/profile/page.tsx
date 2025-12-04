@@ -8,8 +8,11 @@ import BrandingManager from '@/components/dashboard/profile/BrandingManager';
 import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
+import { useGuide } from '@/context/GuideContext';
+import { GuideStep } from '@/lib/guide-content';
 
 export default function BusinessProfilePage() {
+  const { completeStep } = useGuide();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<BusinessProfile> & {
     businessName?: string;
@@ -89,6 +92,7 @@ export default function BusinessProfilePage() {
       updateProfile(payload, {
         onSuccess: () => {
           setEditing(false);
+          completeStep(GuideStep.PROFILE);
         },
         onError: (error) => {
           // TODO: Add user-facing error notification (e.g., toast)

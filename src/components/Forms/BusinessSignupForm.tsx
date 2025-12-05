@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
-import { useBusinessSignUp, useBusinessSignIn } from "@/services/business/hook";
+import { useBusinessSignUp, useAuth } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
 import { useRouter } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
@@ -23,7 +23,7 @@ export default function BusinessSignupForm() {
 
 
   const { mutateAsync: signUp, } = useBusinessSignUp();
-  const { mutateAsync: signIn } = useBusinessSignIn({ skipRedirect: true });
+  const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
 const onSubmit = async (data: BusinessSignUpDto) => {
@@ -33,13 +33,13 @@ const onSubmit = async (data: BusinessSignUpDto) => {
     console.log("Signup response:", response);
 
     // 2️⃣ Automatically sign in after signup
-     await signIn({
+     await login({
       email: data.email,
       password: data.password,
     });
 
     toast.success('Business account created successfully!');
-    router.push('/business/onboard');
+    // Redirection handled by useAuth
 
   } catch (error) {
     console.error('Signup or login error:', error);

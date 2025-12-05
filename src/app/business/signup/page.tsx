@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
-import { useBusinessSignUp, useBusinessSignIn } from "@/services/business/hook";
+import { useBusinessSignUp, useAuth } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
 import { useRouter } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
@@ -23,7 +23,11 @@ export default function BusinessSignupPage() {
 
 
   const { mutateAsync: signUp, } = useBusinessSignUp();
-  const { mutateAsync: signIn } = useBusinessSignIn({ skipRedirect: true });
+  // useAuth handles login logic. We don't have a specific 'skipRedirect' param in the hook based on previous reading,
+  // but let's check if we can rely on its default behavior or if we need to handle redirection manually.
+  // The hook implementation does redirection in onSuccess.
+  // If we want to use it here, we will just call it.
+  const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
 const onSubmit = async (data: BusinessSignUpDto) => {
@@ -33,13 +37,16 @@ const onSubmit = async (data: BusinessSignUpDto) => {
     console.log("Signup response:", response);
 
     // 2️⃣ Automatically sign in after signup
-     await signIn({
+     await login({
       email: data.email,
       password: data.password,
     });
 
+    // The useAuth hook will handle the redirection to /business/onboard if not onboarded,
+    // which matches the original intent (router.push('/business/onboard')).
+
     toast.success('Business account created successfully!');
-    router.push('/business/onboard');
+    // router.push('/business/onboard'); // Removed as useAuth handles it
 
   } catch (error) {
     console.error('Signup or login error:', error);

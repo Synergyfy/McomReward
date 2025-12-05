@@ -1,4 +1,4 @@
-// --- Reconstructed from hook.ts usage ---
+// --- Auth & Business DTOs ---
 
 export interface BusinessLoginDto {
   email: string;
@@ -6,15 +6,15 @@ export interface BusinessLoginDto {
 }
 
 export interface User {
-    role: string;
-    name: string;
-    isOnboarded: boolean;
+  role: string;
+  name: string;
+  isOnboarded: boolean;
 }
 
 export interface BusinessLoginResponse {
-    user: User;
-    accessToken: string;
-    refreshToken: string;
+  user: User;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface BusinessSignUpDto {
@@ -32,7 +32,7 @@ export interface CreateBusinessDto {
   phone: string;
   address: string;
   website?: string;
-  socialMedia?: { name: string; link: string; }[];
+  socialMedia?: { name: string; link: string }[];
   referralCapacity: number;
 }
 
@@ -60,8 +60,7 @@ export interface Business {
   name: string;
 }
 
-
-// --- New Type for Business Profile ---
+// --- Business Profile ---
 
 export interface BusinessProfile {
   id: string;
@@ -76,11 +75,8 @@ export interface BusinessProfile {
   logoUrl?: string;
   bannerUrl?: string;
   description?: string;
-  category?: {
-    id: string;
-    name: string;
-  };
-  socialMedia: { name: string; link: string; }[];
+  category?: { id: string; name: string };
+  socialMedia: { name: string; link: string }[];
   uniqueCode: string;
   role: string;
   referralCapacity: number;
@@ -105,6 +101,8 @@ export interface UpdateBusinessProfileDto {
   socialMedia?: { name: string; link: string }[];
 }
 
+// --- Business Balances & Feature Usage ---
+
 export interface BusinessMonthlyBalance {
   monthlyLimit: number;
   used: number;
@@ -127,4 +125,12 @@ export interface TierUsageResponse {
     teamMembers: TierUsageFeature;
     monthlyPoints: TierUsageFeature;
   };
+}
+
+// --- Business Setup Status (for onboarding guide) ---
+
+export interface BusinessSetupStatus {
+  hasReward: boolean;
+  hasCampaign: boolean;
+  hasStaff: boolean;
 }

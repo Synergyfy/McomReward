@@ -5,6 +5,8 @@ import { useGuide } from '@/context/GuideContext';
 import { GUIDE_CONTENT } from '@/lib/guide-content';
 import { X } from 'lucide-react';
 
+const STEPS = ['REWARD', 'CAMPAIGN', 'STAFF'] as const;
+
 export const FloatingGuide = () => {
   const { currentStep, isLoading } = useGuide();
   const [isVisible, setIsVisible] = React.useState(true);
@@ -12,6 +14,8 @@ export const FloatingGuide = () => {
   if (isLoading || !isVisible || currentStep === 'COMPLETED') {
     return null;
   }
+
+  const currentStepIndex = STEPS.indexOf(currentStep as typeof STEPS[number]);
 
   return (
     <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white border border-orange-100 rounded-xl shadow-xl p-5 animate-in slide-in-from-bottom-5 fade-in duration-500">
@@ -35,14 +39,12 @@ export const FloatingGuide = () => {
 
       <div className="mt-4 flex justify-between items-center">
         <div className="flex gap-1">
-          {(['PROFILE', 'REWARD', 'CAMPAIGN', 'STAFF'] as const).map((step) => (
+          {STEPS.map((step, index) => (
              <div
                key={step}
                className={`h-1.5 w-6 rounded-full ${
                  currentStep === step ? 'bg-orange-500' :
-                 // If the step is "before" the current step, it's done (green/gray).
-                 // Simple logic: checking index in array
-                 (['PROFILE', 'REWARD', 'CAMPAIGN', 'STAFF'].indexOf(step) < ['PROFILE', 'REWARD', 'CAMPAIGN', 'STAFF'].indexOf(currentStep))
+                 index < currentStepIndex
                  ? 'bg-green-400'
                  : 'bg-gray-200'
                }`}
@@ -50,7 +52,7 @@ export const FloatingGuide = () => {
           ))}
         </div>
         <span className="text-xs text-gray-400 font-medium">
-          Step {['PROFILE', 'REWARD', 'CAMPAIGN', 'STAFF'].indexOf(currentStep) + 1} of 4
+          Step {currentStepIndex + 1} of {STEPS.length}
         </span>
       </div>
     </div>

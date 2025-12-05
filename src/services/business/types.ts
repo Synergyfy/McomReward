@@ -113,3 +113,8 @@ export interface BusinessMonthlyBalance {
   maxBuyable: number;
 }
 
+export interface BusinessSetupStatus {
+  hasReward: boolean;
+  hasCampaign: boolean;
+  hasStaff: boolean;
+}

@@ -68,6 +68,30 @@ export const useAuth = () => {
   });
 };
 
+// Alias for useAuth to maintain backward compatibility
+export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
+  const router = useRouter();
+  return useMutation({
+    mutationFn: login,
+    onSuccess: (data) => {
+      localStorage.setItem('userRole', data.user.role);
+      localStorage.setItem('userName', data.user.name);
+      Cookies.set('access', data.accessToken);
+      Cookies.set('refresh', data.refreshToken);
+      setBearerToken(data.accessToken);
+
+      // Only redirect if skipRedirect is not true
+      if (!options?.skipRedirect) {
+        if (data.user.role === 'Admin') router.push('/admin/dashboard');
+        else if (data.user.role === 'Staff') router.push('/staff/dashboard');
+        else if (data.user.role === 'Business' && !data.user.isOnboarded) router.push('/business/onboard');
+        else if (data.user.role === 'Participant') router.push('/wallet');
+        else router.push('/dashboard');
+      }
+    },
+  });
+};
+
 // ------------------- BUSINESS ONBOARDING -------------------
 const businessOnboard = async (onboardData: CreateBusinessDto): Promise<string> => {
   const { data } = await api.post<string>('/business/onboarding', onboardData);

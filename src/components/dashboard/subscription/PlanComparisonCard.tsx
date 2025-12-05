@@ -1,8 +1,13 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Plan } from '@/lib/mock-data/subscription';
+import { useJoinTrial } from '@/services/payment/hook';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface PlanComparisonCardProps {
   plan: Plan;
@@ -10,6 +15,30 @@ interface PlanComparisonCardProps {
 }
 
 export default function PlanComparisonCard({ plan, onChoosePlan }: PlanComparisonCardProps) {
+  const router = useRouter();
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const { mutate: joinTrial } = useJoinTrial();
+
+  const handleStartTrial = () => {
+    setIsStartingTrial(true);
+
+    joinTrial(
+      { tier_id: plan.id },
+      {
+        onSuccess: (data) => {
+          toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`);
+          // Refresh the page to show updated subscription
+          router.refresh();
+        },
+        onError: (error) => {
+          console.error("Trial join failed:", error);
+          toast.error("Failed to start trial. Please try again or contact support.");
+          setIsStartingTrial(false);
+        }
+      }
+    );
+  };
+
   return (
     <Card className={plan.isCurrent ? 'border-2 border-orange-500' : ''}>
       <CardHeader>
@@ -26,7 +55,7 @@ export default function PlanComparisonCard({ plan, onChoosePlan }: PlanCompariso
           ))}
         </ul>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-2">
         <Button
           className="w-full"
           disabled={plan.isCurrent}
@@ -34,6 +63,18 @@ export default function PlanComparisonCard({ plan, onChoosePlan }: PlanCompariso
         >
           {plan.isCurrent ? 'Current Plan' : 'Choose Plan'}
         </Button>
+
+        {!plan.isCurrent && (
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={isStartingTrial}
+            onClick={handleStartTrial}
+          >
+            {isStartingTrial && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isStartingTrial ? 'Starting Trial...' : 'Start Trial'}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

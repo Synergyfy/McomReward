@@ -154,7 +154,6 @@ function CheckoutContent() {
       tier_id: tier.id,
       plan_type: planType,
       coupon_code: appliedCoupon?.code || "",
-      is_trial: false,
       point_package_ids: selectedAddOns, // Pass selected add-ons
     };
 

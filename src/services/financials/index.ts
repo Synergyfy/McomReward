@@ -95,7 +95,7 @@ const POINT_PACKAGE_QUERY_KEY = 'point-packages';
 
 // Fetch all point packages with pagination
 const getPointPackages = async (page: number, limit: number): Promise<PointPackage[]> => {
-  const { data } = await api.get<PaginatedResponse<PointPackage>>('/point-packages/admin', {
+  const { data } = await api.get<PaginatedResponse<PointPackage>>('/point-packages/all', {
     params: { page, limit },
   });
   // Extract the data array from the paginated response

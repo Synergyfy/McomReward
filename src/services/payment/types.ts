@@ -182,7 +182,6 @@ export interface StripeInitiateRequest {
     tier_id: string;
     plan_type: string;
     coupon_code?: string;
-    is_trial?: boolean;
     point_package_ids?: string[];
 }
 
@@ -202,7 +201,6 @@ export interface PayPalInitiateRequest {
     tier_id: string;
     plan_type: string;
     coupon_code?: string;
-    is_trial?: boolean;
     point_package_ids?: string[];
 }
 

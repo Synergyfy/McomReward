@@ -43,11 +43,11 @@ const fetchUnaddedRewards = async (page: number, limit: number) => {
   return data;
 };
 
-export const useGetUnaddedRewards = (page: number, limit: number) => {
+export const useGetUnaddedRewards = (page: number, limit: number, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['unaddedRewards', page, limit],
     queryFn: () => fetchUnaddedRewards(page, limit),
-    enabled: false, // Initially disabled, will be enabled in the modal
+    enabled: options?.enabled, // Controlled by the component
   });
 };
 

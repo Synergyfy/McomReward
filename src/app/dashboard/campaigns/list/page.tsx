@@ -11,12 +11,15 @@ import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
 import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+// Imports moved up and consolidated
+import { useGetBusinessTierUsage } from '@/services/business/hook';
+import UsageCard from '@/components/dashboard/shared/UsageCard';
+
 import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCampaigns } from '@/services/campaigns/hook';
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { PublicCampaignResponse } from '@/services/campaigns/types';
-
-
 
 interface PaginationProps {
   currentPage: number;
@@ -168,6 +171,7 @@ export default function CampaignsListPage() {
   const { data: createdCampaignsData, isLoading: isLoadingCreated } = useGetMyCreatedCampaigns(createdPage, limit);
   const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(claimedPage, limit);
   const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
+  const { data: tierUsageData } = useGetBusinessTierUsage();
 
   const handleCopyLink = (campaignId: string) => {
     const campaignUrl = `${window.location.origin}/campaigns/${campaignId}`;
@@ -380,6 +384,15 @@ export default function CampaignsListPage() {
           </div>
 
           <ClaimableCampaignsTicker />
+
+          {tierUsageData && (
+            <div className="mb-8 max-w-md">
+              <UsageCard
+                title="Campaign Usage"
+                usage={tierUsageData.features.campaigns}
+              />
+            </div>
+          )}
 
           <Tabs defaultValue="created" className="w-full">
             <TabsList className="mb-8">

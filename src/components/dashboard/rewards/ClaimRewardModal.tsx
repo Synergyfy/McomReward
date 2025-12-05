@@ -162,7 +162,7 @@ export default function ClaimRewardModal({
 }: ClaimRewardModalProps) {
   const [page, setPage] = useState(1);
   const limit = 6;
-  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(page, limit);
+  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(page, limit, { enabled: isOpen });
   const addRewardMutation = useAddBusinessReward();
   const [points, setPoints] = useState<{ [key: string]: number }>({});
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);

@@ -84,10 +84,52 @@ Businesses can view available packages based on their subscription tier and purc
 ### Get Available Packages
 
 **Endpoint:** `GET /point-packages/business/available`
+**Parameters** `limit
+number
+(query)
+10
+page
+number
+(query)
+1
+
 
 **Description:** Retrieves a list of point packages available for the currently logged-in business based on their subscription tier.
 
-**Response:** Array of `PointPackage` objects.
+**Response:** {
+  "data": [
+    {
+      "id": "9929c5bd-2f47-4041-a163-4f552abe4bb3",
+      "createdAt": "2025-12-04T21:36:41.043Z",
+      "updatedAt": "2025-12-04T21:36:41.043Z",
+      "deletedAt": null,
+      "name": "Coffe",
+      "description": "free coffe ",
+      "points": 1000,
+      "price": "100.00",
+      "currency": "GBP",
+      "isActive": true
+    },
+    {
+      "id": "c81511b7-73eb-4c53-b27d-e97e25c40b65",
+      "createdAt": "2025-12-03T13:27:38.656Z",
+      "updatedAt": "2025-12-04T08:18:07.799Z",
+      "deletedAt": null,
+      "name": "test ",
+      "description": "package",
+      "points": 100,
+      "price": "10.00",
+      "currency": "GBP",
+      "isActive": true
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1,
+  "next": null,
+  "previous": null
+}
 
 ### Buy Package
 

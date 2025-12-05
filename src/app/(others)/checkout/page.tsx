@@ -3,9 +3,9 @@
 import { Suspense, useMemo, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon } from "lucide-react"
+import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon, Sparkles } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
-import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify, useGetAvailablePointPackages } from "@/services/payment/hook"
+import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify, useGetAvailablePointPackages, useJoinTrial } from "@/services/payment/hook"
 import { PlanType, PaymentProvider, PointPackage } from "@/services/payment/types"
 import { toast } from "sonner"
 import { Elements } from '@stripe/react-stripe-js';
@@ -13,7 +13,6 @@ import PayPalButton from "@/components/paypal-button"
 import { stripePromise } from "@/components/stripe-provider"
 import StripePaymentForm from "@/components/stripe-payment-form"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sparkles } from "lucide-react"
 
 const iconByTier: Record<string, LucideIcon> = {
   Trial: Target,
@@ -47,8 +46,9 @@ function CheckoutContent() {
   const { mutate: initiateStripe, isPending: isInitiatingStripe } = useStripeInitiate();
   const { mutate: initiatePayPal, isPending: isInitiatingPayPal } = usePayPalInitiate();
   const { mutate: verifyStripe, isPending: isVerifyingStripe } = useStripeVerify();
+  const { mutate: joinTrial, isPending: isJoiningTrial } = useJoinTrial();
 
-  const isProcessing = isInitiatingStripe || isInitiatingPayPal;
+  const isProcessing = isInitiatingStripe || isInitiatingPayPal || isJoiningTrial;
 
   // Find the selected tier object from backend data
   // We check both name and ID to be robust, as params might pass either
@@ -128,13 +128,33 @@ function CheckoutContent() {
   const handleConfirmPurchase = () => {
     if (!tier) return;
 
+    // If trial mode, call the trial endpoint directly
+    if (isTrialMode) {
+      joinTrial(
+        { tier_id: tier.id },
+        {
+          onSuccess: (data) => {
+            toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`);
+            // Redirect to dashboard after successful trial join
+            router.push('/dashboard/subscription');
+          },
+          onError: (error) => {
+            console.error("Trial join failed:", error);
+            toast.error("Failed to start trial. Please try again or contact support.");
+          }
+        }
+      );
+      return;
+    }
+
+    // Regular payment flow
     const planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
 
     const paymentPayload = {
       tier_id: tier.id,
       plan_type: planType,
       coupon_code: appliedCoupon?.code || "",
-      is_trial: isTrialMode, // Pass trial flag to backend
+      is_trial: false,
       point_package_ids: selectedAddOns, // Pass selected add-ons
     };
 
@@ -142,7 +162,7 @@ function CheckoutContent() {
       initiateStripe(paymentPayload, {
         onSuccess: (data) => {
           setClientSecret(data.clientSecret);
-          toast.success(isTrialMode ? "Trial initiated! No charge during trial period." : "Payment initiated!");
+          toast.success("Payment initiated!");
         },
         onError: (error) => {
           console.error("Stripe initiation failed:", error);

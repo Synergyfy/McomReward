@@ -1,3 +1,5 @@
+"use client";
+
 import api, { setBearerToken } from '../api';
 import {
   Business,
@@ -18,6 +20,9 @@ import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+
+// ... rest of your code
+
 
 const BUSINESS_QUERY_KEY = 'business';
 

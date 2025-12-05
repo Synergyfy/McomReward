@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { useGetAvailablePointPackages } from '@/services/payment/hook';
+import { useGetPointPackages } from '@/services/financials';
 import { Sparkles, Zap, Info } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/Loading';
 
 const PointPackages: React.FC = () => {
-  const { data: pointPackages, isLoading, isError } = useGetAvailablePointPackages();
+  // Fetch all point packages (using high limit to get all)
+  const { data: pointPackages, isLoading, isError } = useGetPointPackages(1, 100);
 
   if (isLoading) {
     return <LoadingSpinner />;

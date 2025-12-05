@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide-react';
-import TierBadge, { TierName, isTierName } from "@/components/ui/tierBadge";
+import TierBadge, { TierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
 import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
+import { toast } from 'sonner';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
@@ -17,6 +18,10 @@ export default function BusinessProfilePage() {
     whatsapp?: string;
     instagram?: string;
   }>({});
+
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
@@ -49,55 +54,118 @@ export default function BusinessProfilePage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'bannerUrl') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prev) => ({ ...prev, [field]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      if (field === 'logoUrl') {
+        setLogoFile(file);
+      } else {
+        setBannerFile(file);
+      }
+
+      // Create local preview
+      const previewUrl = URL.createObjectURL(file);
+      setForm((prev) => ({ ...prev, [field]: previewUrl }));
     }
   };
 
-  const handleSave = () => {
-    if (!profile) return; // Should not happen if data is loaded
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    try {
+      const paramsToSign = {
+        timestamp: Math.round((new Date).getTime() / 1000),
+      };
 
-    const payload: UpdateBusinessProfileDto = {};
-
-    // Compare simple string fields and add to payload if changed
-    if (form.businessName !== profile.name) payload.name = form.businessName;
-    if (form.email !== profile.email) payload.email = form.email;
-    if (form.phone !== profile.phone) payload.phone = form.phone;
-    if (form.address !== profile.address) payload.address = form.address;
-    if (form.description !== profile.description) payload.description = form.description;
-    if (form.website !== profile.website) payload.website = form.website;
-    if (form.logoUrl !== profile.logoUrl) payload.logoUrl = form.logoUrl;
-    if (form.bannerUrl !== profile.bannerUrl) payload.bannerUrl = form.bannerUrl;
-
-    // Compare and construct social media if changed
-    const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
-    const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
-    const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
-
-    if (hasSocialChanged) {
-      const socialMedia = [];
-      if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
-      if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
-      payload.socialMedia = socialMedia;
-    }
-
-    // Only call update if there are actual changes
-    if (Object.keys(payload).length > 0) {
-      updateProfile(payload, {
-        onSuccess: () => {
-          setEditing(false);
-        },
-        onError: (error) => {
-          // TODO: Add user-facing error notification (e.g., toast)
-          console.error('Failed to update profile:', error);
-        },
+      const signatureResponse = await fetch('/api/sign-cloudinary-params', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paramsToSign }),
       });
-    } else {
-      // No changes, just exit editing mode
-      setEditing(false);
+      const { signature } = await signatureResponse.json();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+      formData.append('timestamp', paramsToSign.timestamp.toString());
+      formData.append('signature', signature);
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Cloudinary upload failed.');
+      }
+
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+  };
+
+  const handleSave = async () => {
+    if (!profile) return;
+
+    setIsUploading(true);
+
+    try {
+      let finalLogoUrl = form.logoUrl;
+      let finalBannerUrl = form.bannerUrl;
+
+      // Upload images if new files were selected
+      if (logoFile) {
+        finalLogoUrl = await uploadImageToCloudinary(logoFile);
+      }
+      if (bannerFile) {
+        finalBannerUrl = await uploadImageToCloudinary(bannerFile);
+      }
+
+      const payload: UpdateBusinessProfileDto = {};
+
+      if (form.businessName !== profile.name) payload.name = form.businessName;
+      if (form.email !== profile.email) payload.email = form.email;
+      if (form.phone !== profile.phone) payload.phone = form.phone;
+      if (form.address !== profile.address) payload.address = form.address;
+      if (form.description !== profile.description) payload.description = form.description;
+      if (form.website !== profile.website) payload.website = form.website;
+
+      // Use the potentially new URLs (or existing ones if not changed)
+      // Only include if they differ from original profile to avoid unnecessary updates
+      // BUT if we just uploaded a new file, we must send it even if the URL string *was* updated locally (which shouldn't happen with objectURLs, but good to be safe)
+      if (logoFile || form.logoUrl !== profile.logoUrl) payload.logoUrl = finalLogoUrl;
+      if (bannerFile || form.bannerUrl !== profile.bannerUrl) payload.bannerUrl = finalBannerUrl;
+
+      const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
+      const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+      const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
+
+      if (hasSocialChanged) {
+        const socialMedia = [];
+        if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
+        if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
+        payload.socialMedia = socialMedia;
+      }
+
+      if (Object.keys(payload).length > 0) {
+        updateProfile(payload, {
+          onSuccess: () => {
+            setEditing(false);
+            setLogoFile(null);
+            setBannerFile(null);
+            toast.success("Profile updated successfully");
+          },
+          onError: (error: any) => {
+            console.error('Failed to update profile:', error);
+            toast.error(error.message || 'Failed to update profile');
+          },
+        });
+      } else {
+        setEditing(false);
+      }
+    } catch (error) {
+      console.error('Error during save:', error);
+      toast.error("Failed to upload images. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -109,8 +177,8 @@ export default function BusinessProfilePage() {
     return <div>Error loading profile data.</div>;
   }
 
+  const tierName = subscription?.tier?.name as TierName | undefined;
   const plan = subscription?.tier?.name.toLowerCase() || 'starter';
-  const tierName = subscription?.tier?.name as TierName | undefined; // Directly use tierName and cast to satisfy type
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm  mt-8 p-8">
@@ -159,14 +227,14 @@ export default function BusinessProfilePage() {
         {/* Edit / Save Button */}
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
-          disabled={isUpdating}
+          disabled={isUpdating || isUploading}
           className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${
             editing
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-orange-500 text-white hover:bg-orange-600'
           } disabled:opacity-50`}
         >
-          {isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
+          {isUploading ? 'Uploading...' : isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>
       </div>
 

@@ -105,30 +105,12 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     }
   };
 
-  const handleMaxPointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-
-    // Allow empty string for user to clear the field
-    if (inputValue === '') {
-      setMaxPoints('');
-      return;
-    }
-
-    const numValue = Number(inputValue);
-
-    // Only update if the value is valid and within range
-    if (!isNaN(numValue) && numValue >= 0) {
-      setMaxPoints(inputValue);
-    }
-  };
-
   useEffect(() => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
     if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
-    if (Number(maxPoints) <= 0) newErrors.maxPoints = 'Max Points is required.';
     if (isPointsExceedingMax) newErrors.pointsExceedingMax = 'Points Required cannot exceed Max Points.';
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
@@ -166,7 +148,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         description,
         value: 0, // Value removed from UI, defaulting to 0
         pointsRequired: Number(pointsRequired),
-        maxPoints: Number(maxPoints),
+        maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
         quantity: Number(quantity),
         disabled,
@@ -219,7 +201,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                     type="number"
                     placeholder="0"
                     min="0"
-                    max={Number(maxPoints) || undefined}
+                    max={Number(maxPoints) > 0 ? Number(maxPoints) : undefined}
                     value={pointsRequired}
                     onChange={handlePointsChange}
                     className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
@@ -230,18 +212,6 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                       Points cannot exceed the maximum of {maxPoints} points.
                     </p>
                   )}
-                </div>
-                <div>
-                  <label htmlFor="maxPoints" className="block text-sm font-medium mb-1">Max Points</label>
-                  <Input
-                    id="maxPoints"
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    value={maxPoints}
-                    onChange={handleMaxPointsChange}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">The maximum points that can be set for this reward.</p>
                 </div>
               </div>
               <div>
@@ -297,10 +267,6 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                     <div className="flex justify-between">
                       <span className="font-medium">Points Required:</span>
                       <span>{pointsRequired}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Max Points:</span>
-                      <span>{maxPoints}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Quantity:</span>

@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
-import { useBusinessSignIn } from "@/services/business/hook";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/services/business/hook";
 
 type LoginFormData = {
   email: string;
@@ -25,22 +24,19 @@ export default function BusinessLoginPage() {
   } = useForm<LoginFormData>({
     defaultValues: { rememberMe: false },
   });
-  const { mutate: businessSignin } = useBusinessSignIn();
+
+  const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
-  const onboard = false
 
   const onSubmit = async (data: LoginFormData) => {
-
     try {
-      console.log("Logging in:", data);
-      businessSignin(data);
+      const { rememberMe, ...loginData } = data;
+      console.log("Logging in:", loginData);
+
+      await login(loginData);
+
       toast.success("Login successful! Redirecting...");
-      if (!onboard) {
-        router.push("/business/onboard");
-      } else {
-        router.push("/business/dashboard");
-      }
+      // Redirection is handled by the useAuth hook onSuccess callback
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed. Please try again.");

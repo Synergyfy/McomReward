@@ -43,6 +43,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [description, setDescription] = useState(reward?.description || '');
   // const [value, setValue] = useState<number | string>(reward?.value || 0); // Removed Value
   const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
+  const [maxPoints, setMaxPoints] = useState<number | string>(reward?.maxPoints || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
   const [quantity, setQuantity] = useState<number | string>(reward?.quantity || 0);
@@ -54,12 +55,20 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
   const isEditMode = useMemo(() => !!reward, [reward]);
 
+  // Validation: Check if pointsRequired exceeds maxPoints
+  const isPointsExceedingMax = useMemo(() => {
+    const points = Number(pointsRequired);
+    const max = Number(maxPoints);
+    return points > max && max > 0;
+  }, [pointsRequired, maxPoints]);
+
   const resetForm = () => {
     setStep(1);
     setName(reward?.title || '');
     setDescription(reward?.description || '');
     // setValue(reward?.value || 0);
     setPointsRequired(reward?.pointsRequired || 0);
+    setMaxPoints(reward?.maxPoints || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
     setQuantity(reward?.quantity || 0);
@@ -79,19 +88,33 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setImagePreviewUrl(previewUrl);
   };
 
+  const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Allow empty string for user to clear the field
+    if (inputValue === '') {
+      setPointsRequired('');
+      return;
+    }
+
+    const numValue = Number(inputValue);
+
+    // Only update if the value is valid and within range
+    if (!isNaN(numValue) && numValue >= 0) {
+      setPointsRequired(inputValue);
+    }
+  };
+
   useEffect(() => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0) {
-      newErrors.pointsOrBadge = 'Points Required is required.';
-    } else if (reward?.maxPoints && Number(pointsRequired) > reward.maxPoints) {
-      newErrors.pointsOrBadge = `Points cannot exceed the maximum of ${reward.maxPoints} set by admin.`;
-    }
+    if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
+    if (isPointsExceedingMax) newErrors.pointsExceedingMax = 'Points Required cannot exceed Max Points.';
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [name, description, pointsRequired, selectedFile, isEditMode, reward]); // Added reward dependency
+  }, [name, description, pointsRequired, maxPoints, selectedFile, isEditMode, isPointsExceedingMax]); // Removed value dependency
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -125,7 +148,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         description,
         value: 0, // Value removed from UI, defaulting to 0
         pointsRequired: Number(pointsRequired),
-        maxPoints: Number(pointsRequired),
+        maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
         quantity: Number(quantity),
         disabled,
@@ -182,32 +205,24 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                     id="points"
                     type="number"
                     placeholder="0"
+                    min="0"
+                    max={Number(maxPoints) > 0 ? Number(maxPoints) : undefined}
                     value={pointsRequired}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setPointsRequired('');
-                        return;
-                      }
-                      const numVal = Number(val);
-                      if (reward?.maxPoints && numVal > reward.maxPoints) {
-                        return; // Block input if it exceeds maxPoints
-                      }
-                      setPointsRequired(numVal);
-                    }}
-                    className={errors.pointsOrBadge ? 'border-red-500' : ''}
+                    onChange={handlePointsChange}
+                    className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                   />
-                  {errors.pointsOrBadge ? (
-                    <p className="text-xs text-red-600 mt-1 font-medium">{errors.pointsOrBadge}</p>
-                  ) : (
-                    <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                  <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                  {isPointsExceedingMax && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Points cannot exceed the maximum of {maxPoints} points.
+                    </p>
                   )}
                 </div>
-                <div>
-                  <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>
-                  <Input id="quantity" type="number" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} />
-                  <p className="text-xs text-gray-500 mt-1">The total number of units available for this reward.</p>
-                </div>
+              </div>
+              <div>
+                <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>
+                <Input id="quantity" type="number" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} />
+                <p className="text-xs text-gray-500 mt-1">The total number of units available for this reward.</p>
               </div>
 
               <div>
@@ -255,7 +270,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <div className="space-y-2 text-sm">
                     {/* Removed Value Display */}
                     <div className="flex justify-between">
-                      <span className="font-medium">Points:</span>
+                      <span className="font-medium">Points Required:</span>
                       <span>{pointsRequired}</span>
                     </div>
                     <div className="flex justify-between">

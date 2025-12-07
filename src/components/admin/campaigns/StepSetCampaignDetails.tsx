@@ -18,11 +18,10 @@ import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetRewards } from '@/services/rewards/hook';
 import { useGetTiers } from '@/services/tiers/hook'; // Add this import
 
-// COMMENTED OUT - Reward field (can be restored if needed)
-// interface RewardOption {
-//     value: string;
-//     label: string;
-// }
+interface RewardOption {
+    value: string;
+    label: string;
+}
 
 interface StepProps {
     onNext: () => void;
@@ -47,17 +46,16 @@ const mockWishlistInsights = [
     },
 ];
 
-// COMMENTED OUT - Reward field styling
-// const selectErrorStyle: StylesConfig<RewardOption, true> = {
-//     control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
-//         ...(base as CSSObjectWithLabel),
-//         borderColor: '#ef4444',
-//         boxShadow: '0 0 0 1px #ef4444',
-//         '&:hover': {
-//             borderColor: '#ef4444',
-//         },
-//     }),
-// };
+const selectErrorStyle: StylesConfig<RewardOption, true> = {
+    control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
+        ...(base as CSSObjectWithLabel),
+        borderColor: '#ef4444',
+        boxShadow: '0 0 0 1px #ef4444',
+        '&:hover': {
+            borderColor: '#ef4444',
+        },
+    }),
+};
 
 export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const { formData, updateFormData } = useCampaignForm();
@@ -159,7 +157,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         return true;
     };
 
-    // const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
+    const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
 
     return (
         <Card>
@@ -179,8 +177,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                         <p className="text-sm text-gray-500 mt-1">The name of your campaign, as it will be displayed to customers.</p>
                     </div>
 
-                    {/* <div>
-                        <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
+                    <div>
+                        <Label htmlFor="rewardToAttach">Rewards to Attach (Optional)</Label>
                         <Select<RewardOption, true>
                             isMulti
                             options={rewardOptions}
@@ -197,14 +195,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                             isLoading={isLoadingRewards}
                             placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
                         />
-                        <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.
+                        <p className="text-sm text-gray-500 mt-1">
+                            (Optional) Choose the rewards to be given out in this campaign. Allowed businesses to set the reward.
                             {formData.maxRewardsPerCampaign && formData.maxRewardsPerCampaign !== -1 && (
                                 <span className="text-red-500 ml-1">
                                     (Max {formData.maxRewardsPerCampaign} rewards allowed for this tier)
                                 </span>
                             )}
                         </p>
-                    </div> */}
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

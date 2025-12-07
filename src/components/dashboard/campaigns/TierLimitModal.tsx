@@ -75,7 +75,7 @@ const TierLimitModal: React.FC<TierLimitModalProps> = ({ isOpen, onClose, messag
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="sm:justify-center">
-                    <AlertDialogAction onClick={onClose} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={onClose} className="bg-red-600 text-white hover:bg-red-700">
                         I Understand
                     </AlertDialogAction>
                 </AlertDialogFooter>

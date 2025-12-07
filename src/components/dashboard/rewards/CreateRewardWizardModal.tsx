@@ -84,10 +84,14 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
+    if (Number(pointsRequired) <= 0) {
+      newErrors.pointsOrBadge = 'Points Required is required.';
+    } else if (reward?.maxPoints && Number(pointsRequired) > reward.maxPoints) {
+      newErrors.pointsOrBadge = `Points cannot exceed the maximum of ${reward.maxPoints} set by admin.`;
+    }
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [name, description, pointsRequired, selectedFile, isEditMode]); // Removed value dependency
+  }, [name, description, pointsRequired, selectedFile, isEditMode, reward]); // Added reward dependency
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -174,8 +178,30 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                 {/* Removed Value Input */}
                 <div>
                   <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
-                  <Input id="points" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
-                  <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                  <Input
+                    id="points"
+                    type="number"
+                    placeholder="0"
+                    value={pointsRequired}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setPointsRequired('');
+                        return;
+                      }
+                      const numVal = Number(val);
+                      if (reward?.maxPoints && numVal > reward.maxPoints) {
+                        return; // Block input if it exceeds maxPoints
+                      }
+                      setPointsRequired(numVal);
+                    }}
+                    className={errors.pointsOrBadge ? 'border-red-500' : ''}
+                  />
+                  {errors.pointsOrBadge ? (
+                    <p className="text-xs text-red-600 mt-1 font-medium">{errors.pointsOrBadge}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>

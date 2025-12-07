@@ -23,6 +23,7 @@ interface BusinessProfileType {
   name: string;
   email: string;
   role?: string; // Assuming role might be part of it
+  profileImage?: string;
 }
 
 interface SubscriptionType {
@@ -171,13 +172,26 @@ export default function BusinessHeader({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-           <button
-            className="flex items-center  justify-centergap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
-            aria-label="User menu"
-          >
-            <User size={18} />
-            {isLoading ? '...' : userInitials}
-          </button>
+            <button
+              className="flex items-center gap-2 px-2 py-1 text-gray-700 hover:bg-gray-100 hover:text-orange-600 transition text-left rounded-full border border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500"
+              aria-label="User menu"
+            >
+              {profile?.profileImage ? (
+                <img
+                  src={profile.profileImage}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600">
+                   <User size={18} />
+                </div>
+              )}
+              {/* Optional: Show initials/name next to avatar on larger screens if desired, keeping it minimal for now */}
+              <span className="hidden lg:inline text-sm font-medium">
+                 {isLoading ? '...' : userInitials}
+              </span>
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>

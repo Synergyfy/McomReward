@@ -5,7 +5,7 @@ import BusinessHeader from '@/components/dashboard/header';
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { GuideProvider } from '@/context/GuideContext';
-import { FloatingGuide } from '@/components/Guide/FloatingGuide';
+import FloatingGuide from '@/components/Guide/FloatingGuide';
 
 export default function DashboardLayout({
   children,

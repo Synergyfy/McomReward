@@ -169,7 +169,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                     <div>
                         <Label htmlFor="campaignName">Campaign Name</Label>
                         <Input
-                            id="campaignName"
+                            id="campaign-name-input"
                             placeholder="e.g., Summer Sale Campaign"
                             value={formData.campaignName}
                             onChange={(e) => updateFormData({ campaignName: e.target.value })}

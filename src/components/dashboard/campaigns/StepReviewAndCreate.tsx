@@ -173,15 +173,15 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
       if (campaignId) {
         // Update existing campaign
         const updatePayload: UpdateCampaignPayload = { ...commonPayload };
-        
+
         if (isClaimed) {
-           // Claimed campaigns (Admin Templates) must use reward_ids
-           updatePayload.reward_ids = formData.rewardIds;
-           delete updatePayload.business_reward_ids;
+          // Claimed campaigns (Admin Templates) must use reward_ids
+          updatePayload.reward_ids = formData.rewardIds;
+          delete updatePayload.business_reward_ids;
         } else {
-           // Custom campaigns must use business_reward_ids
-           updatePayload.business_reward_ids = formData.rewardIds;
-           delete updatePayload.reward_ids;
+          // Custom campaigns must use business_reward_ids
+          updatePayload.business_reward_ids = formData.rewardIds;
+          delete updatePayload.reward_ids;
         }
 
         await updateCampaignMutation.mutateAsync({
@@ -192,7 +192,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
       } else {
         // Create new campaign
         const createPayload = { ...commonPayload, business_reward_ids: formData.rewardIds };
-        
+
         if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
           // Create campaign from wishlist
           const wishlistPayload: CreateCampaignFromWishlistDto = {
@@ -220,7 +220,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
-    router.push('/dashboard/campaigns');
+    router.push('/dashboard/campaigns/list');
   };
 
   return (

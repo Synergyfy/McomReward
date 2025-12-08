@@ -46,6 +46,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [maxPoints, setMaxPoints] = useState<number | string>(reward?.maxPoints || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>(reward?.gallery || []);
   const [quantity, setQuantity] = useState<number | string>(reward?.quantity || 0);
   const [disabled, setDisabled] = useState<boolean>(reward?.disabled || false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +73,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setMaxPoints(reward?.maxPoints || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
+    setGalleryFiles([]);
+    setGalleryPreviewUrls(reward?.gallery || []);
     setQuantity(reward?.quantity || 0);
     setErrors({});
     setIsSubmitting(false);
@@ -86,6 +90,32 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
     setImagePreviewUrl(previewUrl);
+  };
+
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      if (files.length + galleryFiles.length > 3) {
+        toast.error("You can only upload up to 3 gallery images.");
+        return;
+      }
+      const validFiles = files.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`File ${file.name} is too large. Max size is 5MB.`);
+          return false;
+        }
+        return true;
+      });
+
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+      setGalleryFiles(prev => [...prev, ...validFiles]);
+      setGalleryPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,12 +165,30 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const handleConfirmSave = async () => {
     setIsSubmitting(true);
     let imageUrl = imagePreviewUrl || '';
+    const uploadedGalleryUrls: string[] = [];
 
     try {
       if (selectedFile) {
         const uploadResult = await uploadToCloudinary({ file: selectedFile, folder: 'rewards' });
         imageUrl = uploadResult.secure_url;
       }
+
+      // Upload gallery images
+      for (const file of galleryFiles) {
+        try {
+          const uploadResult = await uploadToCloudinary({ file, folder: 'rewards/' });
+          uploadedGalleryUrls.push(uploadResult.secure_url);
+        } catch (error) {
+          console.error(`Failed to upload gallery image: ${file.name}`, error);
+          toast.error(`Failed to upload gallery image: ${file.name}`);
+        }
+      }
+
+      // Combine existing URLs (that are not blobs) with new uploaded URLs
+      const finalGalleryUrls = [
+        ...galleryPreviewUrls.filter(url => !url.startsWith('blob:')),
+        ...uploadedGalleryUrls
+      ];
 
       const rewardData: Reward = {
         id: reward?.id || new Date().toISOString(),
@@ -150,6 +198,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         pointsRequired: Number(pointsRequired),
         maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
+        gallery: finalGalleryUrls,
         quantity: Number(quantity),
         disabled,
         createdAt: reward?.createdAt || new Date().toISOString(),
@@ -237,6 +286,51 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Gallery Images */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Gallery Images (Optional)</label>
+                <p className="text-xs text-gray-500 mb-2">Upload up to 3 additional images (max 5MB each)</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('gallery-upload-dashboard')?.click()}
+                      disabled={galleryPreviewUrls.length >= 3}
+                    >
+                      Upload Gallery Images
+                    </Button>
+                    <input
+                      id="gallery-upload-dashboard"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleGallerySelect}
+                      disabled={galleryPreviewUrls.length >= 3}
+                    />
+                    <span className="text-xs text-gray-500">{galleryPreviewUrls.length}/3 images</span>
+                  </div>
+
+                  {galleryPreviewUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-4 mt-2">
+                      {galleryPreviewUrls.map((url, index) => (
+                        <div key={index} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                          <Image src={url} alt={`Gallery ${index + 1}`} layout="fill" objectFit="cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -4,6 +4,7 @@ export interface CreateRewardRequest {
   value: number;
   description: string;
   image: string;
+  gallery?: string[];
   quantity: number;
   reward_type: string;
   reward_source: string;
@@ -20,6 +21,7 @@ export interface UpdateRewardRequest {
   value?: number;
   description?: string;
   image?: string;
+  gallery?: string[];
   quantity?: number;
   disabled?: boolean;
   type?: string;
@@ -35,6 +37,7 @@ export interface RewardResponse {
   value: number;
   description: string;
   image: string;
+  gallery?: string[];
   quantity: number;
   createdAt: string;
   updatedAt: string;

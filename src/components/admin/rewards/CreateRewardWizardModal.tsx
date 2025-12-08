@@ -62,6 +62,8 @@ export default function CreateRewardWizardModal({
   const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<RewardResponse['status']>('draft');
   const [selectedSector, setSelectedSector] = useState('');
   const [rewardSource, setRewardSource] = useState('mcom vault');
@@ -91,6 +93,8 @@ export default function CreateRewardWizardModal({
     setExpiry(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
     setSelectedFile(null);
     setImagePreviewUrl(null);
+    setGalleryFiles([]);
+    setGalleryPreviewUrls([]);
     setStatus('draft');
     setSelectedSector('');
     setRewardSource('mcom vault');
@@ -108,6 +112,11 @@ export default function CreateRewardWizardModal({
         setPointsRequired(reward.pointsRequired);
         setExpiry(reward.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
         setImagePreviewUrl(reward.image);
+        if (reward.gallery && Array.isArray(reward.gallery)) {
+            setGalleryPreviewUrls(reward.gallery);
+        } else {
+            setGalleryPreviewUrls([]);
+        }
         setStatus(reward.status);
         // Handle badgeLevel - convert string to array if needed
         if (reward.badgeLevel) {
@@ -127,6 +136,32 @@ export default function CreateRewardWizardModal({
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
     setImagePreviewUrl(previewUrl);
+  };
+
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      if (files.length + galleryFiles.length > 3) {
+        toast.error("You can only upload up to 3 gallery images.");
+        return;
+      }
+      const validFiles = files.filter(file => {
+          if (file.size > 5 * 1024 * 1024) {
+              toast.error(`File ${file.name} is too large. Max size is 5MB.`);
+              return false;
+          }
+          return true;
+      });
+
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+      setGalleryFiles(prev => [...prev, ...validFiles]);
+      setGalleryPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+      setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+      setGalleryPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // Validation for Step 1
@@ -175,12 +210,43 @@ export default function CreateRewardWizardModal({
         finalImageUrl = uploadResult.secure_url;
       }
 
+      const uploadedGalleryUrls: string[] = [];
+      // Upload gallery images
+      for (const file of galleryFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          const uploadResponse = await fetch('/api/upload/rewards', {
+              method: 'POST',
+              body: formData,
+          });
+          if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json();
+              toast.error(`Failed to upload gallery image: ${file.name}`);
+              console.error(errorData);
+              continue; // Skip this file and continue
+          }
+          const uploadResult = await uploadResponse.json();
+          uploadedGalleryUrls.push(uploadResult.secure_url);
+      }
+      
+      // Combine existing URLs (from edit mode) with new uploaded URLs
+      // Assuming galleryPreviewUrls contains both blobs (new) and http (existing)
+      // We only uploaded the files in galleryFiles.
+      // We need to keep the existing URLs that were not removed.
+      
+      const finalGalleryUrls = [
+          ...galleryPreviewUrls.filter(url => !url.startsWith('blob:')), // Existing URLs
+          ...uploadedGalleryUrls // New URLs
+      ];
+
+
       const payload: CreateRewardRequest = {
         title: name,
         max_points: Number(pointsRequired),
         value: Number(value),
         description,
         image: finalImageUrl,
+        gallery: finalGalleryUrls,
         quantity: 100, // Default or add field if needed
         reward_type: rewardType,
         reward_source: rewardSource,
@@ -404,6 +470,51 @@ export default function CreateRewardWizardModal({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Gallery Images */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Gallery Images (Optional)</label>
+                <p className="text-xs text-muted-foreground mb-2">Upload up to 3 additional images (max 5MB each)</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                     <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('gallery-upload')?.click()}
+                        disabled={galleryPreviewUrls.length >= 3}
+                      >
+                        Upload Gallery Images
+                      </Button>
+                      <input
+                        id="gallery-upload"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleGallerySelect}
+                        disabled={galleryPreviewUrls.length >= 3}
+                      />
+                      <span className="text-xs text-muted-foreground">{galleryPreviewUrls.length}/3 images</span>
+                  </div>
+                  
+                  {galleryPreviewUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-4 mt-2">
+                      {galleryPreviewUrls.map((url, index) => (
+                        <div key={index} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                          <Image src={url} alt={`Gallery ${index + 1}`} layout="fill" objectFit="cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

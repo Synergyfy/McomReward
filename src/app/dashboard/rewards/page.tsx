@@ -246,6 +246,7 @@ export default function BusinessRewardsPage() {
             description: rewardData.description,
             point_required: rewardData.pointsRequired,
             image: rewardData.image,
+            gallery: rewardData.gallery,
             quantity: rewardData.quantity,
             disabled: rewardData.disabled,
           },
@@ -284,9 +285,10 @@ export default function BusinessRewardsPage() {
           description: rewardData.description,
           point_required: rewardData.pointsRequired,
           image: rewardData.image,
+          gallery: rewardData.gallery,
           quantity: rewardData.quantity,
           disabled: rewardData.disabled,
-          reward_type: 'voucher',
+          reward_type: 'Voucher',
           status: RewardStatus.ACTIVE,
         };
 
@@ -319,6 +321,7 @@ export default function BusinessRewardsPage() {
       title: businessReward.title,
       description: businessReward.description,
       image: businessReward.image,
+      gallery: businessReward.gallery,
       value: businessReward.value,
       disabled: businessReward.disabled,
       pointsRequired: businessReward.pointRequired,

@@ -6,6 +6,7 @@ export interface Reward {
   value: number;
   description: string;
   image: string;
+  gallery?: string[];
   quantity: number;
   disabled: boolean;
   createdAt: string;
@@ -35,6 +36,7 @@ export interface BusinessReward {
   title: string;
   description: string;
   image: string;
+  gallery?: string[];
   value: number;
   disabled: boolean;
   rewardType?: string;
@@ -54,6 +56,7 @@ export interface CreateBusinessRewardDto {
   title?: string;
   description?: string;
   image?: string;
+  gallery?: string[];
   expiry_datetime?: Date;
   status?: RewardStatus;
   reward_type?: string;
@@ -61,8 +64,8 @@ export interface CreateBusinessRewardDto {
 }
 
 export enum RewardStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
+  ACTIVE = 'active',
+  DRAFT = 'draft',
 }
 
 export interface UpdateBusinessRewardDto {
@@ -71,6 +74,7 @@ export interface UpdateBusinessRewardDto {
   title?: string;
   description?: string;
   image?: string;
+  gallery?: string[];
   expiry_datetime?: Date;
   status?: RewardStatus;
   disabled?: boolean;

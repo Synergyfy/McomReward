@@ -44,6 +44,13 @@ export default function EditClaimedRewardModal({
   const isCoBranded = userPlan === 'co-branded';
   const isWhiteLabel = userPlan === 'white-label';
 
+  // Validation: Check if pointsRequired exceeds maxPoints
+  const isPointsExceedingMax = useMemo(() => {
+    if (!rewardTemplate) return false;
+    const points = Number(pointsRequired);
+    return points > rewardTemplate.maxPoints;
+  }, [pointsRequired, rewardTemplate]);
+
   useEffect(() => {
     if (rewardTemplate) {
       setName(rewardTemplate.title);
@@ -57,6 +64,24 @@ export default function EditClaimedRewardModal({
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
     setImagePreviewUrl(previewUrl);
+  };
+
+  const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Allow empty string for user to clear the field
+    if (inputValue === '') {
+      setPointsRequired('');
+      return;
+    }
+
+    const numValue = Number(inputValue);
+
+    // Only update if the value is valid and within range
+    if (!isNaN(numValue) && numValue >= 0) {
+      // Allow the input but the validation will show error if exceeds max
+      setPointsRequired(inputValue);
+    }
   };
 
   const handleSubmit = () => {
@@ -109,7 +134,7 @@ export default function EditClaimedRewardModal({
               onChange={(e) => setDescription(e.target.value)}
               disabled={!isCoBranded && !isWhiteLabel}
             />
-             {!isCoBranded && !isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to Co-Branded to edit.</p>}
+            {!isCoBranded && !isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to Co-Branded to edit.</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -129,11 +154,19 @@ export default function EditClaimedRewardModal({
               <Input
                 id="points"
                 type="number"
+                min="0"
+                max={rewardTemplate?.maxPoints}
                 value={pointsRequired}
-                onChange={(e) => setPointsRequired(e.target.value)}
+                onChange={handlePointsChange}
                 disabled={!isWhiteLabel}
+                className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
               />
               {!isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to White-Label to edit.</p>}
+              {isWhiteLabel && isPointsExceedingMax && (
+                <p className="text-xs text-red-500 mt-1">
+                  Points cannot exceed the maximum of {rewardTemplate?.maxPoints} points set by admin.
+                </p>
+              )}
             </div>
           </div>
 
@@ -148,12 +181,12 @@ export default function EditClaimedRewardModal({
                 </div>
               </div>
             )}
-             {!isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to White-Label to edit.</p>}
+            {!isWhiteLabel && <p className="text-xs text-gray-500 mt-1">Upgrade to White-Label to edit.</p>}
           </div>
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={handleSubmit}>Add to My Rewards</Button>
+          <Button onClick={handleSubmit} disabled={isPointsExceedingMax}>Add to My Rewards</Button>
         </div>
       </DialogContent>
     </Dialog>

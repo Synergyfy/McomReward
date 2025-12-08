@@ -19,7 +19,7 @@ interface TierLimitModalProps {
 const TierLimitModal: React.FC<TierLimitModalProps> = ({ isOpen, onClose, message }) => {
     return (
         <AlertDialog open={isOpen} onOpenChange={onClose}>
-            <AlertDialogContent className="sm:max-w-[425px]">
+            <AlertDialogContent className="sm:max-w-[425px] z-[6000]">
                 <AlertDialogHeader className="items-center">
                     <div className="mb-4">
                         <motion.svg
@@ -75,7 +75,7 @@ const TierLimitModal: React.FC<TierLimitModalProps> = ({ isOpen, onClose, messag
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="sm:justify-center">
-                    <AlertDialogAction onClick={onClose} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={onClose} className="bg-red-600 text-white hover:bg-red-700">
                         I Understand
                     </AlertDialogAction>
                 </AlertDialogFooter>

@@ -236,38 +236,49 @@ export default function BusinessRewardsPage() {
     }
   }, [handleOpenCreateModal]);
 
-  const handleSaveReward = useCallback(async (rewardData: Reward) => {
-    if (editingBusinessRewardId) {
-      updateBusinessReward({
-        rewardId: editingBusinessRewardId,
-        payload: {
-          title: rewardData.title,
-          description: rewardData.description,
-          point_required: rewardData.pointsRequired,
-          image: rewardData.image,
-          quantity: rewardData.quantity,
-          disabled: rewardData.disabled,
-        },
-      }, {
-        onSuccess: () => {
-          toast.success('Reward updated successfully');
-          setIsCreateModalOpen(false);
-          setEditingBusinessRewardId(null);
-        },
-        onError: (error: Error) => {
-          const axiosError = error as AxiosError<{ message: string }>;
-          const errorMessage = axiosError?.response?.data?.message || 'Failed to update reward';
-          if (errorMessage === 'Your tier does not allow updating rewards.') {
-            setTierLimitMessage(errorMessage);
-            setIsTierLimitModalOpen(true);
-            setIsCreateModalOpen(false); // Close the edit modal so the user sees the error clearly
-          } else {
-            toast.error(errorMessage);
+  const handleSaveReward = useCallback(async (rewardData: Reward): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (editingBusinessRewardId) {
+        updateBusinessReward({
+          rewardId: editingBusinessRewardId,
+          payload: {
+            title: rewardData.title,
+            description: rewardData.description,
+            point_required: rewardData.pointsRequired,
+            image: rewardData.image,
+            quantity: rewardData.quantity,
+            disabled: rewardData.disabled,
+          },
+        }, {
+          onSuccess: () => {
+            toast.success('Reward updated successfully');
+            setIsCreateModalOpen(false);
+            setEditingBusinessRewardId(null);
+            resolve();
+          },
+          onError: (error: Error) => {
+            const axiosError = error as AxiosError<{ message: string }>;
+            const errorMessage = axiosError?.response?.data?.message || 'Failed to update reward';
+
+            if (errorMessage === 'Your tier does not allow updating rewards.') {
+              setTierLimitMessage(errorMessage);
+              setIsTierLimitModalOpen(true);
+              setIsCreateModalOpen(false);
+              resolve(); // Resolve because we handled it by closing the modal and showing another one
+            } else if (errorMessage.includes("Points required cannot exceed the maximum points set by admin")) {
+              setTierLimitMessage(errorMessage);
+              setIsTierLimitModalOpen(true);
+              // Do NOT close the edit modal here, so the user can fix it.
+              // TierLimitModal needs a high Z-Index to show above the edit modal.
+              reject(error); // Reject so the edit modal stops loading but stays open
+            } else {
+              toast.error(errorMessage);
+              reject(error);
+            }
           }
-        }
-      });
-    } else {
-      try {
+        });
+      } else {
+        // Create new reward flow
         const payload: CreateBusinessRewardDto = {
           title: rewardData.title,
           description: rewardData.description,
@@ -275,21 +286,30 @@ export default function BusinessRewardsPage() {
           image: rewardData.image,
           quantity: rewardData.quantity,
           disabled: rewardData.disabled,
-          reward_type: 'voucher', // Defaulting to voucher as per typical flow, or could be dynamic
+          reward_type: 'voucher',
           status: RewardStatus.ACTIVE,
         };
 
-        await createBusinessReward(payload);
-        toast.success('Reward created successfully');
-        setIsCreateModalOpen(false);
-      } catch (error) {
-        console.error("Error creating reward:", error);
-        const axiosError = error as AxiosError<{ message: string }>;
-        const errorMessage = axiosError?.response?.data?.message || 'Failed to create reward';
-        toast.error(errorMessage);
-        throw error;
+        createBusinessReward(payload).then(() => {
+          toast.success('Reward created successfully');
+          setIsCreateModalOpen(false);
+          resolve();
+        }).catch((error) => {
+          console.error("Error creating reward:", error);
+          const axiosError = error as AxiosError<{ message: string }>;
+          const errorMessage = axiosError?.response?.data?.message || 'Failed to create reward';
+
+          if (errorMessage.includes("Points required cannot exceed the maximum points set by admin")) {
+            setTierLimitMessage(errorMessage);
+            setIsTierLimitModalOpen(true);
+            // Do NOT close the edit modal
+          } else {
+            toast.error(errorMessage);
+          }
+          reject(error);
+        });
       }
-    }
+    });
   }, [editingBusinessRewardId, updateBusinessReward, createBusinessReward]);
 
   const handleEditBusinessReward = useCallback((businessReward: BusinessReward) => {

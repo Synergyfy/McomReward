@@ -210,9 +210,9 @@ export default function CampaignDetailPage({ params }: PageProps) {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Main Content Column */}
-          <div className="lg:col-span-2 space-y-12">
+        <div className="flex flex-col gap-16">
+          {/* Main Content Column - Text Sections */}
+          <div className="max-w-4xl space-y-12">
 
             {/* About Section */}
             <section>
@@ -260,35 +260,40 @@ export default function CampaignDetailPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Sidebar Column: Rewards */}
-          <div className="lg:col-span-1 space-y-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-24">
-              <div className="p-6 bg-gray-50 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-orange-600" />
-                  Rewards ({campaign.rewards?.length || 0})
-                </h3>
+          {/* Rewards Grid Section */}
+          <div id="rewards" className="scroll-mt-24">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                  <Gift className="w-8 h-8 text-orange-600" />
+                  Rewards
+                </h2>
+                <p className="text-gray-500 mt-2">
+                  Complete tasks to earn points and redeem these exclusive rewards.
+                </p>
               </div>
-              <div className="p-6 space-y-6 max-h-[800px] overflow-y-auto custom-scrollbar">
-                {campaign.rewards && campaign.rewards.length > 0 ? (
-                  campaign.rewards.map((reward, index) => (
-                    <PublicRewardCard
-                      key={index}
-                      reward={reward}
-                      isMember={isMember}
-                    // We don't have userPoints readily available in this context without fetching balance
-                    // But we can pass 0 or fetch it if needed. For now, let's keep it simple.
-                    // Actually, we should fetch balance if member to show progress.
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Gift className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No rewards listed yet.</p>
-                  </div>
-                )}
-              </div>
+              <Badge variant="outline" className="w-fit px-4 py-2 text-base font-medium">
+                {campaign.rewards?.length || 0} Available
+              </Badge>
             </div>
+
+            {campaign.rewards && campaign.rewards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {campaign.rewards.map((reward, index) => (
+                  <PublicRewardCard
+                    key={index}
+                    reward={reward}
+                    isMember={isMember}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <Gift className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900">No rewards listed yet</h3>
+                <p className="text-gray-500">Check back later for exciting rewards!</p>
+              </div>
+            )}
           </div>
         </div>
       </div >

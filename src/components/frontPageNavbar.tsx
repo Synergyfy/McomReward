@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
-import { Menu, X, CircleUserRound } from 'lucide-react';
+import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard } from 'lucide-react';
+import { useLogout } from '@/services/auth/hook';
+import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,6 +20,7 @@ const FrontPageNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -28,14 +32,26 @@ const FrontPageNavbar = () => {
 
   useEffect(() => {
     setIsAuthenticated(!!Cookies.get('access'));
+    setUserRole(localStorage.getItem('userRole'));
   }, []);
 
+  const { mutate: logoutMutation } = useLogout();
+
   const handleLogout = () => {
-    Cookies.remove('access');
-    Cookies.remove('refresh');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    router.push('/login');
+    logoutMutation(undefined, {
+      onSuccess: () => {
+        toast.success('Logged out successfully');
+        router.push('/login');
+      },
+      onError: () => {
+        // Fallback to client-side cleanup
+        Cookies.remove('access');
+        Cookies.remove('refresh');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userName');
+        router.push('/login');
+      }
+    });
   };
 
   const handleDashboardClick = () => {
@@ -105,16 +121,62 @@ const FrontPageNavbar = () => {
                   <CircleUserRound size={24} />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuItem onClick={handleDashboardClick}>
-                  Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  Settings
-                </DropdownMenuItem>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
+                <DropdownMenuItem onClick={handleDashboardClick} className="cursor-pointer">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <span className="flex items-center">
+                    Dashboard
+                  </span>
+                </DropdownMenuItem>
+
+                {userRole === 'Business' && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/profile')} className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/subscription')} className="cursor-pointer">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/account')} className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {userRole === 'Admin' && (
+                  <>
+                    {/* Admin only has Logout which is common below */}
+                  </>
+                )}
+
+                {userRole === 'Participant' && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {userRole === 'Staff' && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push('/staff/dashboard/settings')} className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
+                  <span className="flex items-center">
+                    Logout
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

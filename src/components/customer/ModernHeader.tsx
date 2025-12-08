@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useGetParticipantProfile, useGetParticipantGlobalBalance } from '@/services/customer-campaigns/hook';
 import type { ParticipantGlobalBalanceResponse, ParticipantProfileResponse } from '@/services/customer-campaigns/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +24,7 @@ interface ModernHeaderProps {
 }
 
 export default function ModernHeader({ onMenuClick, profile: propsProfile, balanceData: propsBalance, isLoading: propsLoading }: ModernHeaderProps) {
+    const router = useRouter();
     const { data: fetchedProfile, isLoading: isProfileLoading } = useGetParticipantProfile();
     const { data: fetchedBalance, isLoading: isBalanceLoading } = useGetParticipantGlobalBalance();
 
@@ -106,8 +108,8 @@ export default function ModernHeader({ onMenuClick, profile: propsProfile, balan
                                 <span className="font-bold text-orange-600">{globalPoints.toLocaleString()}</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="sm:hidden" />
-                            <DropdownMenuItem>Profile</DropdownMenuItem>
-                            <DropdownMenuItem>Settings</DropdownMenuItem>
+                            <DropdownMenuSeparator className="sm:hidden" />
+                            <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">Settings</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-600">
                                 Log out

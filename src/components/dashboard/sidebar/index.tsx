@@ -25,6 +25,9 @@ import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
 import { motion } from 'framer-motion';
 import { useGetBusinessProfile } from '@/services/business/hook';
+import { useRouter } from 'next/navigation';
+import { useLogout } from '@/services/auth/hook';
+import { toast } from 'sonner';
 
 // TODO: Replace this with actual imported type (e.g., from services/business/types.ts)
 interface BusinessProfileType {
@@ -47,7 +50,7 @@ export default function BusinessSidebar({
 }: BusinessSidebarProps) {
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [isCampaignsOpen, setIsCampaignsOpen] = useState(false)
-  const [ isVouchersOpen, setIsVouchersOpen] = useState (false);
+  const [isVouchersOpen, setIsVouchersOpen] = useState(false);
   const [isMyAssetsOpen, setIsMyAssetsOpen] = useState(false);
   const linkClasses = useLinkClasses();
 
@@ -57,6 +60,24 @@ export default function BusinessSidebar({
   // Prioritize prop data if provided
   const profile = propProfile ?? hookProfile;
   const isLoading = propIsLoading ?? hookIsLoadingProfile;
+
+  const router = useRouter();
+  const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
+
+  const handleLogout = () => {
+    logoutMutation(undefined, {
+      onSuccess: () => {
+        toast.success('Logged out successfully.');
+        router.push('/login');
+      },
+      onError: (error) => {
+        console.error('Logout failed:', error);
+        toast.error('Logout failed. Please try again.');
+        // Even if server logout fails, clear client-side and redirect for better UX
+        router.push('/login');
+      }
+    });
+  };
 
   return (
     <div
@@ -69,13 +90,13 @@ export default function BusinessSidebar({
     >
       {/* Business Name*/}
       <div className="flex items-center justify-between mb-3">
-         <motion.h1
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-3xl font-semibold text-orange-500 mb-6"
-              >
-                {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'}
-              </motion.h1>
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-semibold text-orange-500 mb-6"
+        >
+          {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'}
+        </motion.h1>
       </div>
 
       {/* 🔗 Navigation Links */}
@@ -97,7 +118,7 @@ export default function BusinessSidebar({
         <li>
           <button
             className={linkClasses('/dashboard/campaigns')}
-            onClick={() => setIsCampaignsOpen(!isCampaignsOpen)}  
+            onClick={() => setIsCampaignsOpen(!isCampaignsOpen)}
           >
             <span className="flex items-center justify-between w-full">
               <span className="flex items-center">
@@ -109,18 +130,18 @@ export default function BusinessSidebar({
           </button>
           {isCampaignsOpen && (
             <ul className="ml-8 mt-2 space-y-1">
-                  <li>
-              <Link href="/dashboard/campaigns/list" className={linkClasses('/dashboard/campaigns/list')}>
-              
-                View Campaigns
-              </Link>
-            </li>
-               <li>
+              <li>
+                <Link href="/dashboard/campaigns/list" className={linkClasses('/dashboard/campaigns/list')}>
+
+                  View Campaigns
+                </Link>
+              </li>
+              <li>
                 <Link href="/dashboard/campaign-performance" className={linkClasses('/dashboard/campaign-performance')}>
-                
+
                   Campaign Performance
                 </Link>
-               </li>
+              </li>
             </ul>
           )}
         </li>
@@ -226,62 +247,67 @@ export default function BusinessSidebar({
       {/* 👤 Settings & Logout */}
       <div className="space-y-2">
         <button
-            className={linkClasses('/dashboard/my-assets')}
-            onClick={() => setIsMyAssetsOpen(!isMyAssetsOpen)}
-          >
-            <span className="flex items-center justify-between w-full">
-              <span className="flex items-center">
-                <Award className="mr-3" />
-                My Assets
-              </span>
-              <span className="text-gray-400 text-xs">{isMyAssetsOpen ? '−' : '+'}</span>
+          className={linkClasses('/dashboard/my-assets')}
+          onClick={() => setIsMyAssetsOpen(!isMyAssetsOpen)}
+        >
+          <span className="flex items-center justify-between w-full">
+            <span className="flex items-center">
+              <Award className="mr-3" />
+              My Assets
             </span>
-          </button>
-          {isMyAssetsOpen && (
-            <ul className="ml-8 mt-2 space-y-1">
-              <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Overview</Link></li>
-              <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
-              <li><Link href="/dashboard/my-assets/nfc-cards" className={linkClasses('/dashboard/my-assets/nfc-cards')}>NFC Cards</Link></li>
-              <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
-              <li><Link href="/dashboard/my-assets/marketing-materials" className={linkClasses('/dashboard/my-assets/marketing-materials')}>Marketing Materials</Link></li>
-              <li><Link href="/dashboard/my-assets/partner-network" className={linkClasses('/dashboard/my-assets/partner-network')}>Partner Network</Link></li>
-              <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li>
-            </ul>
-          )}
+            <span className="text-gray-400 text-xs">{isMyAssetsOpen ? '−' : '+'}</span>
+          </span>
+        </button>
+        {isMyAssetsOpen && (
+          <ul className="ml-8 mt-2 space-y-1">
+            <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Overview</Link></li>
+            <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
+            <li><Link href="/dashboard/my-assets/nfc-cards" className={linkClasses('/dashboard/my-assets/nfc-cards')}>NFC Cards</Link></li>
+            <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
+            <li><Link href="/dashboard/my-assets/marketing-materials" className={linkClasses('/dashboard/my-assets/marketing-materials')}>Marketing Materials</Link></li>
+            <li><Link href="/dashboard/my-assets/partner-network" className={linkClasses('/dashboard/my-assets/partner-network')}>Partner Network</Link></li>
+            <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li>
+          </ul>
+        )}
         <Link href="/dashboard/profile" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
           <User className="mr-3" size={18} />
           Business Profile
         </Link>
         <Link href="/dashboard/tier" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
-            <Star className="mr-3" size={18}/>
-            Tier
+          <Star className="mr-3" size={18} />
+          Tier
         </Link>
         <Link href="/dashboard/subscription" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
-            <CreditCard className="mr-3" size={18}/>
-            Subscription
+          <CreditCard className="mr-3" size={18} />
+          Subscription
         </Link>
         <Link href="/dashboard/account" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
-            <Settings className="mr-3" size={18}/>
-            Settings
+          <Settings className="mr-3" size={18} />
+          Settings
         </Link>
-                <Link href="/dashboard/support" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
-                    <LifeBuoy className="mr-3" size={18}/>
-                    Support & Help
-                </Link>
+        <Link href="/dashboard/support" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+          <LifeBuoy className="mr-3" size={18} />
+          Support & Help
+        </Link>
         <button
-          onClick={() => console.log('Logging out...')}
-          className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-red-600 transition"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="mr-3" size={18} />
-          Logout
+          {isLoggingOut ? (
+            <Loader2 className="mr-3 animate-spin" size={18} />
+          ) : (
+            <LogOut className="mr-3" size={18} />
+          )}
+          {isLoggingOut ? 'Logging out...' : 'Logout'}
         </button>
       </div>
 
       {/* 🧩 Bottom Badge */}
       <div className="absolute bottom-6 left-4 right-4  text-orange-600 flex items-center justify-center gap-2 font-semibold py-2 rounded-full">
-       
+
         <div className="sm:block md:hidden  lg:hidden xl:hidden">
-         <Link href="/dashboard/tier" className="sm:block md:hidden lg:hidden xl:hidden">
+          <Link href="/dashboard/tier" className="sm:block md:hidden lg:hidden xl:hidden">
 
             <TierBadge tier="Gold" />
           </Link>

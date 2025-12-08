@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Loader2, Bell, Coins, Menu, Shield, User, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,8 @@ import { useGetBusinessProfile, useGetBusinessMonthlyBalance } from '@/services/
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
 import { toast } from 'sonner';
+import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
+import { formatDistanceToNow } from 'date-fns';
 
 // TODO: Replace these with actual imported types (e.g., from services/business/types.ts, services/tiers/types.ts)
 interface BusinessProfileType {
@@ -63,6 +66,11 @@ export default function BusinessHeader({
   const { data: hookMonthlyBalance, isLoading: hookIsLoadingMonthlyBalance, isError: hookIsErrorMonthlyBalance } = useGetBusinessMonthlyBalance();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
 
+  // Notification hooks
+  const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
+  const { mutate: markAllRead } = useMarkAllNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationRead();
+
   // Prioritize props data if provided
   const subscription = propSubscription ?? hookSubscription;
   const profile = propProfile ?? hookProfile;
@@ -76,7 +84,8 @@ export default function BusinessHeader({
   const userBadge = profile?.role;
   const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
 
-  const notificationsCount = 3; // Leaving as mock.
+  const unreadCount = notificationsData?.unreadCount ?? 0;
+  const notifications = notificationsData?.data ?? [];
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -91,6 +100,19 @@ export default function BusinessHeader({
         router.push('/login');
       }
     });
+  };
+
+  const handleMarkAllRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    markAllRead(undefined, {
+        onSuccess: () => toast.success('All notifications marked as read')
+    });
+  };
+
+  const handleNotificationClick = (id: string, isRead: boolean) => {
+    if (!isRead) {
+        markRead(id);
+    }
   };
 
   return (
@@ -151,7 +173,7 @@ export default function BusinessHeader({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-6 w-6" />
-              {notificationsCount > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute top-0 right-0 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -159,12 +181,49 @@ export default function BusinessHeader({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="flex items-center justify-between px-2 py-1.5">
+                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                {unreadCount > 0 && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700"
+                        onClick={handleMarkAllRead}
+                    >
+                        Mark all read
+                    </Button>
+                )}
+            </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>New campaign launched!</DropdownMenuItem>
-            <DropdownMenuItem>Your tier has been upgraded.</DropdownMenuItem>
-            <DropdownMenuItem>A customer redeemed a reward.</DropdownMenuItem>
+            <div className="max-h-96 overflow-y-auto">
+                {isNotificationsLoading ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+                ) : (
+                    notifications.map((notification) => (
+                        <DropdownMenuItem
+                            key={notification.id}
+                            className={`flex flex-col items-start p-3 cursor-pointer ${!notification.isRead ? 'bg-blue-50/50' : ''}`}
+                            onClick={() => handleNotificationClick(notification.id, notification.isRead)}
+                        >
+                            <div className="flex items-start justify-between w-full">
+                                <div className="font-medium truncate pr-2">{notification.title || 'Notification'}</div>
+                                {!notification.isRead && <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
+                            </div>
+                            <div className="text-sm text-gray-500 line-clamp-2">{notification.message}</div>
+                            <div className="text-xs text-gray-400 mt-1">
+                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                )}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-center justify-center text-primary cursor-pointer">
+              View all notifications
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -199,6 +258,3 @@ export default function BusinessHeader({
     </header>
   );
 }
-
-
-

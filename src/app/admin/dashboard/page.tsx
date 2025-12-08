@@ -5,41 +5,37 @@ import Link from 'next/link';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Users,
-  Activity,
   Award,
-  Gift,
   PlusCircle,
   Search,
   Bell,
   Building,
-  BarChart,
   DollarSign,
   Megaphone,
   Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  businessTierBreakdownData,
-  notificationsData,
-  mainChartData,
-} from '@/lib/mock-data/dashboard';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useGrowthActivityChart, useSystemOverview, useTierBreakdown, useTopBusinesses } from '@/services/analytics/hook';
+import { useGetNotifications } from '@/services/notifications/hook';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function AdminDashboard() {
   const { data: topBusinesses, isLoading: isLoadingTopBusinesses, error: topBusinessesError } = useTopBusinesses();
   const { data: systemOverview, isLoading: isLoadingSystemOverview, error: systemOverviewError } = useSystemOverview();
   const { data: tierBreakdown, isLoading: isLoadingTierBreakdown, error: tierBreakdownError } = useTierBreakdown();
   const { data: growthData, isLoading: isLoadingGrowthData, error: growthDataError } = useGrowthActivityChart();
+
+  // Notification hook
+  const { data: notificationsData, isLoading: isLoadingNotifications, error: notificationsError } = useGetNotifications({ limit: 5 });
 
   const chartData = React.useMemo(() => {
     if (!growthData) return [];
@@ -202,15 +198,29 @@ export default function AdminDashboard() {
               <CardTitle>Notifications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {notificationsData.map((notification) => (
-                <div key={notification.id} className="flex items-start space-x-3">
-                  <Bell className="h-5 w-5 text-muted-foreground mt-1" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground">{notification.time}</p>
-                  </div>
+              {isLoadingNotifications ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : notificationsError ? (
+                <p className="text-xs text-destructive text-center">Failed to load notifications</p>
+              ) : !notificationsData?.data.length ? (
+                <p className="text-sm text-muted-foreground text-center">No new notifications</p>
+              ) : (
+                notificationsData.data.map((notification) => (
+                  <div key={notification.id} className="flex items-start space-x-3">
+                    <Bell className={`h-5 w-5 mt-1 ${notification.isRead ? 'text-gray-300' : 'text-blue-500'}`} />
+                    <div className="flex-1">
+                      <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'font-medium'}`}>
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

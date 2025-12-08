@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Menu, Bell, Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import React from 'react';
+import { Menu, Bell, Search, User, LogOut, Settings, ChevronDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +14,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -21,7 +24,11 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const router = useRouter();
-  const [notifications] = useState(3); // Mock notification count
+
+  // Notification hooks
+  const { data: notificationsData, isLoading } = useGetNotifications({ limit: 5 });
+  const { mutate: markAllRead } = useMarkAllNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationRead();
 
   const handleLogout = () => {
     // Clear any auth tokens/session data
@@ -31,6 +38,22 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     // Redirect to login page
     router.push('/login');
   };
+
+  const handleMarkAllRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    markAllRead(undefined, {
+        onSuccess: () => toast.success('All notifications marked as read')
+    });
+  };
+
+  const handleNotificationClick = (id: string, isRead: boolean) => {
+    if (!isRead) {
+        markRead(id);
+    }
+  };
+
+  const unreadCount = notificationsData?.unreadCount ?? 0;
+  const notifications = notificationsData?.data ?? [];
 
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
@@ -76,35 +99,54 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {notifications > 0 && (
+                {unreadCount > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                   >
-                    {notifications}
+                    {unreadCount}
                   </Badge>
                 )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                {unreadCount > 0 && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700"
+                        onClick={handleMarkAllRead}
+                    >
+                        Mark all read
+                    </Button>
+                )}
+              </div>
               <DropdownMenuSeparator />
               <div className="max-h-96 overflow-y-auto">
-                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                  <div className="font-medium">New reward created</div>
-                  <div className="text-sm text-gray-500">Summer Sale Voucher was added</div>
-                  <div className="text-xs text-gray-400 mt-1">2 hours ago</div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                  <div className="font-medium">Campaign ending soon</div>
-                  <div className="text-sm text-gray-500">Spring Campaign ends in 2 days</div>
-                  <div className="text-xs text-gray-400 mt-1">5 hours ago</div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                  <div className="font-medium">New tier unlocked</div>
-                  <div className="text-sm text-gray-500">Gold tier reached 100 members</div>
-                  <div className="text-xs text-gray-400 mt-1">1 day ago</div>
-                </DropdownMenuItem>
+                {isLoading ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+                ) : (
+                    notifications.map((notification) => (
+                        <DropdownMenuItem
+                            key={notification.id}
+                            className={`flex flex-col items-start p-3 cursor-pointer ${!notification.isRead ? 'bg-blue-50/50' : ''}`}
+                            onClick={() => handleNotificationClick(notification.id, notification.isRead)}
+                        >
+                            <div className="flex items-start justify-between w-full">
+                                <div className="font-medium truncate pr-2">{notification.title || 'Notification'}</div>
+                                {!notification.isRead && <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
+                            </div>
+                            <div className="text-sm text-gray-500 line-clamp-2">{notification.message}</div>
+                            <div className="text-xs text-gray-400 mt-1">
+                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                )}
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-center justify-center text-primary cursor-pointer">

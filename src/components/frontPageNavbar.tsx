@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
-import { Menu, X, CircleUserRound, User, Settings, CreditCard } from 'lucide-react';
+import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard } from 'lucide-react';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
@@ -125,6 +125,7 @@ const FrontPageNavbar = () => {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDashboardClick} className="cursor-pointer">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span className="flex items-center">
                     Dashboard
                   </span>

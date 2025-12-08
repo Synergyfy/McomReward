@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon, Sparkles } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
 import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify, useGetPointPackagesByTier, useJoinTrial } from "@/services/payment/hook"
-import { PlanType, PaymentProvider, PointPackage } from "@/services/payment/types"
+import { PlanType, PaymentProvider, PointPackage, StripeInitiateRequest } from "@/services/payment/types"
 import { toast } from "sonner"
 import { Elements } from '@stripe/react-stripe-js';
 import PayPalButton from "@/components/paypal-button"

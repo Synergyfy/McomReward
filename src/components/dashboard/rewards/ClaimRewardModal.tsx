@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from 'lucide-react';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
+import SubscriptionRequiredModal from './SubscriptionRequiredModal';
 import { AxiosError } from 'axios';
 import { useDebounce } from 'use-debounce';
 
@@ -169,6 +170,7 @@ export default function ClaimRewardModal({
   const addRewardMutation = useAddBusinessReward();
   const [points, setPoints] = useState<{ [key: string]: number }>({});
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [addingRewardId, setAddingRewardId] = useState<string | null>(null);
 
@@ -181,6 +183,13 @@ export default function ClaimRewardModal({
       refetch();
     }
   }, [isOpen, refetch, page, debouncedSearchQuery]);
+
+  useEffect(() => {
+    if (isError && isOpen) {
+      setIsSubscriptionModalOpen(true);
+      onClose();
+    }
+  }, [isError, isOpen, onClose]);
 
   useEffect(() => {
     if (unaddedRewards) {
@@ -246,7 +255,7 @@ export default function ClaimRewardModal({
 
           <div className="flex-grow overflow-y-auto p-1">
             {isLoading && <LoadingSpinner />}
-            {isError && <p className="text-red-500">Error fetching rewards.</p>}
+            {isError && !isSubscriptionModalOpen && <p className="text-red-500">Error fetching rewards.</p>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {unaddedRewards?.data.map((reward) => (
                 <Card key={reward.id} className="flex flex-col">
@@ -323,6 +332,10 @@ export default function ClaimRewardModal({
         isOpen={isErrorModalOpen}
         onClose={() => setIsErrorModalOpen(false)}
         message={errorMessage}
+      />
+      <SubscriptionRequiredModal
+        isOpen={isSubscriptionModalOpen}
+        onClose={() => setIsSubscriptionModalOpen(false)}
       />
     </>
   );

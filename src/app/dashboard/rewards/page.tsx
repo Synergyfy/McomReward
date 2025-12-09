@@ -462,10 +462,6 @@ export default function BusinessRewardsPage() {
                       </p>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="font-medium">Value:</span>
-                          <span>£{businessReward.value}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="font-medium">Points:</span>
                           <span>
                             {businessReward.pointRequired}

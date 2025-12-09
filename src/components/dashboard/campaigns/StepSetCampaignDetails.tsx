@@ -16,12 +16,9 @@ import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
 import { useGetTiers } from '@/services/tiers/hook'; // Import useGetTiers hook
+import { useGetWishlistInsights } from '@/services/wishlist/hook';
 
-const mockWishlistInsights = [
-  { itemName: 'Gourmet Burger', category: 'Food', estimatedCount: 124 },
-  { itemName: 'Winter Jacket', category: 'Fashion', estimatedCount: 78 },
-  { itemName: 'Wireless Headphones', category: 'Electronics', estimatedCount: 210 },
-];
+
 
 interface StepProps {
   onNext: () => void;
@@ -44,9 +41,18 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const { data: tiersData } = useGetTiers();
   const tiers = tiersData || [];
 
+  // Fetch wishlist insights using the hook
+  const { data: wishlistInsightsData, isLoading: isLoadingWishlist } = useGetWishlistInsights({ page: 1, limit: 100 });
+  const wishlistInsights = wishlistInsightsData?.data || [];
+
   const rewardOptions = rewards.map(r => ({
     value: r.reward.id,
     label: r.reward.title
+  })) || [];
+
+  const wishlistOptions = wishlistInsights.map(item => ({
+    value: item.itemName,
+    label: `${item.itemName} (${item.audienceSize} users)`
   })) || [];
 
   useEffect(() => {
@@ -197,7 +203,16 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
               />
             )}
             {formData.audienceType.includes('wishlist_target') && (
-              <Select isMulti className="mt-2" options={mockWishlistInsights.map(item => ({ value: item.itemName, label: `${item.itemName} (${item.estimatedCount} users)` }))} value={toSelectOptions(formData.wishlistItemIds || [])} onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })} placeholder="Select wishlist items..." styles={errors.wishlistItemIds ? selectErrorStyle : {}} />
+              <Select
+                isMulti
+                className="mt-2"
+                options={wishlistOptions}
+                value={toSelectOptions(formData.wishlistItemIds || [])}
+                onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })}
+                placeholder={isLoadingWishlist ? "Loading wishlist items..." : "Select wishlist items..."}
+                styles={errors.wishlistItemIds ? selectErrorStyle : {}}
+                isDisabled={isLoadingWishlist}
+              />
             )}
           </div>
 

@@ -9,6 +9,7 @@ export interface User {
   role: string;
   name: string;
   isOnboarded: boolean;
+  isEmailVerified: boolean;
 }
 
 export interface BusinessLoginResponse {

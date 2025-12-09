@@ -122,7 +122,12 @@ export default function SubscriptionPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map(plan => (
-            <PlanComparisonCard key={plan.id} plan={plan} onChoosePlan={handleChoosePlan} />
+            <PlanComparisonCard
+              key={plan.id}
+              plan={plan}
+              onChoosePlan={handleChoosePlan}
+              billingCycle={planFrequency === 'annually' ? 'annual' : 'quarterly'}
+            />
           ))}
         </div>
       </div>

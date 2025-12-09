@@ -85,6 +85,10 @@ export interface PayPalVerifyResponse {
 // Trial Subscription Types
 export interface JoinTrialDto {
     tier_id: string;
+    payment_token?: string;
+    provider: 'stripe' | 'paypal';
+    return_url?: string;
+    cancel_url?: string;
 }
 
 export interface TrialSubscriptionResponse {

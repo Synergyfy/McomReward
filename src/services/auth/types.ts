@@ -15,22 +15,10 @@ export interface LoginResponse {
     role: string;
   };
 }
-export interface AdminLoginDto {
+
+export interface VerifyEmailDto {
   email: string;
-  password: string;
-}
-
-export interface AdminLoginResponse {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    role: string;
-  };
+  otp: string;
 }
 
 export interface RefreshTokenResponse {

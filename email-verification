@@ -1,0 +1,54 @@
+
+
+✅ Email Verification Flow for Business Users
+
+Overview
+The login flow now includes an isEmailVerified property in the response. This property determines whether a user has verified their email. If isEmailVerified is false, the user cannot perform any business-related actions (e.g., view campaigns, analytics, etc.).
+
+---
+
+🧑‍💼 For Existing Users
+1. Login Response: When an existing user logs in, the backend returns a response that includes isEmailVerified: false if their email hasn't been verified.
+2. Redirect Logic:
+   - If isEmailVerified is false, redirect the user to a "Verification Required" page (you can name this page something like verify-email) that looks beautiful and premium looking still maintaining brand color.
+   - On this page, inform the user that they must verify their email to continue.
+3. The backend automatically triggers OTP:
+   - The backend automatically sends an OTP to the user's email upon login.
+4. OTP Verification:
+   - Prompt the user to enter the OTP.
+   - Send the OTP to the backend for verification.
+   endpoint info `endpoint : /auth/verify-email
+
+method: Post
+
+Request body: {
+  "email": "user@example.com",
+  "otp": "123456"
+}
+
+`
+5. Post-Verification:
+   - If the user has already completed onboarding, redirect them to the dashboard.
+   - If not, redirect them to the onboarding flow.
+
+---
+
+🆕 For New Users (During Signup /signup)
+1. Auto Login: After account creation, the user is automatically logged in.
+2. Immediate OTP Trigger:
+   - The backend automatically sends an OTP to the user's email upon signup.
+   - No need to manually trigger it.
+3. Redirect to OTP Page:
+   - Immediately redirect the user to the OTP verification page.
+4. OTP Verification:
+   - Once the OTP is entered and verified:
+     - Redirect to the onboarding flow.
+     - After onboarding, take them to the subscription page \dashboard\subscription(as usuall).
+
+---
+
+🔁 Summary of Flow
+- *Login → Check isEmailVerified*
+  - If false → Redirect to verify-email page → Trigger/send OTP → Verify OTP → Continue
+  - If true → Proceed as normal (onboarding or dashboard)
+

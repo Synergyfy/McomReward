@@ -14,6 +14,8 @@ import { stripePromise } from "@/components/stripe-provider"
 import StripePaymentForm from "@/components/stripe-payment-form"
 import { Checkbox } from "@/components/ui/checkbox"
 
+import TrialStripeForm from "@/components/trial-stripe-form"
+
 const iconByTier: Record<string, LucideIcon> = {
   Trial: Target,
   Bronze: Award,
@@ -21,6 +23,8 @@ const iconByTier: Record<string, LucideIcon> = {
   Gold: Trophy,
   Platinum: Crown,
 }
+
+// ... imports remain the same ...
 
 function CheckoutContent() {
   const params = useSearchParams()
@@ -55,8 +59,6 @@ function CheckoutContent() {
   const tier = useMemo(() => {
     if (!tiers) return null;
     return tiers.find(t => t.name === plan || t.id === plan);
-
-
   }, [tiers, plan]);
 
   const { data: pointPackages } = useGetPointPackagesByTier(tier?.id);
@@ -94,10 +96,11 @@ function CheckoutContent() {
     qs.set("plan", plan)
     qs.set("billing", billing)
     if (appliedCoupon) qs.set("coupon", appliedCoupon.code)
+    if (isTrialMode) qs.set("isTrial", "true")
     const next = `/checkout?${qs.toString()}`
     router.replace(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, billing, appliedCoupon])
+  }, [plan, billing, appliedCoupon, isTrialMode])
 
   if (isLoadingTiers) {
     return (
@@ -129,25 +132,56 @@ function CheckoutContent() {
     }
   }
 
+  const handleTrialStripeSuccess = (paymentMethodId: string) => {
+    joinTrial(
+      {
+        tier_id: tier.id,
+        provider: 'stripe',
+        payment_token: paymentMethodId
+      },
+      {
+        onSuccess: (data) => {
+          toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`);
+          router.push('/dashboard/subscription');
+        },
+        onError: (error) => {
+          console.error("Trial join failed:", error);
+          toast.error("Failed to start trial. Please try again or contact support.");
+        }
+      }
+    );
+  };
+
   const handleConfirmPurchase = () => {
     if (!tier) return;
 
-    // If trial mode, call the trial endpoint directly
+    // Trial Mode handling (PayPal only here, Stripe handles itself in component)
     if (isTrialMode) {
-      joinTrial(
-        { tier_id: tier.id },
-        {
-          onSuccess: (data) => {
-            toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`);
-            // Redirect to dashboard after successful trial join
-            router.push('/dashboard/subscription');
+      if (paymentProvider === PaymentProvider.PAYPAL) {
+        joinTrial(
+          {
+            tier_id: tier.id,
+            provider: 'paypal',
+            return_url: `${window.location.origin}/checkout/paypal-return`, // Example return URL
+            cancel_url: `${window.location.origin}/checkout`,
           },
-          onError: (error) => {
-            console.error("Trial join failed:", error);
-            toast.error("Failed to start trial. Please try again or contact support.");
+          {
+            onSuccess: (data: any) => {
+              // Assuming response has approvalUrl for PayPal
+              if (data.approvalUrl) {
+                window.location.href = data.approvalUrl;
+              } else {
+                toast.success("Trial started (PayPal)!");
+                router.push('/dashboard/subscription');
+              }
+            },
+            onError: (error) => {
+              console.error("Trial join (PayPal) failed:", error);
+              toast.error("Failed to initiate PayPal trial.");
+            }
           }
-        }
-      );
+        );
+      }
       return;
     }
 
@@ -179,8 +213,6 @@ function CheckoutContent() {
       initiatePayPal(paymentPayload, {
         onSuccess: (data) => {
           toast.success("Redirecting to PayPal...");
-          console.log("PayPal Order ID:", data.orderId);
-
           if (data.approveLink) {
             window.location.href = data.approveLink;
           } else {
@@ -217,51 +249,55 @@ function CheckoutContent() {
             <div className="text-xl font-semibold">{tier.name}</div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setBilling("quarterly")}
-            className={`px-4 py-2 rounded-full ${billing === "quarterly" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-          >
-            Quarterly
-          </button>
-          <button
-            onClick={() => setBilling("annual")}
-            className={`px-4 py-2 rounded-full ${billing === "annual" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-          >
-            Annual
-          </button>
-          <div className="ml-auto text-right">
-            <div className="text-sm text-foreground/60">Price</div>
-            <div className="text-2xl font-bold">£{basePrice}{billing === "annual" ? "/year" : "/quarter"}</div>
+        {!isTrialMode && (
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setBilling("quarterly")}
+              className={`px-4 py-2 rounded-full ${billing === "quarterly" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+            >
+              Quarterly
+            </button>
+            <button
+              onClick={() => setBilling("annual")}
+              className={`px-4 py-2 rounded-full ${billing === "annual" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+            >
+              Annual
+            </button>
+            <div className="ml-auto text-right">
+              <div className="text-sm text-foreground/60">Price</div>
+              <div className="text-2xl font-bold">£{basePrice}{billing === "annual" ? "/year" : "/quarter"}</div>
+            </div>
           </div>
-        </div>
-        {billing === "annual" && (
+        )}
+        {billing === "annual" && !isTrialMode && (
           <p className="text-xs text-foreground/60 mt-2">Annual price is quarterly × 4.</p>
         )}
       </section>
 
-      <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
-        <div className="flex items-center gap-3 mb-4">
-          <BadgePercent className="w-5 h-5 text-primary" />
-          <div className="font-semibold">Promo code</div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            className="flex-1 px-4 py-3 rounded-lg border bg-background"
-            placeholder="Enter coupon code"
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-          />
-          <button onClick={apply} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground">Apply</button>
-        </div>
-        {couponError && <p className="text-destructive mt-2 text-sm">{couponError}</p>}
-        {appliedCoupon && !couponError && (
-          <p className="text-foreground/70 mt-2 text-sm">Applied {appliedCoupon.code}: {appliedCoupon.discountPercent}% off</p>
-        )}
-      </section>
+      {!isTrialMode && (
+        <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
+          <div className="flex items-center gap-3 mb-4">
+            <BadgePercent className="w-5 h-5 text-primary" />
+            <div className="font-semibold">Promo code</div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              className="flex-1 px-4 py-3 rounded-lg border bg-background"
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+            />
+            <button onClick={apply} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground">Apply</button>
+          </div>
+          {couponError && <p className="text-destructive mt-2 text-sm">{couponError}</p>}
+          {appliedCoupon && !couponError && (
+            <p className="text-foreground/70 mt-2 text-sm">Applied {appliedCoupon.code}: {appliedCoupon.discountPercent}% off</p>
+          )}
+        </section>
+      )}
 
       {/* Add-ons Section */}
-      {pointPackages && pointPackages.length > 0 && (
+      {pointPackages && pointPackages.length > 0 && !isTrialMode && (
         <section className="rounded-3xl border-2 border-border p-6 mb-8 bg-card">
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -322,59 +358,42 @@ function CheckoutContent() {
             <div className="font-semibold">PayPal</div>
           </button>
         </div>
-        {paymentProvider === PaymentProvider.STRIPE && clientSecret && (
+
+        {/* Stripe + Trial Mode: Show Trial Form immediately */}
+        {paymentProvider === PaymentProvider.STRIPE && isTrialMode && (
+          <div className="mt-4">
+            <Elements stripe={stripePromise}>
+              <TrialStripeForm onSuccess={handleTrialStripeSuccess} />
+            </Elements>
+          </div>
+        )}
+
+        {/* Stripe + Regular Mode: Show Payment Form only if clientSecret exists */}
+        {paymentProvider === PaymentProvider.STRIPE && !isTrialMode && clientSecret && (
           <div className="mt-4">
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <StripePaymentForm
                 onSuccess={(transactionId) => {
                   toast.success(`Payment successful! Transaction ID: ${transactionId}`);
-                  // Here you can add logic to update the user's subscription,
-                  // redirect to a confirmation page, etc.
                   router.push("/confirmation");
                 }}
               />
             </Elements>
           </div>
         )}
-        {paymentProvider === PaymentProvider.PAYPAL && (
+
+        {/* PayPal Handling is done via button click below (or custom button here if reusable) */}
+        {paymentProvider === PaymentProvider.PAYPAL && !isTrialMode && (
           <div className="mt-4">
             <PayPalButton
               tier_id={tier.id}
               plan_type={billing === "annual" ? "annual" : "quarterly"}
               coupon_code={appliedCoupon?.code || ""}
               onPaymentSuccess={async (details, orderId) => {
-                console.log("Payment successful:", details);
-                toast.success("Payment confirmed! Updating your subscription...");
-
-                try {
-                  const res = await fetch("/api/update-subscription", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      userId: "123", // Replace with actual user ID
-                      tierId: tier.id,
-                      planType: billing === "annual" ? "annually" : "quarterly",
-                      paymentId: orderId,
-                    }),
-                  });
-
-                  const data = await res.json();
-
-                  if (data.success) {
-                    toast.success("Subscription updated! Redirecting...");
-                    router.push("/confirmation");
-                  } else {
-                    toast.error("Failed to update subscription. Please contact support.");
-                  }
-                } catch (error) {
-                  console.error("Error updating subscription:", error);
-                  toast.error("An error occurred while updating your subscription.");
-                }
+                toast.success("Payment confirmed!");
+                router.push("/confirmation");
               }}
               onPaymentError={(error) => {
-                console.error("Payment error:", error);
                 toast.error("Payment failed. Please try again.");
               }}
             />
@@ -403,23 +422,25 @@ function CheckoutContent() {
         {isTrialMode && (
           <div className="flex items-center justify-between py-2 text-green-600 dark:text-green-400">
             <span>Trial Period Discount</span>
-            <span>-£{final}</span>
+            <span>-£{basePrice + addOnsTotal}</span>
           </div>
         )}
         <div className="flex items-center justify-between py-2 text-xl font-bold border-t mt-2 pt-3">
           <span>Total due {isTrialMode ? "today" : billing === "annual" ? "(per year)" : "(per quarter)"}</span>
-          <span>£{isTrialMode ? addOnsTotal.toFixed(2) : grandTotal.toFixed(2)}</span>
+          <span>£{isTrialMode ? "0.00" : grandTotal.toFixed(2)}</span>
         </div>
         {isTrialMode ? (
           <p className="text-sm text-foreground/70 mt-3">
-            🎉 <strong>14-day free trial</strong> - Your card will be authorized but not charged. After the trial, you'll be billed £{final} {billing === "annual" ? "annually" : "quarterly"}.
+            🎉 <strong>7-day free trial</strong> - Your card will be authorized but not charged. After the trial, you'll be billed £{final} {billing === "annual" ? "annually" : "quarterly"}.
           </p>
         ) : (
           <p className="text-sm text-foreground/70 mt-3">All plans include Done-For-You Services, Marketing Assets and Automation Support.</p>
         )}
       </section>
 
-      {paymentProvider === PaymentProvider.STRIPE && !clientSecret && (
+      {/* Button for Regular Stripe (initiate) OR PayPal Trial (initiate) */}
+      {/* Hidden for Stripe Trial because Form includes button */}
+      {!(paymentProvider === PaymentProvider.STRIPE && (isTrialMode || clientSecret)) && (
         <div className="flex items-center justify-between">
           <Link href="/pricing" className="underline text-foreground/70">Back to pricing</Link>
           <button

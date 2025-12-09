@@ -61,11 +61,6 @@ export default function PublicRewardCard({
                     <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 px-3 py-1.5 text-xs font-medium uppercase tracking-wider shadow-sm">
                         {reward.quantity > 0 ? `${reward.quantity} Left` : 'Unlimited'}
                     </Badge>
-                    {reward.value > 0 && (
-                        <Badge className="bg-green-500/90 backdrop-blur-md text-white border-none px-3 py-1.5 shadow-sm">
-                            £{reward.value} Value
-                        </Badge>
-                    )}
                 </div>
 
                 {/* Points Badge (Floating) */}

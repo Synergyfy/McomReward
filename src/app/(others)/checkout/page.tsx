@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Award, Medal, Trophy, Crown, Target, BadgePercent, Loader2, CreditCard, LucideIcon, Sparkles } from "lucide-react"
 import { applyCoupon, findCoupon, type BillingCycle } from "@/lib/content"
-import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify, useGetAvailablePointPackages, useJoinTrial } from "@/services/payment/hook"
-import { PlanType, PaymentProvider, PointPackage } from "@/services/payment/types"
+import { useGetTiers, useStripeInitiate, usePayPalInitiate, useStripeVerify, useGetPointPackagesByTier, useJoinTrial } from "@/services/payment/hook"
+import { PlanType, PaymentProvider, PointPackage, StripeInitiateRequest } from "@/services/payment/types"
 import { toast } from "sonner"
 import { Elements } from '@stripe/react-stripe-js';
 import PayPalButton from "@/components/paypal-button"
@@ -42,7 +42,7 @@ function CheckoutContent() {
 
   // Fetch tiers and point packages from backend
   const { data: tiers, isLoading: isLoadingTiers } = useGetTiers();
-  const { data: pointPackages } = useGetAvailablePointPackages();
+
   const { mutate: initiateStripe, isPending: isInitiatingStripe } = useStripeInitiate();
   const { mutate: initiatePayPal, isPending: isInitiatingPayPal } = usePayPalInitiate();
   const { mutate: verifyStripe, isPending: isVerifyingStripe } = useStripeVerify();
@@ -55,7 +55,11 @@ function CheckoutContent() {
   const tier = useMemo(() => {
     if (!tiers) return null;
     return tiers.find(t => t.name === plan || t.id === plan);
+
+
   }, [tiers, plan]);
+
+  const { data: pointPackages } = useGetPointPackagesByTier(tier?.id);
 
   const Icon = tier ? (iconByTier[tier.name] ?? Target) : Target
 
@@ -150,12 +154,15 @@ function CheckoutContent() {
     // Regular payment flow
     const planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
 
-    const paymentPayload = {
+    const paymentPayload: StripeInitiateRequest = {
       tier_id: tier.id,
       plan_type: planType,
-      coupon_code: appliedCoupon?.code || "",
-      point_package_ids: selectedAddOns, // Pass selected add-ons
+      point_package_ids: selectedAddOns,
     };
+
+    if (appliedCoupon?.code) {
+      paymentPayload.coupon_code = appliedCoupon.code;
+    }
 
     if (paymentProvider === PaymentProvider.STRIPE) {
       initiateStripe(paymentPayload, {

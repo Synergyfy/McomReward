@@ -151,7 +151,13 @@ export default function BusinessProfilePage() {
             <h1 className="text-2xl font-bold text-gray-800">{form.businessName}</h1>
             <p className="text-gray-500">{form.categoryName}</p>
             <div className="mt-2">
-              <TierBadge tier={tierName} />
+              {tierName ? (
+                <TierBadge tier={tierName} />
+              ) : (
+                <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">
+                  N/A
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -160,11 +166,10 @@ export default function BusinessProfilePage() {
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
           disabled={isUpdating}
-          className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${
-            editing
+          className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${editing
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-orange-500 text-white hover:bg-orange-600'
-          } disabled:opacity-50`}
+            } disabled:opacity-50`}
         >
           {isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>

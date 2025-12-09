@@ -9,9 +9,10 @@ import { useGetUnaddedRewards, useAddBusinessReward } from '@/services/business-
 import LoadingSpinner from '@/components/ui/Loading';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from 'lucide-react';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import { AxiosError } from 'axios';
+import { useDebounce } from 'use-debounce';
 
 interface ClaimRewardModalProps {
   isOpen: boolean;
@@ -161,8 +162,10 @@ export default function ClaimRewardModal({
   onCreateFromScratch,
 }: ClaimRewardModalProps) {
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
   const limit = 6;
-  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(page, limit, { enabled: isOpen });
+  const { data: unaddedRewards, isLoading, isError, refetch } = useGetUnaddedRewards(page, limit, debouncedSearchQuery, { enabled: isOpen });
   const addRewardMutation = useAddBusinessReward();
   const [points, setPoints] = useState<{ [key: string]: number }>({});
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -170,10 +173,14 @@ export default function ClaimRewardModal({
   const [addingRewardId, setAddingRewardId] = useState<string | null>(null);
 
   useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchQuery]);
+
+  useEffect(() => {
     if (isOpen) {
       refetch();
     }
-  }, [isOpen, refetch, page]);
+  }, [isOpen, refetch, page, debouncedSearchQuery]);
 
   useEffect(() => {
     if (unaddedRewards) {
@@ -226,6 +233,16 @@ export default function ClaimRewardModal({
               Choose a pre-made template to get started quickly, or create a new reward from scratch.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="relative my-4 px-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
           <div className="flex-grow overflow-y-auto p-1">
             {isLoading && <LoadingSpinner />}
@@ -284,13 +301,13 @@ export default function ClaimRewardModal({
               ))}
             </div>
             {unaddedRewards && (
-               <Pagination
-                  currentPage={page}
-                  totalPages={unaddedRewards.totalPages || 1}
-                  totalItems={unaddedRewards.total || 0}
-                  limit={limit}
-                  onPageChange={setPage}
-               />
+              <Pagination
+                currentPage={page}
+                totalPages={unaddedRewards.totalPages || 1}
+                totalItems={unaddedRewards.total || 0}
+                limit={limit}
+                onPageChange={setPage}
+              />
             )}
           </div>
 

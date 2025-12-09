@@ -81,7 +81,7 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
     if (!pointPackage) return;
 
     confirmPurchase(
-      { transaction_id: transactionId, provider: PaymentProvider.STRIPE },
+      { transactionId: transactionId, provider: PaymentProvider.STRIPE },
       {
         onSuccess: () => {
           toast.success('Point package purchased successfully!');
@@ -101,7 +101,7 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
     if (!pointPackage) return;
 
     confirmPurchase(
-      { transaction_id: transactionId, provider: PaymentProvider.PAYPAL },
+      { transactionId: transactionId, provider: PaymentProvider.PAYPAL },
       {
         onSuccess: () => {
           toast.success('Point package purchased successfully!');

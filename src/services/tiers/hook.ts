@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { TierResponse, Subscription, BillingHistory } from './types';
+import { TierResponse, Subscription, BillingHistory, BusinessSubscriptionResponse } from './types';
 
 const TIERS_QUERY_KEY = 'tiers';
 const SUBSCRIPTION_QUERY_KEY = 'subscription';
@@ -42,5 +42,18 @@ export const useGetBillingHistory = (businessId?: string) => {
     return useQuery({
         queryKey: [BILLING_HISTORY_QUERY_KEY, businessId],
         queryFn: () => getBillingHistory(businessId),
+    });
+};
+
+// Get Business Subscription
+const getBusinessSubscription = async (): Promise<BusinessSubscriptionResponse> => {
+    const { data } = await api.get<BusinessSubscriptionResponse>('/business/subscription');
+    return data;
+};
+
+export const useGetBusinessSubscription = () => {
+    return useQuery({
+        queryKey: ['businessSubscription'],
+        queryFn: getBusinessSubscription,
     });
 };

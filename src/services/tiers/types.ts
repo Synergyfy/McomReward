@@ -70,3 +70,9 @@ export interface BillingHistory {
     status: string;
     membership: Subscription;
 }
+
+export interface BusinessSubscriptionResponse {
+    tier: string;
+    status: string;
+    features: string[];
+}

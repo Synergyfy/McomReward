@@ -144,6 +144,20 @@ export const useBuyPointPackage = () => {
   });
 };
 
+
+const getPointPackagesByTier = async (tierId: string): Promise<PointPackage[]> => {
+  const { data } = await api.get<PointPackage[]>(`/point-packages/tier/${tierId}`);
+  return data;
+};
+
+export const useGetPointPackagesByTier = (tierId?: string) => {
+  return useQuery({
+    queryKey: [PAYMENT_QUERY_KEY, 'pointPackagesByTier', tierId],
+    queryFn: () => getPointPackagesByTier(tierId!),
+    enabled: !!tierId,
+  });
+};
+
 const confirmPointPackagePurchase = async (payload: ConfirmPurchaseDto): Promise<BusinessPointPackage> => {
   const { data } = await api.post<BusinessPointPackage>('/point-packages/business/confirm-purchase', payload);
   return data;

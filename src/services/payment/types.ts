@@ -129,9 +129,14 @@ export interface BuyPackageDto {
 
 export interface ConfirmPurchaseDto {
     /** Transaction ID from the payment provider */
-    transaction_id: string;
+    transactionId: string;
 
     /** Payment provider ('stripe' or 'paypal') */
+    provider: string;
+}
+
+export interface ConfirmPurchaseResponse {
+    transactionId: string;
     provider: string;
 }
 

@@ -25,6 +25,7 @@ import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
 import { motion } from 'framer-motion';
 import { useGetBusinessProfile } from '@/services/business/hook';
+import { useGetBusinessSubscription } from '@/services/tiers/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
@@ -54,8 +55,8 @@ export default function BusinessSidebar({
   const [isMyAssetsOpen, setIsMyAssetsOpen] = useState(false);
   const linkClasses = useLinkClasses();
 
-  // Conditionally use hook or prop
   const { data: hookProfile, isLoading: hookIsLoadingProfile } = useGetBusinessProfile();
+  const { data: subscription } = useGetBusinessSubscription();
 
   // Prioritize prop data if provided
   const profile = propProfile ?? hookProfile;
@@ -63,6 +64,18 @@ export default function BusinessSidebar({
 
   const router = useRouter();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
+
+  const isFreeTier = subscription?.tier === 'Free';
+
+  const enhancedLinkClasses = (path: string, exact: boolean = false) => {
+    let classes = linkClasses(path, exact);
+    // Disable everything except subscription if on Free tier
+    // We strictly check if the path is NOT subscription related
+    if (isFreeTier && !path.includes('/dashboard/subscription')) {
+      classes += ' opacity-50 pointer-events-none cursor-not-allowed';
+    }
+    return classes;
+  };
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -102,14 +115,14 @@ export default function BusinessSidebar({
       {/* 🔗 Navigation Links */}
       <ul className="space-y-2 text-sm font-medium">
         <li>
-          <Link href="/dashboard" className={linkClasses('/dashboard', true)}>
+          <Link href="/dashboard" className={enhancedLinkClasses('/dashboard', true)}>
             <LayoutDashboard className="mr-3" />
             Overview
           </Link>
         </li>
 
         <li>
-          <Link href="/dashboard/rewards" className={linkClasses('/dashboard/rewards')}>
+          <Link href="/dashboard/rewards" className={enhancedLinkClasses('/dashboard/rewards')}>
             <Gift className="mr-3" />
             Rewards
           </Link>
@@ -117,7 +130,7 @@ export default function BusinessSidebar({
 
         <li>
           <button
-            className={linkClasses('/dashboard/campaigns')}
+            className={enhancedLinkClasses('/dashboard/campaigns')}
             onClick={() => setIsCampaignsOpen(!isCampaignsOpen)}
           >
             <span className="flex items-center justify-between w-full">
@@ -131,13 +144,13 @@ export default function BusinessSidebar({
           {isCampaignsOpen && (
             <ul className="ml-8 mt-2 space-y-1">
               <li>
-                <Link href="/dashboard/campaigns/list" className={linkClasses('/dashboard/campaigns/list')}>
+                <Link href="/dashboard/campaigns/list" className={enhancedLinkClasses('/dashboard/campaigns/list')}>
 
                   View Campaigns
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/campaign-performance" className={linkClasses('/dashboard/campaign-performance')}>
+                <Link href="/dashboard/campaign-performance" className={enhancedLinkClasses('/dashboard/campaign-performance')}>
 
                   Campaign Performance
                 </Link>
@@ -147,7 +160,7 @@ export default function BusinessSidebar({
         </li>
         <li>
           <button
-            className={linkClasses('/dashboard/vouchers')}
+            className={enhancedLinkClasses('/dashboard/vouchers')}
             onClick={() => setIsVouchersOpen(!isVouchersOpen)}
           >
             <span className="flex items-center justify-between w-full">
@@ -161,12 +174,12 @@ export default function BusinessSidebar({
           {isVouchersOpen && (
             <ul className="ml-8 mt-2 space-y-1">
               <li>
-                <Link href="/dashboard/vouchers/list" className={linkClasses('/dashboard/vouchers/list')}>
+                <Link href="/dashboard/vouchers/list" className={enhancedLinkClasses('/dashboard/vouchers/list')}>
                   View Vouchers
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/vouchers/create" className={linkClasses('/dashboard/vouchers/create')}>
+                <Link href="/dashboard/vouchers/create" className={enhancedLinkClasses('/dashboard/vouchers/create')}>
                   Create Voucher
                 </Link>
               </li>
@@ -175,35 +188,35 @@ export default function BusinessSidebar({
         </li>
 
         <li>
-          <Link href="/dashboard/wishlist-insights" className={linkClasses('/dashboard/wishlist-insights')}>
+          <Link href="/dashboard/wishlist-insights" className={enhancedLinkClasses('/dashboard/wishlist-insights')}>
             <Heart className="mr-3" />
             Wishlist Insights
           </Link>
         </li>
 
         <li>
-          <Link href="/dashboard/affiliate" className={linkClasses('/dashboard/affiliate')}>
+          <Link href="/dashboard/affiliate" className={enhancedLinkClasses('/dashboard/affiliate')}>
             <Users className="mr-3" />
             Affiliate
           </Link>
         </li>
 
         <li>
-          <Link href="/dashboard/customer-activities" className={linkClasses('/dashboard/customer-activities')}>
+          <Link href="/dashboard/customer-activities" className={enhancedLinkClasses('/dashboard/customer-activities')}>
             <Activity className="mr-3" />
             Customer Activities
           </Link>
         </li>
 
         <li>
-          <Link href="/dashboard/matching-points" className={linkClasses('/dashboard/matching-points')}>
+          <Link href="/dashboard/matching-points" className={enhancedLinkClasses('/dashboard/matching-points')}>
             <Coins className="mr-3" />
             Matching Points
           </Link>
         </li>
 
         <li>
-          <Link href="/dashboard/deals" className={linkClasses('/dashboard/deals')}>
+          <Link href="/dashboard/deals" className={enhancedLinkClasses('/dashboard/deals')}>
             <Tag className="mr-3" />
             Deals
           </Link>
@@ -212,7 +225,7 @@ export default function BusinessSidebar({
         {/* 👥 Staff Dropdown */}
         <li>
           <button
-            className={linkClasses('/dashboard/staff')}
+            className={enhancedLinkClasses('/dashboard/staff')}
             onClick={() => setIsStaffOpen(!isStaffOpen)}
           >
             <span className="flex items-center justify-between w-full">
@@ -227,12 +240,12 @@ export default function BusinessSidebar({
           {isStaffOpen && (
             <ul className="ml-8 mt-2 space-y-1">
               <li>
-                <Link href="/dashboard/staff" className={linkClasses('/dashboard/staff', true)}>
+                <Link href="/dashboard/staff" className={enhancedLinkClasses('/dashboard/staff', true)}>
                   View Staff
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/staff/add" className={linkClasses('/dashboard/staff/add', true)}>
+                <Link href="/dashboard/staff/add" className={enhancedLinkClasses('/dashboard/staff/add', true)}>
                   Add Staff
                 </Link>
               </li>
@@ -247,7 +260,7 @@ export default function BusinessSidebar({
       {/* 👤 Settings & Logout */}
       <div className="space-y-2">
         <button
-          className={linkClasses('/dashboard/my-assets')}
+          className={enhancedLinkClasses('/dashboard/my-assets')}
           onClick={() => setIsMyAssetsOpen(!isMyAssetsOpen)}
         >
           <span className="flex items-center justify-between w-full">
@@ -269,11 +282,11 @@ export default function BusinessSidebar({
             <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li>
           </ul>
         )}
-        <Link href="/dashboard/profile" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+        <Link href="/dashboard/profile" className={`flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition ${isFreeTier ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>
           <User className="mr-3" size={18} />
           Business Profile
         </Link>
-        <Link href="/dashboard/tier" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+        <Link href="/dashboard/tier" className={`flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition ${isFreeTier ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>
           <Star className="mr-3" size={18} />
           Tier
         </Link>
@@ -281,11 +294,11 @@ export default function BusinessSidebar({
           <CreditCard className="mr-3" size={18} />
           Subscription
         </Link>
-        <Link href="/dashboard/account" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+        <Link href="/dashboard/account" className={`flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition ${isFreeTier ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>
           <Settings className="mr-3" size={18} />
           Settings
         </Link>
-        <Link href="/dashboard/support" className="flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+        <Link href="/dashboard/support" className={`flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition ${isFreeTier ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>
           <LifeBuoy className="mr-3" size={18} />
           Support & Help
         </Link>

@@ -36,17 +36,24 @@ export const useGetAllRewards = (page: number, limit: number, businessId?: strin
   });
 };
 
-const fetchUnaddedRewards = async (page: number, limit: number) => {
+const fetchUnaddedRewards = async (page: number, limit: number, search?: string) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    params.append('search', search);
+  }
   const { data } = await api.get<GetRewardsResponse>(
-    `/rewards/business/unadded-rewards?page=${page}&limit=${limit}`
+    `/rewards/business/unadded-rewards?${params.toString()}`
   );
   return data;
 };
 
-export const useGetUnaddedRewards = (page: number, limit: number, options?: { enabled?: boolean }) => {
+export const useGetUnaddedRewards = (page: number, limit: number, search?: string, options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ['unaddedRewards', page, limit],
-    queryFn: () => fetchUnaddedRewards(page, limit),
+    queryKey: ['unaddedRewards', page, limit, search],
+    queryFn: () => fetchUnaddedRewards(page, limit, search),
     enabled: options?.enabled, // Controlled by the component
   });
 };

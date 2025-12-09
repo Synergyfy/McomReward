@@ -8,14 +8,17 @@ interface UsageCardProps {
 }
 
 const UsageCard: React.FC<UsageCardProps> = ({ title, usage }) => {
+  const isUnlimited = usage.limit === -1;
   const percentage = usage.limit > 0 ? Math.min((usage.used / usage.limit) * 100, 100) : 0;
 
   // Determine color based on usage percentage
   let progressColorClass = "bg-green-500";
-  if (percentage >= 90) {
-    progressColorClass = "bg-red-500";
-  } else if (percentage >= 70) {
-    progressColorClass = "bg-yellow-500";
+  if (!isUnlimited) {
+    if (percentage >= 90) {
+      progressColorClass = "bg-red-500";
+    } else if (percentage >= 70) {
+      progressColorClass = "bg-yellow-500";
+    }
   }
 
   return (
@@ -25,7 +28,7 @@ const UsageCard: React.FC<UsageCardProps> = ({ title, usage }) => {
           <div className="flex justify-between items-center mb-0.5">
             <h3 className="font-semibold text-sm text-gray-800">{title}</h3>
             <span className="text-xs font-medium text-gray-500">
-              {usage.used} / {usage.limit} Used
+              {isUnlimited ? `${usage.used} / Unlimited` : `${usage.used} / ${usage.limit} Used`}
             </span>
           </div>
 
@@ -38,10 +41,10 @@ const UsageCard: React.FC<UsageCardProps> = ({ title, usage }) => {
 
           <div className="flex justify-between items-center text-xs pt-0.5">
              <span className="text-gray-400">
-                {percentage.toFixed(0)}% used
+                {isUnlimited ? 'Unlimited' : `${percentage.toFixed(0)}% used`}
              </span>
              <span className="font-bold text-orange-600">
-                {usage.remaining} Left
+                {isUnlimited ? 'Unlimited' : `${usage.remaining} Left`}
              </span>
           </div>
         </div>

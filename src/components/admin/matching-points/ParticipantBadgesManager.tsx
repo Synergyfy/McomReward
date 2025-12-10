@@ -13,13 +13,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Pencil, Award, Trophy } from 'lucide-react'; // Using Trophy for badges
 import { toast } from 'sonner';
-import { useGetTiers } from '@/services/tiers/hook';
 
 export const ParticipantBadgesManager = () => {
     const { data: badges, isLoading } = useGetParticipantBadges();
     const { mutate: createBadge, isPending: isCreating } = useCreateParticipantBadge();
     const { mutate: updateBadge, isPending: isUpdating } = useUpdateParticipantBadge();
-    const { data: tiers, isLoading: isTiersLoading } = useGetTiers();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBadge, setEditingBadge] = useState<ParticipantBadge | null>(null);
@@ -157,24 +155,8 @@ export const ParticipantBadgesManager = () => {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="levelName" className="text-right">Name</Label>
                             <div className="col-span-3 space-y-1">
-                                <Select
-                                    value={formData.name}
-                                    onValueChange={(val) => setFormData({ ...formData, name: val })}
-                                    disabled={isTiersLoading}
-                                >
-                                    <SelectTrigger id="levelName">
-                                        <SelectValue placeholder={isTiersLoading ? "Loading tiers..." : "Select a tier"} />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-[9999]">
-                                        {tiers?.map((tier) => (
-                                            <SelectItem key={tier.id} value={tier.name}>
-                                                {tier.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {isTiersLoading && <p className="text-xs text-muted-foreground animate-pulse">Loading available tiers from system...</p>}
-                                <p className="text-xs text-muted-foreground">Select one of the defined system tiers.</p>
+                                <Input id="levelName" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Gold" />
+                                <p className="text-xs text-muted-foreground">The visible name of this tier.</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">

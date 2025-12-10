@@ -24,8 +24,31 @@ export interface Tier {
 export interface TierConfiguration {
     quotas?: TierQuotas;
     featureFlags?: TierFeatureFlags;
+    progressBonuses?: Record<string, number>;
     pro?: TierProgressionLevel;
     pro_plus?: TierProgressionLevel;
+    winter?: SeasonalVariant;
+    summer?: SeasonalVariant;
+    autumn?: SeasonalVariant;
+    spring?: SeasonalVariant;
+    trial?: TrialConfiguration;
+}
+
+export interface SeasonalVariant {
+    price?: number;
+    stripe_price_id?: string;
+    paypal_plan_id?: string;
+    quotas?: TierQuotas;
+    featureFlags?: TierFeatureFlags;
+    progressBonuses?: Record<string, number>;
+    pro?: TierProgressionLevel;
+    pro_plus?: TierProgressionLevel;
+}
+
+export interface TrialConfiguration {
+    quotas?: TierQuotas;
+    featureFlags?: TierFeatureFlags;
+    progressBonuses?: Record<string, number>;
 }
 
 export interface TierProgressionLevel {
@@ -76,6 +99,7 @@ export interface TierFeatureFlags {
     hasAccessToAdvancedAnalytics?: boolean;
     hasAccessToCRM?: boolean;
     canUpdateReward?: boolean;
+    canCreateRewardFromScratch?: boolean;
 }
 
 export interface PayPalVerifyResponse {

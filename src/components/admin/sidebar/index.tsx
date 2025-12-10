@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign } from 'lucide-react'; // Import QrCode for Plaque Management, DollarSign and ShoppingCart for Sales Management
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter } from 'lucide-react'; // Import QrCode for Plaque Management, DollarSign and ShoppingCart for Sales Management
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -107,6 +107,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/tier-badge-control" className={linkClasses("/admin/tier-badge-control")}>
             <Award className="mr-3" />
             Tier & Badge Control
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/tier-configuration" className={linkClasses("/admin/tier-configuration")}>
+            <ListFilter className="mr-3" />
+            Tier Configuration
           </Link>
         </li>
         <li>

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken, removeBearerToken } from '../api';
-import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto } from './types';
+import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto, VerifyEmailResponse } from './types';
 import Cookies from 'js-cookie';
 
 // Helper to remove tokens
@@ -102,13 +102,20 @@ export const useLogout = () => {
 };
 
 // Verify Email
-const verifyEmail = async (data: VerifyEmailDto): Promise<string> => {
-  const { data: responseData } = await api.post('/auth/verify-email', data);
+const verifyEmail = async (data: VerifyEmailDto): Promise<VerifyEmailResponse> => {
+  const { data: responseData } = await api.post<VerifyEmailResponse>('/auth/verify-email', data);
   return responseData;
 };
 
 export const useVerifyEmail = () => {
   return useMutation({
     mutationFn: verifyEmail,
+    onSuccess: (data) => {
+      // Update tokens in cookies
+      Cookies.set('access', data.accessToken);
+      Cookies.set('refresh', data.refreshToken);
+      // Update bearer token for subsequent requests
+      setBearerToken(data.accessToken);
+    },
   });
 };

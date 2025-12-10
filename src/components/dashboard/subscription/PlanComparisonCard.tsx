@@ -1,42 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Plan } from '@/lib/mock-data/subscription';
-import { useJoinTrial } from '@/services/payment/hook';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 
 interface PlanComparisonCardProps {
   plan: Plan;
   onChoosePlan: (plan: Plan) => void;
+  billingCycle: 'annual' | 'quarterly';
 }
 
-export default function PlanComparisonCard({ plan, onChoosePlan }: PlanComparisonCardProps) {
+export default function PlanComparisonCard({ plan, onChoosePlan, billingCycle }: PlanComparisonCardProps) {
   const router = useRouter();
-  const [isStartingTrial, setIsStartingTrial] = useState(false);
-  const { mutate: joinTrial } = useJoinTrial();
 
   const handleStartTrial = () => {
-    setIsStartingTrial(true);
-
-    joinTrial(
-      { tier_id: plan.id },
-      {
-        onSuccess: (data) => {
-          toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`);
-          // Refresh the page to show updated subscription
-          router.refresh();
-        },
-        onError: (error) => {
-          console.error("Trial join failed:", error);
-          toast.error("Failed to start trial. Please try again or contact support.");
-          setIsStartingTrial(false);
-        }
-      }
-    );
+    // Redirect to checkout with trial flag and selected billing cycle
+    router.push(`/checkout?plan=${encodeURIComponent(plan.id)}&billing=${billingCycle}&isTrial=true`);
   };
 
   return (
@@ -68,11 +50,9 @@ export default function PlanComparisonCard({ plan, onChoosePlan }: PlanCompariso
           <Button
             variant="outline"
             className="w-full"
-            disabled={isStartingTrial}
             onClick={handleStartTrial}
           >
-            {isStartingTrial && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isStartingTrial ? 'Starting Trial...' : 'Start Trial'}
+            Start Trial
           </Button>
         )}
       </CardFooter>

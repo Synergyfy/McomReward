@@ -52,18 +52,27 @@ export const useAuth = () => {
   const router = useRouter();
   return useMutation({
     mutationFn: login,
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
+      localStorage.setItem('isOnboarded', String(data.user.isOnboarded));
       Cookies.set('access', data.accessToken);
       Cookies.set('refresh', data.refreshToken);
       setBearerToken(data.accessToken);
 
-      if (data.user.role === 'Admin') router.push('/admin/dashboard');
-      else if (data.user.role === 'Staff') router.push('/staff/dashboard');
-      else if (data.user.role === 'Business' && !data.user.isOnboarded) router.push('/business/onboard');
-      else if (data.user.role === 'Participant') router.push('/wallet');
-      else router.push('/dashboard');
+      if (data.user.role === 'Business' && !data.user.isEmailVerified) {
+        router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
+      } else if (data.user.role === 'Admin') {
+        router.push('/admin/dashboard');
+      } else if (data.user.role === 'Staff') {
+        router.push('/staff/dashboard');
+      } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
+        router.push('/business/onboard');
+      } else if (data.user.role === 'Participant') {
+        router.push('/wallet');
+      } else {
+        router.push('/dashboard');
+      }
     },
   });
 };
@@ -73,7 +82,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
   const router = useRouter();
   return useMutation({
     mutationFn: login,
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
       Cookies.set('access', data.accessToken);
@@ -82,11 +91,19 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
 
       // Only redirect if skipRedirect is not true
       if (!options?.skipRedirect) {
-        if (data.user.role === 'Admin') router.push('/admin/dashboard');
-        else if (data.user.role === 'Staff') router.push('/staff/dashboard');
-        else if (data.user.role === 'Business' && !data.user.isOnboarded) router.push('/business/onboard');
-        else if (data.user.role === 'Participant') router.push('/wallet');
-        else router.push('/dashboard');
+        if (data.user.role === 'Business' && !data.user.isEmailVerified) {
+          router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
+        } else if (data.user.role === 'Admin') {
+          router.push('/admin/dashboard');
+        } else if (data.user.role === 'Staff') {
+          router.push('/staff/dashboard');
+        } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
+          router.push('/business/onboard');
+        } else if (data.user.role === 'Participant') {
+          router.push('/wallet');
+        } else {
+          router.push('/dashboard');
+        }
       }
     },
   });

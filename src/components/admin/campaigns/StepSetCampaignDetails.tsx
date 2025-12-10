@@ -28,24 +28,6 @@ interface StepProps {
     onBack: () => void;
 }
 
-const mockWishlistInsights = [
-    {
-        itemName: 'Gourmet Burger',
-        category: 'Food',
-        estimatedCount: 124,
-    },
-    {
-        itemName: 'Winter Jacket',
-        category: 'Fashion',
-        estimatedCount: 78,
-    },
-    {
-        itemName: 'Wireless Headphones',
-        category: 'Electronics',
-        estimatedCount: 210,
-    },
-];
-
 const selectErrorStyle: StylesConfig<RewardOption, true> = {
     control: (base: CSSObjectWithLabel, props: ControlProps<RewardOption, true>) => ({
         ...(base as CSSObjectWithLabel),
@@ -61,23 +43,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const { formData, updateFormData } = useCampaignForm();
     const searchParams = useSearchParams();
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
-    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
-    const itemName = searchParams.get('itemName');
-    const newRewardId = searchParams.get('rewardId');
+    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);    const newRewardId = searchParams.get('rewardId');
 
     // Fetch rewards from API
     const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
     const rewards = rewardsData?.data || [];
 
-    useEffect(() => {
-        if (itemName && !formData.campaignName) {
-            updateFormData({
-                campaignName: `${itemName} Campaign`,
-                audienceType: ['wishlist_target'],
-                wishlistItemIds: [itemName]
-            });
-        }
-    }, [searchParams, formData.campaignName, updateFormData, itemName]);
 
     useEffect(() => {
         if (newRewardId && rewards.length > 0 && !formData.rewardIds.includes(newRewardId)) {
@@ -118,7 +89,6 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             ctaButtonText,
             audienceType,
             badgeLevels,
-            wishlistItemIds,
             maxRewardsPerCampaign,
         } = formData;
 
@@ -148,12 +118,6 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) {
             return false;
         }
-
-        // If wishlist_target is selected, ensure wishlistItemIds is not empty
-        if (audienceType.includes('wishlist_target') && (!wishlistItemIds || wishlistItemIds.length === 0)) {
-            return false;
-        }
-
         return true;
     };
 
@@ -271,19 +235,6 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                 />
                                 <Label htmlFor="badge_level">Badge Level</Label>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="wishlist_target"
-                                    checked={formData.audienceType.includes('wishlist_target')}
-                                    onCheckedChange={(checked) => {
-                                        const newAudienceType = checked
-                                            ? [...formData.audienceType, 'wishlist_target']
-                                            : formData.audienceType.filter(t => t !== 'wishlist_target');
-                                        updateFormData({ audienceType: newAudienceType });
-                                    }}
-                                />
-                                <Label htmlFor="wishlist_target">Target Wishlist</Label>
-                            </div>
                         </div>
                         <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
                         {formData.audienceType.includes('badge_level') && (
@@ -297,23 +248,6 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                 <SelectContent>
                                     {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map(level => (
                                         <SelectItem key={level} value={level}>{level}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </ShadcnSelect>
-                        )}
-                        {formData.audienceType.includes('wishlist_target') && (
-                            <ShadcnSelect
-                                value={formData.wishlistItemIds?.join(', ')}
-                                onValueChange={(value) => updateFormData({ wishlistItemIds: value ? [value] : [] })}
-                            >
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue placeholder="Select a wishlist item to target" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mockWishlistInsights.map((item) => (
-                                        <SelectItem key={item.itemName} value={item.itemName}>
-                                            {item.itemName} ({item.estimatedCount} users)
-                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </ShadcnSelect>
@@ -476,9 +410,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                                 if (type === 'badge_level') {
                                                     return `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}`;
                                                 }
-                                                if (type === 'wishlist_target') {
-                                                    return `Wishlist: ${formData.wishlistItemIds?.join(', ') || '[Item]'}`;
-                                                }
+                                            
                                                 return type.charAt(0).toUpperCase() + type.slice(1);
                                             }).join(', ')}
                                         </span>

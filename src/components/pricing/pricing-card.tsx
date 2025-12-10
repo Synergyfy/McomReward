@@ -1,11 +1,8 @@
 'use client';
 
-import { type LucideIcon, Check, Nfc, Loader2 } from "lucide-react"
+import { type LucideIcon, Check, Nfc } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { useJoinTrial } from "@/services/payment/hook"
-import { toast } from "sonner"
 
 interface PricingCardProps {
   tier: {
@@ -25,28 +22,7 @@ export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
   const price = billingCycle === "annual" ? tier.annualPrice : tier.quarterlyPrice
   const Icon = tier.icon
   const router = useRouter()
-  const [isStartingTrial, setIsStartingTrial] = useState(false)
-  const { mutate: joinTrial } = useJoinTrial()
-
-  const handleStartTrial = () => {
-    setIsStartingTrial(true)
-
-    joinTrial(
-      { tier_id: tier.id },
-      {
-        onSuccess: (data) => {
-          toast.success(`Trial started successfully! Your trial expires on ${new Date(data.expiresAt).toLocaleDateString()}`)
-          // Redirect to dashboard
-          router.push('/dashboard')
-        },
-        onError: (error) => {
-          console.error("Trial join failed:", error)
-          toast.error("Failed to start trial. Please try again or contact support.")
-          setIsStartingTrial(false)
-        }
-      }
-    )
-  }
+  /* Removed unused imports and state for trial */
 
   return (
     <div className="rounded-3xl p-8 transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 bg-card text-card-foreground border-2 border-border shadow-md hover:bg-primary hover:text-primary-foreground hover:border-primary group">
@@ -96,12 +72,10 @@ export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
 
       {tier.name !== "Trial" && (
         <button
-          onClick={handleStartTrial}
-          disabled={isStartingTrial}
+          onClick={() => router.push(`/checkout?plan=${encodeURIComponent(tier.id)}&billing=${billingCycle}&isTrial=true`)}
           className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 border-2 border-primary text-primary group-hover:border-primary-foreground group-hover:text-primary-foreground group-hover:bg-primary-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
-          {isStartingTrial && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isStartingTrial ? "Starting Trial..." : "Start Trial"}
+          Start Trial
         </button>
       )}
     </div>

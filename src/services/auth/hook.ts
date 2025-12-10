@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken, removeBearerToken } from '../api';
-import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse } from './types';
+import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto } from './types';
 import Cookies from 'js-cookie';
 
 // Helper to remove tokens
@@ -98,5 +98,17 @@ export const useLogout = () => {
       console.error('Logout mutation failed, performing client-side logout:', error);
       removeTokens(); // Ensure tokens are removed even if mutation errors out
     }
+  });
+};
+
+// Verify Email
+const verifyEmail = async (data: VerifyEmailDto): Promise<string> => {
+  const { data: responseData } = await api.post('/auth/verify-email', data);
+  return responseData;
+};
+
+export const useVerifyEmail = () => {
+  return useMutation({
+    mutationFn: verifyEmail,
   });
 };

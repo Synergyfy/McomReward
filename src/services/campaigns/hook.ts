@@ -101,8 +101,12 @@ export const useGetClaimableCampaigns = (page: number = 1, limit: number = 10) =
 };
 
 // Claim Campaign
-const claimCampaign = async (campaignId: string): Promise<BusinessCampaign> => {
-  const { data } = await api.post<BusinessCampaign>(`/business/campaigns/${campaignId}/claim`);
+interface ClaimCampaignPayload {
+  business_reward_ids?: string[];
+}
+
+const claimCampaign = async ({ campaignId, payload }: { campaignId: string; payload: ClaimCampaignPayload }): Promise<BusinessCampaign> => {
+  const { data } = await api.post<BusinessCampaign>(`/business/campaigns/${campaignId}/claim`, payload);
   return data;
 };
 

@@ -26,7 +26,12 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
 
   const handleClaim = () => {
     if (!isClaimable) return;
-    claimCampaign(campaign.id, {
+
+    const payload = {
+      business_reward_ids: campaign.business_reward_ids,
+    };
+
+    claimCampaign({ campaignId: campaign.id, payload }, {
       onSuccess: () => {
         toast.success(`Campaign "${campaign.name}" has been successfully claimed!`);
         router.push('/dashboard/campaigns/list');

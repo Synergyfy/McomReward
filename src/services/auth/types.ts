@@ -21,6 +21,15 @@ export interface VerifyEmailDto {
   otp: string;
 }
 
+export interface VerifyEmailResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface ResendOtpDto {
+  email: string;
+}
+
 export interface RefreshTokenResponse {
   user: {
     name: string;

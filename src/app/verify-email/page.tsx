@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Mail, Loader2, CheckCircle2 } from "lucide-react";
-import { useVerifyEmail } from "@/services/auth/hook";
+import { useVerifyEmail, useResendOtp } from "@/services/auth/hook";
 
 function VerifyEmailContent() {
     const router = useRouter();
@@ -16,6 +16,7 @@ function VerifyEmailContent() {
 
     const [otp, setOtp] = useState("");
     const { mutateAsync: verifyEmail, isPending } = useVerifyEmail();
+    const { mutateAsync: resendOtp, isPending: isResending } = useResendOtp();
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +47,21 @@ function VerifyEmailContent() {
         } catch (error: any) {
             console.error("Verification failed:", error);
             toast.error(error?.response?.data?.message || "Verification failed. Please check your OTP.");
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) {
+            toast.error("Email is missing. Please login again.");
+            return;
+        }
+
+        try {
+            await resendOtp({ email });
+            toast.success("OTP resent successfully! Check your email.");
+        } catch (error: any) {
+            console.error("Resend failed:", error);
+            toast.error(error?.response?.data?.message || "Failed to resend OTP. Please try again.");
         }
     };
 
@@ -116,8 +132,13 @@ function VerifyEmailContent() {
 
                     <div className="text-sm text-gray-500">
                         Didn't receive the code?{' '}
-                        <button className="text-orange-600 hover:text-orange-700 font-medium hover:underline transition-colors" type="button">
-                            Resend
+                        <button
+                            onClick={handleResend}
+                            disabled={isResending}
+                            className="text-orange-600 hover:text-orange-700 font-medium hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                        >
+                            {isResending ? "Sending..." : "Resend"}
                         </button>
                     </div>
                 </div>

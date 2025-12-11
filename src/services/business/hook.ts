@@ -52,7 +52,7 @@ export const useAuth = () => {
   const router = useRouter();
   return useMutation({
     mutationFn: login,
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('isOnboarded', String(data.user.isOnboarded));
@@ -61,6 +61,13 @@ export const useAuth = () => {
       setBearerToken(data.accessToken);
 
       if (data.user.role === 'Business' && !data.user.isEmailVerified) {
+        // Auto-trigger resend OTP for existing users
+        try {
+          await api.post('/auth/resend-otp', { email: variables.email });
+        } catch (error) {
+          console.error('Failed to resend OTP:', error);
+          // Continue to verification page even if resend fails
+        }
         router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
       } else if (data.user.role === 'Admin') {
         router.push('/admin/dashboard');
@@ -82,7 +89,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
   const router = useRouter();
   return useMutation({
     mutationFn: login,
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
       Cookies.set('access', data.accessToken);
@@ -92,6 +99,13 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
       // Only redirect if skipRedirect is not true
       if (!options?.skipRedirect) {
         if (data.user.role === 'Business' && !data.user.isEmailVerified) {
+          // Auto-trigger resend OTP for existing users
+          try {
+            await api.post('/auth/resend-otp', { email: variables.email });
+          } catch (error) {
+            console.error('Failed to resend OTP:', error);
+            // Continue to verification page even if resend fails
+          }
           router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
         } else if (data.user.role === 'Admin') {
           router.push('/admin/dashboard');

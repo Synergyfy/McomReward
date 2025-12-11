@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // Imports moved up and consolidated
 import { useGetBusinessTierUsage } from '@/services/business/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
 import UsageCard from '@/components/dashboard/shared/UsageCard';
 
 import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCampaigns } from '@/services/campaigns/hook';
@@ -172,6 +173,7 @@ export default function CampaignsListPage() {
   const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(claimedPage, limit);
   const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
   const { data: tierUsageData } = useGetBusinessTierUsage();
+  const { data: subscriptionData } = useGetMySubscription();
 
   const handleCopyLink = (campaignId: string) => {
     const campaignUrl = `${window.location.origin}/campaigns/${campaignId}`;
@@ -205,6 +207,11 @@ export default function CampaignsListPage() {
 
   const filteredCreatedCampaigns = useMemo(() => filterCampaigns(createdCampaignsData?.data), [searchTerm, createdCampaignsData]);
   const filteredClaimedCampaigns = useMemo(() => filterCampaigns(claimedCampaignsData?.data), [searchTerm, claimedCampaignsData]);
+
+  // Check if user has reached their campaign limit
+  const maxActiveCampaigns = subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0;
+  const currentActiveCampaigns = tierUsageData?.features?.campaigns?.used ?? 0;
+  const hasReachedCampaignLimit = currentActiveCampaigns >= maxActiveCampaigns;
 
   const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
     if (isLoading) {
@@ -368,9 +375,22 @@ export default function CampaignsListPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">My Campaigns</h1>
               <p className="text-gray-600">Manage and create your loyalty campaigns.</p>
             </div>
-            <Button onClick={() => setIsClaimModalOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create New Campaign
+            <Button
+              onClick={() => setIsClaimModalOpen(true)}
+              disabled={hasReachedCampaignLimit}
+              className={hasReachedCampaignLimit ? 'opacity-50 cursor-not-allowed' : ''}
+            >
+              {hasReachedCampaignLimit ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Limit Reached
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create New Campaign
+                </>
+              )}
             </Button>
           </div>
 

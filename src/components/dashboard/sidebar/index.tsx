@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -65,7 +65,9 @@ export default function BusinessSidebar({
   const router = useRouter();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
 
-  const isFreeTier = subscription?.tier === 'Free';
+  const isFreeTier = useMemo(() => subscription?.tier === 'Free', [subscription]);
+
+  console.log('isFreeTier', isFreeTier);
 
   const enhancedLinkClasses = (path: string, exact: boolean = false) => {
     let classes = linkClasses(path, exact);

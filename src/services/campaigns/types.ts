@@ -92,6 +92,7 @@ export interface CampaignResponse {
   totalPointsRedeemed: number;
   totalMatchingPointsEarned: number;
   matchingPointsDisabledByAdmin: boolean;
+  business_reward_ids?: string[];
 }
 
 export enum CampaignType {

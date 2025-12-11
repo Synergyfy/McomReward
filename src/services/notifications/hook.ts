@@ -11,7 +11,8 @@ export const notificationKeys = {
 
 // API Functions
 const getNotifications = async (params: GetNotificationsParams = {}): Promise<GetNotificationsResponse> => {
-  const { data } = await api.get('/notifications', { params });
+  const queryParams = { page: 1, ...params };
+  const { data } = await api.get('/notifications', { params: queryParams });
   return data;
 };
 

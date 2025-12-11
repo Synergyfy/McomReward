@@ -67,7 +67,7 @@ export default function SelectRewardModal({
                   htmlFor={reward.id}
                   className="flex-grow text-sm font-medium leading-none cursor-pointer"
                 >
-                  {reward.reward.title}
+                  {reward.title || reward.reward?.title || 'Untitled Reward'}
                 </label>
               </div>
             ))}

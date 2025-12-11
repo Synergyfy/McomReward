@@ -14,7 +14,8 @@ import {
   UpdateBusinessProfileDto,
   BusinessMonthlyBalance,
   TierUsageResponse,
-  BusinessSetupStatus
+  BusinessSetupStatus,
+  PointPackageBalance
 } from './types';
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
@@ -213,3 +214,12 @@ const getBusinessSetupStatus = async (): Promise<BusinessSetupStatus> => {
 };
 
 export const useGetBusinessSetupStatus = () => useQuery({ queryKey: ['businessSetupStatus'], queryFn: getBusinessSetupStatus });
+
+// ------------------- POINT PACKAGE BALANCE -------------------
+const getPointPackageBalance = async (): Promise<PointPackageBalance> => {
+  const { data } = await api.get('/point-packages/business/balance');
+  return data;
+};
+
+export const useGetPointPackageBalance = () => useQuery({ queryKey: ['pointPackageBalance'], queryFn: getPointPackageBalance });
+

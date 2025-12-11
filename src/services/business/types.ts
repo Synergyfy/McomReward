@@ -74,7 +74,7 @@ export interface BusinessProfile {
   address: string;
   website: string;
   profileImage?: string;
-  bannerUrl?: string;
+  banner?: string;
   description?: string;
   category?: { id: string; name: string };
   socialMedia: { name: string; link: string }[];
@@ -97,7 +97,6 @@ export interface UpdateBusinessProfileDto {
   address?: string;
   website?: string;
   profile_image?: string;
-  bannerUrl?: string;
   banner?: string | null;
   description?: string;
   socialMedia?: { name: string; link: string }[];

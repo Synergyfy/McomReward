@@ -53,11 +53,11 @@ export default function BusinessProfilePage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'bannerUrl') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'banner') => {
     const file = e.target.files?.[0];
     if (file) {
       if (field === 'profileImage') setProfileImageFile(file);
-      if (field === 'bannerUrl') setBannerFile(file);
+      if (field === 'banner') setBannerFile(file);
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -208,7 +208,7 @@ export default function BusinessProfilePage() {
       {/* Banner Image */}
       <div className="mb-8 relative h-48 w-full rounded-lg overflow-hidden shadow-md">
         <Image
-          src={form.bannerUrl || 'https://via.placeholder.com/800x200'}
+          src={form.banner || 'https://via.placeholder.com/800x200'}
           alt="Business Banner"
           layout="fill"
           objectFit="cover"
@@ -220,7 +220,7 @@ export default function BusinessProfilePage() {
               ref={bannerInputRef}
               className="hidden"
               accept="image/*"
-              onChange={(e) => handleFileChange(e, 'bannerUrl')}
+              onChange={(e) => handleFileChange(e, 'banner')}
             />
             <button
               onClick={() => bannerInputRef.current?.click()}

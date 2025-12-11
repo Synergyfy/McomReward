@@ -37,7 +37,7 @@ interface MonthlyBalanceType {
 interface BusinessHeaderProps {
   onMenuClick: () => void;
   // Optional props for impersonation mode
-  profile?: BusinessProfile;
+  profile?: Partial<BusinessProfile>;
   subscription?: SubscriptionType;
   monthlyBalance?: MonthlyBalanceType;
   isLoading?: boolean; // Unified loading prop for impersonation

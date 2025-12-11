@@ -104,14 +104,20 @@ export default function BusinessSidebar({
       `}
     >
       {/* Business Name*/}
-      <div className="flex items-center justify-between mb-3">
-        <motion.h1
+      <div className="mb-6">
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-semibold text-orange-500 mb-6"
         >
-          {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'}
-        </motion.h1>
+          <h1 className="text-3xl font-semibold text-orange-500">
+            {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : profile?.name || 'Business'}
+          </h1>
+          {!isLoading && profile?.role && (
+            <p className="text-sm text-gray-500 mt-1">
+              {profile.role}
+            </p>
+          )}
+        </motion.div>
       </div>
 
       {/* 🔗 Navigation Links */}

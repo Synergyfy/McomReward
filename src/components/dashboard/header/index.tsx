@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useGetMySubscription } from '@/services/tiers/hook';
-import { useGetBusinessProfile, useGetBusinessMonthlyBalance } from '@/services/business/hook';
+import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
+import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
 import { toast } from 'sonner';
@@ -65,6 +65,8 @@ export default function BusinessHeader({
   const { data: hookProfile, isLoading: hookIsLoadingProfile, isError: hookIsErrorProfile } = useGetBusinessProfile();
   const { data: hookMonthlyBalance, isLoading: hookIsLoadingMonthlyBalance, isError: hookIsErrorMonthlyBalance } = useGetBusinessMonthlyBalance();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
+  const { data: businessSubscription } = useGetBusinessSubscription();
+  const { data: pointPackageBalance } = useGetPointPackageBalance();
 
   // Notification hooks
   const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
@@ -81,11 +83,14 @@ export default function BusinessHeader({
   const isError = propIsError ?? (hookIsErrorSubscription || hookIsErrorProfile || hookIsErrorMonthlyBalance);
 
   const tierName = subscription?.tier?.name;
-  const userBadge = profile?.role;
+  const userBadge = pointPackageBalance?.totalBalance?.toLocaleString() ?? '0';
   const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
 
   const unreadCount = notificationsData?.unreadCount ?? 0;
   const notifications = notificationsData?.data ?? [];
+
+  // Check if user is on Free tier
+  const isFreeTier = businessSubscription?.tier === 'Free';
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -105,13 +110,13 @@ export default function BusinessHeader({
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.preventDefault();
     markAllRead(undefined, {
-        onSuccess: () => toast.success('All notifications marked as read')
+      onSuccess: () => toast.success('All notifications marked as read')
     });
   };
 
   const handleNotificationClick = (id: string, isRead: boolean) => {
     if (!isRead) {
-        markRead(id);
+      markRead(id);
     }
   };
 
@@ -131,42 +136,44 @@ export default function BusinessHeader({
 
       {/* Right-side elements */}
       <div className="flex items-center gap-4 md:gap-6">
-        <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-gray-600">
-          {/* Points Balance */}
-          <div className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-yellow-500" />
-            {isLoading ? (
-              <span>...</span>
-            ) : isError ? (
-              <span className='text-red-500'>Error</span>
-            ) : (
-              <span className='whitespace-nowrap'>
-                {monthlyBalance?.remaining?.toLocaleString() ?? 0} / {monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}
-              </span>
-            )}
-          </div>
+        {!isFreeTier && (
+          <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-gray-600">
+            {/* Points Balance */}
+            <div className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-yellow-500" />
+              {isLoading ? (
+                <span>...</span>
+              ) : isError ? (
+                <span className='text-red-500'>Error</span>
+              ) : (
+                <span className='whitespace-nowrap'>
+                  {monthlyBalance?.remaining?.toLocaleString() ?? 0} / {monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}
+                </span>
+              )}
+            </div>
 
-          {/* Used Points */}
-          <div className="flex items-center gap-2">
-             <TrendingDown className="h-5 w-5 text-orange-500" />
-             <span>Used: {isLoading ? '...' : isError ? 'N/A' : monthlyBalance?.used?.toLocaleString() ?? 0}</span>
-          </div>
+            {/* Used Points */}
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-orange-500" />
+              <span>Used: {isLoading ? '...' : isError ? 'N/A' : monthlyBalance?.used?.toLocaleString() ?? 0}</span>
+            </div>
 
-          {/* Badge Status */}
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-500" />
-            {isLoading ? (
+            {/* Badge Status */}
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-500" />
+              {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : isError ? (
+              ) : isError ? (
                 <Badge variant="destructive">Error</Badge>
-            ) : (
+              ) : (
                 <>
-                    <Badge variant="secondary">{userBadge || 'N/A'}</Badge>
-                    <Badge variant="secondary">{tierName || 'N/A'}</Badge>
+                  <Badge variant="secondary">{userBadge || 'N/A'}</Badge>
+                  <Badge variant="secondary">{tierName || 'N/A'}</Badge>
                 </>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Notifications */}
         <DropdownMenu>
@@ -183,42 +190,42 @@ export default function BusinessHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <div className="flex items-center justify-between px-2 py-1.5">
-                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
-                {unreadCount > 0 && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700"
-                        onClick={handleMarkAllRead}
-                    >
-                        Mark all read
-                    </Button>
-                )}
+              <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700"
+                  onClick={handleMarkAllRead}
+                >
+                  Mark all read
+                </Button>
+              )}
             </div>
             <DropdownMenuSeparator />
             <div className="max-h-96 overflow-y-auto">
-                {isNotificationsLoading ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
-                ) : notifications.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
-                ) : (
-                    notifications.map((notification) => (
-                        <DropdownMenuItem
-                            key={notification.id}
-                            className={`flex flex-col items-start p-3 cursor-pointer ${!notification.isRead ? 'bg-blue-50/50' : ''}`}
-                            onClick={() => handleNotificationClick(notification.id, notification.isRead)}
-                        >
-                            <div className="flex items-start justify-between w-full">
-                                <div className="font-medium truncate pr-2">{notification.title || 'Notification'}</div>
-                                {!notification.isRead && <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
-                            </div>
-                            <div className="text-sm text-gray-500 line-clamp-2">{notification.message}</div>
-                            <div className="text-xs text-gray-400 mt-1">
-                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                            </div>
-                        </DropdownMenuItem>
-                    ))
-                )}
+              {isNotificationsLoading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className={`flex flex-col items-start p-3 cursor-pointer ${!notification.isRead ? 'bg-blue-50/50' : ''}`}
+                    onClick={() => handleNotificationClick(notification.id, notification.isRead)}
+                  >
+                    <div className="flex items-start justify-between w-full">
+                      <div className="font-medium truncate pr-2">{notification.title || 'Notification'}</div>
+                      {!notification.isRead && <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
+                    </div>
+                    <div className="text-sm text-gray-500 line-clamp-2">{notification.message}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-center justify-center text-primary cursor-pointer">
@@ -230,13 +237,13 @@ export default function BusinessHeader({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-           <button
-            className="flex items-center  justify-centergap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
-            aria-label="User menu"
-          >
-            <User size={18} />
-            {isLoading ? '...' : userInitials}
-          </button>
+            <button
+              className="flex items-center  justify-centergap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
+              aria-label="User menu"
+            >
+              <User size={18} />
+              {isLoading ? '...' : userInitials}
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>

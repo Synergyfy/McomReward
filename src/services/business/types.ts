@@ -135,3 +135,7 @@ export interface BusinessSetupStatus {
   hasCampaign: boolean;
   hasStaff: boolean;
 }
+
+export interface PointPackageBalance {
+  totalBalance: number;
+}

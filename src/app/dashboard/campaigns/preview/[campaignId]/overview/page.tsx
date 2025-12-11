@@ -63,7 +63,7 @@ export default function CampaignPreviewPage() {
       rewards: selectedRewards.map(reward => ({
         id: reward.reward.id,
         title: reward.reward.title,
-        points_required: reward.point_required,
+        points_required: reward.pointRequired,
         value: reward.reward.value || 0,
         description: reward.reward.description || '',
         image: reward.reward.image || '',

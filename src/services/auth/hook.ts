@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken, removeBearerToken } from '../api';
-import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto, VerifyEmailResponse } from './types';
+import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto, VerifyEmailResponse, ResendOtpDto } from './types';
 import Cookies from 'js-cookie';
 
 // Helper to remove tokens
@@ -117,5 +117,17 @@ export const useVerifyEmail = () => {
       // Update bearer token for subsequent requests
       setBearerToken(data.accessToken);
     },
+  });
+};
+
+// Resend OTP
+const resendOtp = async (data: ResendOtpDto): Promise<string> => {
+  const { data: responseData } = await api.post('/auth/resend-otp', data);
+  return responseData;
+};
+
+export const useResendOtp = () => {
+  return useMutation({
+    mutationFn: resendOtp,
   });
 };

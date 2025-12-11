@@ -26,6 +26,10 @@ export interface VerifyEmailResponse {
   refreshToken: string;
 }
 
+export interface ResendOtpDto {
+  email: string;
+}
+
 export interface RefreshTokenResponse {
   user: {
     name: string;

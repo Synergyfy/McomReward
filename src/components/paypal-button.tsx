@@ -59,6 +59,15 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const orderDetail: any = await actions.order.capture(); // Use the captured order details
       const details = await verifyPaypalPayment({ transaction_id: orderDetail.id });
+
+      // Store new tokens after successful payment
+      const Cookies = (await import('js-cookie')).default;
+      const { setBearerToken } = await import('@/services/api');
+
+      Cookies.set('access', details.accessToken);
+      Cookies.set('refresh', details.refreshToken);
+      setBearerToken(details.accessToken);
+
       onPaymentSuccess(details, orderDetail.id);
     } catch (error) {
       console.error("Error capturing PayPal order:", error);

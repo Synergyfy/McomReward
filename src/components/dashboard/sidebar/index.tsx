@@ -274,7 +274,7 @@ export default function BusinessSidebar({
           <span className="flex items-center justify-between w-full">
             <span className="flex items-center">
               <Award className="mr-3" />
-              My Assets
+              My Network
             </span>
             <span className="text-gray-400 text-xs">{isMyAssetsOpen ? '−' : '+'}</span>
           </span>
@@ -284,10 +284,10 @@ export default function BusinessSidebar({
             <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Overview</Link></li>
             <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
             <li><Link href="/dashboard/my-assets/nfc-cards" className={linkClasses('/dashboard/my-assets/nfc-cards')}>NFC Cards</Link></li>
-            <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
+            {/* <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
             <li><Link href="/dashboard/my-assets/marketing-materials" className={linkClasses('/dashboard/my-assets/marketing-materials')}>Marketing Materials</Link></li>
             <li><Link href="/dashboard/my-assets/partner-network" className={linkClasses('/dashboard/my-assets/partner-network')}>Partner Network</Link></li>
-            <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li>
+            <li><Link href="/dashboard/my-assets/revenue-analytics" className={linkClasses('/dashboard/my-assets/revenue-analytics')}>Revenue & Analytics</Link></li> */}
           </ul>
         )}
         <Link href="/dashboard/profile" className={`flex items-center w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition ${isFreeTier ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>

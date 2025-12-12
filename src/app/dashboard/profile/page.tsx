@@ -221,20 +221,89 @@ export default function BusinessProfilePage() {
           />
         </div>
 
-        {/* Category (display only for now) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">
-            <Building2 size={14} className="inline mr-1 text-orange-500" />
-            Category
-          </label>
-          <input
-            type="text"
-            name="categoryName"
-            value={form.categoryName || ''}
-            disabled
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:bg-gray-50"
-          />
-        </div>
+        {/* Category (Edit Mode: Dropdowns, View Mode: Text) */}
+        {editing ? (
+          <>
+             {/* Sector Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Sector
+              </label>
+              <select
+                name="sectorId"
+                value={form.sectorId || ''}
+                onChange={handleSectorChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400"
+              >
+                <option value="">Select a sector</option>
+                {sectors?.map((sector) => (
+                  <option key={sector.id} value={sector.id}>
+                    {sector.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Category
+              </label>
+              <select
+                name="categoryId"
+                value={form.categoryId || ''}
+                onChange={handleCategoryChange}
+                disabled={!form.sectorId}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
+              >
+                <option value="">Select a category</option>
+                {categories?.data.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subcategory Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Subcategory
+              </label>
+              <select
+                name="subCategoryId"
+                value={form.subCategoryId || ''}
+                onChange={handleChange}
+                disabled={!form.categoryId}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
+              >
+                <option value="">Select a subcategory</option>
+                {subcategories?.data.map((subcategory) => (
+                  <option key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              <Building2 size={14} className="inline mr-1 text-orange-500" />
+              Category
+            </label>
+            <input
+              type="text"
+              name="categoryName"
+              value={form.categoryName || ''}
+              disabled
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:bg-gray-50"
+            />
+          </div>
+        )}
 
         {/* Email */}
         <div>

@@ -118,16 +118,17 @@ export default function BusinessProfilePage() {
         payload.banner = secure_url;
       }
 
+      // Fix: Only send UUID strings if they exist. Do not send objects or empty strings.
       if (form.sectorId !== profile.sectorId && form.sectorId) {
-        payload.sector = { id: form.sectorId };
+        payload.sector = form.sectorId;
       }
 
       if (form.categoryId !== profile.category?.id && form.categoryId) {
-        payload.category = { id: form.categoryId };
+        payload.category = form.categoryId;
       }
 
       if (form.subCategoryId !== profile.subCategoryId && form.subCategoryId) {
-        payload.subCategory = { id: form.subCategoryId };
+        payload.subCategory = form.subCategoryId;
       }
 
       const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
@@ -147,9 +148,15 @@ export default function BusinessProfilePage() {
             setBannerFile(null);
             toast.success('Profile updated successfully');
           },
-          onError: (error) => {
+          onError: (error: any) => {
             console.error('Failed to update profile:', error);
-            toast.error('Failed to update profile');
+            // Enhanced error message handling for better debugging
+            const errorMessage = error.response?.data?.message
+              ? (Array.isArray(error.response.data.message)
+                  ? error.response.data.message.join(', ')
+                  : error.response.data.message)
+              : 'Failed to update profile';
+            toast.error(errorMessage);
           },
         });
       } else {

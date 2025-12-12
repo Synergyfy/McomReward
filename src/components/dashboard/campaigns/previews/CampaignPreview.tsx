@@ -11,6 +11,7 @@ import { useClaimCampaign } from '@/services/campaigns/hook';
 import { Badge } from "@/components/ui/badge";
 import { CampaignResponse, Reward } from '@/services/campaigns/types';
 import TierLimitModal from '../TierLimitModal';
+import SelectRewardModal from '../SelectRewardModal';
 import { AxiosError } from 'axios';
 
 interface CampaignPreviewProps {
@@ -23,12 +24,17 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
   const { mutate: claimCampaign, isPending } = useClaimCampaign();
   const [isTierLimitModalOpen, setIsTierLimitModalOpen] = React.useState(false);
   const [tierLimitMessage, setTierLimitMessage] = React.useState('');
+  const [isSelectRewardModalOpen, setIsSelectRewardModalOpen] = React.useState(false);
 
   const handleClaim = () => {
     if (!isClaimable) return;
+    // Open the reward selection modal
+    setIsSelectRewardModalOpen(true);
+  };
 
+  const handleClaimWithRewards = (selectedRewardIds: string[]) => {
     const payload = {
-      business_reward_ids: campaign.business_reward_ids,
+      business_reward_ids: selectedRewardIds,
     };
 
     claimCampaign({ campaignId: campaign.id, payload }, {
@@ -240,6 +246,11 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
         isOpen={isTierLimitModalOpen}
         onClose={() => setIsTierLimitModalOpen(false)}
         message={tierLimitMessage}
+      />
+      <SelectRewardModal
+        isOpen={isSelectRewardModalOpen}
+        onClose={() => setIsSelectRewardModalOpen(false)}
+        onProceed={handleClaimWithRewards}
       />
     </div>
   );

@@ -102,9 +102,6 @@ export interface TierFeatureFlags {
     canCreateRewardFromScratch?: boolean;
 }
 
-export interface PayPalVerifyResponse {
-    status: string;
-}
 
 // Trial Subscription Types
 export interface JoinTrialDto {
@@ -228,6 +225,8 @@ export interface StripeVerifyRequest {
 
 export interface StripeVerifyResponse {
     status: string;
+    accessToken: string;
+    refreshToken: string;
 }
 
 export interface PayPalInitiateRequest {
@@ -244,6 +243,12 @@ export interface PayPalInitiateResponse {
 
 export interface PayPalVerifyRequest {
     transactionId: string;
+}
+
+export interface PayPalVerifyResponse {
+    status: string;
+    accessToken: string;
+    refreshToken: string;
 }
 
 export interface UpdateTierProgressionDto {

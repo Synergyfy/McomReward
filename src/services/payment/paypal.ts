@@ -23,6 +23,8 @@ export interface VerifyPaypalPaymentPayload {
 
 export interface VerifyPaypalPaymentResponse {
   status: "COMPLETED";
+  accessToken: string;
+  refreshToken: string;
 }
 
 export const verifyPaypalPayment = async (

@@ -76,7 +76,7 @@ export const useDeleteBusinessLevel = () => {
 // --- Customer Badges ---
 
 const getCustomerBadges = async (): Promise<CustomerBadge[]> => {
-    const { data } = await api.get<CustomerBadge[]>('/progression/badges');
+    const { data } = await api.get<CustomerBadge[]>('/participant-progression/badges');
     return data;
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Loader2, Bell, Coins, Menu, Shield, User, TrendingDown } from 'lucide-react';
+import { Loader2, Bell, Coins, Menu, Shield, User, TrendingDown, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -158,6 +158,12 @@ export default function BusinessHeader({
               <span>Used: {isLoading ? '...' : isError ? 'N/A' : monthlyBalance?.used?.toLocaleString() ?? 0}</span>
             </div>
 
+            {/* Add-on Status */}
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-purple-500" />
+              <span className="whitespace-nowrap">add-on: {userBadge}</span>
+            </div>
+
             {/* Badge Status */}
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-blue-500" />
@@ -166,10 +172,7 @@ export default function BusinessHeader({
               ) : isError ? (
                 <Badge variant="destructive">Error</Badge>
               ) : (
-                <>
-                  <Badge variant="secondary">add-on: {userBadge || 'N/A'}</Badge>
-                  <Badge variant="secondary">{tierName || 'N/A'}</Badge>
-                </>
+                <Badge variant="secondary">{tierName || 'N/A'}</Badge>
               )}
             </div>
           </div>

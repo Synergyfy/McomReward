@@ -40,7 +40,8 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
         rewardId: reward.id
         // Points are not sent for REDEEM as per documentation
       });
-      toast.success(`Successfully redeemed "${reward.title}" for ${participantCode}`);
+      // Trigger 4: Reward Redeemed
+      toast.success(`Participant ${participantCode} redeemed reward ${reward.title}.`);
       setIsOpen(false);
       setParticipantCode("");
     } catch (error) {

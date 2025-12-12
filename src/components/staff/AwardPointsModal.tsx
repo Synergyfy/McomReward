@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QrCode, Receipt, Phone, Loader2, CheckCircle, ScanLine } from "lucide-react";
 import { useScanParticipant, useGenerateCode, useDualScan } from "@/services/participant-campaign-balance/hook";
+import { useGetBusinessMonthlyBalance } from "@/services/business/hook";
 import { toast } from "sonner";
 import { Scanner } from "@yudiel/react-qr-scanner";
 
@@ -35,17 +36,47 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
   const { mutateAsync: scanParticipant, isPending: isScanning } = useScanParticipant();
   const { mutateAsync: generateCode, isPending: isGenerating } = useGenerateCode();
   const { mutateAsync: dualScan, isPending: isDualScanning } = useDualScan();
+  const { data: balanceData } = useGetBusinessMonthlyBalance();
+
+  const checkAndToastAllowanceWarning = (addedPoints: number) => {
+    if (!balanceData) return;
+
+    const limit = balanceData.monthlyLimit;
+    const used = balanceData.used;
+
+    if (limit <= 0) return; // Unlimited or invalid
+
+    const prePercent = (used / limit) * 100;
+    const postUsed = used + addedPoints;
+    const postPercent = (postUsed / limit) * 100;
+
+    if (prePercent < 80 && postPercent >= 80) {
+      toast.warning(`You have used over 80% of your monthly point allowance (${postPercent.toFixed(1)}%).`);
+    }
+  };
 
   const handleScanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await scanParticipant({
+      const response = await scanParticipant({
         campaignId,
         participantCode: participantCodeA,
         points,
         type: 'EARN'
       });
-      toast.success(`Successfully awarded ${points} points to ${participantCodeA}`);
+
+      // Trigger 3: Points Awarded
+      toast.success(`You awarded ${points} points to ${participantCodeA}.`);
+
+      // Trigger 2: Campaign Joined
+      // Check if message implies joining (This is a heuristic as API doesn't return explicit flag)
+      if (response.message && response.message.toLowerCase().includes("joined")) {
+        toast.info(`Participant ${participantCodeA} has joined campaign ${campaignName}.`);
+      }
+
+      // Trigger 1: Allowance Warning
+      checkAndToastAllowanceWarning(points);
+
       setIsOpen(false);
       setParticipantCodeA("");
     } catch (error) {
@@ -68,6 +99,11 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
       });
       setGeneratedCode(result.code);
       toast.success("Claim code generated successfully!");
+
+      // Note: Allowance warning not triggered here as points are not deducted until claimed?
+      // Or should it be? Usually usage counts when points are issued/claimed.
+      // Assuming usage updates on claim for generated codes, so no warning here.
+
     } catch (error) {
       toast.error("Failed to generate code.");
       console.error(error);
@@ -77,14 +113,25 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
   const handleDualScanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dualScan({
+      const response = await dualScan({
         campaignId,
         participantCode: participantCodeC,
         staffOrBusinessCode: staffCodeInput,
         points,
         type: 'EARN'
       });
-      toast.success(`Successfully awarded ${points} points to ${participantCodeC}`);
+
+      // Trigger 3: Points Awarded
+      toast.success(`You awarded ${points} points to ${participantCodeC}.`);
+
+      // Trigger 2: Campaign Joined
+      if (response.message && response.message.toLowerCase().includes("joined")) {
+        toast.info(`Participant ${participantCodeC} has joined campaign ${campaignName}.`);
+      }
+
+      // Trigger 1: Allowance Warning
+      checkAndToastAllowanceWarning(points);
+
       setIsOpen(false);
       setParticipantCodeC("");
     } catch (error) {

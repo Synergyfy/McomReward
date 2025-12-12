@@ -102,9 +102,9 @@ export interface UpdateBusinessProfileDto {
   banner?: string | null;
   description?: string;
   socialMedia?: { name: string; link: string }[];
-  sector?: string;
-  category?: string;
-  subCategory?: string;
+  sectorId?: string;
+  categoryId?: string;
+  subCategoryId?: string;
 }
 
 // --- Business Balances & Feature Usage ---
@@ -121,6 +121,7 @@ export interface TierUsageFeature {
   limit: number;
   used: number;
   remaining: number;
+  extraPoints: number;
 }
 
 export interface TierUsageResponse {

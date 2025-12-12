@@ -118,9 +118,9 @@ export default function BusinessProfilePage() {
         payload.banner = secure_url;
       }
 
-      if (form.sectorId !== profile.sectorId) payload.sector = form.sectorId;
-      if (form.categoryId !== profile.category?.id) payload.category = form.categoryId;
-      if (form.subCategoryId !== profile.subCategoryId) payload.subCategory = form.subCategoryId;
+      if (form.sectorId !== profile.sectorId) payload.sectorId = form.sectorId;
+      if (form.categoryId !== profile.category?.id) payload.categoryId = form.categoryId;
+      if (form.subCategoryId !== profile.subCategoryId) payload.subCategoryId = form.subCategoryId;
 
       const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
       const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';

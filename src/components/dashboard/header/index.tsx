@@ -19,14 +19,8 @@ import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
 import { toast } from 'sonner';
 import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
 import { formatDistanceToNow } from 'date-fns';
-
-// TODO: Replace these with actual imported types (e.g., from services/business/types.ts, services/tiers/types.ts)
-interface BusinessProfileType {
-  id: string;
-  name: string;
-  email: string;
-  role?: string; // Assuming role might be part of it
-}
+import Image from 'next/image';
+import { BusinessProfile } from '@/services/business/types';
 
 interface SubscriptionType {
   tier?: { name: string };
@@ -43,7 +37,7 @@ interface MonthlyBalanceType {
 interface BusinessHeaderProps {
   onMenuClick: () => void;
   // Optional props for impersonation mode
-  profile?: BusinessProfileType;
+  profile?: Partial<BusinessProfile>;
   subscription?: SubscriptionType;
   monthlyBalance?: MonthlyBalanceType;
   isLoading?: boolean; // Unified loading prop for impersonation
@@ -237,13 +231,23 @@ export default function BusinessHeader({
         {/* User Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              className="flex items-center  justify-centergap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
-              aria-label="User menu"
-            >
-              <User size={18} />
-              {isLoading ? '...' : userInitials}
-            </button>
+           <button
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
+            aria-label="User menu"
+          >
+            {profile?.profileImage ? (
+                <Image
+                    src={profile.profileImage}
+                    alt="User Avatar"
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover"
+                />
+            ) : (
+                <User size={18} />
+            )}
+            <span className="truncate max-w-[100px]">{isLoading ? '...' : userInitials}</span>
+          </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>

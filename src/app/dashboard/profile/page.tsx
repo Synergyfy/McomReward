@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide-react';
-import TierBadge, { TierName, isTierName } from "@/components/ui/tierBadge";
+import TierBadge, { TierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
 import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
+import { useUploadToCloudinary } from '@/services/upload/hook';
+import { toast } from 'sonner';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
@@ -18,9 +20,14 @@ export default function BusinessProfilePage() {
     instagram?: string;
   }>({});
 
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateBusinessProfile();
+  const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
 
 
   useEffect(() => {
@@ -38,7 +45,7 @@ export default function BusinessProfilePage() {
     }
   }, [profile]);
 
-  const logoInputRef = useRef<HTMLInputElement>(null);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -46,9 +53,12 @@ export default function BusinessProfilePage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'bannerUrl') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'banner') => {
     const file = e.target.files?.[0];
     if (file) {
+      if (field === 'profileImage') setProfileImageFile(file);
+      if (field === 'banner') setBannerFile(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm((prev) => ({ ...prev, [field]: reader.result as string }));
@@ -57,47 +67,67 @@ export default function BusinessProfilePage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!profile) return; // Should not happen if data is loaded
 
-    const payload: UpdateBusinessProfileDto = {};
+    setIsUploading(true);
+    try {
+      const payload: UpdateBusinessProfileDto = {};
 
-    // Compare simple string fields and add to payload if changed
-    if (form.businessName !== profile.name) payload.name = form.businessName;
-    if (form.email !== profile.email) payload.email = form.email;
-    if (form.phone !== profile.phone) payload.phone = form.phone;
-    if (form.address !== profile.address) payload.address = form.address;
-    if (form.description !== profile.description) payload.description = form.description;
-    if (form.website !== profile.website) payload.website = form.website;
-    if (form.logoUrl !== profile.logoUrl) payload.logoUrl = form.logoUrl;
-    if (form.bannerUrl !== profile.bannerUrl) payload.bannerUrl = form.bannerUrl;
+      // Compare simple string fields and add to payload if changed
+      if (form.businessName !== profile.name) payload.name = form.businessName;
+      if (form.email !== profile.email) payload.email = form.email;
+      if (form.phone !== profile.phone) payload.phone = form.phone;
+      if (form.address !== profile.address) payload.address = form.address;
+      if (form.description !== profile.description) payload.description = form.description;
+      if (form.website !== profile.website) payload.website = form.website;
 
-    // Compare and construct social media if changed
-    const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
-    const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
-    const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
+      // Handle Image Uploads
+      if (profileImageFile) {
+        const { secure_url } = await uploadToCloudinary({ file: profileImageFile, folder: 'business' });
+        payload.profile_image = secure_url;
+      }
 
-    if (hasSocialChanged) {
-      const socialMedia = [];
-      if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
-      if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
-      payload.socialMedia = socialMedia;
-    }
+      if (bannerFile) {
+        const { secure_url } = await uploadToCloudinary({ file: bannerFile, folder: 'business' });
+        payload.banner = secure_url;
+      }
 
-    // Only call update if there are actual changes
-    if (Object.keys(payload).length > 0) {
-      updateProfile(payload, {
-        onSuccess: () => {
-          setEditing(false);
-        },
-        onError: (error) => {
-          // TODO: Add user-facing error notification (e.g., toast)
-          console.error('Failed to update profile:', error);
-        },
-      });
-    } else {
-      // No changes, just exit editing mode
-      setEditing(false);
+      // Compare and construct social media if changed
+      const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
+      const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+      const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
+
+      if (hasSocialChanged) {
+        const socialMedia = [];
+        if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
+        if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
+        payload.socialMedia = socialMedia;
+      }
+
+      // Only call update if there are actual changes
+      if (Object.keys(payload).length > 0) {
+        updateProfile(payload, {
+          onSuccess: () => {
+            setEditing(false);
+            setProfileImageFile(null);
+            setBannerFile(null);
+            toast.success('Profile updated successfully');
+          },
+          onError: (error) => {
+            console.error('Failed to update profile:', error);
+            toast.error('Failed to update profile');
+          },
+        });
+      } else {
+        // No changes, just exit editing mode
+        setEditing(false);
+      }
+    } catch (error) {
+      console.error('Error uploading images or saving profile:', error);
+      toast.error('Failed to upload images or save profile');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -120,7 +150,7 @@ export default function BusinessProfilePage() {
           {/* Logo */}
           <div className="relative">
             <Image
-              src={form.logoUrl || 'https://via.placeholder.com/96'}
+              src={form.profileImage || 'https://via.placeholder.com/96'}
               alt="Business Logo"
               className="w-24 h-24 rounded-full object-cover border-4 border-orange-500 shadow-md"
               width={96}
@@ -130,13 +160,13 @@ export default function BusinessProfilePage() {
               <>
                 <input
                   type="file"
-                  ref={logoInputRef}
+                  ref={profileImageInputRef}
                   className="hidden"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'logoUrl')}
+                  onChange={(e) => handleFileChange(e, 'profileImage')}
                 />
                 <button
-                  onClick={() => logoInputRef.current?.click()}
+                  onClick={() => profileImageInputRef.current?.click()}
                   className="absolute bottom-1 right-1 bg-orange-500 text-white p-1.5 rounded-full hover:bg-orange-600 transition"
                   title="Change logo"
                 >
@@ -165,20 +195,20 @@ export default function BusinessProfilePage() {
         {/* Edit / Save Button */}
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
-          disabled={isUpdating}
+          disabled={isUpdating || isUploading}
           className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${editing
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-orange-500 text-white hover:bg-orange-600'
             } disabled:opacity-50`}
         >
-          {isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
+          {isUploading ? 'Uploading...' : isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>
       </div>
 
       {/* Banner Image */}
       <div className="mb-8 relative h-48 w-full rounded-lg overflow-hidden shadow-md">
         <Image
-          src={form.bannerUrl || 'https://via.placeholder.com/800x200'}
+          src={form.banner || 'https://via.placeholder.com/800x200'}
           alt="Business Banner"
           layout="fill"
           objectFit="cover"
@@ -190,7 +220,7 @@ export default function BusinessProfilePage() {
               ref={bannerInputRef}
               className="hidden"
               accept="image/*"
-              onChange={(e) => handleFileChange(e, 'bannerUrl')}
+              onChange={(e) => handleFileChange(e, 'banner')}
             />
             <button
               onClick={() => bannerInputRef.current?.click()}

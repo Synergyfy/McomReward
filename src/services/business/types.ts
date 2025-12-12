@@ -73,8 +73,8 @@ export interface BusinessProfile {
   phone: string;
   address: string;
   website: string;
-  logoUrl?: string;
-  bannerUrl?: string;
+  profileImage?: string;
+  banner?: string;
   description?: string;
   category?: { id: string; name: string };
   socialMedia: { name: string; link: string }[];
@@ -96,8 +96,8 @@ export interface UpdateBusinessProfileDto {
   phone?: string;
   address?: string;
   website?: string;
-  logoUrl?: string;
-  bannerUrl?: string;
+  profile_image?: string;
+  banner?: string | null;
   description?: string;
   socialMedia?: { name: string; link: string }[];
 }

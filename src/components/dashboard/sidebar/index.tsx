@@ -29,18 +29,11 @@ import { useGetBusinessSubscription } from '@/services/tiers/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
-
-// TODO: Replace this with actual imported type (e.g., from services/business/types.ts)
-interface BusinessProfileType {
-  id: string;
-  name: string;
-  email: string;
-  role?: string; // Assuming role might be part of it
-}
+import { BusinessProfile } from '@/services/business/types';
 
 interface BusinessSidebarProps {
   isOpen: boolean;
-  profile?: BusinessProfileType; // Optional prop for impersonation
+  profile?: Partial<BusinessProfile>; // Optional prop for impersonation
   isLoading?: boolean; // Optional prop for unified loading state
 }
 

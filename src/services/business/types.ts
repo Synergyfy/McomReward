@@ -34,7 +34,7 @@ export interface CreateBusinessDto {
   address: string;
   website?: string;
   socialMedia?: { name: string; link: string }[];
-  referralCapacity: number;
+  referralCapacity: "12-24" | "25-49" | "50-99" | "100+";
 }
 
 export interface PaginatedResponse<T> {
@@ -80,7 +80,7 @@ export interface BusinessProfile {
   socialMedia: { name: string; link: string }[];
   uniqueCode: string;
   role: string;
-  referralCapacity: number;
+  referralCapacity: "12-24" | "25-49" | "50-99" | "100+" | number;
   affiliateCode: string;
   referralPoints: string;
   reputationPoints: string;

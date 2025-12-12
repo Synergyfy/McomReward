@@ -9,7 +9,7 @@ export default function ConfirmationPage() {
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">Payment Successful!</h1>
         <p className="text-lg mb-8">Your subscription has been updated.</p>
-        <Link href="/dashboard" className="underline text-primary">
+        <Link href="/dashboard/my-assets" className="underline text-primary">
           Go to your dashboard
         </Link>
       </div>

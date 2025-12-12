@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useBusinessOnboard,
   useGetSectors,
@@ -38,6 +39,7 @@ export default function BusinessOnboardingWizard() {
     trigger,
     watch,
     control,
+    setValue,
   } = useForm<OnboardingFormInputs>({
     mode: "onTouched",
     resolver: zodResolver(createBusinessSchema),
@@ -332,18 +334,26 @@ export default function BusinessOnboardingWizard() {
                         Referral Capacity <span className="text-red-500">*</span>
                       </Label>
                       <p className="text-sm text-gray-500 mb-2">
-                        Set the maximum number of new customers you can accept
-                        from referrals each month.
+                        How Many Contacts can you bring to the platform?
                       </p>
-                      <Input
-                        id="referralCapacity"
-                        type="number"
-                        placeholder="e.g., 50"
-                        {...register("referralCapacity", {
-                          valueAsNumber: true,
-                        })}
-                        className="mt-1"
-                      />
+                      <Select
+                        onValueChange={(value) => {
+                          setValue("referralCapacity", value as "12-24" | "25-49" | "50-99" | "100+", {
+                            shouldValidate: true,
+                          });
+                        }}
+                        value={watch("referralCapacity") as string}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select referral capacity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="12-24">12-24</SelectItem>
+                          <SelectItem value="25-49">25-49</SelectItem>
+                          <SelectItem value="50-99">50-99</SelectItem>
+                          <SelectItem value="100+">100+</SelectItem>
+                        </SelectContent>
+                      </Select>
                       {errors.referralCapacity && (
                         <p className="text-red-500 text-sm mt-1">
                           {errors.referralCapacity.message}

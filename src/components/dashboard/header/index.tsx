@@ -161,7 +161,7 @@ export default function BusinessHeader({
                 <Badge variant="destructive">Error</Badge>
               ) : (
                 <>
-                  <Badge variant="secondary">{userBadge || 'N/A'}</Badge>
+                  <Badge variant="secondary">add-on: {userBadge || 'N/A'}</Badge>
                   <Badge variant="secondary">{tierName || 'N/A'}</Badge>
                 </>
               )}

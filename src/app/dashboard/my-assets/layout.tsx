@@ -9,7 +9,7 @@ export default function MyAssetsLayout({
 }) {
     return (
         <div className="p-6 md:p-8 space-y-8 bg-gray-50 min-h-screen">
-            <h1 className="text-3xl font-bold text-gray-800">My Assets</h1>
+            <h1 className="text-3xl font-bold text-gray-800">My Network</h1>
             <div className="pt-6">
                 {children}
             </div>

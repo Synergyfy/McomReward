@@ -77,6 +77,8 @@ export interface BusinessProfile {
   banner?: string;
   description?: string;
   category?: { id: string; name: string };
+  sectorId?: string;
+  subCategoryId?: string;
   socialMedia: { name: string; link: string }[];
   uniqueCode: string;
   role: string;
@@ -100,6 +102,9 @@ export interface UpdateBusinessProfileDto {
   banner?: string | null;
   description?: string;
   socialMedia?: { name: string; link: string }[];
+  sector?: string;
+  category?: string;
+  subCategory?: string;
 }
 
 // --- Business Balances & Feature Usage ---

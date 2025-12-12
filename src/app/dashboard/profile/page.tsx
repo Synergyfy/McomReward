@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { Camera, Mail, Phone, MapPin, Building2, Link as LinkIcon } from 'lucide-react';
 import TierBadge, { TierName } from "@/components/ui/tierBadge";
 import Image from 'next/image';
 import BrandingManager from '@/components/dashboard/profile/BrandingManager';
-import { useGetBusinessProfile, useUpdateBusinessProfile } from '@/services/business/hook';
+import { useGetBusinessProfile, useUpdateBusinessProfile, useGetSectors, useGetCategories, useGetSubcategories } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
 import { useUploadToCloudinary } from '@/services/upload/hook';
@@ -18,6 +18,9 @@ export default function BusinessProfilePage() {
     categoryName?: string;
     whatsapp?: string;
     instagram?: string;
+    sectorId?: string;
+    categoryId?: string;
+    subCategoryId?: string;
   }>({});
 
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
@@ -29,9 +32,13 @@ export default function BusinessProfilePage() {
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateBusinessProfile();
   const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
 
+  const { data: sectors } = useGetSectors();
+  const { data: categories } = useGetCategories(form.sectorId || "");
+  const { data: subcategories } = useGetSubcategories(form.categoryId || "");
 
+  // Initialize form once
   useEffect(() => {
-    if (profile) {
+    if (profile && Object.keys(form).length === 0) {
       const instagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
       const whatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
 
@@ -41,6 +48,9 @@ export default function BusinessProfilePage() {
         categoryName: profile.category?.name || 'N/A',
         instagram,
         whatsapp,
+        sectorId: profile.sectorId,
+        categoryId: profile.category?.id,
+        subCategoryId: profile.subCategoryId,
       });
     }
   }, [profile]);
@@ -48,33 +58,49 @@ export default function BusinessProfilePage() {
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'banner') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (field === 'profileImage') setProfileImageFile(file);
-      if (field === 'banner') setBannerFile(file);
+  const handleSectorChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setForm(prev => ({
+      ...prev,
+      sectorId: value,
+      categoryId: "",
+      subCategoryId: ""
+    }));
+  };
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prev) => ({ ...prev, [field]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setForm(prev => ({
+      ...prev,
+      categoryId: value,
+      subCategoryId: ""
+    }));
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (field === 'profileImage') setProfileImageFile(file);
+    if (field === 'banner') setBannerFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setForm(prev => ({ ...prev, [field]: reader.result as string }));
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
-    if (!profile) return; // Should not happen if data is loaded
+    if (!profile) return;
 
     setIsUploading(true);
     try {
       const payload: UpdateBusinessProfileDto = {};
 
-      // Compare simple string fields and add to payload if changed
       if (form.businessName !== profile.name) payload.name = form.businessName;
       if (form.email !== profile.email) payload.email = form.email;
       if (form.phone !== profile.phone) payload.phone = form.phone;
@@ -82,7 +108,6 @@ export default function BusinessProfilePage() {
       if (form.description !== profile.description) payload.description = form.description;
       if (form.website !== profile.website) payload.website = form.website;
 
-      // Handle Image Uploads
       if (profileImageFile) {
         const { secure_url } = await uploadToCloudinary({ file: profileImageFile, folder: 'business' });
         payload.profile_image = secure_url;
@@ -93,19 +118,19 @@ export default function BusinessProfilePage() {
         payload.banner = secure_url;
       }
 
-      // Compare and construct social media if changed
+      if (form.sectorId !== profile.sectorId) payload.sector = form.sectorId;
+      if (form.categoryId !== profile.category?.id) payload.category = form.categoryId;
+      if (form.subCategoryId !== profile.subCategoryId) payload.subCategory = form.subCategoryId;
+
       const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
       const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
-      const hasSocialChanged = form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp;
-
-      if (hasSocialChanged) {
+      if (form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp) {
         const socialMedia = [];
         if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
         if (form.instagram) socialMedia.push({ name: 'instagram', link: form.instagram });
         payload.socialMedia = socialMedia;
       }
 
-      // Only call update if there are actual changes
       if (Object.keys(payload).length > 0) {
         updateProfile(payload, {
           onSuccess: () => {
@@ -120,34 +145,27 @@ export default function BusinessProfilePage() {
           },
         });
       } else {
-        // No changes, just exit editing mode
         setEditing(false);
       }
     } catch (error) {
-      console.error('Error uploading images or saving profile:', error);
-      toast.error('Failed to upload images or save profile');
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
     } finally {
       setIsUploading(false);
     }
   };
 
-  if (isLoadingProfile || isLoadingSubscription) {
-    return <div>Loading...</div>;
-  }
-
-  if (isErrorProfile || isErrorSubscription) {
-    return <div>Error loading profile data.</div>;
-  }
+  if (isLoadingProfile || isLoadingSubscription) return <div>Loading...</div>;
+  if (isErrorProfile || isErrorSubscription) return <div>Error loading profile data.</div>;
 
   const plan = subscription?.tier?.name.toLowerCase() || 'starter';
-  const tierName = subscription?.tier?.name as TierName | undefined; // Directly use tierName and cast to satisfy type
+  const tierName = subscription?.tier?.name as TierName | undefined;
 
   return (
-    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm  mt-8 p-8">
+    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm mt-8 p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between border-b border-gray-100 pb-6 mb-8">
         <div className="flex items-center gap-6">
-          {/* Logo */}
           <div className="relative">
             <Image
               src={form.profileImage || 'https://via.placeholder.com/96'}
@@ -175,37 +193,25 @@ export default function BusinessProfilePage() {
               </>
             )}
           </div>
-
-          {/* Business Info */}
           <div>
             <h1 className="text-2xl font-bold text-gray-800">{form.businessName}</h1>
             <p className="text-gray-500">{form.categoryName}</p>
             <div className="mt-2">
-              {tierName ? (
-                <TierBadge tier={tierName} />
-              ) : (
-                <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">
-                  N/A
-                </span>
-              )}
+              {tierName ? <TierBadge tier={tierName} /> :
+                <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">N/A</span>}
             </div>
           </div>
         </div>
-
-        {/* Edit / Save Button */}
         <button
           onClick={() => (editing ? handleSave() : setEditing(true))}
           disabled={isUpdating || isUploading}
-          className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${editing
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-orange-500 text-white hover:bg-orange-600'
-            } disabled:opacity-50`}
+          className={`mt-4 md:mt-0 px-6 py-2 rounded-full font-semibold transition ${editing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-orange-500 text-white hover:bg-orange-600'} disabled:opacity-50`}
         >
           {isUploading ? 'Uploading...' : isUpdating ? 'Saving...' : editing ? 'Save Changes' : 'Edit Profile'}
         </button>
       </div>
 
-      {/* Banner Image */}
+      {/* Banner */}
       <div className="mb-8 relative h-48 w-full rounded-lg overflow-hidden shadow-md">
         <Image
           src={form.banner || 'https://via.placeholder.com/800x200'}
@@ -233,9 +239,9 @@ export default function BusinessProfilePage() {
         )}
       </div>
 
-      {/* Form Section */}
+      {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Business Name (editable) */}
+        {/* Business Name */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
             <Building2 size={14} className="inline mr-1 text-orange-500" />
@@ -251,20 +257,67 @@ export default function BusinessProfilePage() {
           />
         </div>
 
-        {/* Category (display only for now) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">
-            <Building2 size={14} className="inline mr-1 text-orange-500" />
-            Category
-          </label>
-          <input
-            type="text"
-            name="categoryName"
-            value={form.categoryName || ''}
-            disabled
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:bg-gray-50"
-          />
-        </div>
+        {/* Sector */}
+        {editing && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Sector
+              </label>
+              <select
+                name="sectorId"
+                value={form.sectorId || ''}
+                onChange={handleSectorChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400"
+              >
+                <option value="">Select a sector</option>
+                {sectors?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Category
+              </label>
+              <select
+                name="categoryId"
+                value={form.categoryId || ''}
+                onChange={handleCategoryChange}
+                disabled={!form.sectorId}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
+              >
+                <option value="">Select a category</option>
+                {categories?.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                <Building2 size={14} className="inline mr-1 text-orange-500" />
+                Subcategory
+              </label>
+              <select
+                name="subCategoryId"
+                value={form.subCategoryId || ''}
+                onChange={handleChange}
+                disabled={!form.categoryId}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
+              >
+                <option value="">Select a subcategory</option>
+                {subcategories?.data?.map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+              </select>
+            </div>
+          </>
+        )}
+        {!editing && (
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              <Building2 size={14} className="inline mr-1 text-orange-500" />
+              Category
+            </label>
+            <input type="text" name="categoryName" value={form.categoryName || ''} disabled className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:bg-gray-50" />
+          </div>
+        )}
 
         {/* Email */}
         <div>
@@ -272,14 +325,7 @@ export default function BusinessProfilePage() {
             <Mail size={14} className="inline mr-1 text-orange-500" />
             Email
           </label>
-          <input
-            type="email"
-            name="email"
-            value={form.email || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="email" name="email" value={form.email || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
 
         {/* Phone */}
@@ -288,14 +334,7 @@ export default function BusinessProfilePage() {
             <Phone size={14} className="inline mr-1 text-orange-500" />
             Phone
           </label>
-          <input
-            type="text"
-            name="phone"
-            value={form.phone || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="text" name="phone" value={form.phone || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
 
         {/* Address */}
@@ -304,14 +343,7 @@ export default function BusinessProfilePage() {
             <MapPin size={14} className="inline mr-1 text-orange-500" />
             Business Address
           </label>
-          <input
-            type="text"
-            name="address"
-            value={form.address || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="text" name="address" value={form.address || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
 
         {/* Description */}
@@ -320,69 +352,41 @@ export default function BusinessProfilePage() {
             <Building2 size={14} className="inline mr-1 text-orange-500" />
             About Your Business
           </label>
-          <textarea
-            name="description"
-            value={form.description || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            rows={4}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50 resize-none"
-          />
+          <textarea name="description" value={form.description || ''} onChange={handleChange} disabled={!editing} rows={4} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50 resize-none" />
         </div>
 
         {/* Website */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
             <LinkIcon size={14} className="inline mr-1 text-orange-500" />
-            Website URL
+            Website
           </label>
-          <input
-            type="text"
-            name="website"
-            value={form.website || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="text" name="website" value={form.website || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
 
         {/* WhatsApp */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
             <Phone size={14} className="inline mr-1 text-orange-500" />
-            WhatsApp Link
+            WhatsApp
           </label>
-          <input
-            type="text"
-            name="whatsapp"
-            value={form.whatsapp || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="text" name="whatsapp" value={form.whatsapp || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
 
         {/* Instagram */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-600 mb-1">
             <LinkIcon size={14} className="inline mr-1 text-orange-500" />
-            Instagram Profile URL
+            Instagram
           </label>
-          <input
-            type="text"
-            name="instagram"
-            value={form.instagram || ''}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-          />
+          <input type="text" name="instagram" value={form.instagram || ''} onChange={handleChange} disabled={!editing} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50" />
         </div>
       </div>
 
-      {/* Branding Pack Uploader - Conditionally rendered */}
+      {/* Branding */}
       {(plan === 'co-branded' || plan === 'white-label') && <BrandingManager />}
 
-      {/* Bottom Info */}
+      {/* Footer */}
       <div className="mt-10 pt-6 border-t border-gray-100 text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-4">
         <p>Joined: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'N/A'}</p>
         <p>Account Type: <span className="text-orange-500 font-medium">{subscription?.tier?.name || 'N/A'}</span></p>

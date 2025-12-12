@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -100,11 +99,7 @@ export default function BusinessProfilePage() {
 
     setIsUploading(true);
     try {
-      const payload: UpdateBusinessProfileDto = {
-        category: '',
-        subCategory: '',
-        sector: ''
-      };
+      const payload: UpdateBusinessProfileDto = {};
 
       if (form.businessName !== profile.name) payload.name = form.businessName;
       if (form.email !== profile.email) payload.email = form.email;

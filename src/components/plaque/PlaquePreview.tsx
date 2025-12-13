@@ -25,12 +25,13 @@ export const PlaquePreview = React.forwardRef<HTMLDivElement, PlaquePreviewProps
         <div className="flex-1 flex flex-col justify-center w-full space-y-6">
           {/* Action Text */}
           <div className="space-y-2">
-            <h2 className="text-xl font-bold tracking-widest text-gray-800 uppercase">
-              {actionText || "SCAN HERE"}
-            </h2>
+           
             <h3 className="text-lg font-semibold tracking-wider text-gray-800 uppercase">
               {description || "FOR PAYMENT"}
             </h3>
+             <h2 className="text-xl font-bold tracking-widest text-gray-800 uppercase">
+              {actionText || "SCAN HERE"}
+            </h2>
           </div>
 
           <div className="w-16 h-0.5 bg-gray-800 mx-auto opacity-50" />

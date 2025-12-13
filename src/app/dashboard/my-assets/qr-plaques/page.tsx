@@ -207,9 +207,10 @@ export default function QRPlaquesPage() {
                     `}</style>
                     <div className="w-full h-full flex justify-center items-center">
                         <PlaquePreview
-                            actionText={plaqueToPrint.actionText || "SCAN HERE"}
+                            
                             description={plaqueToPrint.description || "FOR PAYMENT"}
                             extraInfo={plaqueToPrint.extraInfo || ""}
+                            actionText={plaqueToPrint.actionText || "SCAN HERE"}
                             qrCodeUrl={plaqueToPrint.qrCodeUrl || ""}
                         />
                     </div>

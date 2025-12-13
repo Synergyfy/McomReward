@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer } from 'lucide-react';
+import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -17,6 +17,7 @@ import AssignPartnerModal from '@/components/dashboard/my-assets/qr-plaques/Assi
 import MarkForSaleModal from '@/components/dashboard/my-assets/qr-plaques/MarkForSaleModal';
 import ConfigurePlaqueModal from '@/components/dashboard/my-assets/qr-plaques/ConfigurePlaqueModal';
 import DeactivateConfirmationModal from '@/components/dashboard/my-assets/qr-plaques/DeactivateConfirmationModal';
+import PlaqueDetailsModal from '@/components/dashboard/my-assets/qr-plaques/PlaqueDetailsModal';
 
 // Enhanced mock data
 const initialQrPlaquesData = [
@@ -71,24 +72,16 @@ export default function QRPlaquesPage() {
     const { data: subscription, isLoading: isSubscriptionLoading, isError } = useGetMySubscription();
 
     // Calculate Max Plaques
-    // Priority: 1. API qrCodeCount, 2. Map based on Name, 3. Default (5)
-    // Initialize with a safe default of 5 (Bronze) instead of 0
     let maxPlaques = 5;
 
     if (subscription?.tier) {
-        // If we have explicit count from API, use it (even if 0, though unlikely for Platinum)
-        // But if it's 0, we might want to check if that's real or a mistake. For now, trust explicit number.
         if (typeof subscription.tier.qrCodeCount === 'number' && subscription.tier.qrCodeCount > 0) {
             maxPlaques = subscription.tier.qrCodeCount;
         } else if (subscription.tier.name) {
-            // Fallback to name matching
             const tierName = subscription.tier.name;
-
-            // Exact match
             if (TIER_LIMITS[tierName]) {
                 maxPlaques = TIER_LIMITS[tierName];
             } else {
-                // Partial/Case-insensitive match
                 const lowerName = tierName.toLowerCase();
                 if (lowerName.includes('platinum')) maxPlaques = 50;
                 else if (lowerName.includes('gold')) maxPlaques = 20;
@@ -99,11 +92,13 @@ export default function QRPlaquesPage() {
     }
 
     const currentCount = plaques.length;
-    // Check if limit is reached (only if maxPlaques is not -1 which means unlimited)
     const isLimitReached = maxPlaques !== -1 && currentCount >= maxPlaques;
 
     // Print State
     const [plaqueToPrint, setPlaqueToPrint] = useState<Plaque | null>(null);
+
+    // View Details State
+    const [viewPlaque, setViewPlaque] = useState<Plaque | null>(null);
 
     // Modal states
     const [isAssignModalOpen, setAssignModalOpen] = useState(false);
@@ -166,6 +161,10 @@ export default function QRPlaquesPage() {
 
     const handlePrint = (plaque: Plaque) => {
         setPlaqueToPrint(plaque);
+    };
+
+    const handleViewDetails = (plaque: Plaque) => {
+        setViewPlaque(plaque);
     };
 
     const getStatusClass = (status: string) => {
@@ -284,17 +283,24 @@ export default function QRPlaquesPage() {
                         </thead>
                         <tbody>
                             {plaques.map((plaque) => (
-                                <tr key={plaque.id} className="border-b hover:bg-gray-50">
+                                <tr
+                                    key={plaque.id}
+                                    className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                                    onClick={() => handleViewDetails(plaque)}
+                                >
                                     <td className="p-4 font-medium">{plaque.id}</td>
                                     <td className="p-4">{plaque.status === 'For Sale' ? plaque.price : plaque.partner}</td>
                                     <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(plaque.status)}`}>{plaque.status}</span></td>
                                     <td className="p-4">{plaque.linkedOffer || 'N/A'}</td>
                                     <td className="p-4">{plaque.scans}</td>
                                     <td className="p-4">{plaque.redemptions}</td>
-                                    <td className="p-4 text-center">
+                                    <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleViewDetails(plaque)}>
+                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handlePrint(plaque)}>
                                                     <Printer className="mr-2 h-4 w-4" /> Print / PDF
                                                 </DropdownMenuItem>
@@ -320,6 +326,12 @@ export default function QRPlaquesPage() {
             </div>
 
             {/* Modals */}
+            <PlaqueDetailsModal
+                isOpen={!!viewPlaque}
+                onClose={() => setViewPlaque(null)}
+                plaque={viewPlaque}
+                onPrint={handlePrint}
+            />
             <AssignPartnerModal isOpen={isAssignModalOpen} onClose={() => setAssignModalOpen(false)} onAssign={handleAssign} plaqueId={selectedPlaque?.id || null} />
             <MarkForSaleModal isOpen={isSaleModalOpen} onClose={() => setSaleModalOpen(false)} onConfirm={handleMarkForSale} plaqueId={selectedPlaque?.id || null} />
             <ConfigurePlaqueModal isOpen={isConfigureModalOpen} onClose={() => setConfigureModalOpen(false)} onSave={handleConfigure} plaque={selectedPlaque} />

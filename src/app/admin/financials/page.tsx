@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, Landmark, TrendingUp } from 'lucide-react';
+import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   mockEscrows,
   mockPayoutRequests,
@@ -23,7 +23,13 @@ import { Tier } from '@/services/financials/types';
 import { AddEditPointPackageModal } from '@/components/admin/financials/AddEditPointPackageModal';
 
 export default function FinancialsPage() {
-  const { data: paymentHistory, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory();
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const paymentsLimit = 10;
+  const { data: paymentHistoryData, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory(paymentsPage, paymentsLimit);
+
+  const paymentHistory = paymentHistoryData?.data || [];
+  const totalPaymentPages = paymentHistoryData?.totalPages || 1;
+
   const [escrows, setEscrows] = useState<Escrow[]>(mockEscrows);
   const [payouts, setPayouts] = useState<PayoutRequest[]>(mockPayoutRequests);
 
@@ -206,17 +212,23 @@ export default function FinancialsPage() {
                 <TableBody>
                   {isLoadingPayments && (
                     <TableRow>
-                      <TableCell colSpan={6}>Loading payment history...</TableCell>
+                      <TableCell colSpan={6} className="text-center py-4">Loading payment history...</TableCell>
                     </TableRow>
                   )}
 
                   {paymentsError && (
                     <TableRow>
-                      <TableCell colSpan={6}>Error loading payment history.</TableCell>
+                      <TableCell colSpan={6} className="text-center py-4 text-red-500">Error loading payment history.</TableCell>
                     </TableRow>
                   )}
 
-                  {paymentHistory && paymentHistory.map((txn: PaymentHistoryItem) => (
+                  {!isLoadingPayments && !paymentsError && paymentHistory.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">No transactions found.</TableCell>
+                    </TableRow>
+                  )}
+
+                  {paymentHistory.map((txn: PaymentHistoryItem) => (
                     <TableRow key={txn.id}>
                       <TableCell>{txn.transactionId}</TableCell>
                       <TableCell>{txn.membership?.tier?.name ?? txn.userId}</TableCell>
@@ -228,6 +240,32 @@ export default function FinancialsPage() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaymentsPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={paymentsPage === 1 || isLoadingPayments}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="text-sm font-medium">
+                  Page {paymentsPage} of {totalPaymentPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaymentsPage((prev) => Math.min(prev + 1, totalPaymentPages))}
+                  disabled={paymentsPage === totalPaymentPages || isLoadingPayments}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
             </CardContent>
           </Card>
         </TabsContent>

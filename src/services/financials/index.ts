@@ -30,15 +30,17 @@ export const useGetTiers = () => {
 // Payment history
 const PAYMENT_HISTORY_QUERY_KEY = 'payment-history';
 
-const getPaymentHistory = async (): Promise<PaymentHistoryItem[]> => {
-  const { data } = await api.get('/payment-history');
+const getPaymentHistory = async (page: number, limit: number): Promise<PaginatedResponse<PaymentHistoryItem>> => {
+  const { data } = await api.get<PaginatedResponse<PaymentHistoryItem>>('/payment-history', {
+    params: { page, limit },
+  });
   return data;
 };
 
-export const useGetPaymentHistory = () => {
-  return useQuery<PaymentHistoryItem[], Error>({
-    queryKey: [PAYMENT_HISTORY_QUERY_KEY],
-    queryFn: getPaymentHistory,
+export const useGetPaymentHistory = (page: number, limit: number) => {
+  return useQuery<PaginatedResponse<PaymentHistoryItem>, Error>({
+    queryKey: [PAYMENT_HISTORY_QUERY_KEY, page, limit],
+    queryFn: () => getPaymentHistory(page, limit),
   });
 };
 

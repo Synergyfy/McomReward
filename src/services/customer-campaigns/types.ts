@@ -84,6 +84,7 @@ export interface PublicCampaignSummary {
   contactEmail: string | null;
   contactPhoneNumber: string | null;
   footerText: string | null;
+  category?: string;
 }
 
 export interface PaginatedPublicCampaigns {

@@ -66,16 +66,16 @@ import {
 
 // Tooltip content for tags
 const LOCATION_TAG_INFO = {
-  Nearby: 'Very close, neighbourhood radius.',
-  Hyperlocal: 'Wider local area but still nearby.',
-  National: 'Anywhere within the country.',
+  nearby: 'Very close, neighbourhood radius.',
+  hyperlocal: 'Wider local area but still nearby.',
+  national: 'Anywhere within the country.',
 };
 
 const RELATIONSHIP_TAG_INFO = {
-  Partner: 'Someone you collaborate with.',
-  Supplier: 'Someone who provides you items or services.',
-  Affiliate: 'Promotes your business.',
-  Customer: 'Buys from you.',
+  partner: 'Someone you collaborate with.',
+  supplier: 'Someone who provides you items or services.',
+  affiliate: 'Promotes your business.',
+  customer: 'Buys from you.',
 };
 
 const SOURCE_TAG_INFO = {
@@ -88,12 +88,12 @@ const SOURCE_TAG_INFO = {
 // Badge color mapping
 const getStatusColor = (status: ContactStatus) => {
   switch (status) {
-    case 'Active':
+    case 'accepted':
       return 'bg-green-100 text-green-800 border-green-200';
-    case 'Pending':
+    case 'pending':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'Inactive':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'rejected':
+      return 'bg-red-100 text-red-700 border-red-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -136,8 +136,8 @@ export default function FormContactsPage() {
     businessName: '',
     email: '',
     phone: '',
-    locationTag: 'Nearby',
-    relationshipTag: 'Customer',
+    locationTag: 'nearby',
+    relationshipTag: 'customer',
     hasPermission: false,
   });
 
@@ -148,7 +148,6 @@ export default function FormContactsPage() {
     search: searchQuery || undefined,
     locationTag: locationFilter !== 'all' ? locationFilter : undefined,
     relationshipTag: relationshipFilter !== 'all' ? relationshipFilter : undefined,
-    sourceTag: sourceFilter !== 'all' ? sourceFilter : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     sortBy,
   };
@@ -161,7 +160,7 @@ export default function FormContactsPage() {
 
   // Handlers
   const handleAddContact = async () => {
-    if (!formData.fullName || !formData.hasPermission) {
+    if (!formData.fullName || !formData.phone || !formData.hasPermission) {
       toast.error('Please fill in required fields and confirm permission');
       return;
     }
@@ -225,7 +224,7 @@ export default function FormContactsPage() {
       phone: contact.phone || '',
       locationTag: contact.locationTag,
       relationshipTag: contact.relationshipTag,
-      hasPermission: contact.hasPermission,
+      hasPermission: contact.hasSharingPermission,
     });
     setIsEditModalOpen(true);
   };
@@ -241,8 +240,8 @@ export default function FormContactsPage() {
       businessName: '',
       email: '',
       phone: '',
-      locationTag: 'Nearby',
-      relationshipTag: 'Customer',
+      locationTag: 'nearby',
+      relationshipTag: 'customer',
       hasPermission: false,
     });
   };
@@ -393,9 +392,9 @@ export default function FormContactsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Locations</SelectItem>
-                        <SelectItem value="Nearby">Nearby</SelectItem>
-                        <SelectItem value="Hyperlocal">Hyperlocal</SelectItem>
-                        <SelectItem value="National">National</SelectItem>
+                        <SelectItem value="nearby">Nearby</SelectItem>
+                        <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
+                        <SelectItem value="national">National</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -410,10 +409,10 @@ export default function FormContactsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Relationships</SelectItem>
-                        <SelectItem value="Partner">Partner</SelectItem>
-                        <SelectItem value="Supplier">Supplier</SelectItem>
-                        <SelectItem value="Affiliate">Affiliate</SelectItem>
-                        <SelectItem value="Customer">Customer</SelectItem>
+                        <SelectItem value="partner">Partner</SelectItem>
+                        <SelectItem value="supplier">Supplier</SelectItem>
+                        <SelectItem value="affiliate">Affiliate</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -446,9 +445,9 @@ export default function FormContactsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="accepted">Accepted</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -505,7 +504,7 @@ export default function FormContactsPage() {
                               <div className="space-y-1 text-xs">
                                 {Object.entries(LOCATION_TAG_INFO).map(([key, value]) => (
                                   <div key={key}>
-                                    <strong>{key}:</strong> {value}
+                                    <strong className="capitalize">{key}:</strong> {value}
                                   </div>
                                 ))}
                               </div>
@@ -526,7 +525,7 @@ export default function FormContactsPage() {
                               <div className="space-y-1 text-xs">
                                 {Object.entries(RELATIONSHIP_TAG_INFO).map(([key, value]) => (
                                   <div key={key}>
-                                    <strong>{key}:</strong> {value}
+                                    <strong className="capitalize">{key}:</strong> {value}
                                   </div>
                                 ))}
                               </div>
@@ -582,22 +581,26 @@ export default function FormContactsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal">
+                        <Badge variant="outline" className="font-normal capitalize">
                           {contact.locationTag}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal">
+                        <Badge variant="outline" className="font-normal capitalize">
                           {contact.relationshipTag}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`font-normal ${getSourceColor(contact.sourceTag)}`}
-                        >
-                          {contact.sourceTag}
-                        </Badge>
+                        {contact.sourceTag ? (
+                          <Badge
+                            variant="outline"
+                            className={`font-normal ${getSourceColor(contact.sourceTag)}`}
+                          >
+                            {contact.sourceTag}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -608,7 +611,7 @@ export default function FormContactsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {contact.hasPermission ? (
+                        {contact.hasSharingPermission ? (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             ✓ Confirmed
                           </Badge>
@@ -652,11 +655,11 @@ export default function FormContactsPage() {
               </Table>
 
               {/* Pagination */}
-              {contactsData && contactsData.totalPages > 1 && (
+              {contactsData && contactsData.meta.lastPage > 1 && (
                 <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
                   <div className="text-sm text-gray-500">
                     Showing {(currentPage - 1) * 10 + 1} to{' '}
-                    {Math.min(currentPage * 10, contactsData.total)} of {contactsData.total}{' '}
+                    {Math.min(currentPage * 10, contactsData.meta.total)} of {contactsData.meta.total}{' '}
                     contacts
                   </div>
                   <div className="flex gap-2">
@@ -669,11 +672,11 @@ export default function FormContactsPage() {
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: contactsData.totalPages }, (_, i) => i + 1)
+                      {Array.from({ length: contactsData.meta.lastPage }, (_, i) => i + 1)
                         .filter(
                           (page) =>
                             page === 1 ||
-                            page === contactsData.totalPages ||
+                            page === contactsData.meta.lastPage ||
                             Math.abs(page - currentPage) <= 1
                         )
                         .map((page, idx, arr) => (
@@ -699,8 +702,8 @@ export default function FormContactsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(contactsData.totalPages, p + 1))}
-                      disabled={currentPage === contactsData.totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(contactsData.meta.lastPage, p + 1))}
+                      disabled={currentPage === contactsData.meta.lastPage}
                     >
                       Next
                     </Button>
@@ -798,7 +801,9 @@ export default function FormContactsPage() {
               {/* Phone */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">
+                    Phone <span className="text-red-500">*</span>
+                  </Label>
                   <TooltipProvider>
                     <Tooltip delayDuration={200}>
                       <TooltipTrigger asChild>
@@ -850,9 +855,9 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="Nearby">Nearby</SelectItem>
-                    <SelectItem value="Hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="National">National</SelectItem>
+                    <SelectItem value="nearby">Nearby</SelectItem>
+                    <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
+                    <SelectItem value="national">National</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -889,10 +894,10 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="Partner">Partner</SelectItem>
-                    <SelectItem value="Supplier">Supplier</SelectItem>
-                    <SelectItem value="Affiliate">Affiliate</SelectItem>
-                    <SelectItem value="Customer">Customer</SelectItem>
+                    <SelectItem value="partner">Partner</SelectItem>
+                    <SelectItem value="supplier">Supplier</SelectItem>
+                    <SelectItem value="affiliate">Affiliate</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -945,7 +950,7 @@ export default function FormContactsPage() {
             </Button>
             <Button
               onClick={handleAddContact}
-              disabled={createContact.isPending || !formData.fullName || !formData.hasPermission}
+              disabled={createContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
               className="bg-orange-600 hover:bg-orange-700"
             >
               {createContact.isPending ? 'Adding...' : 'Add Contact'}
@@ -1040,7 +1045,9 @@ export default function FormContactsPage() {
               {/* Phone */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Label htmlFor="edit-phone">
+                    Phone <span className="text-red-500">*</span>
+                  </Label>
                   <TooltipProvider>
                     <Tooltip delayDuration={200}>
                       <TooltipTrigger asChild>
@@ -1092,9 +1099,9 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="Nearby">Nearby</SelectItem>
-                    <SelectItem value="Hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="National">National</SelectItem>
+                    <SelectItem value="nearby">Nearby</SelectItem>
+                    <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
+                    <SelectItem value="national">National</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1131,10 +1138,10 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="Partner">Partner</SelectItem>
-                    <SelectItem value="Supplier">Supplier</SelectItem>
-                    <SelectItem value="Affiliate">Affiliate</SelectItem>
-                    <SelectItem value="Customer">Customer</SelectItem>
+                    <SelectItem value="partner">Partner</SelectItem>
+                    <SelectItem value="supplier">Supplier</SelectItem>
+                    <SelectItem value="affiliate">Affiliate</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1188,7 +1195,7 @@ export default function FormContactsPage() {
             </Button>
             <Button
               onClick={handleEditContact}
-              disabled={updateContact.isPending || !formData.fullName || !formData.hasPermission}
+              disabled={updateContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
               className="bg-orange-600 hover:bg-orange-700"
             >
               {updateContact.isPending ? 'Updating...' : 'Update Contact'}

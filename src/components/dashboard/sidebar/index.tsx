@@ -195,12 +195,7 @@ export default function BusinessSidebar({
           </Link>
         </li>
 
-        <li>
-          <Link href="/dashboard/affiliate" className={enhancedLinkClasses('/dashboard/affiliate')}>
-            <Users className="mr-3" />
-            Affiliate
-          </Link>
-        </li>
+
 
         <li>
           <Link href="/dashboard/customer-activities" className={enhancedLinkClasses('/dashboard/customer-activities')}>
@@ -274,9 +269,15 @@ export default function BusinessSidebar({
         </button>
         {isMyAssetsOpen && (
           <ul className="ml-8 mt-2 space-y-1">
-            <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Overview</Link></li>
+            <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Contacts</Link></li>
             <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
+
+            <Link href="/dashboard/affiliate" className={linkClasses('/dashboard/affiliate')}>
+              Affiliate
+            </Link>
             <li><Link href="/dashboard/my-assets/nfc-cards" className={linkClasses('/dashboard/my-assets/nfc-cards')}>NFC Cards</Link></li>
+            <li>
+            </li>
             {/* <li><Link href="/dashboard/my-assets/storefront-media" className={linkClasses('/dashboard/my-assets/storefront-media')}>Storefront & Media</Link></li>
             <li><Link href="/dashboard/my-assets/marketing-materials" className={linkClasses('/dashboard/my-assets/marketing-materials')}>Marketing Materials</Link></li>
             <li><Link href="/dashboard/my-assets/partner-network" className={linkClasses('/dashboard/my-assets/partner-network')}>Partner Network</Link></li>

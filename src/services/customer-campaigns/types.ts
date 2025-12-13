@@ -1,5 +1,30 @@
 import { RewardResponse } from "@/services/rewards/types";
 
+export interface CampaignBusiness {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  website: string | null;
+  socialMedia: any[] | null;
+  uniqueCode: string;
+  role: string;
+  referralCapacity: any | null;
+  affiliateCode: string;
+  referralPoints: string;
+  reputationPoints: string;
+  profileImage: string | null;
+  banner: string | null;
+  isDisabled: boolean;
+  stripeCustomerId: string | null;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  extraPoints: number;
+  matchingPoints: number;
+  isEmailVerified: boolean;
+}
+
 export interface PublicCampaign {
   id: string;
   name: string;
@@ -36,7 +61,7 @@ export interface PublicCampaign {
   contactPhoneNumber: string | null;
   footerText: string | null;
   rewards: RewardResponse[];
-  tagline?: string; // Keeping optional fields that might be computed or from other endpoints
+  tagline?: string;
   howToEarn?: string[];
   termsAndConditions?: string[];
   rewardsAvailable?: number;
@@ -44,6 +69,8 @@ export interface PublicCampaign {
   category?: string;
   badgeLevel?: string;
   wishlistItemId?: string;
+  initialAudienceSize: number | null;
+  business?: CampaignBusiness;
 }
 
 export interface PublicCampaignSummary {
@@ -84,6 +111,8 @@ export interface PublicCampaignSummary {
   contactEmail: string | null;
   contactPhoneNumber: string | null;
   footerText: string | null;
+  initialAudienceSize: number | null;
+  business?: CampaignBusiness;
 }
 
 export interface PaginatedPublicCampaigns {

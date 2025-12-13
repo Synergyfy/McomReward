@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock } from 'lucide-react';
+import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // Imports moved up and consolidated
@@ -21,6 +21,8 @@ import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCamp
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { PublicCampaignResponse } from '@/services/campaigns/types';
+
+import QRCodeModal from '@/components/dashboard/campaigns/QRCodeModal';
 
 interface PaginationProps {
   currentPage: number;
@@ -163,17 +165,26 @@ export default function CampaignsListPage() {
   const router = useRouter();
   const [createdPage, setCreatedPage] = useState(1);
   const [claimedPage, setClaimedPage] = useState(1);
-  const limit = 9; // Changed to 9 to match grid layout (3 cols)
+  const limit = 9;
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedCampaignId, setCopiedCampaignId] = useState<string | null>(null);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  // QR Modal State
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [selectedCampaignForQR, setSelectedCampaignForQR] = useState<{ id: string, name: string } | null>(null);
 
   const { data: createdCampaignsData, isLoading: isLoadingCreated } = useGetMyCreatedCampaigns(createdPage, limit);
   const { data: claimedCampaignsData, isLoading: isLoadingClaimed } = useGetMyClaimedCampaigns(claimedPage, limit);
   const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
   const { data: tierUsageData } = useGetBusinessTierUsage();
   const { data: subscriptionData } = useGetMySubscription();
+
+  const handleOpenQRModal = (campaignId: string, campaignName: string) => {
+    setSelectedCampaignForQR({ id: campaignId, name: campaignName });
+    setIsQRModalOpen(true);
+  };
 
   const handleCopyLink = (campaignId: string) => {
     const campaignUrl = `${window.location.origin}/campaigns/${campaignId}`;
@@ -214,6 +225,8 @@ export default function CampaignsListPage() {
   const hasReachedCampaignLimit = currentActiveCampaigns >= maxActiveCampaigns;
 
   const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
+    // ... loading / empty states ...
+
     if (isLoading) {
       return (
         <div className="text-center py-12">
@@ -302,61 +315,54 @@ export default function CampaignsListPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Button
-                  asChild
-                  className="flex-grow py-2 text-md font-semibold bg-orange-600 hover:bg-orange-700 transition-colors duration-200"
-                >
-                  <Link href={`/dashboard/campaigns/${campaign.id}`}>View Campaign</Link>
-                </Button>
+              {/* Action Buttons Grid */}
+              <div className="grid grid-cols-4 gap-2">
                 <Button
                   asChild
                   variant="outline"
                   size="icon"
-                  className="border-orange-600 text-orange-600 hover:bg-orange-50 transition-colors duration-200"
+                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+                  title="View Campaign"
+                >
+                  <Link href={`/dashboard/campaigns/${campaign.id}`}>
+                    <Eye className="h-4 w-4" />
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="w-full border-orange-600 text-orange-600 hover:bg-orange-50"
+                  title="Edit Campaign"
                 >
                   <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
                     <Pencil className="h-4 w-4" />
                   </Link>
                 </Button>
+
                 <Button
                   variant="outline"
                   size="icon"
+                  className="w-full border-gray-600 text-gray-600 hover:bg-gray-50"
                   onClick={() => handleCopyLink(campaign.id)}
-                  title="Copy campaign link"
+                  title="Copy Link"
                 >
                   {copiedCampaignId === campaign.id ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    <span className="text-green-600 font-bold text-xs">✓</span>
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-                    </svg>
+                    <Copy className="h-4 w-4" />
                   )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
+                  onClick={() => handleOpenQRModal(campaign.id, campaign.name)}
+                  title="Generate QR Code"
+                >
+                  <QrCode className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
@@ -369,6 +375,7 @@ export default function CampaignsListPage() {
   return (
     <>
       <div className="min-h-screen bg-gray-50 p-6">
+        {/* ... existing header/search content ... */}
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -455,6 +462,14 @@ export default function CampaignsListPage() {
       <UpgradePlanModal
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
+      />
+
+      {/* QR Code Modal Integration */}
+      <QRCodeModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        campaignId={selectedCampaignForQR?.id || null}
+        campaignName={selectedCampaignForQR?.name || ''}
       />
     </>
   );

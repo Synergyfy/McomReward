@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '../api';
 import {
     NetworkContact,
     NetworkContactsResponse,
@@ -6,15 +7,11 @@ import {
     CreateContactDto,
     UpdateContactDto,
     BulkContactImportDto,
-    LocationTag,
-    RelationshipTag,
-    SourceTag,
-    ContactStatus,
 } from './types';
 
 const NETWORK_CONTACTS_QUERY_KEY = 'networkContacts';
 
-// Mock data storage (simulates a database)
+// Mock data (Modified to match new interface)
 let mockContacts: NetworkContact[] = [
     {
         id: '1',
@@ -22,11 +19,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Smith & Co. Bakery',
         email: 'john@smithbakery.com',
         phone: '+44 20 1234 5678',
-        locationTag: 'Nearby',
-        relationshipTag: 'Partner',
+        locationTag: 'nearby',
+        relationshipTag: 'partner',
         sourceTag: 'User-submitted',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-01-15T10:30:00Z',
         updatedAt: '2024-01-15T10:30:00Z',
     },
@@ -36,11 +33,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Fresh Produce Ltd',
         email: 'sarah@freshproduce.co.uk',
         phone: '+44 20 9876 5432',
-        locationTag: 'Hyperlocal',
-        relationshipTag: 'Supplier',
+        locationTag: 'hyperlocal',
+        relationshipTag: 'supplier',
         sourceTag: 'Platform',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-01-20T14:20:00Z',
         updatedAt: '2024-01-20T14:20:00Z',
     },
@@ -50,11 +47,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Tech Solutions Inc',
         email: 'michael@techsolutions.com',
         phone: '+44 20 5555 1234',
-        locationTag: 'National',
-        relationshipTag: 'Customer',
+        locationTag: 'national',
+        relationshipTag: 'customer',
         sourceTag: 'Plaque',
-        status: 'Pending',
-        hasPermission: false,
+        status: 'pending',
+        hasSharingPermission: false,
         createdAt: '2024-02-01T09:15:00Z',
         updatedAt: '2024-02-01T09:15:00Z',
     },
@@ -64,11 +61,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Williams Marketing Agency',
         email: 'emma@williamsmarketing.com',
         phone: '+44 20 7777 8888',
-        locationTag: 'Nearby',
-        relationshipTag: 'Affiliate',
+        locationTag: 'nearby',
+        relationshipTag: 'affiliate',
         sourceTag: 'Affiliate',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-05T11:45:00Z',
         updatedAt: '2024-02-05T11:45:00Z',
     },
@@ -78,11 +75,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Brown Construction',
         email: 'david@brownconstruction.co.uk',
         phone: '+44 20 3333 4444',
-        locationTag: 'Hyperlocal',
-        relationshipTag: 'Partner',
+        locationTag: 'hyperlocal',
+        relationshipTag: 'partner',
         sourceTag: 'User-submitted',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-10T16:00:00Z',
         updatedAt: '2024-02-10T16:00:00Z',
     },
@@ -91,11 +88,12 @@ let mockContacts: NetworkContact[] = [
         fullName: 'Lisa Anderson',
         businessName: 'Anderson Consulting',
         email: 'lisa@andersonconsulting.com',
-        locationTag: 'National',
-        relationshipTag: 'Customer',
+        phone: '+44 20 1212 3434',
+        locationTag: 'national',
+        relationshipTag: 'customer',
         sourceTag: 'Platform',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-12T08:30:00Z',
         updatedAt: '2024-02-12T08:30:00Z',
     },
@@ -105,11 +103,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Taylor Logistics',
         email: 'robert@taylorlogistics.co.uk',
         phone: '+44 20 6666 7777',
-        locationTag: 'Nearby',
-        relationshipTag: 'Supplier',
+        locationTag: 'nearby',
+        relationshipTag: 'supplier',
         sourceTag: 'User-submitted',
-        status: 'Inactive',
-        hasPermission: true,
+        status: 'rejected',
+        hasSharingPermission: true,
         createdAt: '2024-01-25T13:20:00Z',
         updatedAt: '2024-01-25T13:20:00Z',
     },
@@ -119,11 +117,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Martinez Design Studio',
         email: 'jennifer@martinezdesign.com',
         phone: '+44 20 8888 9999',
-        locationTag: 'Hyperlocal',
-        relationshipTag: 'Partner',
+        locationTag: 'hyperlocal',
+        relationshipTag: 'partner',
         sourceTag: 'Plaque',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-15T10:10:00Z',
         updatedAt: '2024-02-15T10:10:00Z',
     },
@@ -133,11 +131,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Wilson Retail Group',
         email: 'james@wilsonretail.co.uk',
         phone: '+44 20 1111 2222',
-        locationTag: 'National',
-        relationshipTag: 'Customer',
+        locationTag: 'national',
+        relationshipTag: 'customer',
         sourceTag: 'User-submitted',
-        status: 'Pending',
-        hasPermission: false,
+        status: 'pending',
+        hasSharingPermission: false,
         createdAt: '2024-02-18T15:45:00Z',
         updatedAt: '2024-02-18T15:45:00Z',
     },
@@ -147,11 +145,11 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Garcia Food Services',
         email: 'patricia@garciafood.com',
         phone: '+44 20 4444 5555',
-        locationTag: 'Nearby',
-        relationshipTag: 'Supplier',
+        locationTag: 'nearby',
+        relationshipTag: 'supplier',
         sourceTag: 'Affiliate',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-20T12:00:00Z',
         updatedAt: '2024-02-20T12:00:00Z',
     },
@@ -160,11 +158,12 @@ let mockContacts: NetworkContact[] = [
         fullName: 'Christopher Lee',
         businessName: 'Lee Financial Advisors',
         email: 'chris@leefinancial.co.uk',
-        locationTag: 'Hyperlocal',
-        relationshipTag: 'Customer',
+        phone: '+44 20 5656 7878',
+        locationTag: 'hyperlocal',
+        relationshipTag: 'customer',
         sourceTag: 'Platform',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-22T09:30:00Z',
         updatedAt: '2024-02-22T09:30:00Z',
     },
@@ -174,110 +173,69 @@ let mockContacts: NetworkContact[] = [
         businessName: 'Thompson Events',
         email: 'mary@thompsonevents.com',
         phone: '+44 20 2222 3333',
-        locationTag: 'Nearby',
-        relationshipTag: 'Partner',
+        locationTag: 'nearby',
+        relationshipTag: 'partner',
         sourceTag: 'User-submitted',
-        status: 'Active',
-        hasPermission: true,
+        status: 'accepted',
+        hasSharingPermission: true,
         createdAt: '2024-02-25T14:15:00Z',
         updatedAt: '2024-02-25T14:15:00Z',
     },
 ];
 
-// Helper function to filter and sort contacts
-const filterAndSortContacts = (
-    contacts: NetworkContact[],
-    params: NetworkContactsQueryParams
-): NetworkContact[] => {
-    let filtered = [...contacts];
+// Helper to filter/sort (Kept for fallback if needed, or referenced only by local mocks)
+const filterAndSortContacts = (/* ... handled by backend now */) => [];
 
-    // Search filter
-    if (params.search) {
-        const searchLower = params.search.toLowerCase();
-        filtered = filtered.filter(
-            (c) =>
-                c.fullName.toLowerCase().includes(searchLower) ||
-                c.businessName?.toLowerCase().includes(searchLower) ||
-                c.email?.toLowerCase().includes(searchLower)
-        );
-    }
-
-    // Location filter
-    if (params.locationTag) {
-        filtered = filtered.filter((c) => c.locationTag === params.locationTag);
-    }
-
-    // Relationship filter
-    if (params.relationshipTag) {
-        filtered = filtered.filter((c) => c.relationshipTag === params.relationshipTag);
-    }
-
-    // Source filter
-    if (params.sourceTag) {
-        filtered = filtered.filter((c) => c.sourceTag === params.sourceTag);
-    }
-
-    // Status filter
-    if (params.status) {
-        filtered = filtered.filter((c) => c.status === params.status);
-    }
-
-    // Sorting
-    switch (params.sortBy) {
-        case 'name':
-            filtered.sort((a, b) => a.fullName.localeCompare(b.fullName));
-            break;
-        case 'newest':
-            filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            break;
-        case 'oldest':
-            filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-            break;
-        case 'active':
-            filtered.sort((a, b) => {
-                if (a.status === 'Active' && b.status !== 'Active') return -1;
-                if (a.status !== 'Active' && b.status === 'Active') return 1;
-                return 0;
-            });
-            break;
-        default:
-            // Default to newest
-            filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return filtered;
-};
-
-// Mock API functions with simulated delays
+// Real API function
 const fetchNetworkContacts = async (
     params: NetworkContactsQueryParams
 ): Promise<NetworkContactsResponse> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const filtered = filterAndSortContacts(mockContacts, params);
-    const page = params.page || 1;
-    const limit = params.limit || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedData = filtered.slice(startIndex, endIndex);
-
-    return {
-        data: paginatedData,
-        total: filtered.length,
-        page,
-        limit,
-        totalPages: Math.ceil(filtered.length / limit),
-        contactProgress: {
-            completed: mockContacts.length,
-            required: 25, // Mock requirement
-        },
+    // Param Mapping
+    const apiParams: any = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        search: params.search,
+        businessId: params.businessId,
     };
+
+    if (params.locationTag && params.locationTag !== 'all') {
+        apiParams.locationTag = params.locationTag;
+    }
+    if (params.relationshipTag && params.relationshipTag !== 'all') {
+        apiParams.relationshipTag = params.relationshipTag;
+    }
+    if (params.status && params.status !== 'all') {
+        apiParams.status = params.status;
+    }
+
+    // Sort Mapping
+    if (params.sortBy === 'name' as any) { // 'name' comes from UI
+        apiParams.sortBy = 'fullName';
+        apiParams.sortOrder = 'ASC';
+    } else if (params.sortBy === 'newest' as any) {
+        apiParams.sortBy = 'createdAt';
+        apiParams.sortOrder = 'DESC';
+    } else if (params.sortBy === 'oldest' as any) {
+        apiParams.sortBy = 'createdAt';
+        apiParams.sortOrder = 'ASC';
+    } else if (params.sortBy === 'active' as any) {
+        // Fallback for active sort if not supported backend side
+        apiParams.sortBy = 'createdAt';
+        apiParams.sortOrder = 'DESC';
+    } else {
+        // Default or pass through if it matches API already
+        apiParams.sortBy = params.sortBy ?? 'createdAt';
+        apiParams.sortOrder = params.sortOrder ?? 'DESC';
+    }
+
+    const { data } = await api.get<NetworkContactsResponse>('/network', { params: apiParams });
+    return data;
 };
 
 const fetchContactById = async (id: string): Promise<NetworkContact> => {
+    // Keeping mock for ID fetch as endpoint isn't provided
     await new Promise((resolve) => setTimeout(resolve, 300));
-
     const contact = mockContacts.find((c) => c.id === id);
     if (!contact) {
         throw new Error('Contact not found');
@@ -286,19 +244,11 @@ const fetchContactById = async (id: string): Promise<NetworkContact> => {
 };
 
 const createContact = async (contactData: CreateContactDto): Promise<NetworkContact> => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const { data } = await api.post<NetworkContact>('/network', contactData);
 
-    const newContact: NetworkContact = {
-        id: `${Date.now()}`,
-        ...contactData,
-        sourceTag: 'User-submitted',
-        status: 'Active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
-
-    mockContacts = [newContact, ...mockContacts];
-    return newContact;
+    // We can't easily push to backend list, so we won't update local mockContacts for list purposes
+    // since list now comes from API. But React Query invalidation in hook will trigger refetch from API.
+    return data;
 };
 
 const updateContact = async ({
@@ -308,6 +258,7 @@ const updateContact = async ({
     id: string;
     contactData: UpdateContactDto;
 }): Promise<NetworkContact> => {
+    // Mock update
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const index = mockContacts.findIndex((c) => c.id === id);
@@ -318,14 +269,16 @@ const updateContact = async ({
     const updatedContact: NetworkContact = {
         ...mockContacts[index],
         ...contactData,
+        hasSharingPermission: contactData.hasPermission ?? mockContacts[index].hasSharingPermission,
         updatedAt: new Date().toISOString(),
-    };
+    } as NetworkContact;
 
     mockContacts[index] = updatedContact;
     return updatedContact;
 };
 
 const deleteContact = async (id: string): Promise<void> => {
+    // Mock delete
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     const index = mockContacts.findIndex((c) => c.id === id);
@@ -344,8 +297,9 @@ const bulkImportContacts = async (
     const newContacts: NetworkContact[] = importData.contacts.map((contact, index) => ({
         id: `${Date.now()}-${index}`,
         ...contact,
+        hasSharingPermission: contact.hasPermission ?? false,
         sourceTag: 'User-submitted',
-        status: 'Active',
+        status: 'accepted',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }));
@@ -354,10 +308,13 @@ const bulkImportContacts = async (
 
     return {
         data: newContacts,
-        total: newContacts.length,
-        page: 1,
-        limit: newContacts.length,
-        totalPages: 1,
+        meta: {
+            total: newContacts.length,
+            page: 1,
+            lastPage: 1,
+            nextPage: null,
+            prevPage: null
+        }
     };
 };
 

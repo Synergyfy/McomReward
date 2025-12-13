@@ -161,7 +161,10 @@ export default function BusinessHeader({
             {/* Add-on Status */}
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-purple-500" />
-              <span className="whitespace-nowrap">add-on: {userBadge}</span>
+              <div className="flex flex-col leading-3">
+                <span className="text-[10px] text-gray-500 whitespace-nowrap">add-on:</span>
+                <span className="text-sm">{userBadge}</span>
+              </div>
             </div>
 
             {/* Badge Status */}

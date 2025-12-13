@@ -116,10 +116,12 @@ export default function CampaignsPage() {
                       </div>
                     </div>
 
-                    {/* Category Check (if applicable) or Status Tag */}
-                    {/* <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-gray-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                      General
-                    </div> */}
+                    {/* Sector Tag */}
+                    {campaign.business?.sectorName && (
+                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-gray-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm z-10">
+                        {campaign.business.sectorName}
+                      </div>
+                    )}
                   </div>
 
                   <CardContent className="p-6 flex flex-col flex-grow">

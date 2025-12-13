@@ -23,6 +23,9 @@ export interface CampaignBusiness {
   extraPoints: number;
   matchingPoints: number;
   isEmailVerified: boolean;
+  sectorName: string | null;
+  categoryName: string | null;
+  subCategoryName: string | null;
 }
 
 export interface PublicCampaign {

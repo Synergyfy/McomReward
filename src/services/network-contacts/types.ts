@@ -40,8 +40,9 @@ export interface UpdateContactDto {
     locationTag?: LocationTag;
     relationshipTag?: RelationshipTag;
     hasPermission?: boolean;
-    status?: ContactStatus;
 }
+
+export type UpdateNetworkDto = UpdateContactDto;
 
 export interface NetworkContactsQueryParams {
     page?: number;

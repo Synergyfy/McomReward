@@ -258,35 +258,12 @@ const updateContact = async ({
     id: string;
     contactData: UpdateContactDto;
 }): Promise<NetworkContact> => {
-    // Mock update
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const index = mockContacts.findIndex((c) => c.id === id);
-    if (index === -1) {
-        throw new Error('Contact not found');
-    }
-
-    const updatedContact: NetworkContact = {
-        ...mockContacts[index],
-        ...contactData,
-        hasSharingPermission: contactData.hasPermission ?? mockContacts[index].hasSharingPermission,
-        updatedAt: new Date().toISOString(),
-    } as NetworkContact;
-
-    mockContacts[index] = updatedContact;
-    return updatedContact;
+    const { data } = await api.patch<NetworkContact>(`/network/${id}`, contactData);
+    return data;
 };
 
 const deleteContact = async (id: string): Promise<void> => {
-    // Mock delete
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    const index = mockContacts.findIndex((c) => c.id === id);
-    if (index === -1) {
-        throw new Error('Contact not found');
-    }
-
-    mockContacts = mockContacts.filter((c) => c.id !== id);
+    await api.delete(`/network/${id}`);
 };
 
 const bulkImportContacts = async (

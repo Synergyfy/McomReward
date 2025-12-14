@@ -15,6 +15,7 @@ interface Reward {
     image: string;
     value: number;
     quantity: number;
+    remainingQuantity: number;
 }
 
 interface PublicRewardCardProps {
@@ -59,7 +60,7 @@ export default function PublicRewardCard({
                 {/* Top Badges */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
                     <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 px-3 py-1.5 text-xs font-medium uppercase tracking-wider shadow-sm">
-                        {reward.quantity > 0 ? `${reward.quantity} Left` : 'Unlimited'}
+                        {reward.remainingQuantity > 0 ? `${reward.remainingQuantity} Left` : 'Unlimited'}
                     </Badge>
                 </div>
 

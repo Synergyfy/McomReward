@@ -39,6 +39,7 @@ export interface RewardResponse {
   image: string;
   gallery?: string[];
   quantity: number;
+  remainingQuantity: number;
   createdAt: string;
   updatedAt: string;
   disabled: boolean;

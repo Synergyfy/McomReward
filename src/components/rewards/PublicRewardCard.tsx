@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,7 @@ interface Reward {
     value: number;
     quantity: number;
     remainingQuantity: number;
+    gallery?: string[] | null;
 }
 
 interface PublicRewardCardProps {
@@ -45,7 +48,7 @@ export default function PublicRewardCard({
             className
         )}>
             {/* Image Section */}
-            <div className="relative h-56 w-full overflow-hidden">
+            <div className="relative h-72 w-full overflow-hidden">
                 <Image
                     src={reward.image || 'https://placehold.co/600x400?text=Reward'}
                     alt={reward.title}
@@ -73,6 +76,27 @@ export default function PublicRewardCard({
                     </div>
                 </div>
             </div>
+
+            {/* Gallery Thumbnails */}
+            {reward.gallery && reward.gallery.length > 0 && (
+                <div className="px-6 pt-4 grid grid-cols-4 gap-2">
+                    {/* Gallery Images */}
+                    {reward.gallery.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className="relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gray-200 transition-all duration-300 group/thumb"
+                        >
+                            <Image
+                                src={img}
+                                alt={`Gallery ${idx}`}
+                                layout="fill"
+                                objectFit="cover"
+                                className="group-hover/thumb:scale-110 transition-transform duration-500"
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Content Section */}
             <div className="p-6 flex-grow flex flex-col relative">

@@ -159,6 +159,18 @@ export interface PaymentHistoryItem {
   membership: Membership;
 }
 
+export interface PaymentHistorySearchParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  payment_provider?: string;
+  user_type?: string;
+  purchase_type?: string;
+  min_amount?: number;
+  max_amount?: number;
+}
+
 export interface PointPackage {
   id: string;
   name: string;

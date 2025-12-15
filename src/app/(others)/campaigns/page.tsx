@@ -103,7 +103,7 @@ export default function CampaignsPage() {
   return (
     <>
       <div className="bg-gray-50 min-h-screen">
-        <div className="container mx-auto pt-48 pb-12 px-4">
+        <div className="container mx-auto pt-20 md:pt-28 pb-12 px-4">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">Explore Campaigns</h1>
             <p className="mt-4 text-lg text-gray-600">Discover offers and rewards from businesses you love.</p>

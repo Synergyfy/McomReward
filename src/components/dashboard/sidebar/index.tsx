@@ -245,6 +245,22 @@ export default function BusinessSidebar({
                   Add Staff
                 </Link>
               </li>
+              <div className="border-t border-gray-100 my-1 pt-1"></div>
+              <li>
+                <Link href="/dashboard/staff/campaigns" className={enhancedLinkClasses('/dashboard/staff/campaigns')}>
+                  Staff Campaigns
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/staff/customers" className={enhancedLinkClasses('/dashboard/staff/customers')}>
+                  Staff Customers
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/staff/redeem" className={enhancedLinkClasses('/dashboard/staff/redeem')}>
+                  Redeem Terminal
+                </Link>
+              </li>
             </ul>
           )}
         </li>

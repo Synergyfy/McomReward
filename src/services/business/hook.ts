@@ -15,8 +15,19 @@ import {
   BusinessMonthlyBalance,
   TierUsageResponse,
   BusinessSetupStatus,
-  PointPackageBalance
+  PointPackageBalance,
+  ReferralStatsResponseDto
 } from './types';
+// ... existing code
+
+// ------------------- REFERRAL STATS -------------------
+const getReferralStats = async (): Promise<ReferralStatsResponseDto> => {
+  const { data } = await api.get('/business/referral-stats');
+  return data;
+};
+
+export const useGetReferralStats = () => useQuery({ queryKey: ['referralStats'], queryFn: getReferralStats });
+
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

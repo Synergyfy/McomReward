@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight, Search, Filter, RefreshCw } from 'lucide-react';
 import {
   mockEscrows,
   mockPayoutRequests,
@@ -21,11 +21,38 @@ import { useGetTiers, useDeleteTier, useGetPaymentHistory, useGetPointPackages, 
 import { PaymentHistoryItem, PointPackage } from '@/services/financials/types';
 import { Tier } from '@/services/financials/types';
 import { AddEditPointPackageModal } from '@/components/admin/financials/AddEditPointPackageModal';
+import { useDebounce } from '@/hooks/use-debounce';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PaymentHistorySearchParams } from '@/services/financials/types';
 
 export default function FinancialsPage() {
-  const [paymentsPage, setPaymentsPage] = useState(1);
-  const paymentsLimit = 10;
-  const { data: paymentHistoryData, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory(paymentsPage, paymentsLimit);
+  const [paymentFilters, setPaymentFilters] = useState<PaymentHistorySearchParams>({
+    page: 1,
+    limit: 10,
+    search: '',
+    status: 'all',
+    payment_provider: 'all',
+    user_type: '',
+    purchase_type: 'all',
+    min_amount: undefined,
+    max_amount: undefined,
+    sort: 'DESC',
+  });
+
+  const debouncedSearch = useDebounce(paymentFilters.search, 500);
+
+  // Combine filters with debounced search for the hook
+  const effectiveFilters = {
+    ...paymentFilters,
+    search: debouncedSearch,
+    // Convert 'all' to undefined for API
+    status: paymentFilters.status === 'all' ? undefined : paymentFilters.status,
+    payment_provider: paymentFilters.payment_provider === 'all' ? undefined : paymentFilters.payment_provider,
+    purchase_type: paymentFilters.purchase_type === 'all' ? undefined : paymentFilters.purchase_type,
+  };
+
+  const { data: paymentHistoryData, isLoading: isLoadingPayments, error: paymentsError } = useGetPaymentHistory(effectiveFilters);
 
   const paymentHistory = paymentHistoryData?.data || [];
   const totalPaymentPages = paymentHistoryData?.totalPages || 1;
@@ -38,6 +65,25 @@ export default function FinancialsPage() {
 
   const { data: pointPackages, isLoading: isLoadingPointPackages, error: pointPackagesError } = useGetPointPackages(1, 10);
   const deletePointPackageMutation = useDeletePointPackage();
+
+  const handleFilterChange = (key: keyof PaymentHistorySearchParams, value: any) => {
+    setPaymentFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const clearFilters = () => {
+    setPaymentFilters({
+      page: 1,
+      limit: 10,
+      search: '',
+      status: 'all',
+      payment_provider: 'all',
+      user_type: '',
+      purchase_type: 'all',
+      min_amount: undefined,
+      max_amount: undefined,
+      sort: 'DESC',
+    });
+  };
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -198,6 +244,122 @@ export default function FinancialsPage() {
               <CardTitle>All Transactions</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Filters Section */}
+              <div className="mb-6 space-y-4 rounded-lg border p-4 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-medium">Filters</h3>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {/* Search */}
+                  <div className="relative col-span-1 md:col-span-2">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search transaction ID, business, or email..."
+                      className="pl-8"
+                      value={paymentFilters.search || ''}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <Select
+                    value={paymentFilters.status || 'all'}
+                    onValueChange={(value) => handleFilterChange('status', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="succeeded">Succeeded</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Payment Provider */}
+                  <Select
+                    value={paymentFilters.payment_provider || 'all'}
+                    onValueChange={(value) => handleFilterChange('payment_provider', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Providers</SelectItem>
+                      <SelectItem value="stripe">Stripe</SelectItem>
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Purchase Type */}
+                  <Select
+                    value={paymentFilters.purchase_type || 'all'}
+                    onValueChange={(value) => handleFilterChange('purchase_type', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Purchase Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Purchase Types</SelectItem>
+                      <SelectItem value="membership">Membership</SelectItem>
+                      <SelectItem value="extra_points">Extra Points</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* User Type */}
+                  <Input
+                    placeholder="User Type"
+                    value={paymentFilters.user_type || ''}
+                    onChange={(e) => handleFilterChange('user_type', e.target.value)}
+                  />
+
+                  {/* Min Amount */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Min:</span>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={paymentFilters.min_amount !== undefined ? paymentFilters.min_amount : ''}
+                      onChange={(e) => handleFilterChange('min_amount', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    />
+                  </div>
+
+                  {/* Max Amount */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Max:</span>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={paymentFilters.max_amount !== undefined ? paymentFilters.max_amount : ''}
+                      onChange={(e) => handleFilterChange('max_amount', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    />
+                  </div>
+
+                  {/* Sort Order */}
+                  <Select
+                    value={paymentFilters.sort || 'DESC'}
+                    onValueChange={(value) => handleFilterChange('sort', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sort Order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DESC">Newest First</SelectItem>
+                      <SelectItem value="ASC">Oldest First</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Clear Filters */}
+                  <Button variant="outline" onClick={clearFilters} className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -246,20 +408,20 @@ export default function FinancialsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPaymentsPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={paymentsPage === 1 || isLoadingPayments}
+                  onClick={() => handleFilterChange('page', (paymentFilters.page || 1) - 1)}
+                  disabled={(paymentFilters.page || 1) === 1 || isLoadingPayments}
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
                 <div className="text-sm font-medium">
-                  Page {paymentsPage} of {totalPaymentPages}
+                  Page {paymentFilters.page || 1} of {totalPaymentPages}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPaymentsPage((prev) => Math.min(prev + 1, totalPaymentPages))}
-                  disabled={paymentsPage === totalPaymentPages || isLoadingPayments}
+                  onClick={() => handleFilterChange('page', (paymentFilters.page || 1) + 1)}
+                  disabled={(paymentFilters.page || 1) === totalPaymentPages || isLoadingPayments}
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

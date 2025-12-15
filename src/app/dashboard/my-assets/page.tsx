@@ -48,6 +48,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useGetReferralStats } from '@/services/business/hook';
 import {
   useGetNetworkContacts,
   useCreateContact,
@@ -153,6 +154,7 @@ export default function FormContactsPage() {
   };
 
   // Hooks
+  const { data: referralStats } = useGetReferralStats();
   const { data: contactsData, isLoading } = useGetNetworkContacts(queryParams);
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
@@ -295,34 +297,45 @@ export default function FormContactsPage() {
             </div>
           </div>
 
-          {/* Progress Bar (if applicable) */}
-          {contactsData?.contactProgress && (
+          {/* Referral Stats Progress Bar */}
+          {referralStats && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-orange-900">
-                  Contact List Progress
-                </span>
+                <div>
+                  <span className="text-sm font-medium text-orange-900 block">
+                    Referral Capacity
+                  </span>
+                  <span className="text-xs text-orange-700">
+                    Contacts Uploaded
+                  </span>
+                </div>
                 <span className="text-sm font-semibold text-orange-600">
-                  {contactsData.contactProgress.completed} / {contactsData.contactProgress.required}
+                  {referralStats.uploaded} / {referralStats.referralCapacity}
                 </span>
               </div>
-              <div className="w-full bg-orange-200 rounded-full h-2">
+              <div className="w-full bg-orange-200 rounded-full h-2 mb-2">
                 <div
-                  className="bg-orange-600 h-2 rounded-full transition-all"
+                  className="bg-orange-600 h-2 rounded-full transition-all duration-500 ease-out"
                   style={{
-                    width: `${(contactsData.contactProgress.completed / contactsData.contactProgress.required) * 100}%`,
+                    width: `${Math.min(referralStats.percentage, 100)}%`,
                   }}
                 />
               </div>
-              {contactsData.contactProgress.completed < contactsData.contactProgress.required && (
-                <Button
-                  variant="link"
-                  className="text-orange-600 p-0 h-auto mt-2"
-                  onClick={() => setIsAddModalOpen(true)}
-                >
-                  Complete My Contact List →
-                </Button>
-              )}
+
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-xs text-orange-800">
+                  {referralStats.remaining} spots remaining
+                </span>
+                {referralStats.percentage < 100 && (
+                  <Button
+                    variant="link"
+                    className="text-orange-600 p-0 h-auto font-medium text-xs"
+                    onClick={() => setIsAddModalOpen(true)}
+                  >
+                    Add More Contacts →
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 

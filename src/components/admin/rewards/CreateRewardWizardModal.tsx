@@ -448,24 +448,6 @@ export default function CreateRewardWizardModal({
                 </div>
               </div>
 
-              {/* Reward Source */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Reward Source</label>
-                  <p className="text-xs text-muted-foreground mb-2">Indicate whether this reward is from MCOM's inventory or a partner</p>
-                  <RadioGroup value={rewardSource} onValueChange={setRewardSource} className="flex space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mcom vault" id="mcom" />
-                      <Label htmlFor="mcom">MCOM Vault</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="partner" id="partner" />
-                      <Label htmlFor="partner">Partner</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
               {/* Expiry and Image */}
               <div>
                 <label className="block text-sm font-medium mb-2">Expiry Date</label>

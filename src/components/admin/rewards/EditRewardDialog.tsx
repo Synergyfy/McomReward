@@ -20,7 +20,7 @@ interface EditRewardDialogProps {
 
 export default function EditRewardDialog({ reward, isOpen, onClose }: EditRewardDialogProps) {
   const [title, setTitle] = useState(reward.title);
-  const [pointsRequired, setPointsRequired] = useState(reward.pointsRequired);
+  const [pointsRequired, setPointsRequired] = useState(reward.pointRequired);
   const [value, setValue] = useState(reward.value);
   const [description, setDescription] = useState(reward.description);
   const [image, setImage] = useState(reward.image);

@@ -36,7 +36,7 @@ export default function SelectableRewardCard({ reward, isSelected, onSelect }: S
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-lg font-bold mb-1 truncate">{reward.title}</CardTitle>
-        <p className="text-sm text-muted-foreground">Points: {reward.pointsRequired}</p>
+        <p className="text-sm text-muted-foreground">Points: {reward.pointRequired}</p>
         <p className="text-sm text-muted-foreground">Value: ${reward.value}</p>
       </CardContent>
     </Card>

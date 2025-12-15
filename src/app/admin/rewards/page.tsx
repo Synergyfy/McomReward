@@ -273,7 +273,7 @@ export default function AdminRewardsPage() {
                           </div>
                           <div className="flex justify-between">
                             <span className="font-medium text-gray-500">Points:</span>
-                            <span>{reward.pointsRequired}</span>
+                            <span>{reward.pointRequired}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="font-medium text-gray-500">Created:</span>

@@ -56,7 +56,7 @@ export default function RedeemPointsPage() {
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {rewards.map((reward: RewardResponse) => {
-            const canRedeem = userPoints >= reward.pointsRequired;
+            const canRedeem = userPoints >= reward.pointRequired;
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
                 <div className="relative h-48 w-full">
@@ -76,17 +76,17 @@ export default function RedeemPointsPage() {
                       {reward.description}
                     </CardDescription>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xl font-bold text-orange-600">{reward.pointsRequired} pts</span>
+                      <span className="text-xl font-bold text-orange-600">{reward.pointRequired} pts</span>
                       <Gift className="h-8 w-8 text-gray-400" />
                     </div>
-                    <Progress value={Math.min((userPoints / reward.pointsRequired) * 100, 100)} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500" />
+                    <Progress value={Math.min((userPoints / reward.pointRequired) * 100, 100)} className="mb-4 h-2 bg-orange-100 [&>div]:bg-orange-500" />
                   </div>
                   <Button
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100"
                     disabled={!canRedeem}
                     onClick={() => handleRedeemClick(reward.id)}
                   >
-                    {canRedeem ? 'Redeem' : `Requires ${reward.pointsRequired} points`}
+                    {canRedeem ? 'Redeem' : `Requires ${reward.pointRequired} points`}
                   </Button>
                 </CardContent>
               </Card>

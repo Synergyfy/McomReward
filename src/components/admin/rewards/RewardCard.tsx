@@ -40,7 +40,7 @@ export default function RewardCard({ reward, onEditClick, onDeleteClick }: Rewar
                   <div className="mt-4 flex justify-between items-center">
                     <div className="flex flex-col">
                       <span className="text-xs text-muted-foreground">Points</span>
-                      <span className="font-bold text-lg text-orange-600">{reward.pointsRequired}</span>
+                      <span className="font-bold text-lg text-orange-600">{reward.pointRequired}</span>
                     </div>
                     <div className="flex flex-col text-center">
                       <span className="text-xs text-muted-foreground">Value</span>

@@ -20,6 +20,7 @@ interface AddEditPlanModalProps {
   initialData?: Tier;
   onSave: (plan: Tier) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
+  planType?: 'standard' | 'seasonal';
 }
 
 const defaultConfiguration: TierConfiguration = {
@@ -45,8 +46,14 @@ const defaultConfiguration: TierConfiguration = {
   },
 };
 
-export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowFeedback }: AddEditPlanModalProps) {
+export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowFeedback, planType = 'standard' }: AddEditPlanModalProps) {
   const [name, setName] = useState('');
+  const [type, setType] = useState<'standard' | 'seasonal'>('standard');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [fixedPrice, setFixedPrice] = useState('');
+  const [qrCodeCount, setQrCodeCount] = useState<string>('0');
+  const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [monthlyPrice, setMonthlyPrice] = useState('');
   const [annualPrice, setAnnualPrice] = useState('');
   const [quaterlyPrice, setQuaterlyPrice] = useState('');
@@ -60,6 +67,12 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
+      setType(initialData.type || 'standard');
+      setStartDate(initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : '');
+      setEndDate(initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : '');
+      setFixedPrice(initialData.fixedPrice || '');
+      setQrCodeCount(initialData.qrCodeCount?.toString() || '0');
+      setStatus((initialData.status as 'draft' | 'published') || 'draft');
       setMonthlyPrice(initialData.monthlyPrice);
       setQuaterlyPrice(initialData.quaterlyPrice ?? '');
       setAnnualPrice(initialData.annualPrice);
@@ -103,13 +116,19 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       setConfiguration(normalizeConfiguration(initialData.configuration));
     } else {
       setName('');
+      setType(planType); // Use prop when creating
+      setStartDate('');
+      setEndDate('');
+      setFixedPrice('');
+      setQrCodeCount('0');
+      setStatus('draft');
       setMonthlyPrice('');
       setQuaterlyPrice('');
       setAnnualPrice('');
       setFeatures(['']);
       setConfiguration(defaultConfiguration);
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, planType]);
 
   const handleFeatureChange = (index: number, value: string) => {
     const newFeatures = [...features];
@@ -130,9 +149,15 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   const handleSubmit = async () => {
     const planData = {
       name,
-      monthly_price: parseFloat(monthlyPrice),
-      quaterly_price: parseFloat(quaterlyPrice),
-      annual_price: parseFloat(annualPrice),
+      type,
+      start_date: type === 'seasonal' && startDate ? new Date(startDate).toISOString() : undefined,
+      end_date: type === 'seasonal' && endDate ? new Date(endDate).toISOString() : undefined,
+      fixed_price: type === 'seasonal' && fixedPrice ? parseFloat(fixedPrice) : undefined,
+      qrCodeCount: parseInt(qrCodeCount) || 0,
+      status,
+      monthly_price: parseFloat(monthlyPrice) || 0,
+      quaterly_price: parseFloat(quaterlyPrice) || 0,
+      annual_price: parseFloat(annualPrice) || 0,
       features: features.filter(f => f.trim() !== ''),
       configuration,
     };
@@ -198,8 +223,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
             <TabsTrigger value="details">Basic Details</TabsTrigger>
             <TabsTrigger value="configuration">Configuration</TabsTrigger>
             <TabsTrigger value="progression">Progression (Pro/Pro+)</TabsTrigger>
-            <TabsTrigger value="seasonal">Seasonal</TabsTrigger>
-            <TabsTrigger value="trial">Trial</TabsTrigger>
+            {type === 'standard' && <TabsTrigger value="trial">Trial</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 py-4">
@@ -208,6 +232,51 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Gold Plan" />
               <p className="text-sm text-muted-foreground mt-1">This name will be displayed to users during checkout.</p>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <LabelWithTooltip label="QR Code Plaque Count" tooltip="Number of physical QR code plaques included in this plan." />
+                <Input type="number" value={qrCodeCount} onChange={(e) => setQrCodeCount(e.target.value)} />
+              </div>
+              <div className="flex flex-col justify-center">
+                <LabelWithTooltip label="Status" tooltip="Draft plans are not visible to users." />
+                <div className="flex items-center space-x-2 mt-1">
+                  <Switch
+                    checked={status === 'published'}
+                    onCheckedChange={(checked) => setStatus(checked ? 'published' : 'draft')}
+                  />
+                  <span className="text-sm font-medium">{status === 'published' ? 'Published' : 'Draft'}</span>
+                </div>
+              </div>
+            </div>
+
+            {type === 'seasonal' && (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-1">
+                  <LabelWithTooltip label="Fixed Price" tooltip="One-time price for this seasonal plan." />
+                  <Input id="fixedPrice" type="number" value={fixedPrice} onChange={(e) => setFixedPrice(e.target.value)} placeholder="0.00" />
+                </div>
+                <div>
+                  <LabelWithTooltip label="Start Date" tooltip="When this seasonal plan becomes active." />
+                  <Input
+                    id="startDate"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <LabelWithTooltip label="End Date" tooltip="When this seasonal plan expires." />
+                  <Input
+                    id="endDate"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <LabelWithTooltip label="Monthly Price" tooltip="The cost of the plan billed monthly." />
@@ -269,22 +338,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
             </Accordion>
           </TabsContent>
 
-          <TabsContent value="seasonal" className="space-y-6 py-4">
-            <Accordion type="multiple" className="w-full">
-              {['winter', 'summer', 'autumn', 'spring'].map((season) => (
-                <AccordionItem value={season} key={season}>
-                  <AccordionTrigger className="capitalize">{season} Variant</AccordionTrigger>
-                  <AccordionContent>
-                    <SeasonalVariantSection
-                      variant={configuration[season as keyof TierConfiguration] as SeasonalVariant || {}}
-                      onChange={(v) => updateSeasonalVariant(season as 'winter' | 'summer' | 'autumn' | 'spring', v)}
-                      title={season.charAt(0).toUpperCase() + season.slice(1)}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </TabsContent>
+
 
           <TabsContent value="trial" className="space-y-6 py-4">
             <div className="bg-blue-50 p-4 rounded-md border border-blue-100 flex gap-2 text-sm text-blue-700">

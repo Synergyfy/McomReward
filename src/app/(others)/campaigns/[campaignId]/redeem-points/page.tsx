@@ -86,8 +86,8 @@ export default function RedeemPointsPage({ params }: PageProps) {
 
                 {/* Rewards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {campaign.rewards && campaign.rewards.length > 0 ? (
-                        campaign.rewards.map((reward) => (
+                    {campaign.businessRewards && campaign.businessRewards.length > 0 ? (
+                        campaign.businessRewards.map((reward) => (
                             <PublicRewardCard
                                 key={reward.id}
                                 reward={reward}

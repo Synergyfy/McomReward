@@ -7,7 +7,7 @@ export interface CreateRewardRequest {
   gallery?: string[];
   quantity: number;
   reward_type: string;
-  reward_source: string;
+  // reward_source: string;
   audience: string;
   expiry_datetime: string;
   status: string;
@@ -18,6 +18,7 @@ export interface CreateRewardRequest {
 export interface UpdateRewardRequest {
   title?: string;
   pointsRequired?: number;
+  max_points?: number;
   value?: number;
   description?: string;
   image?: string;
@@ -34,6 +35,8 @@ export interface RewardResponse {
   id: string;
   title: string;
   pointRequired: number;
+  maxPoints: number; // Corrected to match backend payload
+  max_points?: number; // Kept as optional just in case
   value: number;
   description: string;
   image: string;
@@ -43,11 +46,12 @@ export interface RewardResponse {
   createdAt: string;
   updatedAt: string;
   disabled: boolean;
-  rewardType: string; // Backend uses rewardType (camelCase)
-  type: string; // Keep for backward compatibility
+  rewardType: string;
+  type: string;
   status: string;
   expiry: string;
-  badgeLevel: string | string[]; // Can be string or array
+  expiryDatetime?: string; // Corrected to match backend payload
+  badgeLevel: string | string[];
 }
 
 export interface GetRewardsResponse {
@@ -60,4 +64,3 @@ export interface GetRewardsResponse {
 export interface AddRewardToBusinessRequest {
   quantity: number;
 }
-

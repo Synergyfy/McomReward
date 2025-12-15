@@ -70,7 +70,7 @@ export default function CreateRewardWizardModal({
   const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<RewardResponse['status']>('draft');
   const [selectedSector, setSelectedSector] = useState('');
-  const [rewardSource, setRewardSource] = useState('mcom vault');
+  // const [rewardSource, setRewardSource] = useState('mcom vault');
   const [audience, setAudience] = useState('all business');
   const [newRewardId, setNewRewardId] = useState<string | null>(null);
 
@@ -101,7 +101,7 @@ export default function CreateRewardWizardModal({
     setGalleryPreviewUrls([]);
     setStatus('draft');
     setSelectedSector('');
-    setRewardSource('mcom vault');
+    // setRewardSource('mcom vault');
     setAudience('all business');
     setErrors({});
   };
@@ -113,7 +113,7 @@ export default function CreateRewardWizardModal({
         setDescription(reward.description);
         setRewardType(reward.type);
         setValue(reward.value);
-        setPointsRequired(reward.pointRequired);
+       setPointsRequired(reward.max_points ?? '');
         setExpiry(reward.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
         setImagePreviewUrl(reward.image);
         if (reward.gallery && Array.isArray(reward.gallery)) {
@@ -180,7 +180,7 @@ export default function CreateRewardWizardModal({
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
+    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Max Points or Badge Level is required.';
     if (!imagePreviewUrl) newErrors.image = 'Image is required.';
     setErrors(newErrors);
   }, [rewardType, name, description, value, pointsRequired, badgeLevel, imagePreviewUrl]);
@@ -259,7 +259,7 @@ export default function CreateRewardWizardModal({
         gallery: finalGalleryUrls,
         quantity: 100, // Default or add field if needed
         reward_type: rewardType,
-        reward_source: rewardSource,
+        // reward_source: rewardSource,
         audience,
         expiry_datetime: expiry.toISOString(),
         status,
@@ -448,24 +448,6 @@ export default function CreateRewardWizardModal({
                 </div>
               </div>
 
-              {/* Reward Source */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Reward Source</label>
-                  <p className="text-xs text-muted-foreground mb-2">Indicate whether this reward is from MCOM's inventory or a partner</p>
-                  <RadioGroup value={rewardSource} onValueChange={setRewardSource} className="flex space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mcom vault" id="mcom" />
-                      <Label htmlFor="mcom">MCOM Vault</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="partner" id="partner" />
-                      <Label htmlFor="partner">Partner</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
               {/* Expiry and Image */}
               <div>
                 <label className="block text-sm font-medium mb-2">Expiry Date</label>
@@ -555,7 +537,7 @@ export default function CreateRewardWizardModal({
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between"><span className="font-medium">Type:</span><span>{rewardTypes.find(t => t.value === rewardType)?.label}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Value:</span><span>£{value}</span></div>
-                    <div className="flex justify-between"><span className="font-medium">Points:</span><span>{pointsRequired}</span></div>
+                    <div className="flex justify-between"><span className="font-medium">Max Points:</span><span>{pointsRequired}</span></div>
                     {badgeLevel.length > 0 && (
                       <div className="flex justify-between">
                         <span className="font-medium">Badge Level:</span>
@@ -564,7 +546,7 @@ export default function CreateRewardWizardModal({
                     )}
                     {selectedSector && <div className="flex justify-between"><span className="font-medium">Sector:</span><span>{sectors.find(s => s.id === selectedSector)?.name}</span></div>}
                     <div className="flex justify-between"><span className="font-medium">Audience:</span><span>{audience.replace('_', ' ')}</span></div>
-                    <div className="flex justify-between"><span className="font-medium">Source:</span><span>{rewardSource === 'mcom vault' ? 'MCOM Vault' : 'Partner'}</span></div>
+                    {/* <div className="flex justify-between"><span className="font-medium">Source:</span><span>{rewardSource === 'mcom vault' ? 'MCOM Vault' : 'Partner'}</span></div> */}
                     <div className="flex justify-between"><span className="font-medium">Expires:</span><span>{expiry.toLocaleDateString()}</span></div>
                   </div>
                 </CardContent>

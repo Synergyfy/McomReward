@@ -28,6 +28,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 
 const typeLabels: { [key: string]: string } = {
@@ -38,18 +44,6 @@ const typeLabels: { [key: string]: string } = {
   'physical product': 'Physical Product',
 };
 
-const audienceLabels: { [key: string]: string } = {
-  'all business': 'All Businesses',
-  'specific sectors': 'Specific Sectors',
-  'specific tiers': 'Specific Tiers',
-};
-
-const sectorLabels: { [key: string]: string } = {
-  'sec-1': 'Food & Dining',
-  'sec-2': 'Fashion & Beauty',
-  'sec-3': 'Health & Wellness',
-}
-
 interface DisplayStatus {
   text: string;
   variant: 'default' | 'secondary' | 'destructive';
@@ -57,7 +51,8 @@ interface DisplayStatus {
 
 const getRewardDisplayStatus = (reward: RewardResponse): DisplayStatus => {
   const now = new Date();
-  const expiryDate = new Date(reward.expiry);
+  // Use expiryDatetime if available (preferred), fallback to expiry
+  const expiryDate = new Date(reward.expiryDatetime || reward.expiry);
 
   if (expiryDate < now) {
     return { text: 'Expired', variant: 'destructive' };
@@ -69,6 +64,118 @@ const getRewardDisplayStatus = (reward: RewardResponse): DisplayStatus => {
     return { text: 'Draft', variant: 'secondary' };
   }
   return { text: 'Unknown', variant: 'secondary' }; // Fallback
+};
+
+const RewardItem = ({ reward, onEdit, onDuplicate, onDelete }: {
+  reward: RewardResponse;
+  onEdit: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
+}) => {
+  // Main image logic: use first gallery image or fallback to main image
+  const displayImage = useMemo(() => {
+    if (reward.gallery && reward.gallery.length > 0) {
+      return reward.gallery[0];
+    }
+    return reward.image;
+  }, [reward.gallery, reward.image]);
+
+  return (
+    <Card className="flex flex-col justify-between hover:shadow-lg transition-shadow duration-200">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
+              {displayImage && (
+                <Image
+                  src={displayImage}
+                  alt={reward.title}
+                  layout="fill"
+                  objectFit="cover"
+                />
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-lg">{reward.title}</CardTitle>
+              {(() => {
+                const { text, variant } = getRewardDisplayStatus(reward);
+                return <Badge variant={variant}>{text}</Badge>;
+              })()}
+            </div>
+          </div>
+          <div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(reward.id)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDuplicate(reward.id)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  <span>Duplicate</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(reward.id)} className="text-red-600">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Gallery Thumbnails */}
+        {reward.gallery && reward.gallery.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-2">Gallery:</p>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {reward.gallery.map((img, index) => (
+                <div key={index} className="relative w-10 h-10 flex-shrink-0 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
+                  <Image
+                    src={img}
+                    alt={`Gallery ${index + 1}`}
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-sm text-gray-600 mb-3 h-10 line-clamp-2">{reward.description}</p>
+        <div className="space-y-2 text-sm border-t pt-3 mt-3">
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-500">Value:</span>
+            <span>£{reward.value}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="font-medium text-gray-500 cursor-help border-b border-dotted border-gray-400">Max Points:</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>The maximum points required to redeem this reward.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/* Use maxPoints from payload, fallback to max_points or pointRequired for safety */}
+            <span>{reward.maxPoints || reward.max_points || reward.pointRequired}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-500">Created:</span>
+            <span>{new Date(reward.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default function AdminRewardsPage() {
@@ -217,71 +324,13 @@ export default function AdminRewardsPage() {
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{groupName}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groupRewards.map((reward) => (
-                    <Card key={reward.id} className="flex flex-col justify-between hover:shadow-lg transition-shadow duration-200">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
-                              {reward.image && (
-                                <Image
-                                  src={reward.image}
-                                  alt={reward.title}
-                                  layout="fill"
-                                  objectFit="cover"
-                                />
-                              )}
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">{reward.title}</CardTitle>
-                              {(() => {
-                                const { text, variant } = getRewardDisplayStatus(reward);
-                                return <Badge variant={variant}>{text}</Badge>;
-                              })()}
-                            </div>
-                          </div>
-                          <div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEdit(reward.id)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>Edit</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(reward.id)}>
-                                  <Copy className="mr-2 h-4 w-4" />
-                                  <span>Duplicate</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDelete(reward.id)} className="text-red-600">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>Delete</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-600 mb-3 h-10">{reward.description}</p>
-                        <div className="space-y-2 text-sm border-t pt-3 mt-3">
-                          <div className="flex justify-between">
-                            <span className="font-medium text-gray-500">Value:</span>
-                            <span>£{reward.value}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium text-gray-500">Points:</span>
-                            <span>{reward.pointRequired}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium text-gray-500">Created:</span>
-                            <span>{new Date(reward.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <RewardItem
+                      key={reward.id}
+                      reward={reward}
+                      onEdit={handleEdit}
+                      onDuplicate={handleDuplicate}
+                      onDelete={handleDelete}
+                    />
                   ))}
                 </div>
               </div>

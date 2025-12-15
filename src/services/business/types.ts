@@ -146,3 +146,10 @@ export interface BusinessSetupStatus {
 export interface PointPackageBalance {
   totalBalance: number;
 }
+
+export interface ReferralStatsResponseDto {
+  referralCapacity: number;
+  uploaded: number;
+  remaining: number;
+  percentage: number;
+}

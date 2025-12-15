@@ -9,6 +9,7 @@ import {
   PointPackageCreateInput,
   PointPackageUpdateInput,
   PaginatedResponse,
+  PaymentHistorySearchParams,
 } from './types';
 
 
@@ -30,17 +31,17 @@ export const useGetTiers = () => {
 // Payment history
 const PAYMENT_HISTORY_QUERY_KEY = 'payment-history';
 
-const getPaymentHistory = async (page: number, limit: number): Promise<PaginatedResponse<PaymentHistoryItem>> => {
+const getPaymentHistory = async (params: PaymentHistorySearchParams): Promise<PaginatedResponse<PaymentHistoryItem>> => {
   const { data } = await api.get<PaginatedResponse<PaymentHistoryItem>>('/payment-history', {
-    params: { page, limit },
+    params,
   });
   return data;
 };
 
-export const useGetPaymentHistory = (page: number, limit: number) => {
+export const useGetPaymentHistory = (params: PaymentHistorySearchParams) => {
   return useQuery<PaginatedResponse<PaymentHistoryItem>, Error>({
-    queryKey: [PAYMENT_HISTORY_QUERY_KEY, page, limit],
-    queryFn: () => getPaymentHistory(page, limit),
+    queryKey: [PAYMENT_HISTORY_QUERY_KEY, params],
+    queryFn: () => getPaymentHistory(params),
   });
 };
 

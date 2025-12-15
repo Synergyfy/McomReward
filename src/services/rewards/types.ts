@@ -18,6 +18,7 @@ export interface CreateRewardRequest {
 export interface UpdateRewardRequest {
   title?: string;
   pointsRequired?: number;
+  max_points?: number;
   value?: number;
   description?: string;
   image?: string;
@@ -34,6 +35,7 @@ export interface RewardResponse {
   id: string;
   title: string;
   pointRequired: number;
+  max_points: number;
   value: number;
   description: string;
   image: string;
@@ -60,4 +62,3 @@ export interface GetRewardsResponse {
 export interface AddRewardToBusinessRequest {
   quantity: number;
 }
-

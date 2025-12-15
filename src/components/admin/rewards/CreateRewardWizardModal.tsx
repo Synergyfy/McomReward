@@ -113,7 +113,7 @@ export default function CreateRewardWizardModal({
         setDescription(reward.description);
         setRewardType(reward.type);
         setValue(reward.value);
-        setPointsRequired(reward.pointRequired);
+        setPointsRequired(reward.max_points);
         setExpiry(reward.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
         setImagePreviewUrl(reward.image);
         if (reward.gallery && Array.isArray(reward.gallery)) {
@@ -180,7 +180,7 @@ export default function CreateRewardWizardModal({
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Points Required or Badge Level is required.';
+    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Max Points or Badge Level is required.';
     if (!imagePreviewUrl) newErrors.image = 'Image is required.';
     setErrors(newErrors);
   }, [rewardType, name, description, value, pointsRequired, badgeLevel, imagePreviewUrl]);
@@ -555,7 +555,7 @@ export default function CreateRewardWizardModal({
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between"><span className="font-medium">Type:</span><span>{rewardTypes.find(t => t.value === rewardType)?.label}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Value:</span><span>£{value}</span></div>
-                    <div className="flex justify-between"><span className="font-medium">Points:</span><span>{pointsRequired}</span></div>
+                    <div className="flex justify-between"><span className="font-medium">Max Points:</span><span>{pointsRequired}</span></div>
                     {badgeLevel.length > 0 && (
                       <div className="flex justify-between">
                         <span className="font-medium">Badge Level:</span>

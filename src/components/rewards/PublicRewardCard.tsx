@@ -12,7 +12,7 @@ interface Reward {
     id: string;
     title: string;
     description: string;
-    pointRequired?: number;
+    max_points?: number;
     points_required?: number;
     image: string;
     value: number;
@@ -37,7 +37,7 @@ export default function PublicRewardCard({
     className
 }: PublicRewardCardProps) {
     // Handle points property inconsistency
-    const pointsRequired = reward.pointRequired || reward.points_required || 0;
+    const pointsRequired = reward.max_points || reward.points_required || 0;
 
     // State for active image (defaults to main image)
     const [activeImage, setActiveImage] = useState<string>(reward.image || 'https://placehold.co/600x400?text=Reward');

@@ -29,7 +29,7 @@ export interface GetRewardsResponse extends PaginationMeta {
 export interface BusinessReward {
   id: string;
   quantity: number | null;
-  pointRequired: number;
+  max_points: number;
   reward: Reward;
   createdAt: string;
   updatedAt: string;
@@ -52,7 +52,7 @@ export interface GetBusinessRewardsResponse extends PaginationMeta {
 
 export interface CreateBusinessRewardDto {
   quantity?: number;
-  point_required: number;
+  max_points: number;
   title?: string;
   description?: string;
   image?: string;
@@ -70,7 +70,7 @@ export enum RewardStatus {
 
 export interface UpdateBusinessRewardDto {
   quantity?: number;
-  point_required?: number;
+  max_points?: number;
   title?: string;
   description?: string;
   image?: string;

@@ -273,13 +273,13 @@ export default function CampaignDetailPage({ params }: PageProps) {
                 </p>
               </div>
               <Badge variant="outline" className="w-fit px-4 py-2 text-base font-medium">
-                {campaign.rewards?.length || 0} Available
+                {campaign.businessRewards?.length || 0} Available
               </Badge>
             </div>
 
-            {campaign.rewards && campaign.rewards.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {campaign.rewards.map((reward, index) => (
+            {campaign.businessRewards && campaign.businessRewards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campaign.businessRewards.map((reward, index) => (
                   <PublicRewardCard
                     key={index}
                     reward={reward}

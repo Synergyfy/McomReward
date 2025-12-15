@@ -1,4 +1,6 @@
-import React from 'react';
+
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,11 +12,13 @@ interface Reward {
     id: string;
     title: string;
     description: string;
-    pointsRequired?: number;
+    pointRequired?: number;
     points_required?: number;
     image: string;
     value: number;
     quantity: number;
+    remainingQuantity: number;
+    gallery?: string[] | null;
 }
 
 interface PublicRewardCardProps {
@@ -33,20 +37,28 @@ export default function PublicRewardCard({
     className
 }: PublicRewardCardProps) {
     // Handle points property inconsistency
-    const pointsRequired = reward.pointsRequired || reward.points_required || 0;
+    const pointsRequired = reward.pointRequired || reward.points_required || 0;
+
+    // State for active image (defaults to main image)
+    const [activeImage, setActiveImage] = useState<string>(reward.image || 'https://placehold.co/600x400?text=Reward');
+
+    // Reset active image when reward changes
+    React.useEffect(() => {
+        setActiveImage(reward.image || 'https://placehold.co/600x400?text=Reward');
+    }, [reward.image]);
 
     const progress = isMember ? Math.min((userPoints / pointsRequired) * 100, 100) : 0;
     const canRedeem = isMember && userPoints >= pointsRequired;
 
     return (
         <div className={cn(
-            "group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col h-full border border-gray-100",
+            "group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col h-full border border-gray-100",
             className
         )}>
             {/* Image Section */}
-            <div className="relative h-56 w-full overflow-hidden">
+            <div className="relative h-72 w-full overflow-hidden">
                 <Image
-                    src={reward.image || 'https://placehold.co/600x400?text=Reward'}
+                    src={activeImage}
                     alt={reward.title}
                     layout="fill"
                     objectFit="cover"
@@ -59,7 +71,7 @@ export default function PublicRewardCard({
                 {/* Top Badges */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
                     <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 px-3 py-1.5 text-xs font-medium uppercase tracking-wider shadow-sm">
-                        {reward.quantity > 0 ? `${reward.quantity} Left` : 'Unlimited'}
+                        {reward.remainingQuantity > 0 ? `${reward.remainingQuantity} Left` : 'Unlimited'}
                     </Badge>
                 </div>
 
@@ -72,6 +84,32 @@ export default function PublicRewardCard({
                     </div>
                 </div>
             </div>
+
+            {reward.gallery && reward.gallery.length > 0 && (
+                <div
+                    className="px-6 pt-4 grid grid-cols-2 gap-2"
+                    onMouseLeave={() => setActiveImage(reward.image || 'https://placehold.co/600x400?text=Reward')}
+                >
+                    {/* Gallery Images */}
+                    {reward.gallery.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className={cn(
+                                "relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-300",
+                                activeImage === img ? "border-orange-500 ring-2 ring-orange-200 scale-[1.02]" : "border-transparent hover:border-gray-200"
+                            )}
+                            onMouseEnter={() => setActiveImage(img)}
+                        >
+                            <Image
+                                src={img}
+                                alt={`Gallery ${idx}`}
+                                layout="fill"
+                                objectFit="cover"
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Content Section */}
             <div className="p-6 flex-grow flex flex-col relative">

@@ -215,7 +215,11 @@ export default function CampaignOverviewPage() {
                   campaign.rewards.map((reward, index) => (
                     <PublicRewardCard
                       key={index}
-                      reward={reward}
+                      reward={{
+                        ...reward,
+                        remainingQuantity: reward.quantity,
+                        gallery: []
+                      }}
                     // Admin view doesn't need member logic or redemption
                     />
                   ))

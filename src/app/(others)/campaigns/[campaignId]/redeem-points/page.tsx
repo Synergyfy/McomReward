@@ -31,7 +31,7 @@ export default function RedeemPointsPage({ params }: PageProps) {
     const [selectedReward, setSelectedReward] = useState<{ title: string } | null>(null);
 
     const handleRedeemClick = (reward: RewardResponse) => {
-        if (userPoints >= reward.pointsRequired) {
+        if (userPoints >= reward.pointRequired) {
             // In a real app, we would need the staffId and participantId here.
             // Since this is a customer-facing app, we might need to adjust the endpoint or flow.
             // For now, we will use mock IDs as per previous instructions or context if available.

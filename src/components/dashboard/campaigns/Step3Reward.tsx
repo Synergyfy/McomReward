@@ -31,7 +31,8 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
         // For now using the nested reward object which matches RewardResponse structure mostly
         // Adjust properties if needed based on BusinessReward structure vs RewardResponse
         quantity: businessReward.quantity ?? businessReward.reward.quantity,
-        pointsRequired: businessReward.pointRequired,
+        remainingQuantity: businessReward.quantity ?? businessReward.reward.quantity,
+        pointRequired: businessReward.pointRequired,
         // Default values for missing properties from BusinessReward
         rewardType: 'standard',
         type: 'standard',

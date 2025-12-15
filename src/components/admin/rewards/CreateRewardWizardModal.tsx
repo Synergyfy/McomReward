@@ -113,7 +113,7 @@ export default function CreateRewardWizardModal({
         setDescription(reward.description);
         setRewardType(reward.type);
         setValue(reward.value);
-        setPointsRequired(reward.pointsRequired);
+        setPointsRequired(reward.pointRequired);
         setExpiry(reward.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
         setImagePreviewUrl(reward.image);
         if (reward.gallery && Array.isArray(reward.gallery)) {

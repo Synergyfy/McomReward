@@ -33,12 +33,13 @@ export interface UpdateRewardRequest {
 export interface RewardResponse {
   id: string;
   title: string;
-  pointsRequired: number;
+  pointRequired: number;
   value: number;
   description: string;
   image: string;
   gallery?: string[];
   quantity: number;
+  remainingQuantity: number;
   createdAt: string;
   updatedAt: string;
   disabled: boolean;

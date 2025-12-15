@@ -36,6 +36,7 @@ export interface PublicCampaign {
   startDate: string;
   endDate: string;
   quantity: number;
+  remainingQuantity: number;
   audienceType: string;
   bannerUrl: string;
   logoUrl: string | null;
@@ -64,6 +65,7 @@ export interface PublicCampaign {
   contactPhoneNumber: string | null;
   footerText: string | null;
   rewards: RewardResponse[];
+  businessRewards: RewardResponse[];
   tagline?: string;
   howToEarn?: string[];
   termsAndConditions?: string[];

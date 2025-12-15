@@ -94,6 +94,10 @@ export interface Tier {
   updatedAt: string;
   deletedAt: string | null;
   name: string;
+  type: 'standard' | 'seasonal';
+  startDate?: string;
+  endDate?: string;
+  fixedPrice?: string;
   monthlyPrice: string;
   annualPrice: string;
   quaterlyPrice: string;
@@ -113,6 +117,10 @@ export interface Tier {
 
 export interface TierCreateInput {
   name: string;
+  type?: 'standard' | 'seasonal';
+  start_date?: string;
+  end_date?: string;
+  fixed_price?: number;
   monthly_price: number;
   quaterly_price: number;
   annual_price: number;
@@ -122,6 +130,10 @@ export interface TierCreateInput {
 
 export interface TierUpdateInput {
   name?: string;
+  type?: 'standard' | 'seasonal';
+  start_date?: string;
+  end_date?: string;
+  fixed_price?: number;
   monthly_price?: number;
   quaterly_price?: number;
   annual_price?: number;

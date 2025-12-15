@@ -31,12 +31,15 @@ function CheckoutContent() {
   const router = useRouter()
   const initialPlan = params.get("plan") || "Bronze"
   const rawBilling = params.get("billing")
-  const initialBilling: BillingCycle = rawBilling === "annual" ? "annual" : "quarterly"
+  const initialBilling: BillingCycle | 'fixed' = rawBilling === "fixed" ? "fixed" : (rawBilling === "annual" ? "annual" : "quarterly")
+
+  // ... (lines 35-38) matches user intent to keep context, but I must replace content fully if using replace_file_content.
+  // I will restore the full block.
   const initialCoupon = params.get("coupon") || ""
   const isTrialMode = params.get("isTrial") === "true"
 
   const [plan, setPlan] = useState(initialPlan)
-  const [billing, setBilling] = useState<BillingCycle>(initialBilling)
+  const [billing, setBilling] = useState<BillingCycle | 'fixed'>(initialBilling)
   const [couponCode, setCouponCode] = useState(initialCoupon)
   const [appliedCoupon, setAppliedCoupon] = useState(() => findCoupon(initialCoupon))
   const [couponError, setCouponError] = useState<string | null>(null)
@@ -67,6 +70,12 @@ function CheckoutContent() {
 
   const basePrice = useMemo(() => {
     if (!tier) return 0;
+    if (tier.type === 'seasonal' || billing === 'fixed') {
+      // Robustly handle camelCase or snake_case for fixedPrice
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const price = tier.fixedPrice ?? (tier as any).fixed_price;
+      return price ? parseFloat(price) : 0;
+    }
     return billing === "annual" ? parseFloat(tier.annualPrice) : parseFloat(tier.quaterlyPrice);
   }, [tier, billing]);
 
@@ -186,7 +195,13 @@ function CheckoutContent() {
     }
 
     // Regular payment flow
-    const planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
+    let planType = billing === "annual" ? PlanType.ANNUALLY : PlanType.QUARTERLY;
+
+    // If seasonal, override planType. We cast to string/any because PlanType enum might not have SEASONAL yet
+    if (billing === 'fixed' || tier.type === 'seasonal') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      planType = 'seasonal' as any;
+    }
 
     const paymentPayload: StripeInitiateRequest = {
       tier_id: tier.id,
@@ -247,9 +262,10 @@ function CheckoutContent() {
           <div>
             <div className="text-sm text-foreground/60">Selected plan</div>
             <div className="text-xl font-semibold">{tier.name}</div>
+            {tier.type === 'seasonal' && <div className="text-xs text-muted-foreground">Seasonal Plan</div>}
           </div>
         </div>
-        {!isTrialMode && (
+        {!isTrialMode && tier.type !== 'seasonal' && (
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setBilling("quarterly")}
@@ -269,7 +285,18 @@ function CheckoutContent() {
             </div>
           </div>
         )}
-        {billing === "annual" && !isTrialMode && (
+        {tier.type === 'seasonal' && (
+          <div className="flex justify-between items-center mt-2">
+            <div className="px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm">
+              One-time Payment
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-foreground/60">Price</div>
+              <div className="text-2xl font-bold">£{basePrice}</div>
+            </div>
+          </div>
+        )}
+        {billing === "annual" && !isTrialMode && tier.type !== 'seasonal' && (
           <p className="text-xs text-foreground/60 mt-2">Annual price is quarterly × 4.</p>
         )}
       </section>
@@ -387,7 +414,7 @@ function CheckoutContent() {
           <div className="mt-4">
             <PayPalButton
               tier_id={tier.id}
-              plan_type={billing === "annual" ? "annual" : "quarterly"}
+              plan_type={billing === 'fixed' || tier.type === 'seasonal' ? 'seasonal' : (billing === "annual" ? "annual" : "quarterly")}
               coupon_code={appliedCoupon?.code || ""}
               onPaymentSuccess={async (details, orderId) => {
                 toast.success("Payment confirmed!");

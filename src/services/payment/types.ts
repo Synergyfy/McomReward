@@ -210,6 +210,7 @@ export enum PlanType {
     MONTHLY = 'monthly',
     QUARTERLY = 'quarterly',
     ANNUALLY = 'annual',
+    SEASONAL = 'seasonal',
 }
 
 // Payment Request/Response Types

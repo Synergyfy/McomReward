@@ -18,7 +18,9 @@ export default function BusinessSignupForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-  } = useForm<BusinessSignUpDto>();
+  } = useForm<BusinessSignUpDto>({
+    mode: "onBlur",
+  });
   const router = useRouter();
 
 
@@ -158,6 +160,31 @@ const onSubmit = async (data: BusinessSignUpDto) => {
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="inviteCode">Invite Code <span className="text-gray-500 text-sm">(optional)</span></Label>
+            <Input
+              id="inviteCode"
+              type="text"
+              placeholder="Invite Code"
+              maxLength={9}
+              {...register("inviteCode", {
+                required: false,
+                minLength: {
+                  value: 9,
+                  message: "Invite Code must be 9 characters",
+                },
+                maxLength: {
+                  value: 9,
+                  message: "Invite Code must be 9 characters",
+                }
+              })}
+            />
+            {errors.inviteCode && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.inviteCode.message}
               </p>
             )}
           </div>

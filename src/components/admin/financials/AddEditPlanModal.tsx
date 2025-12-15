@@ -67,7 +67,9 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
-      setType(initialData.type || 'standard');
+      // Prioritize the passed planType (from selection modal) if available, otherwise fallback to existing data
+      // This allows users to "convert" a plan or fix missing types
+      setType(planType || initialData.type || 'standard');
       setStartDate(initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : '');
       setEndDate(initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : '');
       setFixedPrice(initialData.fixedPrice || '');

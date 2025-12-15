@@ -68,15 +68,9 @@ export default function FinancialsPage() {
   const [currentEditPointPackage, setCurrentEditPointPackage] = useState<PointPackage | undefined>(undefined);
 
   const handleAddEditPlan = (plan?: Tier) => {
-    if (plan) {
-      // Editing existing plan
-      setCurrentEditPlan(plan);
-      setShowAddEditPlanModal(true);
-    } else {
-      // Creating new plan - ask for type first
-      setCurrentEditPlan(undefined);
-      setShowPlanTypeSelectionModal(true);
-    }
+    setCurrentEditPlan(plan);
+    // Show selection modal for both New and Edit actions to allow type confirmation/change
+    setShowPlanTypeSelectionModal(true);
   };
 
   const handlePlanTypeSelected = (type: 'standard' | 'seasonal') => {

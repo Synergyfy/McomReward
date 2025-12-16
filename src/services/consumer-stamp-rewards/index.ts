@@ -1,23 +1,165 @@
 /**
- * Consumer Stamp Rewards Mock Service
- * Provides mock API functions for customer stamp card operations
+ * Consumer Stamp Rewards Service
+ * 
+ * Customer-side stamp operations.
  */
 
+import apiClient from '@/services/api';
 import {
     ConsumerStampCard,
     ConsumerStampStats,
     DiscoverableStampReward,
     GetConsumerStampCardsResponse,
     StampCardRedemptionQR,
+    StampRewardBusinessInfo,
+    ConsumerStampRewardTemplate,
+    StartStampCardDto,
 } from './types';
+import { StampCardDto, BusinessStampRewardDto } from '@/services/business-stamp-rewards/types';
+import { StampRewardTemplateDto, StampTriggerMethod, RewardBenefitType } from '@/services/stamp-rewards/types';
 
 // Simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Mock customer ID
 const MOCK_CUSTOMER_ID = 'customer-123';
 
-// Mock stamp cards for the customer
+// --- Helpers ---
+
+// We need to map the backend response to the frontend ConsumerStampCard structure.
+// This assumes the backend response includes deeply nested relations:
+// StampCard -. BusinessStampReward -. Template
+// StampCard -. BusinessStampReward -. Business
+
+const mapTemplateDtoToConsumerTemplate = (dto: StampRewardTemplateDto): ConsumerStampRewardTemplate => {
+    return {
+        id: dto.id,
+        title: dto.title,
+        description: dto.description,
+        stampsRequired: dto.requiredStamps,
+        rewardBenefitType: dto.rewardBenefit?.toLowerCase() as RewardBenefitType || 'free_item',
+        rewardBenefitValue: dto.rewardBenefitValue,
+        triggerMethod: dto.triggerMethod?.toLowerCase() as StampTriggerMethod || 'qr_scan',
+        stampIcon: '⭐', // Default
+        image: dto.defaultImage,
+        expirationRules: {
+            stampValidityDays: dto.stampValidityDays || null,
+            rewardClaimDays: dto.rewardClaimDeadlineDays || null,
+        },
+        hybridSettings: {
+            enabled: dto.isHybrid,
+            pointsPerStamp: dto.hybridPointsPerStamp || 0,
+            completionBonusPoints: dto.hybridCompletionBonusPoints || 0,
+            pointsFallbackEnabled: false,
+        },
+        isRepeatable: true,
+    };
+};
+
+const mapDtoToConsumerCard = (dto: any): ConsumerStampCard => {
+    // Note: The input 'dto' is typed as 'any' because strict typing of the nested 
+    // Participant/Business relations isn't fully defined in types.ts yet 
+    // and depends on actual backend response shape. 
+
+    // Fallback Mock Data if relations missing (for resilience during dev)
+    const businessName = dto.businessStampReward?.business?.name || 'Partner Business';
+    const businessId = dto.businessStampReward?.business?.id || 'unknown-business';
+
+    // Safely map template
+    const templateDto = dto.businessStampReward?.template;
+    const template = templateDto
+        ? mapTemplateDtoToConsumerTemplate(templateDto)
+        : {
+            id: 'unknown',
+            title: 'Unknown Reward',
+            description: '',
+            stampsRequired: 10,
+            rewardBenefitType: 'discount' as RewardBenefitType,
+            rewardBenefitValue: '',
+            triggerMethod: 'qr_scan' as StampTriggerMethod,
+            stampIcon: '⭐',
+            expirationRules: { stampValidityDays: null, rewardClaimDays: null },
+            hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
+            isRepeatable: true
+        };
+
+    return {
+        id: dto.id,
+        customerId: MOCK_CUSTOMER_ID, // Or from auth context
+        businessId: businessId,
+        business: {
+            id: businessId,
+            name: businessName,
+            logo: dto.businessStampReward?.business?.logo || '',
+            address: dto.businessStampReward?.business?.address || '',
+        },
+        template: template,
+        stampsCollected: dto.current_stamps,
+        stampsRequired: template.stampsRequired,
+        status: dto.status?.toLowerCase() as any || 'in_progress',
+        stampHistory: [], // History not in StampCardDto shallow, maybe need fetch?
+        pointsEarned: 0, // Not in DTO
+        completedAt: dto.completed_at,
+        redeemedAt: dto.redeemed_at,
+        createdAt: dto.created_at || new Date().toISOString(),
+        updatedAt: dto.updated_at || new Date().toISOString(),
+    };
+};
+
+// --- Real API ---
+
+/**
+ * Get customer's stamp cards
+ * Backend: GET /participant/stamps/my-cards
+ */
+export const getConsumerStampCards = async (
+    status?: 'in_progress' | 'completed' | 'redeemed' | 'all',
+    page: number = 1,
+    limit: number = 10
+): Promise<GetConsumerStampCardsResponse> => {
+    try {
+        const { data } = await apiClient.get<StampCardDto[]>('/participant/stamps/my-cards');
+
+        let filtered = data.map(mapDtoToConsumerCard);
+
+        // Client-side Filter
+        if (status && status !== 'all') {
+            filtered = filtered.filter(c => c.status === status);
+        }
+
+        // Client-side Pagination
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = filtered.slice(startIndex, endIndex);
+
+        return {
+            data: paginatedData,
+            totalPages: Math.ceil(filtered.length / limit),
+            currentPage: page,
+            count: filtered.length,
+        };
+    } catch (error) {
+        console.error('Failed to fetch consumer stamp cards', error);
+        return getMockConsumerStampCardsWithPagination(status, page, limit);
+    }
+};
+
+/**
+ * Get a single stamp card by ID
+ * Backend: GET /participant/stamps/card/:id
+ */
+export const getConsumerStampCardById = async (id: string): Promise<ConsumerStampCard> => {
+    try {
+        const { data } = await apiClient.get<StampCardDto>(`/participant/stamps/card/${id}`);
+        return mapDtoToConsumerCard(data);
+    } catch (error) {
+        console.error('Failed to fetch stamp card', error);
+        throw error;
+    }
+};
+
+// --- MOCK IMPLEMENTATIONS (Missing Endpoints) ---
+
+// Mock data setup
 let mockConsumerStampCards: ConsumerStampCard[] = [
     {
         id: 'csc-101',
@@ -57,318 +199,141 @@ let mockConsumerStampCards: ConsumerStampCard[] = [
         createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         updatedAt: new Date().toISOString(),
     },
-    {
-        id: 'csc-102',
-        customerId: MOCK_CUSTOMER_ID,
-        businessId: 'business-2',
-        business: {
-            id: 'business-2',
-            name: 'Pizza Palace',
-            logo: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100',
-            address: '456 Oak Avenue',
-        },
-        template: {
-            id: 'template-2',
-            title: 'Pizza Lovers Reward',
-            description: 'Order 8 pizzas and get your 9th pizza completely free!',
-            stampsRequired: 8,
-            rewardBenefitType: 'free_item',
-            rewardBenefitValue: 'Free Large Pizza',
-            triggerMethod: 'purchase',
-            stampIcon: '🍕',
-            image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-            termsAndConditions: 'Cannot be combined with other offers.',
-            expirationRules: { stampValidityDays: 60, rewardClaimDays: 14 },
-            hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
-            isRepeatable: true,
-        },
-        stampsCollected: 8,
-        stampsRequired: 8,
-        status: 'completed',
-        stampHistory: Array.from({ length: 8 }, (_, i) => ({
-            id: `sh-pizza-${i + 1}`,
-            stampNumber: i + 1,
-            awardedAt: new Date(Date.now() - (15 - i * 2) * 24 * 60 * 60 * 1000).toISOString(),
-            businessName: 'Pizza Palace',
-        })),
-        pointsEarned: 0,
-        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        expiresAt: new Date(Date.now() + 13 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-103',
-        customerId: MOCK_CUSTOMER_ID,
-        businessId: 'business-3',
-        business: {
-            id: 'business-3',
-            name: 'Flex Gym',
-            logo: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=100',
-            address: '789 Fitness Blvd',
-        },
-        template: {
-            id: 'template-3',
-            title: 'Fitness Milestone',
-            description: 'Show up for 12 workouts and earn a 20% discount on your next monthly membership!',
-            stampsRequired: 12,
-            rewardBenefitType: 'discount',
-            rewardBenefitValue: '20% Off Next Month',
-            triggerMethod: 'check_in',
-            stampIcon: '💪',
-            image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400',
-            termsAndConditions: 'Discount applies to monthly membership only.',
-            expirationRules: { stampValidityDays: null, rewardClaimDays: 14 },
-            hybridSettings: { enabled: true, pointsPerStamp: 15, completionBonusPoints: 200, pointsFallbackEnabled: true },
-            isRepeatable: true,
-        },
-        stampsCollected: 7,
-        stampsRequired: 12,
-        status: 'in_progress',
-        stampHistory: Array.from({ length: 7 }, (_, i) => ({
-            id: `sh-gym-${i + 1}`,
-            stampNumber: i + 1,
-            awardedAt: new Date(Date.now() - (14 - i * 2) * 24 * 60 * 60 * 1000).toISOString(),
-            businessName: 'Flex Gym',
-            pointsAwarded: 15,
-        })),
-        pointsEarned: 105,
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-104',
-        customerId: MOCK_CUSTOMER_ID,
-        businessId: 'business-4',
-        business: {
-            id: 'business-4',
-            name: 'Style Studio',
-            logo: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=100',
-            address: '321 Fashion Lane',
-        },
-        template: {
-            id: 'template-4',
-            title: 'Haircut Loyalty Card',
-            description: 'Get 6 haircuts and receive your 7th haircut absolutely free!',
-            stampsRequired: 6,
-            rewardBenefitType: 'free_service',
-            rewardBenefitValue: 'Free Haircut',
-            triggerMethod: 'qr_scan',
-            stampIcon: '✂️',
-            image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400',
-            termsAndConditions: 'Valid for standard haircut only.',
-            expirationRules: { stampValidityDays: 120, rewardClaimDays: 30 },
-            hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
-            isRepeatable: true,
-        },
-        stampsCollected: 6,
-        stampsRequired: 6,
-        status: 'redeemed',
-        stampHistory: Array.from({ length: 6 }, (_, i) => ({
-            id: `sh-hair-${i + 1}`,
-            stampNumber: i + 1,
-            awardedAt: new Date(Date.now() - (60 - i * 10) * 24 * 60 * 60 * 1000).toISOString(),
-            businessName: 'Style Studio',
-        })),
-        pointsEarned: 0,
-        completedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        redeemedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
 ];
 
-// Discoverable stamp rewards (available but not yet started)
-const mockDiscoverableRewards: DiscoverableStampReward[] = [
-    {
-        id: 'discover-1',
-        businessStampRewardId: 'bsr-new-1',
-        template: {
-            id: 'template-spa',
-            title: 'Spa Day Rewards',
-            description: 'Collect stamps with every spa visit and unlock a complimentary treatment!',
-            stampsRequired: 10,
-            rewardBenefitType: 'free_service',
-            rewardBenefitValue: 'Free 1-Hour Massage',
-            triggerMethod: 'check_in',
-            stampIcon: '✨',
-            image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400',
-            termsAndConditions: 'Valid for Gold and Platinum members only.',
-            expirationRules: { stampValidityDays: 90, rewardClaimDays: 30 },
-            hybridSettings: { enabled: true, pointsPerStamp: 25, completionBonusPoints: 100, pointsFallbackEnabled: false },
-            isRepeatable: true,
-        },
-        business: {
-            id: 'business-5',
-            name: 'Zen Spa & Wellness',
-            logo: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=100',
-            address: '555 Relaxation Way',
-        },
-        hasStarted: false,
-    },
-    {
-        id: 'discover-2',
-        businessStampRewardId: 'bsr-new-2',
-        template: {
-            id: 'template-smoothie',
-            title: 'Smoothie Lover',
-            description: 'Buy 4 smoothies and get your 5th one free!',
-            stampsRequired: 4,
-            rewardBenefitType: 'free_item',
-            rewardBenefitValue: 'Free Smoothie',
-            triggerMethod: 'qr_scan',
-            stampIcon: '🥤',
-            image: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400',
-            expirationRules: { stampValidityDays: 21, rewardClaimDays: 7 },
-            hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
-            isRepeatable: true,
-        },
-        business: {
-            id: 'business-6',
-            name: 'Fresh Blends',
-            logo: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=100',
-            address: '100 Healthy Street',
-        },
-        hasStarted: false,
-    },
-];
-
-/**
- * Get customer's stamp cards
- */
-export const getConsumerStampCards = async (
-    status?: 'in_progress' | 'completed' | 'redeemed' | 'all',
-    page: number = 1,
-    limit: number = 10
-): Promise<GetConsumerStampCardsResponse> => {
+const getMockConsumerStampCardsWithPagination = async (status: string | undefined, page: number, limit: number) => {
     await delay(500);
-
     let filtered = [...mockConsumerStampCards];
     if (status && status !== 'all') {
         filtered = filtered.filter(c => c.status === status);
     }
-
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedData = filtered.slice(startIndex, endIndex);
-
     return {
         data: paginatedData,
         totalPages: Math.ceil(filtered.length / limit),
         currentPage: page,
         count: filtered.length,
     };
+}
+
+
+const mapDtoToDiscoverableReward = (dto: BusinessStampRewardDto): DiscoverableStampReward => {
+    const business = (dto as any).business || {};
+    return {
+        id: dto.id,
+        template: mapTemplateDtoToConsumerTemplate(dto.template),
+        business: {
+            id: business.id || 'unknown',
+            name: business.name || 'Unknown Business',
+            logo: business.logo,
+            address: business.address,
+        },
+        businessStampRewardId: dto.id,
+        hasStarted: false, // Backend might calculate this, otherwise logic needed
+        currentProgress: 0
+    };
 };
 
 /**
- * Get a single stamp card by ID
- */
-export const getConsumerStampCardById = async (id: string): Promise<ConsumerStampCard> => {
-    await delay(300);
-
-    const card = mockConsumerStampCards.find(c => c.id === id);
-    if (!card) {
-        throw new Error('Stamp card not found');
-    }
-    return card;
-};
-
-/**
- * Get discoverable stamp rewards (available to start)
+ * Get discoverable stamp rewards
+ * Backend: GET /participant/stamps/discover
  */
 export const getDiscoverableStampRewards = async (): Promise<DiscoverableStampReward[]> => {
-    await delay(400);
-    return mockDiscoverableRewards;
+    try {
+        const { data } = await apiClient.get<BusinessStampRewardDto[]>('/participant/stamps/discover');
+        return data.map(mapDtoToDiscoverableReward);
+    } catch (error) {
+        console.error('Failed to fetch discoverable rewards', error);
+        // Fallback to empty
+        return [];
+    }
 };
 
 /**
- * Start a new stamp card (enroll in a stamp reward)
+ * Start a new stamp card
+ * Backend: POST /participant/stamps/start
  */
 export const startStampCard = async (businessStampRewardId: string): Promise<ConsumerStampCard> => {
-    await delay(500);
-
-    const discoverable = mockDiscoverableRewards.find(d => d.businessStampRewardId === businessStampRewardId);
-    if (!discoverable) {
-        throw new Error('Stamp reward not found');
+    try {
+        const dto: StartStampCardDto = { businessStampRewardId };
+        const { data } = await apiClient.post<StampCardDto>('/participant/stamps/start', dto);
+        return mapDtoToConsumerCard(data);
+    } catch (error) {
+        console.error('Failed to start stamp card', error);
+        throw error;
     }
-
-    const newCard: ConsumerStampCard = {
-        id: `csc-${Date.now()}`,
-        customerId: MOCK_CUSTOMER_ID,
-        businessId: discoverable.business.id,
-        business: discoverable.business,
-        template: discoverable.template,
-        stampsCollected: 0,
-        stampsRequired: discoverable.template.stampsRequired,
-        status: 'in_progress',
-        stampHistory: [],
-        pointsEarned: 0,
-        expiresAt: discoverable.template.expirationRules.stampValidityDays
-            ? new Date(Date.now() + discoverable.template.expirationRules.stampValidityDays * 24 * 60 * 60 * 1000).toISOString()
-            : undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
-
-    mockConsumerStampCards.unshift(newCard);
-    return newCard;
 };
 
 /**
- * Get redemption QR code for a completed stamp card
+ * Get redemption QR code (Mock)
+ * Note: Should use a util to generate QR from participant unique code + card ID.
  */
 export const getRedemptionQR = async (stampCardId: string): Promise<StampCardRedemptionQR> => {
+    console.warn('getRedemptionQR is using MOCK');
     await delay(400);
 
-    const card = mockConsumerStampCards.find(c => c.id === stampCardId);
-    if (!card) {
-        throw new Error('Stamp card not found');
-    }
+    // Mock for demo
+    const card = mockConsumerStampCards.find(c => c.id === stampCardId) ||
+        (await getConsumerStampCardById(stampCardId)); // Logic might loop if API also fails.
 
-    if (card.status !== 'completed') {
-        throw new Error('Card is not ready for redemption');
-    }
-
-    // Generate mock QR code data
     const qrData = {
-        stampCardId: card.id,
-        customerId: card.customerId,
-        businessId: card.businessId,
-        rewardTitle: card.template.title,
-        rewardValue: card.template.rewardBenefitValue,
-        expiresAt: card.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        stampCardId: stampCardId,
+        customerId: MOCK_CUSTOMER_ID,
+        businessId: card?.businessId || '',
+        rewardTitle: card?.template?.title || 'Reward',
+        rewardValue: card?.template?.rewardBenefitValue || '',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify({
             type: 'stamp_redemption',
-            cardId: card.id,
-            customerId: card.customerId,
+            cardId: stampCardId,
             timestamp: Date.now(),
         }))}`,
     };
-
     return qrData;
 };
 
 /**
- * Get customer's stamp reward stats
+ * Get consumer stamp stats
+ * Backend: GET /participant/stamps/stats
  */
 export const getConsumerStampStats = async (): Promise<ConsumerStampStats> => {
-    await delay(300);
-
-    const activeCards = mockConsumerStampCards.filter(c => c.status === 'in_progress').length;
-    const completedCards = mockConsumerStampCards.filter(c => c.status === 'completed').length;
-    const redeemedRewards = mockConsumerStampCards.filter(c => c.status === 'redeemed').length;
-    const totalStampsCollected = mockConsumerStampCards.reduce((sum, c) => sum + c.stampsCollected, 0);
-    const totalPointsEarned = mockConsumerStampCards.reduce((sum, c) => sum + c.pointsEarned, 0);
-
-    return {
-        activeCards,
-        completedCards,
-        redeemedRewards,
-        totalStampsCollected,
-        totalPointsEarned,
-    };
+    try {
+        const { data } = await apiClient.get<any>('/participant/stamps/stats'); // Unknown DTO yet
+        return {
+            activeCards: data.activeCards || data.active_cards || 0,
+            completedCards: data.completedCards || data.completed_cards || 0,
+            redeemedRewards: data.redeemedRewards || data.redeemed_rewards || 0,
+            totalStampsCollected: data.totalStampsCollected || data.total_stamps_collected || 0,
+            totalPointsEarned: data.totalPointsEarned || data.total_points_earned || 0,
+        };
+    } catch (error) {
+        console.error('Failed to fetch stats', error);
+        return {
+            activeCards: 0,
+            completedCards: 0,
+            redeemedRewards: 0,
+            totalStampsCollected: 0,
+            totalPointsEarned: 0
+        };
+    }
 };
 
-// Export mock data for direct access
+/**
+ * Get available stamp rewards for a specific business
+ * Backend: GET /participant/stamps/business/:businessId
+ */
+export const getRewardsByBusiness = async (businessId: string): Promise<DiscoverableStampReward[]> => {
+    try {
+        const { data } = await apiClient.get<BusinessStampRewardDto[]>(`/participant/stamps/business/${businessId}`);
+        return data.map(mapDtoToDiscoverableReward);
+    } catch (error) {
+        console.error(`Failed to fetch rewards for business ${businessId}`, error);
+        return [];
+    }
+};
+
+// Export mock data
 export const getMockConsumerStampCards = () => [...mockConsumerStampCards];
-export const getMockDiscoverableRewards = () => [...mockDiscoverableRewards];
+export const getMockDiscoverableRewards = () => [];

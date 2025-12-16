@@ -72,6 +72,10 @@ export default function ActiveStampRewardCard({
     onAwardStamp,
 }: ActiveStampRewardCardProps) {
     const { template } = reward;
+
+    if (!template) {
+        return null;
+    }
     const completionRate = reward.customersEnrolled > 0
         ? Math.round((reward.customersCompleted / reward.customersEnrolled) * 100)
         : 0;
@@ -83,10 +87,10 @@ export default function ActiveStampRewardCard({
         <Card className="group relative overflow-visible border border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300">
             {/* Status indicator bar */}
             <div className={`absolute top-0 left-0 right-0 h-1 ${reward.status === 'active'
-                    ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-400'
-                    : reward.status === 'paused'
-                        ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400'
-                        : 'bg-gray-400'
+                ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-400'
+                : reward.status === 'paused'
+                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400'
+                    : 'bg-gray-400'
                 }`} />
 
             <CardContent className="p-5 pt-6">

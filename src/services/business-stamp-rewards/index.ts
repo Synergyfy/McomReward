@@ -380,7 +380,7 @@ export const awardStamp = async (payload: AwardStampRequest): Promise<CustomerSt
         const dto: ScanParticipantQrDto = {
             businessStampRewardId: payload.businessStampRewardId,
             customerId: payload.customerId,
-            // participantUniqueCode: undefined // We don't have this in manual award flow
+            participantUniqueCode: payload.participantUniqueCode
         };
 
         const { data } = await apiClient.post<StampCardDto>('/business/stamps/scan', dto);

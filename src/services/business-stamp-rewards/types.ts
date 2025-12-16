@@ -153,7 +153,8 @@ export interface StampHistoryItem {
 // Request to award a stamp to a customer
 export interface AwardStampRequest {
     businessStampRewardId: string;
-    customerId: string;
+    customerId?: string;
+    participantUniqueCode?: string;
     triggerMethod: StampTriggerMethod;
 }
 

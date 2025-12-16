@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wallet, Megaphone, Heart, Settings,  HandCoins } from 'lucide-react';
+import { Wallet, Megaphone, Heart, Settings, HandCoins, Stamp } from 'lucide-react';
 
 interface CustomerSidebarProps {
   isOpen: boolean;
@@ -46,6 +46,12 @@ export default function CustomerSidebar({ isOpen, activePath }: CustomerSidebarP
           <Link href="/wishlist" className={linkClasses("/wishlist")}>
             <Heart className="mr-3" />
             My Wishlist
+          </Link>
+        </li>
+        <li className="mb-2">
+          <Link href="/stamp-rewards" className={linkClasses("/stamp-rewards")}>
+            <Stamp className="mr-3" />
+            Stamp Rewards
           </Link>
         </li>
         {/* <li className="mb-2">

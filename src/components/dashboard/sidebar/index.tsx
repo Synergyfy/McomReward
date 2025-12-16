@@ -20,6 +20,7 @@ import {
   Tag,
   LayoutDashboard,
   Loader2,
+  Stamp,
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -126,6 +127,13 @@ export default function BusinessSidebar({
           <Link href="/dashboard/rewards" className={enhancedLinkClasses('/dashboard/rewards')}>
             <Gift className="mr-3" />
             Rewards
+          </Link>
+        </li>
+
+        <li>
+          <Link href="/dashboard/stamp-rewards" className={enhancedLinkClasses('/dashboard/stamp-rewards')}>
+            <Stamp className="mr-3" />
+            Stamp Rewards
           </Link>
         </li>
 

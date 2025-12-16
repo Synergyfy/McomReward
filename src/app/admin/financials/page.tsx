@@ -16,6 +16,7 @@ import {
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal';
+import { PlanTypeSelectionModal } from '@/components/admin/financials/PlanTypeSelectionModal';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { useGetTiers, useDeleteTier, useGetPaymentHistory, useGetPointPackages, useDeletePointPackage } from '@/services/financials';
 import { PaymentHistoryItem, PointPackage } from '@/services/financials/types';
@@ -104,7 +105,9 @@ export default function FinancialsPage() {
 
   // State for Add/Edit Plan Modal
   const [showAddEditPlanModal, setShowAddEditPlanModal] = useState(false);
+  const [showPlanTypeSelectionModal, setShowPlanTypeSelectionModal] = useState(false);
   const [currentEditPlan, setCurrentEditPlan] = useState<Tier | undefined>(undefined);
+  const [selectedPlanType, setSelectedPlanType] = useState<'standard' | 'seasonal'>('standard');
 
   // State for Add/Edit Point Package Modal
   const [showAddEditPointPackageModal, setShowAddEditPointPackageModal] = useState(false);
@@ -112,6 +115,13 @@ export default function FinancialsPage() {
 
   const handleAddEditPlan = (plan?: Tier) => {
     setCurrentEditPlan(plan);
+    // Show selection modal for both New and Edit actions to allow type confirmation/change
+    setShowPlanTypeSelectionModal(true);
+  };
+
+  const handlePlanTypeSelected = (type: 'standard' | 'seasonal') => {
+    setSelectedPlanType(type);
+    setShowPlanTypeSelectionModal(false);
     setShowAddEditPlanModal(true);
   };
 
@@ -620,6 +630,13 @@ export default function FinancialsPage() {
         initialData={currentEditPlan}
         onSave={handleSavePlan}
         onShowFeedback={handleShowFeedback}
+        planType={selectedPlanType}
+      />
+
+      <PlanTypeSelectionModal
+        isOpen={showPlanTypeSelectionModal}
+        onClose={() => setShowPlanTypeSelectionModal(false)}
+        onSelectType={handlePlanTypeSelected}
       />
 
       <AddEditPointPackageModal

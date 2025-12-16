@@ -4,9 +4,14 @@ export interface Tier {
     updatedAt: string;
     deletedAt: string | null;
     name: string;
-    monthlyPrice: string; // API returns string "45.00"
-    annualPrice: string; // API returns string "540.00"
-    quaterlyPrice: string; // API returns string "135.00"
+    type: 'standard' | 'seasonal'; // Added
+    startDate?: string; // Added
+    endDate?: string; // Added
+    fixedPrice?: number; // Added
+    colorCode?: string; // Added
+    monthlyPrice: string;
+    annualPrice: string;
+    quaterlyPrice: string;
     features: string[];
     status: string;
     stripeMonthlyPriceId: string;
@@ -205,6 +210,7 @@ export enum PlanType {
     MONTHLY = 'monthly',
     QUARTERLY = 'quarterly',
     ANNUALLY = 'annual',
+    SEASONAL = 'seasonal',
 }
 
 // Payment Request/Response Types

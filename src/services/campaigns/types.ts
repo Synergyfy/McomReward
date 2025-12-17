@@ -147,6 +147,7 @@ export interface PublicCampaignResponse {
   background_color: string;
   disabled: boolean;
   rewards: Reward[];
+  businessRewards?: BusinessReward[];
   uniqueCode?: string; // Present in my-created-campaigns example
 }
 

@@ -6,8 +6,16 @@
 import {
     StampTriggerMethod,
     RewardBenefitType,
-    HybridSettings
+    HybridSettings,
+    StampRewardTemplateDto
 } from '@/services/stamp-rewards/types';
+
+// DTO from Business types (can be reused if exported, or redefined)
+import { BusinessStampRewardDto, StampCardDto } from '@/services/business-stamp-rewards/types';
+
+export interface StartStampCardDto {
+    businessStampRewardId: string;
+}
 
 // Status of customer's stamp card
 export type ConsumerStampCardStatus = 'in_progress' | 'completed' | 'redeemed' | 'expired';
@@ -40,7 +48,7 @@ export interface ConsumerStampRewardTemplate {
     isRepeatable: boolean;
 }
 
-// Customer's stamp card data
+// Customer's stamp card data (Frontend View)
 export interface ConsumerStampCard {
     id: string;
     customerId: string;
@@ -93,6 +101,7 @@ export interface ConsumerStampStats {
     redeemedRewards: number;
     totalStampsCollected: number;
     totalPointsEarned: number;
+    // Missing in backend?
 }
 
 // QR code data for redemption
@@ -103,5 +112,5 @@ export interface StampCardRedemptionQR {
     rewardTitle: string;
     rewardValue: string;
     expiresAt: string;
-    qrCode: string;
+    qrCode: string; // The data string to generate QR
 }

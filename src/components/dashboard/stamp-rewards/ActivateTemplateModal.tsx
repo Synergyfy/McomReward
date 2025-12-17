@@ -60,6 +60,7 @@ export default function ActivateTemplateModal({
     onSuccess,
 }: ActivateTemplateModalProps) {
     const [customImage, setCustomImage] = useState<string | null>(null);
+    const [operatingHours, setOperatingHours] = useState<string>('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [step, setStep] = useState<'review' | 'customize' | 'confirm'>('review');
 
@@ -96,6 +97,7 @@ export default function ActivateTemplateModal({
                 {
                     templateId: template.id,
                     customImage: finalImageUrl || undefined,
+                    operatingHours: operatingHours || undefined,
                 },
                 {
                     onSuccess: () => {
@@ -103,6 +105,7 @@ export default function ActivateTemplateModal({
                         onSuccess?.();
                         setStep('review');
                         setCustomImage(null);
+                        setOperatingHours('');
                         setSelectedFile(null);
                     },
                 }
@@ -116,6 +119,7 @@ export default function ActivateTemplateModal({
         onClose();
         setStep('review');
         setCustomImage(null);
+        setOperatingHours('');
         setSelectedFile(null);
     };
 
@@ -310,10 +314,28 @@ export default function ActivateTemplateModal({
                                 )}
                             </div>
 
-                            {/* Future: Operating hours, availability dates */}
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                                <p className="text-sm text-gray-500 text-center">
-                                    More customization options coming soon!
+                            {/* Operating Hours */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Label className="font-medium">Operating Hours (Optional)</Label>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>e.g. &quot;Mon-Fri 9am-5pm, Sat 10am-2pm&quot;</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Input
+                                    placeholder="e.g. Mon-Fri 9am-5pm"
+                                    value={operatingHours}
+                                    onChange={(e) => setOperatingHours(e.target.value)}
+                                />
+                                <p className="text-xs text-gray-500 mt-2">
+                                    This will be displayed to customers collecting stamps.
                                 </p>
                             </div>
                         </div>

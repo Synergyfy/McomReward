@@ -41,22 +41,66 @@ export interface ExpirationRules {
     rewardClaimDays: number | null;       // Days to claim reward after completion (null = forever)
 }
 
-// Request payload for creating a new stamp reward template
+// --- DTOs matching the Backend API structure ---
+
+// --- DTOs matching the Backend API structure ---
+
+export interface CreateStampTemplateDto {
+    title: string;
+    description: string;
+    required_stamps: number;
+    reward_benefit: string; // 'FREE_ITEM' | 'DISCOUNT' | 'FREE_SERVICE' | 'BONUS_POINTS'
+    reward_benefit_value: string;
+    trigger_method: string; // 'QR_SCAN' | 'PURCHASE' | 'CHECK_IN'
+    stamp_validity_days?: number;
+    reward_claim_deadline_days?: number;
+    is_hybrid: boolean;
+    hybrid_points_per_stamp?: number;
+    hybrid_completion_bonus_points?: number;
+    default_image?: string;
+}
+
+export interface UpdateStampTemplateDto extends Partial<CreateStampTemplateDto> { }
+
+export interface StampRewardTemplateDto {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string;
+    title: string;
+    description: string;
+    requiredStamps: number;
+    rewardBenefit: string;
+    rewardBenefitValue: string;
+    triggerMethod: string;
+    stampValidityDays?: number | null;
+    rewardClaimDeadlineDays?: number | null;
+    isHybrid: boolean;
+    hybridPointsPerStamp: number;
+    hybridCompletionBonusPoints: number;
+    isPublished: boolean;
+    isArchived: boolean;
+    defaultImage: string;
+}
+
+// --- Frontend Types (Kept for compatibility) ---
+
+// Request payload for creating a new stamp reward template (Frontend View)
 export interface CreateStampRewardRequest {
     title: string;
     description: string;
     stampsRequired: number;
     rewardBenefitType: RewardBenefitType;
-    rewardBenefitValue: string;           // Description of the reward (e.g., "Free coffee", "20% discount")
+    rewardBenefitValue: string;
     triggerMethod: StampTriggerMethod;
     expirationRules: ExpirationRules;
     audience: StampAudience;
-    sectorIds: string[];                   // Sector IDs if audience is 'specific_sectors'
-    tierIds: string[];                     // Tier IDs for badge level restrictions
+    sectorIds: string[];
+    tierIds: string[];
     status: StampRewardStatus;
-    image: string;                         // Main image URL
-    stampIcon: string;                     // Icon used for stamp slots
-    isRepeatable: boolean;                 // Whether customers can earn this reward multiple times
+    image: string;
+    stampIcon: string;
+    isRepeatable: boolean;
     hybridSettings: HybridSettings;
     termsAndConditions: string;
 }
@@ -66,7 +110,7 @@ export interface UpdateStampRewardRequest extends Partial<CreateStampRewardReque
     id: string;
 }
 
-// Response from the API for a stamp reward template
+// Response from the API for a stamp reward template (Frontend View)
 export interface StampRewardResponse {
     id: string;
     title: string;

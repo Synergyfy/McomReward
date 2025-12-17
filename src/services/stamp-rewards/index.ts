@@ -1,24 +1,211 @@
 /**
- * Stamp Rewards Service (Mock Implementation)
- * 
- * Mock API service functions for demonstrating stamp reward templates.
- * This provides simulated backend responses for frontend development.
+ * Stamp Rewards Service
+ *
+ * API functions for Admin Stamp Reward Templates.
+ * Integrates with the backend API while maintaining mock functions for missing endpoints.
  */
 
+import apiClient from '@/services/api';
 import {
     CreateStampRewardRequest,
     UpdateStampRewardRequest,
     StampRewardResponse,
-    GetStampRewardsResponse
+    GetStampRewardsResponse,
+    CreateStampTemplateDto,
+    UpdateStampTemplateDto,
+    StampRewardTemplateDto,
+    StampTriggerMethod,
+    RewardBenefitType
 } from './types';
 
-// Simulate network delay
+// Simulate network delay for mocks
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Generate a random ID
+// Generate a random ID for mocks
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-// Mock database
+// Helper: Map Backend DTO to Frontend Response
+const mapDtoToResponse = (dto: StampRewardTemplateDto): StampRewardResponse => {
+    return {
+        id: dto.id,
+        title: dto.title,
+        description: dto.description,
+        stampsRequired: dto.requiredStamps,
+        rewardBenefitType: dto.rewardBenefit?.toLowerCase() as RewardBenefitType || 'free_item',
+        rewardBenefitValue: dto.rewardBenefitValue,
+        triggerMethod: dto.triggerMethod?.toLowerCase() as StampTriggerMethod || 'qr_scan',
+        expirationRules: {
+            stampValidityDays: dto.stampValidityDays || null,
+            rewardClaimDays: dto.rewardClaimDeadlineDays || null,
+        },
+        // These fields are not in the provided DTO, defaulting
+        audience: 'all_businesses',
+        sectorIds: [],
+        tierIds: [],
+        status: dto.isPublished ? 'active' : (dto.isArchived ? 'archived' : 'draft'),
+        image: dto.defaultImage || '',
+        stampIcon: '⭐', // Default
+        isRepeatable: true, // Default
+        hybridSettings: {
+            enabled: dto.isHybrid,
+            pointsPerStamp: dto.hybridPointsPerStamp || 0,
+            completionBonusPoints: dto.hybridCompletionBonusPoints || 0,
+            pointsFallbackEnabled: false,
+        },
+        termsAndConditions: '', // Default
+
+        createdAt: dto.createdAt,
+        updatedAt: dto.updatedAt,
+        createdBy: 'admin', // Default
+
+        // Analytics - Not provided in Admin Template DTO yet
+        businessesActivated: 0,
+        customersEnrolled: 0,
+        totalCompletions: 0,
+        totalRedemptions: 0,
+    };
+};
+
+// Helper: Map Frontend Request to Backend DTO
+const mapRequestToDto = (payload: CreateStampRewardRequest): CreateStampTemplateDto => {
+    return {
+        title: payload.title,
+        description: payload.description,
+        required_stamps: payload.stampsRequired,
+        reward_benefit: payload.rewardBenefitType.toUpperCase(),
+        reward_benefit_value: payload.rewardBenefitValue,
+        trigger_method: payload.triggerMethod.toUpperCase(),
+        stamp_validity_days: payload.expirationRules.stampValidityDays || undefined,
+        reward_claim_deadline_days: payload.expirationRules.rewardClaimDays || undefined,
+        is_hybrid: payload.hybridSettings.enabled,
+        hybrid_points_per_stamp: payload.hybridSettings.pointsPerStamp,
+        hybrid_completion_bonus_points: payload.hybridSettings.completionBonusPoints,
+        default_image: payload.image,
+    };
+};
+
+/**
+ * Create a new stamp reward template
+ * Backend: POST /admin/stamps/templates
+ */
+export const createStampReward = async (
+    payload: CreateStampRewardRequest
+): Promise<StampRewardResponse> => {
+    try {
+        const dto = mapRequestToDto(payload);
+        const { data } = await apiClient.post<StampRewardTemplateDto>('/admin/stamps/templates', dto);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error('Failed to create stamp reward template', error);
+        throw error;
+    }
+};
+
+/**
+ * Get all stamp reward templates
+ * Backend: GET /admin/stamps/templates
+ * Note: Backend currently doesn't support server-side pagination in the DTO spec (returns array).
+ * We will fake pagination on the client side if needed, or pass params if backend supports it later.
+ */
+export const getStampRewards = async (
+    page: number = 1,
+    limit: number = 10
+): Promise<GetStampRewardsResponse> => {
+    try {
+        const { data } = await apiClient.get<StampRewardTemplateDto[]>('/admin/stamps/templates');
+
+        // Client-side pagination since backend returns all
+        const allRewards = data.map(mapDtoToResponse);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = allRewards.slice(startIndex, endIndex);
+
+        return {
+            data: paginatedData,
+            totalPages: Math.ceil(allRewards.length / limit),
+            currentPage: page,
+            count: allRewards.length,
+        };
+    } catch (error) {
+        console.error('Failed to fetch stamp rewards', error);
+        // Fallback to mock data if API fails (for dev resilience)
+        console.warn('Falling back to mock data');
+        return getMockStampRewardsWithPagination(page, limit);
+    }
+};
+
+/**
+ * Get a single stamp reward template by ID
+ * Backend: GET /admin/stamps/templates/:id
+ */
+export const getStampRewardById = async (
+    id: string
+): Promise<StampRewardResponse> => {
+    try {
+        const { data } = await apiClient.get<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error(`Failed to fetch stamp reward ${id}`, error);
+        throw error;
+    }
+};
+
+/**
+ * Update an existing stamp reward template
+ * Backend: PATCH /admin/stamps/templates/:id
+ */
+export const updateStampReward = async (
+    id: string,
+    payload: Partial<UpdateStampRewardRequest>
+): Promise<StampRewardResponse> => {
+    try {
+        // Map partial payload to partial DTO
+        // Constructing a partial DTO manually
+        const dto: Partial<UpdateStampTemplateDto> = {};
+        if (payload.title) dto.title = payload.title;
+        if (payload.description) dto.description = payload.description;
+        if (payload.stampsRequired) dto.required_stamps = payload.stampsRequired;
+        if (payload.rewardBenefitType) dto.reward_benefit = payload.rewardBenefitType.toUpperCase();
+        if (payload.rewardBenefitValue) dto.reward_benefit_value = payload.rewardBenefitValue;
+        if (payload.triggerMethod) dto.trigger_method = payload.triggerMethod.toUpperCase();
+        if (payload.expirationRules) {
+            dto.stamp_validity_days = payload.expirationRules.stampValidityDays || undefined;
+            dto.reward_claim_deadline_days = payload.expirationRules.rewardClaimDays || undefined;
+        }
+        if (payload.hybridSettings) {
+            dto.is_hybrid = payload.hybridSettings.enabled;
+            dto.hybrid_points_per_stamp = payload.hybridSettings.pointsPerStamp;
+            dto.hybrid_completion_bonus_points = payload.hybridSettings.completionBonusPoints;
+        }
+        if (payload.image) dto.default_image = payload.image;
+
+        const { data } = await apiClient.patch<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`, dto);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error(`Failed to update stamp reward ${id}`, error);
+        throw error;
+    }
+};
+
+/**
+ * Publish a draft stamp reward template
+ * Backend: POST /admin/stamps/templates/:id/publish
+ */
+export const publishStampReward = async (
+    id: string
+): Promise<StampRewardResponse> => {
+    try {
+        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/publish`);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error(`Failed to publish stamp reward ${id}`, error);
+        throw error;
+    }
+};
+
+// --- MOCK FUNCTIONS (Endpoints not available in backend yet) ---
+
+// Mock database for fallback
 let mockStampRewards: StampRewardResponse[] = [
     {
         id: '1',
@@ -72,123 +259,13 @@ let mockStampRewards: StampRewardResponse[] = [
         totalCompletions: 342,
         totalRedemptions: 298,
     },
-    {
-        id: '3',
-        title: 'Spa Day Rewards',
-        description: 'Collect stamps with every spa visit and unlock a complimentary treatment after 10 visits.',
-        stampsRequired: 10,
-        rewardBenefitType: 'free_service',
-        rewardBenefitValue: 'Free 1-Hour Massage',
-        triggerMethod: 'check_in',
-        expirationRules: { stampValidityDays: 90, rewardClaimDays: 30 },
-        audience: 'all_businesses',
-        sectorIds: [],
-        tierIds: ['gold', 'platinum'],
-        status: 'draft',
-        image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400',
-        stampIcon: '✨',
-        isRepeatable: true,
-        hybridSettings: { enabled: true, pointsPerStamp: 25, completionBonusPoints: 100, pointsFallbackEnabled: false },
-        termsAndConditions: 'Valid for Gold and Platinum members only.',
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 0,
-        customersEnrolled: 0,
-        totalCompletions: 0,
-        totalRedemptions: 0,
-    },
-    {
-        id: '4',
-        title: 'Fitness Milestone',
-        description: 'Show up for 12 workouts and earn a 20% discount on your next monthly membership!',
-        stampsRequired: 12,
-        rewardBenefitType: 'discount',
-        rewardBenefitValue: '20% Off Next Month',
-        triggerMethod: 'check_in',
-        expirationRules: { stampValidityDays: null, rewardClaimDays: 14 },
-        audience: 'specific_sectors',
-        sectorIds: ['fitness'],
-        tierIds: [],
-        status: 'active',
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400',
-        stampIcon: '💪',
-        isRepeatable: true,
-        hybridSettings: { enabled: true, pointsPerStamp: 15, completionBonusPoints: 200, pointsFallbackEnabled: true },
-        termsAndConditions: 'Discount applies to monthly membership only.',
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 15,
-        customersEnrolled: 456,
-        totalCompletions: 123,
-        totalRedemptions: 98,
-    },
-    {
-        id: '5',
-        title: 'Haircut Loyalty Card',
-        description: 'Get 6 haircuts and receive your 7th haircut absolutely free! A great way to save on your grooming.',
-        stampsRequired: 6,
-        rewardBenefitType: 'free_service',
-        rewardBenefitValue: 'Free Haircut',
-        triggerMethod: 'qr_scan',
-        expirationRules: { stampValidityDays: 120, rewardClaimDays: 30 },
-        audience: 'specific_sectors',
-        sectorIds: ['beauty', 'salon'],
-        tierIds: [],
-        status: 'active',
-        image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400',
-        stampIcon: '✂️',
-        isRepeatable: true,
-        hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
-        termsAndConditions: 'Valid for standard haircut only.',
-        createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 67,
-        customersEnrolled: 2340,
-        totalCompletions: 890,
-        totalRedemptions: 823,
-    },
 ];
 
-/**
- * Create a new stamp reward template (Mock)
- */
-export const createStampReward = async (
-    payload: CreateStampRewardRequest
-): Promise<StampRewardResponse> => {
-    await delay(800); // Simulate network delay
-
-    const newReward: StampRewardResponse = {
-        id: generateId(),
-        ...payload,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 0,
-        customersEnrolled: 0,
-        totalCompletions: 0,
-        totalRedemptions: 0,
-    };
-
-    mockStampRewards.unshift(newReward);
-    return newReward;
-};
-
-/**
- * Get all stamp reward templates with pagination (Mock)
- */
-export const getStampRewards = async (
-    page: number = 1,
-    limit: number = 10
-): Promise<GetStampRewardsResponse> => {
-    await delay(500); // Simulate network delay
-
+const getMockStampRewardsWithPagination = async (page: number, limit: number): Promise<GetStampRewardsResponse> => {
+    await delay(500);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedData = mockStampRewards.slice(startIndex, endIndex);
-
     return {
         data: paginatedData,
         totalPages: Math.ceil(mockStampRewards.length / limit),
@@ -198,130 +275,49 @@ export const getStampRewards = async (
 };
 
 /**
- * Get a single stamp reward template by ID (Mock)
- */
-export const getStampRewardById = async (
-    id: string
-): Promise<StampRewardResponse> => {
-    await delay(300);
-
-    const reward = mockStampRewards.find(r => r.id === id);
-    if (!reward) {
-        throw new Error('Stamp reward not found');
-    }
-    return reward;
-};
-
-/**
- * Update an existing stamp reward template (Mock)
- */
-export const updateStampReward = async (
-    id: string,
-    payload: Partial<UpdateStampRewardRequest>
-): Promise<StampRewardResponse> => {
-    await delay(600);
-
-    const index = mockStampRewards.findIndex(r => r.id === id);
-    if (index === -1) {
-        throw new Error('Stamp reward not found');
-    }
-
-    mockStampRewards[index] = {
-        ...mockStampRewards[index],
-        ...payload,
-        updatedAt: new Date().toISOString(),
-    };
-
-    return mockStampRewards[index];
-};
-
-/**
- * Delete a stamp reward template (Mock)
+ * Delete a stamp reward template
+ * Backend: DELETE /admin/stamps/templates/:id
  */
 export const deleteStampReward = async (id: string): Promise<void> => {
-    await delay(500);
-
-    const index = mockStampRewards.findIndex(r => r.id === id);
-    if (index === -1) {
-        throw new Error('Stamp reward not found');
+    try {
+        await apiClient.delete(`/admin/stamps/templates/${id}`);
+    } catch (error) {
+        console.error(`Failed to delete stamp reward ${id}`, error);
+        throw error;
     }
-
-    mockStampRewards.splice(index, 1);
 };
 
 /**
- * Publish a draft stamp reward template (Mock)
- */
-export const publishStampReward = async (
-    id: string
-): Promise<StampRewardResponse> => {
-    await delay(400);
-
-    const index = mockStampRewards.findIndex(r => r.id === id);
-    if (index === -1) {
-        throw new Error('Stamp reward not found');
-    }
-
-    mockStampRewards[index] = {
-        ...mockStampRewards[index],
-        status: 'active',
-        updatedAt: new Date().toISOString(),
-    };
-
-    return mockStampRewards[index];
-};
-
-/**
- * Archive an active stamp reward template (Mock)
+ * Archive an active stamp reward template
+ * Backend: POST /admin/stamps/templates/:id/archive
  */
 export const archiveStampReward = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    await delay(400);
-
-    const index = mockStampRewards.findIndex(r => r.id === id);
-    if (index === -1) {
-        throw new Error('Stamp reward not found');
+    try {
+        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/archive`);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error(`Failed to archive stamp reward ${id}`, error);
+        throw error;
     }
-
-    mockStampRewards[index] = {
-        ...mockStampRewards[index],
-        status: 'archived',
-        updatedAt: new Date().toISOString(),
-    };
-
-    return mockStampRewards[index];
 };
 
 /**
- * Duplicate an existing stamp reward template (Mock)
+ * Duplicate an existing stamp reward template
+ * Backend: POST /admin/stamps/templates/:id/duplicate
  */
 export const duplicateStampReward = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    await delay(600);
-
-    const original = mockStampRewards.find(r => r.id === id);
-    if (!original) {
-        throw new Error('Stamp reward not found');
+    try {
+        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/duplicate`);
+        return mapDtoToResponse(data);
+    } catch (error) {
+        console.error(`Failed to duplicate stamp reward ${id}`, error);
+        throw error;
     }
-
-    const duplicated: StampRewardResponse = {
-        ...original,
-        id: generateId(),
-        title: `Copy of ${original.title}`,
-        status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        businessesActivated: 0,
-        customersEnrolled: 0,
-        totalCompletions: 0,
-        totalRedemptions: 0,
-    };
-
-    mockStampRewards.unshift(duplicated);
-    return duplicated;
 };
 
-// Export the mock data for direct access if needed
+// Export the mock data getter (legacy support)
 export const getMockStampRewards = () => [...mockStampRewards];

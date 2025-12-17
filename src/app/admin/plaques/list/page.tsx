@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Edit, Trash2, QrCode, Share2, Ban, Printer } from 'lucide-react';
-import { mockPlaques, Plaque } from '@/lib/mock-data/plaques';
 import { mockPlaqueGroups } from '@/lib/mock-data/plaque-groups';
 import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
@@ -16,15 +15,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TransferPlaqueModal } from '@/components/admin/plaques/TransferPlaqueModal';
 import { RetirePlaqueModal } from '@/components/admin/plaques/RetirePlaqueModal';
-import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal'; // New import
+import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal';
+import { useGetAdminQrPlaques, useDeleteAdminQrPlaque } from '@/services/qr-plaques/hook';
+import { QrPlaque } from '@/services/qr-plaques/types';
 
 export default function PlaqueListPage() {
-  const [plaques, setPlaques] = useState<Plaque[]>(mockPlaques);
+  const router = useRouter();
+
+  // API Hooks
+  const { data: plaquesData, isLoading } = useGetAdminQrPlaques();
+  const { mutate: deletePlaque } = useDeleteAdminQrPlaque();
+  const plaques = plaquesData || [];
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGroup, setFilterGroup] = useState('all');
   const [filterOwner, setFilterOwner] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const router = useRouter();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -41,112 +47,71 @@ export default function PlaqueListPage() {
 
   // State for Add/Edit Plaque Modal
   const [showAddEditPlaqueModal, setShowAddEditPlaqueModal] = useState(false);
-  const [currentPlaqueForEdit, setCurrentPlaqueForEdit] = useState<Plaque | undefined>(undefined);
+  const [currentPlaqueForEdit, setCurrentPlaqueForEdit] = useState<QrPlaque | undefined>(undefined);
 
   // State for Transfer Plaque Modal
   const [showTransferPlaqueModal, setShowTransferPlaqueModal] = useState(false);
-  const [currentPlaqueForTransfer, setCurrentPlaqueForTransfer] = useState<Plaque | undefined>(undefined);
+  const [currentPlaqueForTransfer, setCurrentPlaqueForTransfer] = useState<QrPlaque | undefined>(undefined);
 
   // State for Retire Plaque Modal
   const [showRetirePlaqueModal, setShowRetirePlaqueModal] = useState(false);
-  const [currentPlaqueForRetire, setCurrentPlaqueForRetire] = useState<Plaque | undefined>(undefined);
+  const [currentPlaqueForRetire, setCurrentPlaqueForRetire] = useState<QrPlaque | undefined>(undefined);
 
   const filteredPlaques = useMemo(() => {
     return plaques.filter(plaque => {
-      const matchesSearch = plaque.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            plaque.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = plaque.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            plaque.ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             plaque.id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGroup = filterGroup === 'all' || plaque.groupId === filterGroup;
-      const matchesOwner = filterOwner === 'all' || plaque.ownerId === filterOwner;
+      // const matchesGroup = filterGroup === 'all' || plaque.groupId === filterGroup; // Group not in API yet
+      const matchesOwner = filterOwner === 'all' || plaque.assignedBusinessId === filterOwner;
       const matchesStatus = filterStatus === 'all' || plaque.status === filterStatus;
-      return matchesSearch && matchesGroup && matchesOwner && matchesStatus;
+      return matchesSearch && matchesOwner && matchesStatus;
     });
   }, [plaques, searchTerm, filterGroup, filterOwner, filterStatus]);
 
-  const getStatusBadgeVariant = (status: Plaque['status']) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Active': return 'default';
-      case 'Sold': return 'success'; // Assuming 'Sold' is a positive status
-      case 'Retired': return 'secondary';
-      case 'Lost': return 'destructive';
-      case 'Inactive': return 'outline';
+      case 'ACTIVE': return 'default';
+      case 'SOLD': return 'success'; // Custom variant map needed or use default
+      case 'RETIRED': return 'secondary';
+      case 'LOST': return 'destructive';
+      case 'INACTIVE': return 'outline';
       default: return 'outline';
     }
   };
 
   const handleDeletePlaque = (plaqueId: string) => {
-    // In a real app, this would trigger a confirmation dialog first
-    setPlaques(prev => prev.filter(plaque => plaque.id !== plaqueId));
-    handleShowFeedback("Plaque Deleted", `Plaque ${plaqueId} has been deleted.`);
+    if (confirm('Are you sure you want to delete this plaque?')) {
+        deletePlaque(plaqueId);
+    }
   };
 
-  const handleOpenEditPlaqueModal = (plaque: Plaque) => {
+  const handleOpenEditPlaqueModal = (plaque: QrPlaque) => {
     setCurrentPlaqueForEdit(plaque);
     setShowAddEditPlaqueModal(true);
   };
 
-  const handleSavePlaque = (savedPlaque: Plaque) => {
-    setShowAddEditPlaqueModal(false); // Close modal first
-    setTimeout(() => {
-      setPlaques(prev => prev.map(plaque => (plaque.id === savedPlaque.id ? { ...savedPlaque, updatedAt: new Date() } : plaque)));
-      handleShowFeedback("Plaque Updated", `Plaque "${savedPlaque.name}" has been updated.`);
-    }, 300);
+  // Success callbacks for modals to refresh UI (React Query invalidation handles data refresh)
+  const handleSaveSuccess = (savedPlaque: QrPlaque) => {
+    handleShowFeedback("Plaque Updated", `Plaque "${savedPlaque.name}" has been updated.`);
   };
 
-  const handleOpenTransferPlaqueModal = (plaque: Plaque) => {
+  const handleOpenTransferPlaqueModal = (plaque: QrPlaque) => {
     setCurrentPlaqueForTransfer(plaque);
     setShowTransferPlaqueModal(true);
   };
 
-  const handleTransferPlaque = (plaqueId: string, newOwnerId: string) => {
-    setShowTransferPlaqueModal(false); // Close modal first
-    setTimeout(() => {
-      setPlaques(prev => prev.map(plaque => {
-        if (plaque.id === plaqueId) {
-          const newOwner = mockBusinessUsers.find(u => u.id === newOwnerId);
-          const fromOwnerId = plaque.ownerId;
-          const fromOwnerName = plaque.ownerName;
-          return {
-            ...plaque,
-            ownerId: newOwnerId,
-            ownerName: newOwner?.name || 'Unknown Owner',
-            status: 'Sold', // Assuming transfer implies a sale
-            transferHistory: [...plaque.transferHistory, {
-              fromOwnerId,
-              fromOwnerName,
-              toOwnerId: newOwnerId,
-              toOwnerName: newOwner?.name || 'Unknown Owner',
-              transferDate: new Date(),
-            }],
-            updatedAt: new Date(),
-          };
-        }
-        return plaque;
-      }));
-      handleShowFeedback("Plaque Transferred", `Plaque ${plaqueId} successfully transferred.`);
-    }, 300);
+  const handleTransferSuccess = () => {
+      handleShowFeedback("Plaque Transferred", `Plaque successfully transferred.`);
   };
 
-  const handleOpenRetirePlaqueModal = (plaque: Plaque) => {
+  const handleOpenRetirePlaqueModal = (plaque: QrPlaque) => {
     setCurrentPlaqueForRetire(plaque);
     setShowRetirePlaqueModal(true);
   };
 
-  const handleRetirePlaque = (plaqueId: string, newStatus: 'Retired' | 'Lost' | 'Inactive') => {
-    setShowRetirePlaqueModal(false); // Close modal first
-    setTimeout(() => {
-      setPlaques(prev => prev.map(plaque => {
-        if (plaque.id === plaqueId) {
-          return {
-            ...plaque,
-            status: newStatus,
-            updatedAt: new Date(),
-          };
-        }
-        return plaque;
-      }));
-      handleShowFeedback("Plaque Status Updated", `Plaque ${plaqueId} status changed to ${newStatus}.`);
-    }, 300);
+  const handleRetireSuccess = () => {
+    handleShowFeedback("Plaque Status Updated", `Plaque status updated.`);
   };
 
   return (
@@ -198,11 +163,11 @@ export default function PlaqueListPage() {
                 </SelectTrigger>
                 <SelectContent className="z-[10000]">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Sold">Sold</SelectItem>
-                  <SelectItem value="Retired">Retired</SelectItem>
-                  <SelectItem value="Lost">Lost</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="SOLD">Sold</SelectItem>
+                  <SelectItem value="RETIRED">Retired</SelectItem>
+                  <SelectItem value="LOST">Lost</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -222,7 +187,11 @@ export default function PlaqueListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPlaques.length === 0 ? (
+              {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">Loading plaques...</TableCell>
+                  </TableRow>
+              ) : filteredPlaques.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     No plaques found.
@@ -233,12 +202,12 @@ export default function PlaqueListPage() {
                   <TableRow key={plaque.id}>
                     <TableCell className="font-medium">{plaque.id}</TableCell>
                     <TableCell>{plaque.name}</TableCell>
-                    <TableCell>{plaque.groupName}</TableCell>
-                    <TableCell>{plaque.ownerName}</TableCell>
+                    <TableCell>{plaque.groupName || 'N/A'}</TableCell>
+                    <TableCell>{plaque.ownerName || plaque.assignedBusinessId || 'Unassigned'}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(plaque.status)}>{plaque.status}</Badge>
+                      <Badge variant={getStatusBadgeVariant(plaque.status) as any}>{plaque.status}</Badge>
                     </TableCell>
-                    <TableCell>{plaque.scanCounts}</TableCell>
+                    <TableCell>{plaque.scans || 0}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Link href={`/admin/plaques/${plaque.id}`}>
@@ -265,7 +234,7 @@ export default function PlaqueListPage() {
         isOpen={showAddEditPlaqueModal}
         onClose={() => setShowAddEditPlaqueModal(false)}
         initialData={currentPlaqueForEdit}
-        onSave={handleSavePlaque}
+        onSave={handleSaveSuccess}
         onShowFeedback={handleShowFeedback}
       />
 
@@ -273,14 +242,14 @@ export default function PlaqueListPage() {
         isOpen={showTransferPlaqueModal}
         onClose={() => setShowTransferPlaqueModal(false)}
         plaque={currentPlaqueForTransfer}
-        onTransfer={handleTransferPlaque}
+        onSuccess={handleTransferSuccess}
       />
 
       <RetirePlaqueModal
         isOpen={showRetirePlaqueModal}
         onClose={() => setShowRetirePlaqueModal(false)}
         plaque={currentPlaqueForRetire}
-        onRetire={handleRetirePlaque}
+        onSuccess={handleRetireSuccess}
       />
 
       <FeedbackDialog

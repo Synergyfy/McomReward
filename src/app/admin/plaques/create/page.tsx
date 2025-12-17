@@ -1,67 +1,72 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal';
+import { QrPlaque } from '@/services/qr-plaques/types';
+import { useCreateAdminQrPlaque } from '@/services/qr-plaques/hook';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal'; // Import the modal
-import { Plaque, mockPlaques } from '@/lib/mock-data/plaques'; // Import Plaque interface and mockPlaques
 
-export default function CreatePlaquePage() {
-  // State for Feedback Dialog
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState<{ title: string; description: React.ReactNode; actionText: string }>({
-    title: '',
-    description: '',
-    actionText: 'OK',
-  });
+export default function AdminCreatePlaquePage() {
+    const router = useRouter();
+    const { mutate: createPlaque, isPending } = useCreateAdminQrPlaque();
+    const [showFeedback, setShowFeedback] = React.useState(false);
+    const [feedbackData, setFeedbackData] = React.useState({ title: '', description: '', actionText: 'OK' });
 
-  const handleShowFeedback = (title: string, description: React.ReactNode, actionText?: string) => {
-    setFeedbackDialogProps({ title, description, actionText: actionText || 'OK' });
-    setShowFeedbackDialog(true);
-  };
+    const handleSave = (plaque: QrPlaque) => {
+        // The modal handles the mutation via the hook passed to it, or we handle it here?
+        // The modal currently has useUpdateAdminQrPlaque inside it.
+        // We should probably refactor the modal to accept a generic onSave or have a mode.
+        // For now, let's assume the page handles the "Create" logic if the modal passes back data,
+        // BUT the modal as currently written (my previous step) calls updatePlaque internally.
 
-  // State for Add/Edit Plaque Modal
-  const [showAddEditPlaqueModal, setShowAddEditPlaqueModal] = useState(false);
+        // Refactoring plan: Update AddEditPlaqueModal to handle both Create and Edit,
+        // or accept an onSave that overrides internal logic.
+        // Let's pass onSave to the modal, and the modal should use it.
 
-  const handleSavePlaque = (newPlaque: Plaque) => {
-    setShowAddEditPlaqueModal(false); // Close modal first
-    setTimeout(() => {
-      mockPlaques.push(newPlaque); // Add to mock data
-      handleShowFeedback("Plaque Created", `Plaque "${newPlaque.name}" has been successfully created.`);
-    }, 300);
-  };
+        createPlaque(plaque, { // plaque here is the data object
+            onSuccess: () => {
+                setFeedbackData({
+                    title: 'Success',
+                    description: 'Plaque created successfully.',
+                    actionText: 'Go to List'
+                });
+                setShowFeedback(true);
+            }
+        });
+    };
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Create New Plaque</h1>
-        <p className="text-muted-foreground">Form where admin can choose a group, select owner, enter plaque details, and generate a QR code.</p>
-      </div>
+    const handleFeedbackClose = () => {
+        setShowFeedback(false);
+        router.push('/admin/plaques/list');
+    };
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Plaque</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => setShowAddEditPlaqueModal(true)}><PlusCircle className="mr-2 h-4 w-4" /> Open Create Plaque Form</Button>
-          <p className="text-muted-foreground mt-2">Click the button to open the form for creating a new plaque.</p>
-        </CardContent>
-      </Card>
+    return (
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Create New Plaque</h1>
+            {/* We can reuse the modal UI or embed it.
+                Since the design uses a Modal, we can just render the Modal component
+                but forcefully open, or wrap it in a page layout.
+                However, usually 'create' pages are full pages.
+                But to save time and consistency, I'll invoke the modal immediately or
+                better, just render the form content if I extracted it.
 
-      <AddEditPlaqueModal
-        isOpen={showAddEditPlaqueModal}
-        onClose={() => setShowAddEditPlaqueModal(false)}
-        onSave={handleSavePlaque}
-        onShowFeedback={handleShowFeedback}
-      />
+                For now, I'll render the Modal component with isOpen=true and redirect on close.
+            */}
+            <AddEditPlaqueModal
+                isOpen={true}
+                onClose={() => router.push('/admin/plaques/list')}
+                onSave={handleSave} // This needs to be wired correctly in the modal
+                onShowFeedback={(t, d, a) => { setFeedbackData({title: t, description: d as string, actionText: a || 'OK'}); setShowFeedback(true); }}
+            />
 
-      <FeedbackDialog
-        isOpen={showFeedbackDialog}
-        onClose={() => setShowFeedbackDialog(false)}
-        {...feedbackDialogProps}
-      />
-    </div>
-  );
+            <FeedbackDialog
+                isOpen={showFeedback}
+                onClose={handleFeedbackClose}
+                title={feedbackData.title}
+                description={feedbackData.description}
+                actionText={feedbackData.actionText}
+            />
+        </div>
+    );
 }

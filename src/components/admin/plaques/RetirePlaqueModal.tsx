@@ -12,23 +12,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plaque } from '@/lib/mock-data/plaques';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
+import { QrPlaque } from '@/services/qr-plaques/types';
+import { useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
 
 interface RetirePlaqueModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plaque: Plaque | undefined;
-  onRetire: (plaqueId: string, newStatus: 'Retired' | 'Lost' | 'Inactive') => void;
+  plaque: QrPlaque | undefined;
+  onSuccess: () => void;
 }
 
 export function RetirePlaqueModal({
   isOpen,
   onClose,
   plaque,
-  onRetire,
+  onSuccess,
 }: RetirePlaqueModalProps) {
-  const [newStatus, setNewStatus] = useState<'Retired' | 'Lost' | 'Inactive'>('Retired');
+  const { mutate: updatePlaque, isPending } = useUpdateAdminQrPlaque();
+  const [newStatus, setNewStatus] = useState<string>('RETIRED');
 
   // State for Feedback Dialog (local to modal for validation errors)
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -45,15 +47,22 @@ export function RetirePlaqueModal({
 
   useEffect(() => {
     if (!isOpen) {
-      setNewStatus('Retired'); // Reset on close
+      setNewStatus('RETIRED'); // Reset on close
     }
   }, [isOpen]);
 
   const handleConfirmRetire = () => {
     if (!plaque) return;
 
-    onRetire(plaque.id, newStatus);
-    onClose();
+    updatePlaque({
+        id: plaque.id,
+        data: { status: newStatus }
+    }, {
+        onSuccess: () => {
+            onSuccess();
+            onClose();
+        }
+    });
   };
 
   return (
@@ -76,21 +85,23 @@ export function RetirePlaqueModal({
             <Label htmlFor="newStatus" className="text-right">
               New Status
             </Label>
-            <Select value={newStatus} onValueChange={(value: 'Retired' | 'Lost' | 'Inactive') => setNewStatus(value)}>
+            <Select value={newStatus} onValueChange={setNewStatus}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select new status" />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
-                <SelectItem value="Retired">Retired</SelectItem>
-                <SelectItem value="Lost">Lost</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="RETIRED">Retired</SelectItem>
+                <SelectItem value="LOST">Lost</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="destructive" onClick={handleConfirmRetire}>Confirm Change</Button>
+          <Button variant="destructive" onClick={handleConfirmRetire} disabled={isPending}>
+             {isPending ? 'Updating...' : 'Confirm Change'}
+          </Button>
         </DialogFooter>
       </DialogContent>
 

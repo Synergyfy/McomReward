@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import {
-  AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse, MatchingPointsOverview, MatchingPointsHistoryResponse, MatchingPointsQueryDto,
+  AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse,
+  GetMatchingPointBalanceResponse, GetMatchingPointsHistoryParams, GetMatchingPointsHistoryResponse,
   EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto
 } from './types';
 // import { LoginResponse } from '@/services/auth/types'; // Not used in this file
@@ -41,28 +42,28 @@ export const useToggleMatchingPoints = () => {
   });
 };
 
-// Get Matching Points Overview
-const fetchMatchingPointsOverview = async (params: MatchingPointsQueryDto): Promise<MatchingPointsOverview> => {
-  const { data } = await api.get<MatchingPointsOverview>('/business/matching-points/overview', { params });
+// Get Matching Point Balance
+const fetchMatchingPointBalance = async (): Promise<GetMatchingPointBalanceResponse> => {
+  const { data } = await api.get<GetMatchingPointBalanceResponse>('/matching-points/balance');
   return data;
 };
 
-export const useGetMatchingPointsOverview = (params: MatchingPointsQueryDto = {}) => {
+export const useGetMatchingPointBalance = () => {
   return useQuery({
-    queryKey: [MATCHING_POINTS_QUERY_KEY, 'overview', params.businessId],
-    queryFn: () => fetchMatchingPointsOverview(params),
+    queryKey: [MATCHING_POINTS_QUERY_KEY, 'balance'],
+    queryFn: fetchMatchingPointBalance,
   });
 };
 
 // Get Matching Points History
-const fetchMatchingPointsHistory = async (params: MatchingPointsQueryDto): Promise<MatchingPointsHistoryResponse> => {
-  const { data } = await api.get<MatchingPointsHistoryResponse>('/business/matching-points/history', { params });
+const fetchMatchingPointsHistory = async (params: GetMatchingPointsHistoryParams): Promise<GetMatchingPointsHistoryResponse> => {
+  const { data } = await api.get<GetMatchingPointsHistoryResponse>('/matching-points/history', { params });
   return data;
 };
 
-export const useGetMatchingPointsHistory = (params: MatchingPointsQueryDto = {}) => {
+export const useGetMatchingPointsHistory = (params: GetMatchingPointsHistoryParams = {}) => {
   return useQuery({
-    queryKey: [MATCHING_POINTS_QUERY_KEY, 'history', params.businessId],
+    queryKey: [MATCHING_POINTS_QUERY_KEY, 'history', params],
     queryFn: () => fetchMatchingPointsHistory(params),
   });
 };

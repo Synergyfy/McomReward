@@ -40,9 +40,7 @@ const BUSINESS_QUERY_KEY = 'business';
 
 // ------------------- BUSINESS SIGN-UP -------------------
 const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<string> => {
-  const dataToSend = { ...signUpData, referralCode: signUpData.inviteCode };
-  delete dataToSend.inviteCode;
-  const { data } = await api.post<string>('/business/signup', dataToSend);
+  const { data } = await api.post<string>('/business/signup', signUpData);
   return data;
 };
 

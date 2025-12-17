@@ -121,12 +121,12 @@ const onSubmit = async (data: BusinessSignUpDto) => {
           </div>
 
           <div>
-            <Label htmlFor="inviteCode">Invite Code (Optional)</Label>
+            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
             <Input
-              id="inviteCode"
+              id="referralCode"
               type="text"
-              placeholder="Enter invite code"
-              {...register("inviteCode")}
+              placeholder="Enter referral code"
+              {...register("referralCode")}
             />
           </div>
 

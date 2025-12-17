@@ -65,6 +65,21 @@ export const useGetAdminQrPlaques = (params?: any) => {
   });
 };
 
+// Explicitly added useCreateAdminQrPlaque
+export const useCreateAdminQrPlaque = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateQrPlaqueRequest) => api.createAdminQrPlaque(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QR_PLAQUES_KEY });
+      toast.success('Admin QR Plaque created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create QR Plaque');
+    },
+  });
+};
+
 export const useUpdateAdminQrPlaque = () => {
   const queryClient = useQueryClient();
   return useMutation({

@@ -15,18 +15,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, Save } from 'lucide-react';
-import { mockPlaqueGroups } from '@/lib/mock-data/plaque-groups';
 import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { QrPlaque } from '@/services/qr-plaques/types';
-import { useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
 
 interface AddEditPlaqueModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: QrPlaque;
-  onSave: (plaque: QrPlaque) => void;
+  onSave: (plaque: any) => void; // Using any or partial to allow flexibility for Create/Update payloads
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
+  isSaving?: boolean; // Pass loading state from parent
 }
 
 export function AddEditPlaqueModal({
@@ -35,18 +34,14 @@ export function AddEditPlaqueModal({
   initialData,
   onSave,
   onShowFeedback,
+  isSaving = false,
 }: AddEditPlaqueModalProps) {
-  // Hooks
-  const { mutate: updatePlaque, isPending } = useUpdateAdminQrPlaque();
-
   // State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [groupId, setGroupId] = useState('');
   const [ownerId, setOwnerId] = useState('');
-  const [locationDetails, setLocationDetails] = useState('');
   const [qrCodeData, setQrCodeData] = useState('');
-  const [status, setStatus] = useState<string>('Active');
+  const [status, setStatus] = useState<string>('ACTIVE');
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -65,28 +60,23 @@ export function AddEditPlaqueModal({
     if (initialData) {
       setName(initialData.name || '');
       setDescription(initialData.description || '');
-      setGroupId(''); // Mapping needed if groups exist in API data
       setOwnerId(initialData.assignedBusinessId || '');
-      setLocationDetails(''); // Not in QrPlaque interface yet
       setQrCodeData(initialData.qrCodeUrl || '');
       setStatus(initialData.status);
     } else {
       setName('');
       setDescription('');
-      setGroupId('');
       setOwnerId('');
-      setLocationDetails('');
       setQrCodeData('');
-      setStatus('Active');
+      setStatus('ACTIVE');
     }
-  }, [initialData]);
+  }, [initialData, isOpen]);
 
   const handleSave = () => {
     const errors: string[] = [];
 
     // Basic Validation
     if (!name.trim()) errors.push('Plaque Name is required.');
-    // if (!ownerId.trim()) errors.push('Owner is required.'); // Maybe optional if creating unassigned?
 
     if (errors.length > 0) {
       handleShowLocalFeedback(
@@ -100,31 +90,25 @@ export function AddEditPlaqueModal({
       return;
     }
 
-    if (!initialData) {
-       // Create Logic - Admins don't create plaques per instructions "create is for business not for admin"
-       // But if they were to edit, we need initialData.
-       // If this modal is somehow opened for create, we should probably block it or clarification needed.
-       // Assuming this is EDIT only based on previous turns.
-       handleShowLocalFeedback("Error", "Admins cannot create plaques.");
-       return;
-    }
+    // Prepare data object
+    const plaqueData = {
+        id: initialData?.id, // undefined if create
+        name,
+        description,
+        assignedBusinessId: ownerId,
+        status,
+        qrCodeUrl: qrCodeData,
+        // Include other fields defaults if needed
+    };
 
-    updatePlaque({
-        id: initialData.id,
-        data: {
-            name,
-            description,
-            // groupId, // Not in API type
-            assignedBusinessId: ownerId,
-            status,
-            qrCodeUrl: qrCodeData
-        }
-    }, {
-        onSuccess: (data) => {
-            onSave(data);
-            onClose();
-        }
-    });
+    // Pass data to parent handler
+    onSave(plaqueData);
+    // Note: Parent handles closing on success usually, or we close here?
+    // The previous implementation closed here on success.
+    // Ideally parent closes. But let's keep consistent behavior:
+    // if parent handles async, we should wait?
+    // For now, let's assume parent triggers close or we close if not async.
+    // The props say `onClose`.
   };
 
   const dialogTitle = initialData ? `Edit Plaque: ${initialData.name}` : 'Create New Plaque';
@@ -188,8 +172,8 @@ export function AddEditPlaqueModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={isPending}>
-            <Save className="mr-2 h-4 w-4" /> {isPending ? 'Saving...' : 'Save Plaque'}
+          <Button onClick={handleSave} disabled={isSaving}>
+            <Save className="mr-2 h-4 w-4" /> {isSaving ? 'Saving...' : 'Save Plaque'}
           </Button>
         </DialogFooter>
       </DialogContent>

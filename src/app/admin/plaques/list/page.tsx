@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { TransferPlaqueModal } from '@/components/admin/plaques/TransferPlaqueModal';
 import { RetirePlaqueModal } from '@/components/admin/plaques/RetirePlaqueModal';
 import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal';
-import { useGetAdminQrPlaques, useDeleteAdminQrPlaque } from '@/services/qr-plaques/hook';
+import { useGetAdminQrPlaques, useDeleteAdminQrPlaque, useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
 import { QrPlaque } from '@/services/qr-plaques/types';
 
 export default function PlaqueListPage() {
@@ -25,6 +25,8 @@ export default function PlaqueListPage() {
   // API Hooks
   const { data: plaquesData, isLoading } = useGetAdminQrPlaques();
   const { mutate: deletePlaque } = useDeleteAdminQrPlaque();
+  const { mutate: updatePlaque, isPending: isUpdating } = useUpdateAdminQrPlaque();
+
   const plaques = plaquesData || [];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,7 +74,7 @@ export default function PlaqueListPage() {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'ACTIVE': return 'default';
-      case 'SOLD': return 'success'; // Custom variant map needed or use default
+      case 'SOLD': return 'success';
       case 'RETIRED': return 'secondary';
       case 'LOST': return 'destructive';
       case 'INACTIVE': return 'outline';
@@ -91,9 +93,25 @@ export default function PlaqueListPage() {
     setShowAddEditPlaqueModal(true);
   };
 
-  // Success callbacks for modals to refresh UI (React Query invalidation handles data refresh)
-  const handleSaveSuccess = (savedPlaque: QrPlaque) => {
-    handleShowFeedback("Plaque Updated", `Plaque "${savedPlaque.name}" has been updated.`);
+  // Refactored to handle mutation here
+  const handleSavePlaque = (plaqueData: any) => {
+     if (currentPlaqueForEdit) {
+         updatePlaque({
+             id: currentPlaqueForEdit.id,
+             data: {
+                 name: plaqueData.name,
+                 description: plaqueData.description,
+                 assignedBusinessId: plaqueData.assignedBusinessId,
+                 status: plaqueData.status,
+                 qrCodeUrl: plaqueData.qrCodeUrl
+             }
+         }, {
+             onSuccess: () => {
+                 handleShowFeedback("Plaque Updated", `Plaque "${plaqueData.name}" has been updated.`);
+                 setShowAddEditPlaqueModal(false);
+             }
+         });
+     }
   };
 
   const handleOpenTransferPlaqueModal = (plaque: QrPlaque) => {
@@ -234,8 +252,9 @@ export default function PlaqueListPage() {
         isOpen={showAddEditPlaqueModal}
         onClose={() => setShowAddEditPlaqueModal(false)}
         initialData={currentPlaqueForEdit}
-        onSave={handleSaveSuccess}
+        onSave={handleSavePlaque}
         onShowFeedback={handleShowFeedback}
+        isSaving={isUpdating}
       />
 
       <TransferPlaqueModal

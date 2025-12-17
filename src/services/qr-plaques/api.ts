@@ -6,12 +6,14 @@ import {
   AdminUpdateQrPlaqueRequest
 } from './types';
 
-// Business Endpoints
+// Shared Endpoints
 
 export const createQrPlaque = async (data: CreateQrPlaqueRequest): Promise<QrPlaque> => {
   const response = await api.post('/qr-plaques', data);
   return response.data;
 };
+
+// Business Endpoints
 
 export const getQrPlaques = async (params?: any): Promise<QrPlaque[]> => {
   const response = await api.get('/qr-plaques', { params });
@@ -35,12 +37,10 @@ export const getAdminQrPlaques = async (params?: any): Promise<QrPlaque[]> => {
   return response.data;
 };
 
-export const createAdminQrPlaque = async (data: AdminUpdateQrPlaqueRequest): Promise<QrPlaque> => {
-    // Assuming a specific admin create endpoint or using the general admin endpoint
-    // "POST /api/v1/qr-plaques/admin" (implied pattern)
-    // Or reusing Business POST but with admin credentials (unlikely to allow extra fields)
-    // Using implied "POST /api/v1/qr-plaques/admin" based on "DELETE /api/v1/qr-plaques/admin/{id}" pattern
-    const response = await api.post('/qr-plaques/admin', data);
+// Admin Create uses the shared POST /qr-plaques
+export const createAdminQrPlaque = async (data: CreateQrPlaqueRequest): Promise<QrPlaque> => {
+    // Corrected to use the shared endpoint per user instruction
+    const response = await api.post('/qr-plaques', data);
     return response.data;
 };
 

@@ -11,10 +11,10 @@ export interface QrPlaque {
   assignedPartnerId?: string;
   assignedBusinessId?: string;
   networkContactId?: string;
-  ownerName?: string; // For Admin List
-  groupName?: string; // For Admin List
-  scans?: number; // Optional, based on mock
-  redemptions?: number; // Optional
+  ownerName?: string;
+  groupName?: string;
+  scans?: number;
+  redemptions?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -25,6 +25,12 @@ export interface CreateQrPlaqueRequest {
   actionText: string;
   footerText: string;
   contentUrl: string;
+  // Optional fields mainly for Admin or specific flows
+  status?: string;
+  price?: number;
+  assignedPartnerId?: string;
+  assignedBusinessId?: string;
+  networkContactId?: string;
 }
 
 export interface UpdateQrPlaqueRequest {

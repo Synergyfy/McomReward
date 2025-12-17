@@ -1,10 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, Info } from 'lucide-react';
-import { matchingPointsOverview as MatchingPointsOverviewType } from '@/lib/mock-data/matchingPoints';
+
+export interface MatchingPointsOverviewData {
+  totalMatchingPoints: number;
+  totalRegularPoints: number;
+  earningRules: string[];
+  redemptionRules: string[];
+  adminNotices?: string[]; // Optional as it might be used separately
+}
 
 interface MatchingPointsOverviewProps {
-  overview: typeof MatchingPointsOverviewType;
+  overview: MatchingPointsOverviewData;
 }
 
 export default function MatchingPointsOverview({ overview }: MatchingPointsOverviewProps) {

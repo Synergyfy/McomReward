@@ -23,7 +23,7 @@ export interface BusinessSignUpDto {
   email: string;
   password: string;
   confirmPassword?: string;
-  inviteCode?: string;
+  referralCode?: string;
 }
 
 export interface CreateBusinessDto {

@@ -457,6 +457,23 @@ export default function BusinessRewardsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="flex-grow">
+                      {businessReward.gallery && businessReward.gallery.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs text-gray-500 mb-2">Gallery:</p>
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {businessReward.gallery.map((img, index) => (
+                              <div key={index} className="relative w-10 h-10 flex-shrink-0 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
+                                <Image
+                                  src={img}
+                                  alt={`Gallery ${index + 1}`}
+                                  layout="fill"
+                                  objectFit="cover"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <p className="text-sm text-gray-600 mb-3">
                         {businessReward.description}
                       </p>

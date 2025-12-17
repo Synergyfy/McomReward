@@ -26,28 +26,28 @@ export default function BusinessSignupForm() {
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
-const onSubmit = async (data: BusinessSignUpDto) => {
-  try {
-    // 1️⃣ Call the signup mutation
-    const response = await signUp(data);
-    console.log("Signup response:", response);
+  const onSubmit = async (data: BusinessSignUpDto) => {
+    try {
+      // 1️⃣ Call the signup mutation
+      const response = await signUp(data);
+      console.log("Signup response:", response);
 
-    // 2️⃣ Automatically sign in after signup
-     await login({
-      email: data.email,
-      password: data.password,
-    });
+      // 2️⃣ Automatically sign in after signup
+      await login({
+        email: data.email,
+        password: data.password,
+      });
 
-    toast.success('Business account created successfully!');
-    // Redirection handled by useAuth
+      toast.success('Business account created successfully!');
+      // Redirection handled by useAuth
 
-  } catch (error) {
-    console.error('Signup or login error:', error);
-    toast.error(
-      'Failed to create account. Please try again.'
-    );
-  }
-};
+    } catch (error) {
+      console.error('Signup or login error:', error);
+      toast.error(
+        'Failed to create account. Please try again.'
+      );
+    }
+  };
 
 
   const handleGoogleSignup = () => {
@@ -59,11 +59,11 @@ const onSubmit = async (data: BusinessSignUpDto) => {
     <div className="h-full flex items-center justify-center bg-white ">
       <div className="bg-white w-full max-w-md p-8 rounded-2xl  space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
-               
-                   Manage your vouchers, staff, and rewards
+
+          Manage your vouchers, staff, and rewards
         </h2>
         <p className="text-center text-gray-500 text-sm">
-         
+
         </p>
 
         {/* Sign up with Google */}
@@ -112,6 +112,16 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 {errors.email.message}
               </p>
             )}
+          </div>
+
+          <div>
+            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="Enter referral code"
+              {...register("referralCode")}
+            />
           </div>
 
           <div>

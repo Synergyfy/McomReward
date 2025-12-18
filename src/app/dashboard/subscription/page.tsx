@@ -13,6 +13,10 @@ import { TierResponse } from '@/services/tiers/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Plan } from '@/types';
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles } from 'lucide-react';
+import SeasonalPricingCard from '@/components/pricing/seasonal-pricing-card';
+
 type PlanFrequency = 'monthly' | 'quarterly' | 'annually';
 
 export default function SubscriptionPage() {
@@ -29,7 +33,11 @@ export default function SubscriptionPage() {
 
   const plans: Plan[] = useMemo(() => {
     if (!tiersData) return [];
-    return tiersData.map(tier => {
+    return tiersData.filter(t => {
+      const type = (t.type || '').toLowerCase().trim();
+      // Only include standard plans here
+      return type === 'standard' || type === '';
+    }).map(tier => {
       let price;
       switch (planFrequency) {
         case 'monthly':
@@ -53,6 +61,25 @@ export default function SubscriptionPage() {
       };
     });
   }, [tiersData, currentSubscriptionTier, planFrequency]);
+
+  const seasonalPlans = useMemo(() => {
+    if (!tiersData) return [];
+    return tiersData.filter(t => {
+      const type = (t.type || '').toLowerCase().trim();
+      const status = (t.status || '').toLowerCase().trim();
+      const isVisible = status === 'published' || status === 'draft' || status === '';
+      return type === 'seasonal' && isVisible;
+    }).map(t => ({
+      ...t,
+      // Ensure features is always an array
+      features: t.features || [],
+      // Ensure properties needed for SeasonalPricingCard are present
+      startDate: t.startDate,
+      endDate: t.endDate,
+      fixedPrice: t.fixedPrice,
+      colorCode: t.colorCode,
+    }));
+  }, [tiersData]);
 
   const handleChoosePlan = (plan: Plan) => {
     if (plan.isCurrent) return;
@@ -98,39 +125,71 @@ export default function SubscriptionPage() {
       )}
 
       {/* Plan Comparison Section */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Compare Plans</h2>
-          <RadioGroup
-            defaultValue="monthly"
-            onValueChange={handleFrequencyChange}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="monthly" id="monthly" />
-              <Label htmlFor="monthly">Monthly</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="quarterly" id="quarterly" />
-              <Label htmlFor="quarterly">Quarterly</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="annually" id="annually" />
-              <Label htmlFor="annually">Annually</Label>
-            </div>
-          </RadioGroup>
+      <Tabs defaultValue="standard" className="w-full">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+            <TabsTrigger value="standard">Standard Plans</TabsTrigger>
+            <TabsTrigger value="seasonal" className="flex items-center gap-2">
+              Seasonal Offers <Sparkles className="h-3 w-3 text-amber-500" />
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="standard" className="mt-0">
+            <RadioGroup
+              defaultValue="monthly"
+              onValueChange={handleFrequencyChange}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="monthly" id="monthly" />
+                <Label htmlFor="monthly">Monthly</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="quarterly" id="quarterly" />
+                <Label htmlFor="quarterly">Quarterly</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="annually" id="annually" />
+                <Label htmlFor="annually">Annually</Label>
+              </div>
+            </RadioGroup>
+          </TabsContent>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map(plan => (
-            <PlanComparisonCard
-              key={plan.id}
-              plan={plan}
-              onChoosePlan={handleChoosePlan}
-              billingCycle={planFrequency === 'annually' ? 'annual' : 'quarterly'}
-            />
-          ))}
-        </div>
-      </div>
+
+        <TabsContent value="standard">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {plans.map(plan => (
+              <PlanComparisonCard
+                key={plan.id}
+                plan={plan}
+                onChoosePlan={handleChoosePlan}
+                billingCycle={planFrequency === 'annually' ? 'annual' : 'quarterly'}
+              />
+            ))}
+            {plans.length === 0 && (
+              <div className="col-span-3 text-center py-10 text-gray-500">
+                No standard plans available.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="seasonal">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
+            {seasonalPlans.map((tier) => (
+              <SeasonalPricingCard
+                key={tier.id}
+                tier={tier}
+              />
+            ))}
+          </div>
+          {seasonalPlans.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <p>No seasonal offers available at the moment.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Point Packages Section */}
       <div className="pt-8 border-t border-border">

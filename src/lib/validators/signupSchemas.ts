@@ -14,7 +14,8 @@ export const createBusinessSchema = z.object({
   categoryId: z.string(),
   subCategoryId: z.string().optional().nullable(),
   phone: z.string().min(7, "Valid phone number is required"),
-  address: z.string(),
+  address: z.string().min(1, "Address is required"),
+  postalCode: z.string().min(1, "Postal code is required"),
   website: z.string().optional(),
   socialMedia: socialMediaSchema,
   referralCapacity: z.enum(["12+", "25+", "50+", "100+"], {

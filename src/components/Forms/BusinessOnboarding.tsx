@@ -63,7 +63,7 @@ export default function BusinessOnboardingWizard() {
 
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
     1: ["sectorId", "categoryId", "subCategoryId"],
-    2: ["phone", "address", "website", "socialMedia"],
+    2: ["phone", "address", "postalCode", "website", "socialMedia"],
     3: ["referralCapacity"],
   };
 
@@ -246,6 +246,20 @@ export default function BusinessOnboardingWizard() {
                       {errors.address && (
                         <p className="text-red-500 text-sm mt-1">
                           {errors.address.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="postalCode">Postal Code <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="postalCode"
+                        placeholder="12345"
+                        {...register("postalCode")}
+                        className="mt-1"
+                      />
+                      {errors.postalCode && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.postalCode.message}
                         </p>
                       )}
                     </div>

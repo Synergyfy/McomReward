@@ -35,6 +35,7 @@ export interface CreateBusinessDto {
   website?: string;
   socialMedia?: { name: string; link: string }[];
   referralCapacity: "12+" | "25+" | "50+" | "100+";
+  postalCode: string;
 }
 
 export interface PaginatedResponse<T> {

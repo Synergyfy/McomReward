@@ -23,9 +23,9 @@ interface AddEditPlaqueModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: QrPlaque;
-  onSave: (plaque: any) => void; // Using any or partial to allow flexibility for Create/Update payloads
+  onSave: (plaque: any) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
-  isSaving?: boolean; // Pass loading state from parent
+  isSaving?: boolean;
 }
 
 export function AddEditPlaqueModal({
@@ -41,6 +41,7 @@ export function AddEditPlaqueModal({
   const [description, setDescription] = useState('');
   const [ownerId, setOwnerId] = useState('');
   const [qrCodeData, setQrCodeData] = useState('');
+  const [contentUrl, setContentUrl] = useState(''); // New State
   const [status, setStatus] = useState<string>('ACTIVE');
 
   // State for Feedback Dialog
@@ -62,12 +63,14 @@ export function AddEditPlaqueModal({
       setDescription(initialData.description || '');
       setOwnerId(initialData.assignedBusinessId || '');
       setQrCodeData(initialData.qrCodeUrl || '');
+      setContentUrl(initialData.contentUrl || ''); // Load existing content URL
       setStatus(initialData.status);
     } else {
       setName('');
       setDescription('');
       setOwnerId('');
       setQrCodeData('');
+      setContentUrl(''); // Reset
       setStatus('ACTIVE');
     }
   }, [initialData, isOpen]);
@@ -77,6 +80,8 @@ export function AddEditPlaqueModal({
 
     // Basic Validation
     if (!name.trim()) errors.push('Plaque Name is required.');
+    // if (!contentUrl.trim()) errors.push('Content URL is required.'); // Error said "should not be empty", so adding validation might be good, but letting backend handle strictness is also fine. I'll adding it to be safe.
+    if (!contentUrl.trim()) errors.push('Content URL is required.');
 
     if (errors.length > 0) {
       handleShowLocalFeedback(
@@ -92,23 +97,18 @@ export function AddEditPlaqueModal({
 
     // Prepare data object
     const plaqueData = {
-        id: initialData?.id, // undefined if create
+        id: initialData?.id,
         name,
         description,
-        assignedBusinessId: ownerId,
+        assignedBusinessId: ownerId || undefined, // Send undefined if empty to avoid invalid UUID error
         status,
         qrCodeUrl: qrCodeData,
-        // Include other fields defaults if needed
+        contentUrl,
+        actionText: 'Scan Here', // Default action text needed for Create
+        footerText: '', // Default footer
     };
 
-    // Pass data to parent handler
     onSave(plaqueData);
-    // Note: Parent handles closing on success usually, or we close here?
-    // The previous implementation closed here on success.
-    // Ideally parent closes. But let's keep consistent behavior:
-    // if parent handles async, we should wait?
-    // For now, let's assume parent triggers close or we close if not async.
-    // The props say `onClose`.
   };
 
   const dialogTitle = initialData ? `Edit Plaque: ${initialData.name}` : 'Create New Plaque';
@@ -132,11 +132,17 @@ export function AddEditPlaqueModal({
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description..." className="col-span-3" />
           </div>
 
+          {/* New Content URL Input */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="contentUrl" className="text-right">Linked Offer / Content URL</Label>
+            <Input id="contentUrl" value={contentUrl} onChange={(e) => setContentUrl(e.target.value)} placeholder="https://..." className="col-span-3" />
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="owner" className="text-right">Owner (Business)</Label>
             <Select value={ownerId} onValueChange={setOwnerId}>
               <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select an owner" />
+                <SelectValue placeholder="Select an owner (Optional)" />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
                  {/* This would ideally come from an API too */}

@@ -13,17 +13,17 @@ export default function AdminCreatePlaquePage() {
     const [showFeedback, setShowFeedback] = React.useState(false);
     const [feedbackData, setFeedbackData] = React.useState({ title: '', description: '', actionText: 'OK' });
 
-    const handleSave = (plaque: QrPlaque) => {
+    const handleSave = (plaque: any) => { // Using any to accept the raw form data from modal
         // Map fields to match CreateQrPlaqueRequest strict requirements
         createPlaque({
             name: plaque.name,
-            description: plaque.description || '', // Fallback for optional fields
+            description: plaque.description || '',
             actionText: plaque.actionText || 'Scan Here',
             footerText: plaque.footerText || '',
-            contentUrl: plaque.contentUrl || '',
+            contentUrl: plaque.contentUrl, // This should now be populated from modal
             status: plaque.status,
             price: plaque.price ?? undefined,
-            assignedBusinessId: plaque.assignedBusinessId,
+            assignedBusinessId: plaque.assignedBusinessId, // Modal sends undefined if empty
             assignedPartnerId: plaque.assignedPartnerId,
             networkContactId: plaque.networkContactId
         }, {
@@ -34,13 +34,23 @@ export default function AdminCreatePlaquePage() {
                     actionText: 'Go to List'
                 });
                 setShowFeedback(true);
+            },
+            onError: (error: any) => {
+                 setFeedbackData({
+                    title: 'Error',
+                    description: error.response?.data?.message?.join(', ') || 'Failed to create plaque.',
+                    actionText: 'Close'
+                });
+                setShowFeedback(true);
             }
         });
     };
 
     const handleFeedbackClose = () => {
         setShowFeedback(false);
-        router.push('/admin/plaques/list');
+        if (feedbackData.title === 'Success') {
+             router.push('/admin/plaques/list');
+        }
     };
 
     return (
@@ -51,6 +61,7 @@ export default function AdminCreatePlaquePage() {
                 onClose={() => router.push('/admin/plaques/list')}
                 onSave={handleSave}
                 onShowFeedback={(t, d, a) => { setFeedbackData({title: t, description: d as string, actionText: a || 'OK'}); setShowFeedback(true); }}
+                isSaving={isPending}
             />
 
             <FeedbackDialog

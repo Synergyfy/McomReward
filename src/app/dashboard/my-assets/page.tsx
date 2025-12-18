@@ -868,9 +868,30 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="nearby">Nearby</SelectItem>
-                    <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="national">National</SelectItem>
+                    <SelectItem value="nearby" textValue="Nearby">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Nearby</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.nearby}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="hyperlocal" textValue="Hyperlocal">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Hyperlocal</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.hyperlocal}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="national" textValue="National">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">National</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.national}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -907,10 +928,38 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="partner" textValue="Partner">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Partner</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.partner}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="supplier" textValue="Supplier">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Supplier</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.supplier}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="affiliate" textValue="Affiliate">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Affiliate</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.affiliate}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="customer" textValue="Customer">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Customer</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.customer}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1112,9 +1161,30 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="nearby">Nearby</SelectItem>
-                    <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="national">National</SelectItem>
+                    <SelectItem value="nearby" textValue="Nearby">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Nearby</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.nearby}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="hyperlocal" textValue="Hyperlocal">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Hyperlocal</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.hyperlocal}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="national" textValue="National">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">National</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.national}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1151,10 +1221,38 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="partner" textValue="Partner">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Partner</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.partner}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="supplier" textValue="Supplier">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Supplier</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.supplier}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="affiliate" textValue="Affiliate">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Affiliate</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.affiliate}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="customer" textValue="Customer">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Customer</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.customer}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

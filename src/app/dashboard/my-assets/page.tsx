@@ -64,6 +64,7 @@ import {
   CreateContactDto,
   UpdateContactDto,
 } from '@/services/network-contacts/types';
+  type SortBy = 'name' | 'newest' | 'oldest' | 'active';
 
 // Tooltip content for tags
 const LOCATION_TAG_INFO = {
@@ -130,6 +131,7 @@ export default function FormContactsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
+  
 
   // Form state
   const [formData, setFormData] = useState<CreateContactDto>({
@@ -149,6 +151,7 @@ export default function FormContactsPage() {
     search: searchQuery || undefined,
     locationTag: locationFilter !== 'all' ? locationFilter : undefined,
     relationshipTag: relationshipFilter !== 'all' ? relationshipFilter : undefined,
+    sourceTag: sourceFilter !== 'all' ? sourceFilter : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     sortBy,
   };
@@ -364,7 +367,7 @@ export default function FormContactsPage() {
                   </Badge>
                 )}
               </Button>
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <Select value={sortBy} onValueChange={(value: SortBy) => setSortBy(value)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -398,7 +401,8 @@ export default function FormContactsPage() {
                     <Label className="text-sm font-medium mb-2 block">Location</Label>
                     <Select
                       value={locationFilter}
-                      onValueChange={(value: any) => setLocationFilter(value)}
+                      onValueChange={(value: LocationTag | 'all') => setLocationFilter(value)}
+
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -415,7 +419,7 @@ export default function FormContactsPage() {
                     <Label className="text-sm font-medium mb-2 block">Relationship</Label>
                     <Select
                       value={relationshipFilter}
-                      onValueChange={(value: any) => setRelationshipFilter(value)}
+                      onValueChange={(value: RelationshipTag | 'all') => setRelationshipFilter(value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -433,7 +437,7 @@ export default function FormContactsPage() {
                     <Label className="text-sm font-medium mb-2 block">Source</Label>
                     <Select
                       value={sourceFilter}
-                      onValueChange={(value: any) => setSourceFilter(value)}
+                      onValueChange={(value: SourceTag | 'all') => setSourceFilter(value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -451,7 +455,7 @@ export default function FormContactsPage() {
                     <Label className="text-sm font-medium mb-2 block">Status</Label>
                     <Select
                       value={statusFilter}
-                      onValueChange={(value: any) => setStatusFilter(value)}
+                      onValueChange={(value: ContactStatus | 'all') => setStatusFilter(value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -868,9 +872,33 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="nearby">Nearby</SelectItem>
+                    {/* <SelectItem value="nearby">Nearby</SelectItem>
                     <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="national">National</SelectItem>
+                    <SelectItem value="national">National</SelectItem> */}
+                     <SelectItem value="nearby" textValue="Nearby">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Nearby</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.nearby}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="hyperlocal" textValue="Hyperlocal">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Hyperlocal</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.hyperlocal}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="national" textValue="National">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">National</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.national}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -907,10 +935,42 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="partner">Partner</SelectItem>
+                    {/* <SelectItem value="partner">Partner</SelectItem>
                     <SelectItem value="supplier">Supplier</SelectItem>
                     <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem> */}
+                    <SelectItem value="partner" textValue="Partner">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Partner</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.partner}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="supplier" textValue="Supplier">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Supplier</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.supplier}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="affiliate" textValue="Affiliate">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Affiliate</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.affiliate}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="customer" textValue="Customer">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Customer</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.customer}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1112,9 +1172,33 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="nearby">Nearby</SelectItem>
+                    {/* <SelectItem value="nearby">Nearby</SelectItem>
                     <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="national">National</SelectItem>
+                    <SelectItem value="national">National</SelectItem> */}
+                     <SelectItem value="nearby" textValue="Nearby">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Nearby</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.nearby}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="hyperlocal" textValue="Hyperlocal">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Hyperlocal</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.hyperlocal}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="national" textValue="National">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">National</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {LOCATION_TAG_INFO.national}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1151,10 +1235,42 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="partner">Partner</SelectItem>
+                    {/* <SelectItem value="partner">Partner</SelectItem>
                     <SelectItem value="supplier">Supplier</SelectItem>
                     <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem> */}
+                     <SelectItem value="partner" textValue="Partner">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Partner</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.partner}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="supplier" textValue="Supplier">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Supplier</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.supplier}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="affiliate" textValue="Affiliate">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Affiliate</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.affiliate}
+                        </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="customer" textValue="Customer">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">Customer</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {RELATIONSHIP_TAG_INFO.customer}
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

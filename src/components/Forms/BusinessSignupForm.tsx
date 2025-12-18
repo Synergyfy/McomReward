@@ -21,8 +21,7 @@ export default function BusinessSignupForm() {
   } = useForm<BusinessSignUpDto>();
   const router = useRouter();
 
-
-  const { mutateAsync: signUp, } = useBusinessSignUp();
+  const { mutateAsync: signUp } = useBusinessSignUp();
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,17 +37,13 @@ export default function BusinessSignupForm() {
         password: data.password,
       });
 
-      toast.success('Business account created successfully!');
+      toast.success("Business account created successfully!");
       // Redirection handled by useAuth
-
     } catch (error) {
-      console.error('Signup or login error:', error);
-      toast.error(
-        'Failed to create account. Please try again.'
-      );
+      console.error("Signup or login error:", error);
+      toast.error("Failed to create account. Please try again.");
     }
   };
-
 
   const handleGoogleSignup = () => {
     console.log("Google signup clicked");
@@ -59,12 +54,9 @@ export default function BusinessSignupForm() {
     <div className="h-full flex items-center justify-center bg-white ">
       <div className="bg-white w-full max-w-md p-8 rounded-2xl  space-y-6">
         <h2 className="text-2xl font-semibold text-center text-gray-800">
-
           Manage your vouchers, staff, and rewards
         </h2>
-        <p className="text-center text-gray-500 text-sm">
-
-        </p>
+        <p className="text-center text-gray-500 text-sm"></p>
 
         {/* Sign up with Google */}
         <Button
@@ -86,7 +78,9 @@ export default function BusinessSignupForm() {
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">
+              Name <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="name"
               type="text"
@@ -94,13 +88,13 @@ export default function BusinessSignupForm() {
               {...register("name", { required: "Name is required" })}
             />
             {errors.name && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.name.message}
-              </p>
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
             )}
           </div>
           <div>
-            <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+            <Label htmlFor="email">
+              Email <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
@@ -125,7 +119,9 @@ export default function BusinessSignupForm() {
           </div>
 
           <div>
-            <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+            <Label htmlFor="password">
+              Password <span className="text-red-500">*</span>
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -154,7 +150,9 @@ export default function BusinessSignupForm() {
             )}
           </div>
           <div>
-            <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+            <Label htmlFor="confirmPassword">
+              Confirm Password <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="referalcode"
               type={showPassword ? "text" : "password"}
@@ -171,21 +169,38 @@ export default function BusinessSignupForm() {
               </p>
             )}
           </div>
-           <div>
-            <Label htmlFor="referalCode">Referal code <span className="text-red-500">*</span></Label>
+          <div>
+            <Label htmlFor="confirmPassword">
+              Confirm Password <span className="text-red-500">*</span>
+            </Label>
             <Input
-              id="referalCode"
+              id="confirmPassword"
               type={showPassword ? "text" : "password"}
-              placeholder="....."
+              placeholder="••••••••"
               {...register("confirmPassword", {
-                required: "Con is required",
+                required: "Confirm Password is required",
                 validate: (value) =>
                   value === watch("password") || "Passwords do not match",
               })}
             />
-            {errors.inviteCode && (
+            {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.inviteCode.message}
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="Enter referral code"
+              {...register("referralCode")}
+            />
+            {errors.referralCode && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.referralCode.message}
               </p>
             )}
           </div>
@@ -198,7 +213,6 @@ export default function BusinessSignupForm() {
             {isSubmitting ? "Creating Account..." : "Sign Up"}
           </Button>
         </form>
-
       </div>
     </div>
   );

@@ -294,6 +294,7 @@ export default function BusinessSidebar({
         {isMyAssetsOpen && (
           <ul className="ml-8 mt-2 space-y-1">
             <li><Link href="/dashboard/my-assets" className={linkClasses('/dashboard/my-assets')}>Contacts</Link></li>
+            <li><Link href="/dashboard/my-assets/group-circles" className={linkClasses('/dashboard/my-assets/group-circles')}>Group Circles</Link></li>
             <li><Link href="/dashboard/my-assets/qr-plaques" className={linkClasses('/dashboard/my-assets/qr-plaques')}>QR Plaques</Link></li>
 
             <Link href="/dashboard/affiliate" className={linkClasses('/dashboard/affiliate')}>

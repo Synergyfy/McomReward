@@ -222,7 +222,7 @@ export default function CampaignsListPage() {
   // Check if user has reached their campaign limit
   const maxActiveCampaigns = subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0;
   const currentActiveCampaigns = tierUsageData?.features?.campaigns?.used ?? 0;
-  const hasReachedCampaignLimit = currentActiveCampaigns >= maxActiveCampaigns;
+  const hasReachedCampaignLimit = maxActiveCampaigns !== -1 && currentActiveCampaigns >= maxActiveCampaigns;
 
   const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
     // ... loading / empty states ...

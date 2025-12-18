@@ -34,6 +34,13 @@ export interface TierResponse {
             trustedCampaignBonus: number;
         };
     };
+    // Seasonal / New fields
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    fixedPrice?: number;
+    colorCode?: string;
+    description?: string;
 }
 
 export interface GetTiersResponse {

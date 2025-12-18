@@ -63,7 +63,7 @@ export default function BusinessOnboardingWizard() {
 
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
     1: ["sectorId", "categoryId", "subCategoryId"],
-    2: ["phone", "address", "website", "socialMedia"],
+    2: ["phone", "address", "postalCode", "website", "socialMedia"],
     3: ["referralCapacity"],
   };
 
@@ -250,6 +250,20 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
+                      <Label htmlFor="postalCode">Postal Code <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="postalCode"
+                        placeholder="12345"
+                        {...register("postalCode")}
+                        className="mt-1"
+                      />
+                      {errors.postalCode && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.postalCode.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
                       <Label htmlFor="website">Website URL (optional)</Label>
                       <Input
                         id="website"
@@ -395,7 +409,7 @@ export default function BusinessOnboardingWizard() {
                       </Button>
                       <Button
                         type="submit"
-                        disabled={isPending || !agreedToTerms}
+                        disabled={isPending || !agreedToTerms || !watch("referralCapacity")}
                         className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
                       >
                         {isPending && <LoadingSpinner />}

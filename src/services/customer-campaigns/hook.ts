@@ -21,7 +21,9 @@ import {
   IsJoinedResponse,
   UniqueCodeResponse,
   ParticipantGlobalBalanceResponse,
-  ParticipantProfileResponse
+  ParticipantProfileResponse,
+  ParticipantHistoryResponse,
+  MyCampaignsResponse
 } from './types';
 
 const PUBLIC_CAMPAIGNS_QUERY_KEY = 'publicCampaigns';
@@ -229,7 +231,6 @@ export const useDualScan = () => {
 };
 
 // Get Participant History
-import { ParticipantHistoryResponse } from './types';
 
 const getParticipantHistory = async (campaignId: string, page: number, limit: number): Promise<ParticipantHistoryResponse> => {
   const { data } = await api.get<ParticipantHistoryResponse>(`/participant-campaign-balance/history/${campaignId}`, {
@@ -288,7 +289,6 @@ export const useGetParticipantProfile = () => {
 };
 
 // Get My Campaigns
-import { MyCampaignsResponse } from './types';
 
 const getMyCampaigns = async (page: number, limit: number): Promise<MyCampaignsResponse> => {
   const { data } = await api.get<MyCampaignsResponse>('/participant/campaigns', {

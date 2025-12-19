@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, use } from 'react';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy } from "lucide-react";
@@ -78,10 +79,14 @@ export default function RedeemPointsPage({ params }: PageProps) {
                     <h1 className="text-4xl font-extrabold text-gray-800">
                         {campaign.redeemRewardPageTitle || 'Redeem Your Points'}
                     </h1>
-                    <p className="mt-2 text-lg text-gray-600">
-                        {campaign.redeemRewardPageDescription || `Current Points: `}
+                    <div className="mt-2 text-lg text-gray-600">
+                        {campaign.redeemRewardPageDescription ? (
+                            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(campaign.redeemRewardPageDescription) }} />
+                        ) : (
+                            "Current Points: "
+                        )}
                         <span className="font-bold text-orange-600">{userPoints}</span>
-                    </p>
+                    </div>
                 </div>
 
                 {/* Rewards Grid */}

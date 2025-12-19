@@ -23,6 +23,10 @@ const updateGroupCircle = async ({ id, data }: { id: string; data: UpdateGroupCi
     return response.data;
 };
 
+const removeGroupCircleMember = async ({ id, memberId }: { id: string; memberId: string }): Promise<void> => {
+    await api.delete(`/group-circles/${id}/members/${memberId}`);
+};
+
 export const useGetGroupCircles = (params: GroupCirclesQueryParams = {}) => {
     return useQuery({
         queryKey: [GROUP_CIRCLE_QUERY_KEY, params],
@@ -46,6 +50,17 @@ export const useUpdateGroupCircle = () => {
 
     return useMutation({
         mutationFn: updateGroupCircle,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
+        },
+    });
+};
+
+export const useRemoveGroupCircleMember = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: removeGroupCircleMember,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
         },

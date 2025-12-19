@@ -28,7 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useCreateGroupCircle, useGetGroupCircles, useUpdateGroupCircle } from "@/services/group-circle/hook";
+import { useCreateGroupCircle, useGetGroupCircles, useUpdateGroupCircle, useRemoveGroupCircleMember } from "@/services/group-circle/hook";
 import { CreateGroupCircleDto, UpdateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleVisibility, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 
@@ -436,17 +436,26 @@ export default function GroupCirclesPage() {
             ...circle,
             type: (circle.type === 'SMART_MONEY' ? 'finance' : circle.type.toLowerCase()) as any,
             durationDays: circle.duration,
-            members: circle.members.map(m => ({
-                id: m.id,
-                name: m.network.fullName,
-                role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
-                orbit: (m.role === 'PERIPHERAL' ? 6 : (m.role === 'OWNER' ? 1 : 3)) as OrbitLevel,
-                status: (m.network.status === 'active' || m.network.status === 'accepted' ? 'active' : 'offline') as any,
-                category: m.network.businessName || m.network.relationshipTag || "Partner",
-                avatar: undefined,
-                contributions: Number(circle.contributionAmount),
-                drawDate: m.drawDate
-            }))
+            members: circle.members.map(m => {
+                let orbit: OrbitLevel = 6;
+                const loc = m.network.locationTag?.toLowerCase();
+                if (loc === 'nearby') orbit = 1;
+                else if (loc === 'hyperlocal') orbit = 3;
+                else if (loc === 'national') orbit = 5;
+                else if (m.role === 'OWNER') orbit = 1;
+
+                return {
+                    id: m.id,
+                    name: m.network.fullName,
+                    role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
+                    orbit,
+                    status: (m.network.status === 'active' || m.network.status === 'accepted' ? 'active' : 'offline') as any,
+                    category: m.network.businessName || m.network.relationshipTag || "Partner",
+                    avatar: undefined,
+                    contributions: Number(circle.contributionAmount),
+                    drawDate: m.drawDate
+                };
+            })
         }));
     }, [circlesData]);
 
@@ -476,6 +485,7 @@ export default function GroupCirclesPage() {
     const { data: networkContactsData } = useGetNetworkContacts({ limit: 100 });
     const createCircleMutation = useCreateGroupCircle();
     const updateCircleMutation = useUpdateGroupCircle();
+    const removeMemberMutation = useRemoveGroupCircleMember();
 
     // Computed
     const missingMandatory = useMemo(() => {
@@ -568,6 +578,21 @@ export default function GroupCirclesPage() {
         if (!activeMember) return;
         toast.success(`${action} for ${activeMember.name}`);
         if (action === "Message") setChatOpen(true);
+    };
+
+    const handleRemoveMember = async () => {
+        if (!selectedCircleId || !activeMember) return;
+
+        try {
+            await removeMemberMutation.mutateAsync({
+                id: selectedCircleId,
+                memberId: activeMember.id
+            });
+            toast.success("Member removed from circle");
+            setActiveMember(null);
+        } catch (error) {
+            toast.error("Failed to remove member");
+        }
     };
 
     return (
@@ -1019,8 +1044,13 @@ export default function GroupCirclesPage() {
                                         <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200" onClick={() => handleMemberAction("Message")}>
                                             <MessageSquare className="w-4 h-4 mr-2" /> Chat
                                         </Button>
-                                        <Button variant="outline" className="w-full" onClick={() => handleMemberAction("View Profile")}>
-                                            Profile
+                                        <Button
+                                            variant="destructive"
+                                            className="w-full shadow-sm"
+                                            onClick={handleRemoveMember}
+                                            disabled={removeMemberMutation.isPending}
+                                        >
+                                            {removeMemberMutation.isPending ? "Removing..." : "Remove"}
                                         </Button>
                                     </div>
                                 </CardContent>

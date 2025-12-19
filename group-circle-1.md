@@ -184,7 +184,27 @@ Get full details of a specific circle.
 
 #### `PATCH /group-circles/:id`
 Update basic info.
-- **Response Data**: Updated `GroupCircle` object.
+- **Request body (schema)**: UpdateGroupCircleDto{
+name	string
+description	string
+type	string
+Enum:
+[ MARKETING, ADVERTISING, NEARBY, HYPERLOCAL, NATIONAL, GLOBAL, SMART_MONEY ]
+duration	number
+Enum:
+[ 90, 180, 270, 360 ]
+visibility	string
+Enum:
+[ PRIVATE, INVITE_ONLY ]
+interactionLevel	string
+Enum:
+[ READ, MESSAGE, COLLABORATE ]
+networkIds	[
+List of Network IDs to add to the circle
+
+string]
+contributionAmount	number
+}.
 
 ---
 

@@ -19,11 +19,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useCreateGroupCircle, useGetGroupCircles } from "@/services/group-circle/hook";
-import { CreateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleVisibility, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle } from "@/services/group-circle/types";
+import { useCreateGroupCircle, useGetGroupCircles, useUpdateGroupCircle } from "@/services/group-circle/hook";
+import { CreateGroupCircleDto, UpdateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleVisibility, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 
 
@@ -451,6 +457,7 @@ export default function GroupCirclesPage() {
     const [chatOpen, setChatOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     // Chat
     const [chatMessages, setChatMessages] = useState(SAMPLE_MESSAGES);
@@ -468,6 +475,7 @@ export default function GroupCirclesPage() {
 
     const { data: networkContactsData } = useGetNetworkContacts({ limit: 100 });
     const createCircleMutation = useCreateGroupCircle();
+    const updateCircleMutation = useUpdateGroupCircle();
 
     // Computed
     const missingMandatory = useMemo(() => {
@@ -489,20 +497,48 @@ export default function GroupCirclesPage() {
         const typeDef = GROUP_CIRCLE_TYPES.find(t => t.id === typeKey);
         if (!typeDef) return;
 
+        setIsEditing(false);
         setNewCircleData({ ...newCircleData, type: typeDef.id as GroupCircleType });
         setCreateStep(2);
         setCreateOpen(true);
     };
 
-    const handleCreateCircle = async () => {
+    const handleEditCircle = (circle: any) => {
+        const apiCircle = circlesData?.data.find(c => c.id === circle.id);
+        if (!apiCircle) return;
+
+        setIsEditing(true);
+        setNewCircleData({
+            name: apiCircle.name,
+            description: apiCircle.description,
+            type: apiCircle.type,
+            duration: apiCircle.duration as any,
+            visibility: apiCircle.visibility,
+            interactionLevel: apiCircle.interactionLevel,
+            contributionAmount: Number(apiCircle.contributionAmount),
+            networkIds: apiCircle.members.map(m => m.network.id)
+        });
+        setCreateStep(2);
+        setCreateOpen(true);
+    };
+
+    const handleSubmitCircle = async () => {
         if (!newCircleData.name || !newCircleData.type) {
             toast.error("Please fill in the required fields");
             return;
         }
 
         try {
-            await createCircleMutation.mutateAsync(newCircleData as CreateGroupCircleDto);
-            toast.success(`${newCircleData.name} created!`);
+            if (isEditing && selectedCircleId) {
+                await updateCircleMutation.mutateAsync({
+                    id: selectedCircleId,
+                    data: newCircleData as UpdateGroupCircleDto
+                });
+                toast.success(`${newCircleData.name} updated!`);
+            } else {
+                await createCircleMutation.mutateAsync(newCircleData as CreateGroupCircleDto);
+                toast.success(`${newCircleData.name} created!`);
+            }
             setCreateOpen(false);
             setCreateStep(1);
             setNewCircleData({
@@ -513,7 +549,7 @@ export default function GroupCirclesPage() {
                 networkIds: []
             });
         } catch (error) {
-            toast.error("Failed to create circle");
+            toast.error(isEditing ? "Failed to update circle" : "Failed to create circle");
         }
     };
 
@@ -548,20 +584,28 @@ export default function GroupCirclesPage() {
                     </p>
                 </div>
 
-                {/* Create Dialog */}
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-md" onClick={() => {
+                    setIsEditing(false);
+                    setCreateStep(1);
+                    setNewCircleData({
+                        duration: 90,
+                        visibility: 'PRIVATE',
+                        interactionLevel: 'READ',
+                        contributionAmount: 0,
+                        networkIds: []
+                    });
+                    setCreateOpen(true);
+                }}>
+                    <Plus className="w-4 h-4 mr-2" /> New Circle
+                </Button>
                 <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-md">
-                            <Plus className="w-4 h-4 mr-2" /> New Circle
-                        </Button>
-                    </DialogTrigger>
                     <DialogContent className={cn(createStep === 2 ? "sm:max-w-[600px]" : "sm:max-w-[425px]")}>
                         <DialogHeader>
-                            <DialogTitle>{createStep === 1 ? "Create New Circle" : "Circle Details"}</DialogTitle>
+                            <DialogTitle>{createStep === 1 ? "Create New Circle" : (isEditing ? "Edit Circle Details" : "Circle Details")}</DialogTitle>
                             <DialogDescription>
                                 {createStep === 1
                                     ? "Select the type of circle you want to build."
-                                    : "Fill in the details for your new circle."}
+                                    : (isEditing ? "Update the details for this circle." : "Fill in the details for your new circle.")}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -729,11 +773,11 @@ export default function GroupCirclesPage() {
                             )}
                             {createStep === 2 && (
                                 <Button
-                                    onClick={handleCreateCircle}
-                                    disabled={createCircleMutation.isPending}
+                                    onClick={handleSubmitCircle}
+                                    disabled={createCircleMutation.isPending || updateCircleMutation.isPending}
                                     className="bg-orange-600 hover:bg-orange-700 text-white"
                                 >
-                                    {createCircleMutation.isPending ? "Creating..." : "Create Circle"}
+                                    {createCircleMutation.isPending || updateCircleMutation.isPending ? "Saving..." : (isEditing ? "Update Circle" : "Create Circle")}
                                 </Button>
                             )}
                         </DialogFooter>
@@ -863,9 +907,19 @@ export default function GroupCirclesPage() {
                                     <Tooltip><TooltipTrigger asChild>
                                         <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full"><Filter className="w-4 h-4" /></Button>
                                     </TooltipTrigger><TooltipContent>Filter Members</TooltipContent></Tooltip>
-                                    <Tooltip><TooltipTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full"><Settings className="w-4 h-4" /></Button>
-                                    </TooltipTrigger><TooltipContent>Graph Settings</TooltipContent></Tooltip>
+
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full">
+                                                <Settings className="w-4 h-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-32 bg-white/95 backdrop-blur-md border-orange-100 z-[10000]">
+                                            <DropdownMenuItem onClick={() => handleEditCircle(selectedCircle)} className="cursor-pointer hover:bg-orange-50 text-orange-700">
+                                                Edit Circle
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TooltipProvider>
                             </div>
 

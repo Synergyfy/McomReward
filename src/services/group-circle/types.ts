@@ -70,3 +70,13 @@ export interface GroupCirclesResponse {
         prevPage: number | null;
     };
 }
+export interface UpdateGroupCircleDto {
+    name?: string;
+    description?: string;
+    type?: GroupCircleType;
+    duration?: GroupCircleDuration;
+    visibility?: GroupCircleVisibility;
+    interactionLevel?: GroupCircleInteractionLevel;
+    networkIds?: string[];
+    contributionAmount?: number;
+}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse } from './types';
+import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse, UpdateGroupCircleDto } from './types';
 
 const GROUP_CIRCLE_QUERY_KEY = 'groupCircles';
 
@@ -18,6 +18,11 @@ const createGroupCircle = async (data: CreateGroupCircleDto): Promise<GroupCircl
     return response.data;
 };
 
+const updateGroupCircle = async ({ id, data }: { id: string; data: UpdateGroupCircleDto }): Promise<GroupCircle> => {
+    const response = await api.patch<GroupCircle>(`/group-circles/${id}`, data);
+    return response.data;
+};
+
 export const useGetGroupCircles = (params: GroupCirclesQueryParams = {}) => {
     return useQuery({
         queryKey: [GROUP_CIRCLE_QUERY_KEY, params],
@@ -30,6 +35,17 @@ export const useCreateGroupCircle = () => {
 
     return useMutation({
         mutationFn: createGroupCircle,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
+        },
+    });
+};
+
+export const useUpdateGroupCircle = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateGroupCircle,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
         },

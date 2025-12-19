@@ -474,6 +474,7 @@ export default function GroupCirclesPage() {
     const [chatInput, setChatInput] = useState("");
     const [chatType, setChatType] = useState<'GROUP' | 'DIRECT'>('GROUP');
     const [chatMemberId, setChatMemberId] = useState<string | null>(null);
+    const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
 
     // Create Circle Wizard State
     const [createStep, setCreateStep] = useState(1);
@@ -629,219 +630,289 @@ export default function GroupCirclesPage() {
     };
 
     return (
-        <div className="w-full min-h-screen bg-zinc-50/50 dark:bg-zinc-950/50 p-6 flex flex-col gap-6">
+        <div className="w-full min-h-screen bg-zinc-50/20 dark:bg-zinc-950/20 p-4 md:p-6 flex flex-col gap-6 relative">
 
-            {/* --- Header & Mandatory Check --- */}
+            {/* --- Header --- */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight font-display text-zinc-900 dark:text-zinc-50">
-                        Group Circles
+                        Circles Visualization
                     </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Manage your collaborative marketing and finance networks.
+                    <p className="text-muted-foreground mt-1 text-sm">
+                        Enterprise-grade network mapping and collaboration.
                     </p>
                 </div>
 
-                <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-md" onClick={() => {
-                    setIsEditing(false);
-                    setCreateStep(1);
-                    setNewCircleData({
-                        duration: 90,
-                        visibility: 'PRIVATE',
-                        interactionLevel: 'READ',
-                        contributionAmount: 0,
-                        networkIds: []
-                    });
-                    setCreateOpen(true);
-                }}>
-                    <Plus className="w-4 h-4 mr-2" /> New Circle
-                </Button>
-                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                    <DialogContent className={cn(createStep === 2 ? "sm:max-w-[600px]" : "sm:max-w-[425px]")}>
-                        <DialogHeader>
-                            <DialogTitle>{createStep === 1 ? "Create New Circle" : (isEditing ? "Edit Circle Details" : "Circle Details")}</DialogTitle>
-                            <DialogDescription>
-                                {createStep === 1
-                                    ? "Select the type of circle you want to build."
-                                    : (isEditing ? "Update the details for this circle." : "Fill in the details for your new circle.")}
-                            </DialogDescription>
-                        </DialogHeader>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <Button variant="outline" className="hidden md:flex border-zinc-200" onClick={() => toast.info("Exporting graph data...")}>
+                        <Share2 className="w-4 h-4 mr-2" /> Export
+                    </Button>
+                    <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-md flex-1 md:flex-none" onClick={() => {
+                        setIsEditing(false);
+                        setCreateStep(1);
+                        setNewCircleData({
+                            duration: 90,
+                            visibility: 'PRIVATE',
+                            interactionLevel: 'READ',
+                            contributionAmount: 0,
+                            networkIds: []
+                        });
+                        setCreateOpen(true);
+                    }}>
+                        <Plus className="w-4 h-4 mr-2" /> New Circle
+                    </Button>
+                </div>
+            </div>
 
-                        <AnimatePresence mode="wait">
-                            {createStep === 1 ? (
-                                <motion.div
-                                    key="step1"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    className="grid grid-cols-2 gap-3 py-4"
-                                >
-                                    {GROUP_CIRCLE_TYPES.filter(t => !t.mandatory || (t.mandatory && missingMandatory.some(m => m.toLowerCase().includes(t.id.toLowerCase())))).map(type => (
-                                        <div
-                                            key={type.id}
-                                            onClick={() => {
-                                                setNewCircleData({ ...newCircleData, type: type.id as GroupCircleType });
-                                                setCreateStep(2);
-                                            }}
-                                            className="p-3 border rounded-xl hover:bg-orange-50 cursor-pointer transition-all hover:border-orange-500 group"
-                                        >
-                                            <div className={cn("w-8 h-8 rounded-lg mb-2 flex items-center justify-center text-white", type.gradient)}>
-                                                <type.icon className="w-4 h-4" />
-                                            </div>
-                                            <p className="font-semibold text-sm group-hover:text-orange-700">{type.name}</p>
-                                        </div>
-                                    ))}
-                                    {missingMandatory.length > 0 && (
-                                        <div className="col-span-2 p-3 bg-zinc-100 rounded-lg text-xs text-muted-foreground text-center">
-                                            Complete mandatory circles ({missingMandatory.join(", ")}) before creating custom ones.
-                                        </div>
+            {/* --- Horizontal Circle Selector --- */}
+            <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border rounded-2xl p-2 flex items-center gap-2 overflow-hidden shadow-sm">
+                <div className="flex-none px-3 border-r pr-4 hidden md:block">
+                    <span className="text-[10px] uppercase font-bold tracking-tighter text-muted-foreground block">Active</span>
+                    <span className="text-xs font-bold text-orange-600">Circles</span>
+                </div>
+
+                <ScrollArea className="flex-1 w-full">
+                    <div className="flex items-center gap-2 pb-2">
+                        {isLoadingCircles ? (
+                            <div className="flex gap-2 p-1">
+                                {[1, 2, 3].map(i => <div key={i} className="w-32 h-10 bg-zinc-200 animate-pulse rounded-xl" />)}
+                            </div>
+                        ) : circles.length === 0 ? (
+                            <div className="px-4 py-2 text-xs text-muted-foreground italic">No circles yet...</div>
+                        ) : circles.map((circle) => {
+                            const typeDef = GROUP_CIRCLE_TYPES.find(t => t.id === circle.type);
+                            const isActive = selectedCircleId === circle.id;
+                            return (
+                                <button
+                                    key={circle.id}
+                                    onClick={() => setSelectedCircleId(circle.id)}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all whitespace-nowrap group relative min-w-[140px]",
+                                        isActive
+                                            ? "bg-white border-orange-500 shadow-sm ring-1 ring-orange-500"
+                                            : "bg-transparent border-transparent hover:bg-white/80 hover:border-zinc-200"
                                     )}
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="step2"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4 py-4"
                                 >
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name">Circle Name</Label>
-                                            <Input
-                                                id="name"
-                                                placeholder="e.g. Savings Group 1"
-                                                value={newCircleData.name || ""}
-                                                onChange={(e) => setNewCircleData({ ...newCircleData, name: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="duration">Duration (Days)</Label>
-                                            <Select
-                                                value={String(newCircleData.duration)}
-                                                onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: Number(val) as GroupCircleDuration })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select Duration" />
-                                                </SelectTrigger>
-                                                <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                                    {[90, 180, 270, 360].map(d => (
-                                                        <SelectItem key={d} value={String(d)}>{d} Days</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                    <div className={cn(
+                                        "w-6 h-6 rounded-lg flex items-center justify-center text-white shrink-0",
+                                        typeDef?.gradient || "bg-zinc-400"
+                                    )}>
+                                        {typeDef?.icon && <typeDef.icon className="w-3 h-3" />}
                                     </div>
+                                    <span className={cn(
+                                        "text-xs font-semibold truncate max-w-[100px]",
+                                        isActive ? "text-zinc-900" : "text-muted-foreground group-hover:text-zinc-700"
+                                    )}>
+                                        {circle.name}
+                                    </span>
+                                    {isActive && (
+                                        <motion.div layoutId="active-dot" className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-1" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
 
+                <div className="flex-none flex gap-1 pl-2 border-l ml-2">
+                    {['all', 'marketing', 'finance'].map(t => (
+                        <Button
+                            key={t}
+                            size="sm"
+                            variant={activeTab === t ? "secondary" : "ghost"}
+                            className={cn("h-8 text-[10px] capitalize rounded-lg px-2", activeTab === t ? "bg-orange-100 text-orange-700" : "")}
+                            onClick={() => setActiveTab(t as any)}
+                        >
+                            {t}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                <DialogContent className={cn(createStep === 2 ? "sm:max-w-[600px]" : "sm:max-w-[425px]")}>
+                    <DialogHeader>
+                        <DialogTitle>{createStep === 1 ? "Create New Circle" : (isEditing ? "Edit Circle Details" : "Circle Details")}</DialogTitle>
+                        <DialogDescription>
+                            {createStep === 1
+                                ? "Select the type of circle you want to build."
+                                : (isEditing ? "Update the details for this circle." : "Fill in the details for your new circle.")}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <AnimatePresence mode="wait">
+                        {createStep === 1 ? (
+                            <motion.div
+                                key="step1"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                className="grid grid-cols-2 gap-3 py-4"
+                            >
+                                {GROUP_CIRCLE_TYPES.filter(t => !t.mandatory || (t.mandatory && missingMandatory.some(m => m.toLowerCase().includes(t.id.toLowerCase())))).map(type => (
+                                    <div
+                                        key={type.id}
+                                        onClick={() => {
+                                            setNewCircleData({ ...newCircleData, type: type.id as GroupCircleType });
+                                            setCreateStep(2);
+                                        }}
+                                        className="p-3 border rounded-xl hover:bg-orange-50 cursor-pointer transition-all hover:border-orange-500 group"
+                                    >
+                                        <div className={cn("w-8 h-8 rounded-lg mb-2 flex items-center justify-center text-white", type.gradient)}>
+                                            <type.icon className="w-4 h-4" />
+                                        </div>
+                                        <p className="font-semibold text-sm group-hover:text-orange-700">{type.name}</p>
+                                    </div>
+                                ))}
+                                {missingMandatory.length > 0 && (
+                                    <div className="col-span-2 p-3 bg-zinc-100 rounded-lg text-xs text-muted-foreground text-center">
+                                        Complete mandatory circles ({missingMandatory.join(", ")}) before creating custom ones.
+                                    </div>
+                                )}
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="step2"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-4 py-4"
+                            >
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Description</Label>
+                                        <Label htmlFor="name">Circle Name</Label>
                                         <Input
-                                            id="description"
-                                            placeholder="Weekly savings circle..."
-                                            value={newCircleData.description || ""}
-                                            onChange={(e) => setNewCircleData({ ...newCircleData, description: e.target.value })}
+                                            id="name"
+                                            placeholder="e.g. Savings Group 1"
+                                            value={newCircleData.name || ""}
+                                            onChange={(e) => setNewCircleData({ ...newCircleData, name: e.target.value })}
                                         />
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="visibility">Visibility</Label>
-                                            <Select
-                                                value={newCircleData.visibility}
-                                                onValueChange={(val) => setNewCircleData({ ...newCircleData, visibility: val as GroupCircleVisibility })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select Visibility" />
-                                                </SelectTrigger>
-                                                <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                                    <SelectItem value="PRIVATE">Private</SelectItem>
-                                                    <SelectItem value="INVITE_ONLY">Invite Only</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="interaction">Interaction Level</Label>
-                                            <Select
-                                                value={newCircleData.interactionLevel}
-                                                onValueChange={(val) => setNewCircleData({ ...newCircleData, interactionLevel: val as GroupCircleInteractionLevel })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select Interaction" />
-                                                </SelectTrigger>
-                                                <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                                    <SelectItem value="READ">Read</SelectItem>
-                                                    <SelectItem value="MESSAGE">Message</SelectItem>
-                                                    <SelectItem value="COLLABORATE">Collaborate</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
                                     <div className="space-y-2">
-                                        <Label htmlFor="amount">Contribution Amount</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground">£</span>
-                                            <Input
-                                                id="amount"
-                                                type="number"
-                                                className="pl-7"
-                                                placeholder="50"
-                                                value={newCircleData.contributionAmount || ""}
-                                                onChange={(e) => setNewCircleData({ ...newCircleData, contributionAmount: Number(e.target.value) })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Network Contacts</Label>
-                                        <ScrollArea className="h-[120px] w-full border rounded-md p-2">
-                                            <div className="space-y-2">
-                                                {networkContactsData?.data.map((contact) => (
-                                                    <div key={contact.id} className="flex items-center space-x-2">
-                                                        <Switch
-                                                            id={`contact-${contact.id}`}
-                                                            checked={newCircleData.networkIds?.includes(contact.id)}
-                                                            onCheckedChange={(checked) => {
-                                                                const currentIds = newCircleData.networkIds || [];
-                                                                if (checked) {
-                                                                    setNewCircleData({ ...newCircleData, networkIds: [...currentIds, contact.id] });
-                                                                } else {
-                                                                    setNewCircleData({ ...newCircleData, networkIds: currentIds.filter(id => id !== contact.id) });
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Label htmlFor={`contact-${contact.id}`} className="text-sm font-normal cursor-pointer">
-                                                            {contact.fullName} {contact.businessName ? `(${contact.businessName})` : ''}
-                                                        </Label>
-                                                    </div>
+                                        <Label htmlFor="duration">Duration (Days)</Label>
+                                        <Select
+                                            value={String(newCircleData.duration)}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: Number(val) as GroupCircleDuration })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Duration" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
+                                                {[90, 180, 270, 360].map(d => (
+                                                    <SelectItem key={d} value={String(d)}>{d} Days</SelectItem>
                                                 ))}
-                                                {(!networkContactsData || networkContactsData.data.length === 0) && (
-                                                    <p className="text-xs text-muted-foreground text-center py-4">No contacts found</p>
-                                                )}
-                                            </div>
-                                        </ScrollArea>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                </div>
 
-                        <DialogFooter className="flex justify-between sm:justify-between w-full">
-                            {createStep === 2 && (
-                                <Button variant="ghost" onClick={() => setCreateStep(1)}>Back</Button>
-                            )}
-                            {createStep === 2 && (
-                                <Button
-                                    onClick={handleSubmitCircle}
-                                    disabled={createCircleMutation.isPending || updateCircleMutation.isPending}
-                                    className="bg-orange-600 hover:bg-orange-700 text-white"
-                                >
-                                    {createCircleMutation.isPending || updateCircleMutation.isPending ? "Saving..." : (isEditing ? "Update Circle" : "Create Circle")}
-                                </Button>
-                            )}
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="description">Description</Label>
+                                    <Input
+                                        id="description"
+                                        placeholder="Weekly savings circle..."
+                                        value={newCircleData.description || ""}
+                                        onChange={(e) => setNewCircleData({ ...newCircleData, description: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="visibility">Visibility</Label>
+                                        <Select
+                                            value={newCircleData.visibility}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, visibility: val as GroupCircleVisibility })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Visibility" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
+                                                <SelectItem value="PRIVATE">Private</SelectItem>
+                                                <SelectItem value="INVITE_ONLY">Invite Only</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="interaction">Interaction Level</Label>
+                                        <Select
+                                            value={newCircleData.interactionLevel}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, interactionLevel: val as GroupCircleInteractionLevel })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Interaction" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
+                                                <SelectItem value="READ">Read</SelectItem>
+                                                <SelectItem value="MESSAGE">Message</SelectItem>
+                                                <SelectItem value="COLLABORATE">Collaborate</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="amount">Contribution Amount</Label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground">£</span>
+                                        <Input
+                                            id="amount"
+                                            type="number"
+                                            className="pl-7"
+                                            placeholder="50"
+                                            value={newCircleData.contributionAmount || ""}
+                                            onChange={(e) => setNewCircleData({ ...newCircleData, contributionAmount: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Network Contacts</Label>
+                                    <ScrollArea className="h-[120px] w-full border rounded-md p-2">
+                                        <div className="space-y-2">
+                                            {networkContactsData?.data.map((contact) => (
+                                                <div key={contact.id} className="flex items-center space-x-2">
+                                                    <Switch
+                                                        id={`contact-${contact.id}`}
+                                                        checked={newCircleData.networkIds?.includes(contact.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            const currentIds = newCircleData.networkIds || [];
+                                                            if (checked) {
+                                                                setNewCircleData({ ...newCircleData, networkIds: [...currentIds, contact.id] });
+                                                            } else {
+                                                                setNewCircleData({ ...newCircleData, networkIds: currentIds.filter(id => id !== contact.id) });
+                                                            }
+                                                        }}
+                                                    />
+                                                    <Label htmlFor={`contact-${contact.id}`} className="text-sm font-normal cursor-pointer">
+                                                        {contact.fullName} {contact.businessName ? `(${contact.businessName})` : ''}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                            {(!networkContactsData || networkContactsData.data.length === 0) && (
+                                                <p className="text-xs text-muted-foreground text-center py-4">No contacts found</p>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <DialogFooter className="flex justify-between sm:justify-between w-full">
+                        {createStep === 2 && (
+                            <Button variant="ghost" onClick={() => setCreateStep(1)}>Back</Button>
+                        )}
+                        {createStep === 2 && (
+                            <Button
+                                onClick={handleSubmitCircle}
+                                disabled={createCircleMutation.isPending || updateCircleMutation.isPending}
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                                {createCircleMutation.isPending || updateCircleMutation.isPending ? "Saving..." : (isEditing ? "Update Circle" : "Create Circle")}
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Mandatory Alert */}
             {missingMandatory.length > 0 && (
@@ -868,323 +939,362 @@ export default function GroupCirclesPage() {
                 </motion.div>
             )}
 
-            {/* --- Main Workspace (Height Increased for Chat) --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[900px]">
-
-                {/* Left Sidebar: Circle List */}
-                <Card className="lg:col-span-3 flex flex-col h-full border-zinc-200 dark:border-zinc-800 shadow-sm">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Your Circles</CardTitle>
-                        <div className="flex gap-1 mt-2">
-                            {['all', 'marketing', 'finance'].map(t => (
-                                <Badge
-                                    key={t}
-                                    variant={activeTab === t ? 'default' : 'outline'}
-                                    className={cn("cursor-pointer capitalize text-xs px-2", activeTab === t ? "bg-orange-600 hover:bg-orange-700" : "")}
-                                    onClick={() => setActiveTab(t as any)}
-                                >
-                                    {t}
-                                </Badge>
-                            ))}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-hidden p-3 pt-0">
-                        <ScrollArea className="h-full pr-3 relative">
-                            <div className="space-y-3 pt-2">
-                                {isLoadingCircles ? (
-                                    <div className="flex flex-col items-center justify-center h-40 space-y-2">
-                                        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                                        <p className="text-xs text-muted-foreground animate-pulse">Loading circles...</p>
-                                    </div>
-                                ) : circles.length === 0 ? (
-                                    <div className="text-center py-10">
-                                        <p className="text-xs text-muted-foreground">No circles found</p>
-                                    </div>
-                                ) : circles.filter(c => activeTab === 'all' || (activeTab === 'finance' ? c.type === 'finance' : c.type !== 'finance')).map((circle, idx) => {
-                                    const typeDef = GROUP_CIRCLE_TYPES.find(t => t.id === circle.type);
-                                    return (
-                                        <motion.div
-                                            key={circle.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.1 }}
-                                            onClick={() => setSelectedCircleId(circle.id)}
-                                            className={cn(
-                                                "p-3 rounded-xl border transition-all cursor-pointer hover:shadow-md relative overflow-hidden group",
-                                                selectedCircleId === circle.id
-                                                    ? "border-orange-500 bg-orange-50 dark:bg-orange-900/10 ring-1 ring-orange-500"
-                                                    : "border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-orange-200"
-                                            )}
-                                        >
-                                            {selectedCircleId === circle.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />}
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className={cn("p-1.5 rounded-lg text-white shadow-sm", typeDef?.gradient || "bg-zinc-500")}>
-                                                    {typeDef?.icon && <typeDef.icon className="w-4 h-4" />}
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    <Badge variant="secondary" className="text-[10px] h-5 bg-zinc-100 dark:bg-zinc-800">{circle.members.length} Members</Badge>
-                                                </div>
+            {/* --- Main Workspace (Expanded Radar) --- */}
+            <div className="flex-1 min-h-[700px] flex gap-6 relative">
+                {/* The Visualization Stage (Full Width when no member selected) */}
+                <div className="flex-1 relative flex flex-col">
+                    <Card className="flex-1 relative overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-3xl shadow-xl shadow-orange-500/5">
+                        {selectedCircle ? (
+                            <>
+                                <div className="absolute top-6 left-6 z-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn("p-2 rounded-xl text-white shadow-lg", GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.gradient || "bg-zinc-500")}>
+                                            {React.createElement(GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.icon || Zap, { className: "w-5 h-5" })}
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-display font-bold text-zinc-800 dark:text-zinc-100">{selectedCircle.name}</h2>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-orange-200 text-orange-700 bg-orange-50/50">
+                                                    {selectedCircle.type}
+                                                </Badge>
+                                                <span>•</span>
+                                                <span className="font-medium">{selectedCircle.durationDays} Days Duration</span>
+                                                <span>•</span>
+                                                <span className="font-medium text-emerald-600">{selectedCircle.members.length} Members</span>
                                             </div>
-                                            <h3 className="font-bold text-sm truncate group-hover:text-orange-700 transition-colors">{circle.name}</h3>
-                                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{circle.description}</p>
-                                        </motion.div>
-                                    )
-                                })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Toolbar */}
+                                <div className="absolute top-6 right-6 z-10 flex gap-2">
+                                    <TooltipProvider>
+                                        <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur p-1 rounded-2xl border flex gap-1 shadow-sm">
+                                            <Tooltip><TooltipTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Search className="w-4 h-4" /></Button>
+                                            </TooltipTrigger><TooltipContent>Search Graph</TooltipContent></Tooltip>
+
+                                            <Tooltip><TooltipTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Filter className="w-4 h-4" /></Button>
+                                            </TooltipTrigger><TooltipContent>Filter Members</TooltipContent></Tooltip>
+
+                                            <div className="w-px h-6 bg-zinc-200 my-auto" />
+
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors">
+                                                        <Settings className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-40 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-1 rounded-xl">
+                                                    <DropdownMenuItem onClick={() => handleEditCircle(selectedCircle)} className="cursor-pointer hover:bg-orange-50 text-orange-700 rounded-lg">
+                                                        <Settings className="w-3.5 h-3.5 mr-2" /> Circle Settings
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="cursor-pointer text-zinc-600 rounded-lg">
+                                                        <Share2 className="w-3.5 h-3.5 mr-2" /> Share Details
+                                                    </DropdownMenuItem>
+                                                    <Separator className="my-1" />
+                                                    <DropdownMenuItem className="cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg">
+                                                        <AlertCircle className="w-3.5 h-3.5 mr-2" /> Disband Circle
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </TooltipProvider>
+                                </div>
+
+                                {/* The Graph Stage */}
+                                <div className="flex-1 overflow-hidden relative">
+                                    <div className="absolute inset-0 flex items-center justify-center p-10">
+                                        <div className="w-full h-full max-w-[800px] max-h-[800px] relative">
+                                            <MultiLayerRadialGraph
+                                                members={selectedCircle.members}
+                                                onMemberClick={setActiveMember}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bottom Visualization Legend */}
+                                <div className="absolute bottom-6 left-6 z-10 flex gap-4">
+                                    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-2xl border p-3 py-2 flex items-center gap-6 shadow-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full border-2 border-orange-600 bg-orange-100" />
+                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Nearby</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full border-2 border-orange-400 bg-orange-50" />
+                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Hyperlocal</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full border-2 border-orange-200 bg-zinc-50" />
+                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">National</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Floating Action Buttons (Local Context) */}
+                                <div className="absolute bottom-6 right-6 z-10 flex gap-3">
+                                    <Button onClick={() => setInviteOpen(true)} className="rounded-full h-12 px-6 bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-lg border">
+                                        <UserPlus className="w-4 h-4 mr-2" /> Invite Members
+                                    </Button>
+                                    <Button onClick={() => setIsChatOverlayOpen(true)} className="rounded-full h-12 w-12 bg-orange-600 text-white hover:bg-orange-700 shadow-xl shadow-orange-500/20 flex items-center justify-center">
+                                        <MessageSquare className="w-5 h-5" />
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-10 text-center">
+                                <div className="w-32 h-32 rounded-full bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center mb-8 relative">
+                                    <Globe className="w-16 h-16 text-orange-200 animate-pulse" />
+                                    <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-200 animate-[spin_10s_linear_infinite]" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Select an Active Circle</h3>
+                                <p className="max-w-xs mt-2 text-zinc-500">Pick a circle from the selector above to visualize your collaborative network and start collaborating.</p>
+                                <Button className="mt-8 bg-zinc-900 text-white rounded-xl h-11 px-8" onClick={() => setCreateOpen(true)}>
+                                    <Plus className="w-4 h-4 mr-2" /> Start New Circle
+                                </Button>
                             </div>
-                        </ScrollArea>
-                        <Button
-                            variant="outline"
-                            className="w-full mt-4 border-dashed border-2 hover:border-orange-500 hover:text-orange-500"
-                            onClick={() => setCreateOpen(true)}
+                        )}
+                    </Card>
+                </div>
+
+                {/* Right Sidebar: Member Details (Compact & Professional) */}
+                <AnimatePresence>
+                    {activeMember && (
+                        <motion.div
+                            initial={{ width: 0, opacity: 0, x: 20 }}
+                            animate={{ width: 340, opacity: 1, x: 0 }}
+                            exit={{ width: 0, opacity: 0, x: 20 }}
+                            className="flex-none overflow-hidden h-full z-20"
                         >
-                            <Plus className="w-4 h-4 mr-2" /> Add Circle
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                {/* Center: The Visualization Stage */}
-                <Card className="lg:col-span-6 lg:h-full relative overflow-hidden border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-black/40 flex flex-col backdrop-blur-sm">
-                    {selectedCircle ? (
-                        <>
-                            <div className="absolute top-4 left-4 z-10 p-2 bg-white/50 dark:bg-black/50 backdrop-blur rounded-xl border shadow-sm">
-                                <h2 className="text-2xl font-display font-bold text-zinc-800 dark:text-zinc-100">{selectedCircle.name}</h2>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                    <Badge variant="outline" className={cn("border-0 text-white", GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.gradient || "bg-zinc-500")}>
-                                        {selectedCircle.type}
+                            <Card className="w-full h-full border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-3xl overflow-hidden flex flex-col bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md">
+                                <div className="h-32 bg-gradient-to-br from-orange-400 to-red-600 relative p-6 flex justify-between items-start">
+                                    <Badge className="bg-white/20 backdrop-blur text-white border-white/30 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5">
+                                        Member Node
                                     </Badge>
-                                    <span>• <span className="font-mono">{selectedCircle.durationDays}</span> Days</span>
-                                </div>
-                            </div>
-
-                            {/* Toolbar */}
-                            <div className="absolute top-4 right-4 z-10 flex gap-2">
-                                <TooltipProvider>
-                                    <Tooltip><TooltipTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full"><Search className="w-4 h-4" /></Button>
-                                    </TooltipTrigger><TooltipContent>Search Graph</TooltipContent></Tooltip>
-                                    <Tooltip><TooltipTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full"><Filter className="w-4 h-4" /></Button>
-                                    </TooltipTrigger><TooltipContent>Filter Members</TooltipContent></Tooltip>
-
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="bg-white/80 shadow-sm hover:bg-orange-50 hover:text-orange-600 rounded-full">
-                                                <Settings className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-32 bg-white/95 backdrop-blur-md border-orange-100 z-[10000]">
-                                            <DropdownMenuItem onClick={() => handleEditCircle(selectedCircle)} className="cursor-pointer hover:bg-orange-50 text-orange-700">
-                                                Edit Circle
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TooltipProvider>
-                            </div>
-
-                            {/* The Graph */}
-                            <div className="flex-1 overflow-hidden relative">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <MultiLayerRadialGraph
-                                        members={selectedCircle.members}
-                                        onMemberClick={setActiveMember}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Bottom Controls */}
-                            <div className="h-20 bg-white/90 dark:bg-zinc-900/90 border-t backdrop-blur flex items-center justify-between px-6 z-20">
-                                <div className="text-xs text-muted-foreground hidden md:flex items-center gap-4">
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-100"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Active</div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 text-zinc-600 rounded-full border border-zinc-100"><div className="w-2 h-2 rounded-full bg-zinc-300" /> Offline</div>
-                                </div>
-                                <div className="flex gap-3 w-full md:w-auto">
-                                    <Button variant="outline" className="flex-1 md:flex-none border-orange-200 text-orange-700 hover:bg-orange-50" onClick={() => setInviteOpen(true)}>
-                                        <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-                                    </Button>
-                                    <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white flex-1 md:flex-none shadow-lg shadow-orange-500/20">
-                                        <MessageSquare className="w-4 h-4 mr-2" /> Broadcast
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-                            <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center mb-6 animate-pulse">
-                                <Globe className="w-12 h-12 text-orange-200" />
-                            </div>
-                            <h3 className="text-xl font-bold text-zinc-700 dark:text-zinc-200">No Circle Selected</h3>
-                            <p>Select a Group Circle from the sidebar to visualize the network.</p>
-                        </div>
-                    )}
-                </Card>
-
-                {/* Right Sidebar: Interaction & Details (Scrollable Container) */}
-                <div className="lg:col-span-3 h-full flex flex-col gap-4">
-
-                    {/* User Details Section */}
-                    <div className="flex-none">
-                        {activeMember ? (
-                            <Card className="border-orange-200 dark:border-zinc-800 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                                <div className="h-24 bg-gradient-to-r from-orange-400 to-red-600 relative p-4 flex justify-end items-start">
-                                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-8 w-8" onClick={() => setActiveMember(null)}>
+                                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl h-9 w-9" onClick={() => setActiveMember(null)}>
                                         <X className="w-4 h-4" />
                                     </Button>
                                 </div>
-                                <div className="px-6 -mt-12 mb-2 flex justify-between items-end">
-                                    <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-md overflow-hidden p-1">
-                                        <Avatar className="w-full h-full rounded-full">
-                                            <AvatarFallback className="text-2xl font-bold bg-zinc-100 text-zinc-700">{activeMember.name[0]}</AvatarFallback>
-                                        </Avatar>
-                                    </div>
-                                    <Button size="icon" variant="outline" className="rounded-full shadow-sm" title="Add to favorites">
-                                        <Star className="w-4 h-4 text-orange-400" />
-                                    </Button>
-                                </div>
-                                <CardContent className="space-y-4 pt-2">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h2 className="text-xl font-bold">{activeMember.name}</h2>
-                                            {activeMember.status === 'active' && <div className="w-2 h-2 rounded-full bg-green-500" title="Online" />}
+
+                                <CardContent className="flex-1 overflow-y-auto px-6 -mt-10 space-y-6 pb-20">
+                                    <div className="space-y-4">
+                                        <div className="flex items-end justify-between">
+                                            <div className="w-24 h-24 rounded-3xl border-4 border-white dark:border-zinc-900 bg-white dark:bg-zinc-800 shadow-xl overflow-hidden p-1.5 animate-in zoom-in-50 duration-500">
+                                                <Avatar className="w-full h-full rounded-2xl">
+                                                    <AvatarImage src={activeMember.avatar} />
+                                                    <AvatarFallback className="text-3xl font-black bg-orange-50 text-orange-600 uppercase">{activeMember.name[0]}</AvatarFallback>
+                                                </Avatar>
+                                            </div>
+                                            <div className="flex gap-2 pb-1">
+                                                <Button size="icon" variant="outline" className="rounded-xl h-10 w-10 border-zinc-100 shadow-sm"><Star className="w-4 h-4 text-zinc-300" /></Button>
+                                                <Button size="icon" variant="outline" className="rounded-xl h-10 w-10 border-zinc-100 shadow-sm"><Share2 className="w-4 h-4 text-zinc-300" /></Button>
+                                            </div>
                                         </div>
-                                        <p className="text-orange-600 font-medium text-sm">{activeMember.category}</p>
+
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-tight">{activeMember.name}</h2>
+                                                {activeMember.status === 'active' && (
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+                                                )}
+                                            </div>
+                                            <p className="text-orange-600 font-bold text-sm tracking-wide">{activeMember.category}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div className="p-2 bg-zinc-50 rounded-lg border">
-                                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground block mb-0.5">Role</span>
-                                            <span className="font-semibold">{activeMember.role}</span>
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Member Role</span>
+                                            <span className="font-bold text-zinc-800 dark:text-zinc-200">{activeMember.role}</span>
                                         </div>
-                                        <div className="p-2 bg-zinc-50 rounded-lg border">
-                                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground block mb-0.5">Orbit</span>
-                                            <span className="font-semibold text-orange-600">{ORBIT_CONFIG[activeMember.orbit].label}</span>
+                                        <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Network Orbit</span>
+                                            <span className="font-bold text-orange-600">{ORBIT_CONFIG[activeMember.orbit]?.label || "Outer"}</span>
                                         </div>
                                     </div>
 
                                     {selectedCircle?.type === 'finance' && (
-                                        <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                                            <h4 className="font-semibold text-emerald-800 text-sm flex items-center gap-2 mb-2">
-                                                <Banknote className="w-4 h-4" /> Smart Finance
+                                        <div className="p-5 bg-zinc-900 dark:bg-black rounded-3xl border border-zinc-800 text-white relative overflow-hidden group">
+                                            <div className="absolute right-0 top-0 w-24 h-24 bg-orange-600/10 blur-3xl rounded-full" />
+                                            <h4 className="font-bold text-sm flex items-center gap-2 mb-4">
+                                                <Banknote className="w-4 h-4 text-orange-500" /> Financial Standing
                                             </h4>
-                                            <Separator className="bg-emerald-200 mb-2" />
-                                            <div className="space-y-1 text-sm text-emerald-700">
-                                                <div className="flex justify-between"><span>Contribution:</span> <span className="font-mono font-bold">£{(activeMember.contributions || 0)}</span></div>
-                                                <div className="flex justify-between"><span>Next Draw:</span> <span className="font-medium">Dec 24</span></div>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl">
+                                                    <span className="text-xs opacity-60">Total Contribution</span>
+                                                    <span className="font-black text-sm uppercase">£{activeMember.contributions || 0}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl">
+                                                    <span className="text-xs opacity-60">Cycle Draw</span>
+                                                    <span className="font-black text-sm uppercase">{activeMember.drawDate ? new Date(activeMember.drawDate).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'TBD'}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200" onClick={() => handleMemberAction("Message")}>
-                                            <MessageSquare className="w-4 h-4 mr-2" /> Chat
+                                    <div className="pt-4 flex flex-col gap-3">
+                                        <Button
+                                            className="w-full h-12 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-2"
+                                            onClick={() => handleMemberAction("Message")}
+                                        >
+                                            <MessageSquare className="w-4 h-4" /> Send Direct Message
                                         </Button>
                                         <Button
-                                            variant="destructive"
-                                            className="w-full shadow-sm"
+                                            variant="ghost"
+                                            className="w-full h-12 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl font-bold"
                                             onClick={handleRemoveMember}
                                             disabled={removeMemberMutation.isPending}
                                         >
-                                            {removeMemberMutation.isPending ? "Removing..." : "Remove"}
+                                            {removeMemberMutation.isPending ? "Removing..." : "Remove Member"}
                                         </Button>
                                     </div>
                                 </CardContent>
                             </Card>
-                        ) : (
-                            <Card className="flex flex-col items-center justify-center text-center p-8 border-dashed bg-zinc-50/50">
-                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                                    <Users className="w-8 h-8 text-zinc-300" />
-                                </div>
-                                <h3 className="font-semibold text-zinc-600">No Member Selected</h3>
-                                <p className="text-muted-foreground text-sm mt-1 max-w-[200px]">Select a node from the orbit graph to view details.</p>
-                            </Card>
-                        )}
-                    </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                    {/* Chat Panel - Fixed Height & Scrollable */}
-                    <Card className="flex-none flex flex-col border-t-4 border-t-orange-500 shadow-lg h-[500px] overflow-hidden">
-                        <CardHeader className="py-3 px-4 border-b bg-zinc-50/50 flex flex-row items-center justify-between space-y-0 flex-none">
-                            <CardTitle className="text-sm flex items-center gap-2 font-bold cursor-pointer hover:text-orange-600 transition-colors" onClick={() => {
-                                setChatType('GROUP');
-                                setChatMemberId(null);
-                            }}>
-                                <MessageSquare className="w-4 h-4 text-orange-500" />
-                                {chatType === 'GROUP' ? 'Circle Chat' : `DM: ${selectedCircle?.members.find(m => m.id === chatMemberId)?.name || 'Member'}`}
-                            </CardTitle>
-                            {chatType === 'DIRECT' && (
-                                <Badge variant="outline" className="text-[10px] font-normal cursor-pointer hover:bg-zinc-100" onClick={() => {
-                                    setChatType('GROUP');
-                                    setChatMemberId(null);
-                                }}>Back to Group</Badge>
-                            )}
-                            {chatType === 'GROUP' && <Badge variant="outline" className="text-[10px] font-normal">Group</Badge>}
-                        </CardHeader>
-                        <ScrollArea className="flex-1 p-4 bg-white dark:bg-zinc-950">
-                            <div className="space-y-4">
-                                {isLoadingMessages ? (
-                                    <div className="flex justify-center py-10">
-                                        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                {/* --- Floating Messaging System (Glassmorphic Overlay) --- */}
+                <AnimatePresence>
+                    {isChatOverlayOpen && selectedCircle && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed bottom-24 right-6 w-[400px] h-[600px] z-[100] flex flex-col pointer-events-auto"
+                        >
+                            <Card className="flex-1 flex flex-col border-white/20 dark:border-zinc-800 shadow-[0_32px_128px_-16px_rgba(249,115,22,0.15)] overflow-hidden rounded-[32px] bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl">
+                                <CardHeader className="py-4 px-6 border-b bg-gradient-to-r from-zinc-50/50 to-white/50 dark:from-zinc-900/50 dark:to-zinc-950/50 flex flex-row items-center justify-between space-y-0 flex-none backdrop-blur-md">
+                                    <div
+                                        className="flex items-center gap-3 cursor-pointer group"
+                                        onClick={() => {
+                                            setChatType('GROUP');
+                                            setChatMemberId(null);
+                                        }}
+                                    >
+                                        <div className="w-10 h-10 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                                            <MessageSquare className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <CardTitle className="text-sm font-black group-hover:text-orange-600 transition-colors">
+                                                {chatType === 'GROUP' ? 'Circle Broadcast' : `Direct: ${selectedCircle?.members.find(m => m.id === chatMemberId)?.name || 'Direct'}`}
+                                            </CardTitle>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Live Connect</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                ) : messagesData?.data && messagesData.data.length > 0 ? (
-                                    messagesData.data
-                                        .filter(msg => {
-                                            if (chatType === 'GROUP') return msg.type === 'GROUP';
-                                            return msg.type === 'DIRECT' && (msg.senderId === chatMemberId || msg.recipientId === chatMemberId);
-                                        })
-                                        .reverse()
-                                        .map((msg, idx) => {
-                                            const isMe = msg.senderId === profile?.id;
-                                            return (
-                                                <div key={msg.id} className={cn("flex gap-2", isMe ? "flex-row-reverse" : "")}>
-                                                    <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm mt-1",
-                                                        isMe ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"
-                                                    )}>
-                                                        {msg.senderName.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div className={cn(
-                                                        "p-3 rounded-2xl text-xs max-w-[80%] shadow-sm",
-                                                        isMe ? "bg-orange-600 text-white rounded-tr-none" : "bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100 rounded-tl-none"
-                                                    )}>
-                                                        {!isMe && chatType === 'GROUP' && <span className="block font-bold text-[10px] mb-1 opacity-70">{msg.senderName}</span>}
-                                                        <p>{msg.content}</p>
-                                                        <span className={cn("text-[9px] block mt-1 opacity-70", isMe ? "text-orange-100" : "text-zinc-400")}>
-                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
+
+                                    <div className="flex gap-1">
+                                        {chatType === 'DIRECT' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-zinc-100 rounded-xl"
+                                                onClick={() => {
+                                                    setChatType('GROUP');
+                                                    setChatMemberId(null);
+                                                }}
+                                                title="Back to Circle"
+                                            >
+                                                <ArrowRight className="w-4 h-4 text-zinc-400 rotate-180" />
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-zinc-100 rounded-xl"
+                                            onClick={() => setIsChatOverlayOpen(false)}
+                                        >
+                                            <X className="w-4 h-4 text-zinc-400" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+
+                                <ScrollArea className="flex-1 p-6 bg-transparent">
+                                    <div className="space-y-6">
+                                        {isLoadingMessages ? (
+                                            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                                <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Syncing messages...</p>
+                                            </div>
+                                        ) : messagesData?.data && messagesData.data.length > 0 ? (
+                                            messagesData.data
+                                                .filter(msg => {
+                                                    if (chatType === 'GROUP') return msg.type === 'GROUP';
+                                                    return msg.type === 'DIRECT' && (msg.senderId === chatMemberId || msg.recipientId === chatMemberId);
+                                                })
+                                                .reverse()
+                                                .map((msg, idx) => {
+                                                    const isMe = msg.senderId === profile?.id;
+                                                    return (
+                                                        <div key={msg.id} className={cn("flex flex-col gap-1.5", isMe ? "items-end" : "items-start")}>
+                                                            {!isMe && chatType === 'GROUP' && (
+                                                                <span className="text-[10px] font-black uppercase text-zinc-400 ml-1">{msg.senderName}</span>
+                                                            )}
+                                                            <div className={cn(
+                                                                "p-4 rounded-[24px] text-sm max-w-[85%] shadow-sm transition-all hover:scale-[1.02]",
+                                                                isMe
+                                                                    ? "bg-orange-600 text-white rounded-tr-none shadow-orange-500/20"
+                                                                    : "bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100 rounded-tl-none"
+                                                            )}>
+                                                                <p className="leading-relaxed font-medium">{msg.content}</p>
+                                                            </div>
+                                                            <span className="text-[9px] font-bold text-zinc-400 mx-1 uppercase">
+                                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })
+                                        ) : (
+                                            <div className="text-center py-20">
+                                                <div className="w-20 h-20 bg-orange-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <MessageSquare className="w-10 h-10 text-orange-200" />
                                                 </div>
-                                            );
-                                        })
-                                ) : (
-                                    <div className="text-center py-10 opacity-50">
-                                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                        <p className="text-xs">No messages yet. {chatType === 'DIRECT' ? 'Start your conversation!' : 'Say hello to the group!'}</p>
+                                                <h4 className="font-bold text-zinc-800 dark:text-zinc-100 italic">No Conversations Found</h4>
+                                                <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400 mt-2 px-10">Start the conversation with your network members.</p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </ScrollArea>
-                        <div className="p-3 border-t bg-zinc-50/50">
-                            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border rounded-full px-3 py-1 shadow-sm focus-within:ring-2 focus-within:ring-orange-500 transition-all">
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-orange-600"><Paperclip className="w-3 h-3" /></Button>
-                                <input
-                                    className="flex-1 bg-transparent border-0 text-xs focus:outline-none h-8"
-                                    placeholder="Type a message..."
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                />
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-orange-600"><Smile className="w-3 h-3" /></Button>
-                                <Button size="icon" className="h-7 w-7 rounded-full bg-orange-600 text-white hover:bg-orange-700" onClick={handleSendMessage}><Send className="w-3 h-3 ml-0.5" /></Button>
-                            </div>
-                        </div>
-                    </Card>
-                </div>
-            </div>
+                                </ScrollArea>
 
-            {/* Invites Dialog */}
-            <InviteMemberDialog
-                open={inviteOpen}
-                onOpenChange={setInviteOpen}
-                onInvite={handleInviteMembers}
-            />
+                                <div className="p-4 px-6 border-t bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md">
+                                    <div className="flex items-center gap-3 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-orange-600 rounded-lg"><Paperclip className="w-4 h-4" /></Button>
+                                        <input
+                                            className="flex-1 bg-transparent border-0 text-sm font-medium focus:outline-none h-10"
+                                            placeholder={chatType === 'GROUP' ? "Post to circle..." : "Reply privately..."}
+                                            value={chatInput}
+                                            onChange={(e) => setChatInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                        />
+                                        <Button
+                                            size="icon"
+                                            className={cn(
+                                                "h-10 w-10 rounded-xl transition-all shadow-lg",
+                                                chatInput.trim() ? "bg-orange-600 text-white shadow-orange-500/40 hover:scale-105" : "bg-zinc-200 text-zinc-400 cursor-not-allowed"
+                                            )}
+                                            onClick={handleSendMessage}
+                                            disabled={!chatInput.trim() || sendMessageMutation.isPending}
+                                        >
+                                            <Send className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <InviteMemberDialog
+                    open={inviteOpen}
+                    onOpenChange={setInviteOpen}
+                    onInvite={handleInviteMembers}
+                />
+            </div>
         </div>
     );
-}
+};

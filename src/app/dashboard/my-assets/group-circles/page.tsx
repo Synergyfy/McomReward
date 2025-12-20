@@ -511,7 +511,6 @@ export default function GroupCirclesPage() {
 
     // Interaction State
     const [activeMember, setActiveMember] = useState<Member | null>(null);
-    const [chatOpen, setChatOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -662,8 +661,8 @@ export default function GroupCirclesPage() {
         if (action === "Message") {
             setChatType('DIRECT');
             setChatMemberId(activeMember.id);
-            setChatOpen(true);
-            toast.info(`Switched to Direct Message with ${activeMember.name}`);
+            setIsChatOverlayOpen(true);
+            toast.info(`Private conversation with ${activeMember.name} initiated`);
         } else {
             toast.success(`${action} for ${activeMember.name}`);
         }

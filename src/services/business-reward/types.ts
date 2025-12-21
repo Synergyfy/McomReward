@@ -2,6 +2,7 @@ export interface Reward {
   id: string;
   title: string;
   pointsRequired: number;
+  stampsRequired?: number;
   maxPoints: number;
   value: number;
   description: string;
@@ -9,6 +10,7 @@ export interface Reward {
   gallery?: string[];
   quantity: number;
   disabled: boolean;
+  rewardType?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +32,7 @@ export interface BusinessReward {
   id: string;
   quantity: number | null;
   pointRequired: number;
+  stampsRequired?: number;
   reward: Reward;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +56,7 @@ export interface GetBusinessRewardsResponse extends PaginationMeta {
 export interface CreateBusinessRewardDto {
   quantity?: number;
   point_required: number;
+  stamps_required?: number;
   title?: string;
   description?: string;
   image?: string;
@@ -71,6 +75,7 @@ export enum RewardStatus {
 export interface UpdateBusinessRewardDto {
   quantity?: number;
   point_required?: number;
+  stamps_required?: number;
   title?: string;
   description?: string;
   image?: string;
@@ -78,4 +83,5 @@ export interface UpdateBusinessRewardDto {
   expiry_datetime?: Date;
   status?: RewardStatus;
   disabled?: boolean;
+  reward_type?: string;
 }

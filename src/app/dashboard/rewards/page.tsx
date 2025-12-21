@@ -245,10 +245,12 @@ export default function BusinessRewardsPage() {
             title: rewardData.title,
             description: rewardData.description,
             point_required: rewardData.pointsRequired,
+            stamps_required: rewardData.stampsRequired,
             image: rewardData.image,
             gallery: rewardData.gallery,
             quantity: rewardData.quantity,
             disabled: rewardData.disabled,
+            reward_type: rewardData.rewardType,
           },
         }, {
           onSuccess: () => {
@@ -284,11 +286,12 @@ export default function BusinessRewardsPage() {
           title: rewardData.title,
           description: rewardData.description,
           point_required: rewardData.pointsRequired,
+          stamps_required: rewardData.stampsRequired,
           image: rewardData.image,
           gallery: rewardData.gallery,
           quantity: rewardData.quantity,
           disabled: rewardData.disabled,
-          reward_type: 'Voucher',
+          reward_type: rewardData.rewardType || 'Voucher',
           status: RewardStatus.ACTIVE,
         };
 
@@ -395,7 +398,8 @@ export default function BusinessRewardsPage() {
                 {businessRewardsData?.data.map((businessReward: BusinessReward) => (
                   <Card
                     key={businessReward.id}
-                    className="flex flex-col hover:shadow-lg transition-shadow duration-200"
+                    className="flex flex-col hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                    onClick={() => handleEditBusinessReward(businessReward)}
                   >
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
@@ -428,32 +432,34 @@ export default function BusinessRewardsPage() {
                           </div>
                         </div>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleEditBusinessReward(businessReward)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(businessReward)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleEditBusinessReward(businessReward)}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(businessReward)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-grow">

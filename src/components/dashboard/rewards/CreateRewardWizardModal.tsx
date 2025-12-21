@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
@@ -43,6 +50,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [description, setDescription] = useState(reward?.description || '');
   // const [value, setValue] = useState<number | string>(reward?.value || 0); // Removed Value
   const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
+  const [stampsRequired, setStampsRequired] = useState<number | string>(reward?.stampsRequired || 0);
+  const [rewardType, setRewardType] = useState<string>(reward?.rewardType || 'Voucher');
   const [maxPoints, setMaxPoints] = useState<number | string>(reward?.maxPoints || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
@@ -70,6 +79,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setDescription(reward?.description || '');
     // setValue(reward?.value || 0);
     setPointsRequired(reward?.pointsRequired || 0);
+    setStampsRequired(reward?.stampsRequired || 0);
+    setRewardType(reward?.rewardType || 'Voucher');
     setMaxPoints(reward?.maxPoints || 0);
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
@@ -120,18 +131,25 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
   const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-
-    // Allow empty string for user to clear the field
     if (inputValue === '') {
       setPointsRequired('');
       return;
     }
-
     const numValue = Number(inputValue);
-
-    // Only update if the value is valid and within range
     if (!isNaN(numValue) && numValue >= 0) {
       setPointsRequired(inputValue);
+    }
+  };
+
+  const handleStampsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    if (inputValue === '') {
+      setStampsRequired('');
+      return;
+    }
+    const numValue = Number(inputValue);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setStampsRequired(inputValue);
     }
   };
 
@@ -140,11 +158,17 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
+
+    // Require either points or stamps (or allow both to be 0 if free? Assuming points>0 for now if stamps is 0)
+    // If we want flexibility: "At least one of Points or Stamps must be > 0"
+    if (Number(pointsRequired) <= 0 && Number(stampsRequired) <= 0) {
+      newErrors.cost = 'Either Points or Stamps required must be greater than 0.';
+    }
+
     if (isPointsExceedingMax) newErrors.pointsExceedingMax = 'Points Required cannot exceed Max Points.';
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
     setErrors(newErrors);
-  }, [name, description, pointsRequired, maxPoints, selectedFile, isEditMode, isPointsExceedingMax]); // Removed value dependency
+  }, [name, description, pointsRequired, stampsRequired, maxPoints, selectedFile, isEditMode, isPointsExceedingMax]);
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -196,6 +220,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         description,
         value: 0, // Value removed from UI, defaulting to 0
         pointsRequired: Number(pointsRequired),
+        stampsRequired: Number(stampsRequired),
+        rewardType,
         maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
         gallery: finalGalleryUrls,
@@ -246,6 +272,21 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                 <p className="text-xs text-gray-500 mt-1">A brief explanation of what the reward entails.</p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-1">Reward Type</label>
+                <Select value={rewardType} onValueChange={setRewardType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Voucher">Voucher</SelectItem>
+                    <SelectItem value="Physical Item">Physical Item</SelectItem>
+                    <SelectItem value="Service">Service</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">Select the type of reward.</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 {/* Removed Value Input */}
                 <div>
@@ -260,14 +301,29 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                     onChange={handlePointsChange}
                     className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                   />
-                  <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                  <p className="text-xs text-gray-500 mt-1">Points needed to redeem.</p>
                   {isPointsExceedingMax && (
                     <p className="text-xs text-red-500 mt-1">
                       Points cannot exceed the maximum of {maxPoints} points.
                     </p>
                   )}
                 </div>
+
+                <div>
+                  <label htmlFor="stamps" className="block text-sm font-medium mb-1">Stamps Required</label>
+                  <Input
+                    id="stamps"
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    value={stampsRequired}
+                    onChange={handleStampsChange}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Stamps needed to redeem.</p>
+                </div>
               </div>
+              {errors.cost && <p className="text-sm text-red-500">{errors.cost}</p>}
+
               <div>
                 <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>
                 <Input id="quantity" type="number" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} />
@@ -364,9 +420,19 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <div className="space-y-2 text-sm">
                     {/* Removed Value Display */}
                     <div className="flex justify-between">
+                      <span className="font-medium">Type:</span>
+                      <span>{rewardType}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="font-medium">Points Required:</span>
                       <span>{pointsRequired}</span>
                     </div>
+                    {Number(stampsRequired) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Stamps Required:</span>
+                        <span>{stampsRequired}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="font-medium">Quantity:</span>
                       <span>{quantity}</span>

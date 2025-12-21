@@ -81,5 +81,7 @@ export interface UpdateBusinessRewardDto {
   gallery?: string[];
   expiry_datetime?: Date;
   status?: RewardStatus;
+  reward_type?: string;
+  stamps_required?: number;
   disabled?: boolean;
 }

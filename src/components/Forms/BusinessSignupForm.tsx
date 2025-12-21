@@ -109,16 +109,6 @@ export default function BusinessSignupForm() {
           </div>
 
           <div>
-            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-            <Input
-              id="referralCode"
-              type="text"
-              placeholder="Enter referral code"
-              {...register("referralCode")}
-            />
-          </div>
-
-          <div>
             <Label htmlFor="password">
               Password <span className="text-red-500">*</span>
             </Label>

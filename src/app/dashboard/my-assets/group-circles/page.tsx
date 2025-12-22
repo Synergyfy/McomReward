@@ -116,7 +116,8 @@ const MultiLayerRadialGraph = ({
     onMemberClick: (m: Member) => void,
     currentMemberId?: string | null
 }) => {
-    const me = members.find(m => m.id === currentMemberId) || members.find(m => m.role === 'Owner');
+    const me = members.find(m => m.id === currentMemberId) ||
+        members.find(m => m.role.toLowerCase() === 'owner');
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-visible">
@@ -152,14 +153,19 @@ const MultiLayerRadialGraph = ({
 
                 {/* --- The Hub (Center) --- */}
                 <div
-                    onClick={() => me && onMemberClick(me)}
+                    onClick={() => {
+                        if (me) {
+                            onMemberClick(me);
+                        } else {
+                            toast.error("You are not identified as a member of this circle.");
+                        }
+                    }}
                     className={cn(
-                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 select-none",
-                        me ? "cursor-pointer hover:shadow-orange-500/50" : "cursor-default"
+                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 select-none cursor-pointer hover:shadow-orange-500/50 pointer-events-auto"
                     )}
                 >
-                    <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse" />
-                    <span className="text-[6px] md:text-[8px] font-bold">YOU</span>
+                    <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse pointer-events-none" />
+                    <span className="text-[6px] md:text-[8px] font-bold pointer-events-none">YOU</span>
                 </div>
 
                 {/* --- The Particles (Members) --- */}
@@ -576,8 +582,23 @@ export default function GroupCirclesPage() {
         [circles, selectedCircleId]);
 
     const myMemberId = useMemo(() => {
-        if (!selectedCircle || !profile) return null;
-        return selectedCircle.members.find(m => (m as any).email === profile.email)?.id;
+        if (!selectedCircle || !profile || !profile.email) return null;
+
+        const myEmail = profile.email.toLowerCase().trim();
+        const matchedMember = selectedCircle.members.find(m => {
+            const memberEmail = (m as any).email?.toLowerCase().trim();
+            // Also try matching by name/business name if email is missing (last resort)
+            // Ensure m.network exists before accessing properties
+            const memberName = m.network?.fullName?.toLowerCase().trim();
+            const businessName = m.network?.businessName?.toLowerCase().trim();
+            const myName = profile.name.toLowerCase().trim();
+
+            return (memberEmail && memberEmail === myEmail) ||
+                (memberName && memberName === myName) ||
+                (businessName && businessName === myName);
+        });
+
+        return matchedMember?.id;
     }, [selectedCircle, profile]);
 
     // Actions

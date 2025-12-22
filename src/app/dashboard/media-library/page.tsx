@@ -40,6 +40,12 @@ import {
     DialogTitle,
     DialogFooter
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useUploadToCloudinary } from '@/services/upload/hook';
 import Image from 'next/image';
@@ -456,10 +462,30 @@ export default function MediaLibraryPage() {
                                             <td className="px-6 py-4 text-sm text-gray-500">
                                                 {new Date(asset.uploadedAt).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button className="text-gray-400 hover:text-gray-600 p-1">
-                                                    <MoreVertical size={16} />
-                                                </button>
+                                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition outline-none">
+                                                            <MoreVertical size={16} />
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => copyToClipboard(asset.url)} className="gap-2 cursor-pointer">
+                                                            <Copy size={14} />
+                                                            Copy Link
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
+                                                            <a href={asset.url} download target="_blank" rel="noopener noreferrer">
+                                                                <Download size={14} />
+                                                                Download
+                                                            </a>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDeleteAsset(asset.id)} className="text-red-600 gap-2 cursor-pointer hover:text-red-700 hover:bg-red-50 focus:bg-red-50 focus:text-red-700">
+                                                            <Trash2 size={14} />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </td>
                                         </tr>
                                     ))}

@@ -19,15 +19,26 @@ function Calendar({
   buttonVariant = "ghost",
   formatters,
   components,
+  disablePastDates = true,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
-  buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+  disablePastDates?: boolean;
 }) {
   const defaultClassNames = getDefaultClassNames()
+
+  const disabledDays = disablePastDates ? { before: new Date() } : undefined;
+
+  // Merge the computed disabledDays with any disabled prop passed in
+  const mergedDisabled = props.disabled
+    ? (Array.isArray(props.disabled) ? [...props.disabled, disabledDays].filter(Boolean) : [props.disabled, disabledDays].filter(Boolean))
+    // @ts-ignore - react-day-picker types can be complex for disabled
+    : disabledDays;
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      disabled={mergedDisabled as any}
       className={cn(
         "bg-background group/calendar p-3 [--cell-size:2rem] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,

@@ -23,7 +23,7 @@ const DateTimePicker: React.FC<DateTimePickerType> = ({ date, setDate, disabled,
         dateFormat="MMMM d, yyyy h:mm aa"
         className="w-full h-[2rem] border-b outline-blue-600 p-2"
         disabled={disabled}
-        minDate={minDate}
+        minDate={minDate ?? new Date()}
       />
     </div>
   );

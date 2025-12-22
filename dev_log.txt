@@ -1,0 +1,32 @@
+
+> temp-app@0.1.0 dev
+> next dev
+
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 1741ms
+ ○ Compiling /login ...
+ GET /login 200 in 6.9s (compile: 6.2s, render: 747ms)
+(node:4116) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ GET /verify-email?email=test%40example.com 200 in 2.3s (compile: 2.3s, render: 56ms)
+ GET /login 200 in 100ms (compile: 6ms, render: 95ms)
+ GET /verify-email?email=test%40example.com 200 in 29ms (compile: 6ms, render: 22ms)
+ GET /login 200 in 76ms (compile: 5ms, render: 71ms)
+ GET /verify-email?email=test%40example.com 200 in 25ms (compile: 5ms, render: 20ms)
+ ○ Compiling /dashboard/campaigns/create ...
+ GET /dashboard/campaigns/create 200 in 5.8s (compile: 5.0s, proxy.ts: 63ms, render: 782ms)
+ GET /dashboard/campaigns/create 200 in 131ms (compile: 7ms, proxy.ts: 7ms, render: 117ms)
+ GET /login 200 in 72ms (compile: 6ms, render: 67ms)
+ GET /verify-email?email=test%40example.com 200 in 29ms (compile: 6ms, render: 23ms)
+ GET /dashboard/campaigns/create 200 in 112ms (compile: 5ms, proxy.ts: 7ms, render: 101ms)
+ ○ Compiling /dashboard/my-assets/qr-plaques ...
+ GET /dashboard/my-assets/qr-plaques 200 in 5.4s (compile: 4.9s, proxy.ts: 7ms, render: 489ms)

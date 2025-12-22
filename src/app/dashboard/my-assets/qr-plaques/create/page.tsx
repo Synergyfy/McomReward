@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaquePreview } from '@/components/plaque/PlaquePreview';
-import { ArrowLeft, Save, Printer, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Printer, Upload, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,11 +22,24 @@ export default function CreatePlaquePage() {
     const [extraInfo, setExtraInfo] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSelectAsset = (asset: MediaAsset) => {
         setQrCodeUrl(asset.url);
         setIsLibraryOpen(false);
         toast.success(`Selected QR Code: ${asset.name}`);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setQrCodeUrl(reader.result as string);
+                toast.success("Image uploaded from device");
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = () => {
@@ -151,15 +164,33 @@ export default function CreatePlaquePage() {
                         {/* 4. QR Upload */}
                         <div className="space-y-2">
                             <Label>QR Code Image</Label>
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsLibraryOpen(true)}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" /> Upload QR Code
-                                </Button>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setIsLibraryOpen(true)}
+                                    >
+                                        <ImageIcon className="mr-2 h-4 w-4" /> Select from Library
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <Upload className="mr-2 h-4 w-4" /> Upload from Device
+                                    </Button>
+                                </div>
 
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleFileChange}
+                                />
                                 {qrCodeUrl && <span className="text-sm text-green-600">Image selected</span>}
                             </div>
                         </div>

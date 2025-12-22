@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, Info } from 'lucide-react';
+import { PoundSterling, TrendingUp, Info } from 'lucide-react';
 
 export interface MatchingPointsOverviewData {
   totalMatchingPoints: number;
@@ -21,11 +21,11 @@ export default function MatchingPointsOverview({ overview }: MatchingPointsOverv
       <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Your Points Balance</CardTitle>
-          <DollarSign className="h-4 w-4 text-white" />
+          <PoundSterling className="h-4 w-4 text-white" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{overview.totalMatchingPoints} Matching Points</div>
-          <p className="text-xs text-gray-200">{overview.totalRegularPoints} Regular Points</p>
+
         </CardContent>
       </Card>
 

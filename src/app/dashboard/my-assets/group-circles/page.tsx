@@ -588,9 +588,9 @@ export default function GroupCirclesPage() {
         const matchedMember = selectedCircle.members.find(m => {
             const memberEmail = (m as any).email?.toLowerCase().trim();
             // Also try matching by name/business name if email is missing (last resort)
-            // Ensure m.network exists before accessing properties
-            const memberName = m.network?.fullName?.toLowerCase().trim();
-            const businessName = m.network?.businessName?.toLowerCase().trim();
+            // Use mapped properties since 'network' object is not available in UI member type
+            const memberName = m.name?.toLowerCase().trim();
+            const businessName = m.category?.toLowerCase().trim();
             const myName = profile.name.toLowerCase().trim();
 
             return (memberEmail && memberEmail === myEmail) ||

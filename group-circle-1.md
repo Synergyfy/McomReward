@@ -320,17 +320,25 @@ Swap payout dates.
 
 ### 3. Contributions (Smart Money Only)
 
-#### `POST /group-circles/:id/contributions`
+#### `POST /group-circles/{id}/contributions/initiate`
 Record manual contribution.
+- **Parameters**:
+  - `id`: Circle id (required)
+
+- **Request body (schema)**: InitiateContributionDto{
+memberId*	string
+amount*	number
+provider*	string
+Enum:
+[ STRIPE, PAYPAL, MANUAL ]
+round*	number
+}
 - **Response Data**:
   ```json
   {
-    "id": "contrib-uuid",
-    "amount": 50,
-    "round": 1,
-    "status": "PAID",
-    "paidAt": "2023-10-27T12:00:00Z",
-    "provider": "MANUAL"
+  "clientSecret": "...",
+  "orderId": "..."
+
   }
   ```
 
@@ -347,7 +355,31 @@ Initiate online payment.
 
 #### `POST /group-circles/:id/contributions/verify`
 Verify/Record online transaction.
-- **Response Data**: Updated `GroupCircleContribution` object.
+
+- **Parameters**:
+  - `id`: Circle id (required)
+
+- **Request body schema**: VerifyContributionDto{
+memberId*	string
+amount*	number
+round*	number
+provider*	string
+Enum:
+[ STRIPE, PAYPAL, MANUAL ]
+transactionId*	string
+}
+- **Response Data**: {
+  "id": "string",
+  "created_at": "2025-12-20T15:37:27.173Z",
+  "updated_at": "2025-12-20T15:37:27.173Z",
+  "deleted_at": "2025-12-20T15:37:27.173Z",
+  "amount": 0,
+  "round": 0,
+  "status": "PENDING",
+  "paidAt": "2025-12-20T15:37:27.173Z",
+  "provider": "STRIPE",
+  "transactionId": "string"
+}
 
 #### `GET /group-circles/contributions`
 All contributions for the business.

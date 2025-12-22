@@ -17,6 +17,39 @@ export interface AddMemberDto {
     role: 'CORE' | 'PERIPHERAL' | 'BANKER' | 'PARTNER';
 }
 
+export type ContributionProvider = 'STRIPE' | 'PAYPAL' | 'MANUAL';
+export type ContributionStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+
+export interface InitiateContributionDto {
+    memberId: string;
+    amount: number;
+    provider: ContributionProvider;
+    round: number;
+}
+
+export interface InitiateContributionResponse {
+    clientSecret?: string;
+    orderId?: string;
+}
+
+export interface VerifyContributionDto {
+    memberId: string;
+    amount: number;
+    round: number;
+    provider: ContributionProvider;
+    transactionId: string;
+}
+
+export interface Contribution {
+    id: string;
+    amount: number;
+    round: number;
+    status: ContributionStatus;
+    paidAt: string;
+    provider: ContributionProvider;
+    transactionId: string;
+}
+
 export interface CreateGroupCircleDto {
     name: string;
     description: string;

@@ -23,7 +23,8 @@ import {
   Stamp,
   ChevronLeft,
   ChevronRight,
-  Store
+  Store,
+  Image
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -284,6 +285,8 @@ export default function BusinessSidebar({
           <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
 
           <SidebarItem icon={Settings} label="Settings" href="/dashboard/account" />
+
+          <SidebarItem icon={Image} label="Media Library" href="/dashboard/media-library" />
 
           <SidebarItem icon={LifeBuoy} label="Support & Help" href="/dashboard/support" />
 

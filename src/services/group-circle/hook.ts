@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse, UpdateGroupCircleDto, SendMessageDto, GroupCircleMessage, MessageQueryParams, MessagesResponse, AddMemberDto } from './types';
+import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse, UpdateGroupCircleDto, SendMessageDto, GroupCircleMessage, MessageQueryParams, MessagesResponse, AddMemberDto, InitiateContributionDto, InitiateContributionResponse, VerifyContributionDto, Contribution } from './types';
 
 const GROUP_CIRCLE_QUERY_KEY = 'groupCircles';
 const GROUP_CIRCLE_MESSAGES_QUERY_KEY = 'groupCircleMessages';
@@ -47,6 +47,16 @@ const sendMessage = async ({ id, data }: { id: string; data: SendMessageDto }): 
 
 const addCircleMember = async ({ id, data }: { id: string; data: AddMemberDto }): Promise<void> => {
     await api.post(`/group-circles/${id}/members`, data);
+};
+
+const initiateContribution = async ({ id, data }: { id: string; data: InitiateContributionDto }): Promise<InitiateContributionResponse> => {
+    const response = await api.post<InitiateContributionResponse>(`/group-circles/${id}/contributions/initiate`, data);
+    return response.data;
+};
+
+const verifyContribution = async ({ id, data }: { id: string; data: VerifyContributionDto }): Promise<Contribution> => {
+    const response = await api.post<Contribution>(`/group-circles/${id}/contributions/verify`, data);
+    return response.data;
 };
 
 export const useGetGroupCircles = (params: GroupCirclesQueryParams = {}) => {
@@ -114,6 +124,23 @@ export const useAddCircleMember = () => {
 
     return useMutation({
         mutationFn: addCircleMember,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
+        },
+    });
+};
+
+export const useInitiateGroupCircleContribution = () => {
+    return useMutation({
+        mutationFn: initiateContribution,
+    });
+};
+
+export const useVerifyGroupCircleContribution = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: verifyContribution,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
         },

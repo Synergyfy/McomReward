@@ -6,7 +6,7 @@ import {
     Users, Plus, ArrowRight, Check, Search, Filter, MoreHorizontal,
     MessageSquare, Activity, Settings, Shield, Globe, MapPin, Zap,
     Briefcase, Share2, X, AlertCircle, Banknote, Calendar, CreditCard,
-    UserPlus, UserMinus, Star, User, Send, Paperclip, Smile
+    UserPlus, UserMinus, Star, User, Send, Paperclip, Smile, Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,7 @@ import { useCreateGroupCircle, useGetGroupCircles, useUpdateGroupCircle, useRemo
 import { CreateGroupCircleDto, UpdateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleVisibility, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle, SendMessageDto, AddMemberDto } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { ContributionDialog } from "./ContributionDialog";
 
 
 // --- Types & Constants ---
@@ -108,11 +109,16 @@ const INITIAL_CIRCLES: GroupCircle[] = [
 
 const MultiLayerRadialGraph = ({
     members,
-    onMemberClick
+    onMemberClick,
+    currentMemberId
 }: {
     members: Member[],
-    onMemberClick: (m: Member) => void
+    onMemberClick: (m: Member) => void,
+    currentMemberId?: string | null
 }) => {
+    const me = members.find(m => m.id === currentMemberId) ||
+        members.find(m => m.role.toLowerCase() === 'owner');
+
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-visible">
             <div className="relative w-full aspect-square max-w-[800px] max-h-[800px] mx-auto isolate">
@@ -146,14 +152,25 @@ const MultiLayerRadialGraph = ({
                 ))}
 
                 {/* --- The Hub (Center) --- */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 cursor-default hover:shadow-orange-500/50">
-                    <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse" />
-                    <span className="text-[6px] md:text-[8px] font-bold">YOU</span>
+                <div
+                    onClick={() => {
+                        if (me) {
+                            onMemberClick(me);
+                        } else {
+                            toast.error("You are not identified as a member of this circle.");
+                        }
+                    }}
+                    className={cn(
+                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 select-none cursor-pointer hover:shadow-orange-500/50 pointer-events-auto"
+                    )}
+                >
+                    <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse pointer-events-none" />
+                    <span className="text-[6px] md:text-[8px] font-bold pointer-events-none">YOU</span>
                 </div>
 
                 {/* --- The Particles (Members) --- */}
                 <AnimatePresence>
-                    {members.map((member, i) => {
+                    {members.filter(m => m.id !== (me?.id || null)).map((member, i) => {
                         const siblings = members.filter(m => m.orbit === member.orbit);
                         const indexInOrbit = siblings.indexOf(member);
                         const totalInOrbit = siblings.length;
@@ -495,6 +512,7 @@ export default function GroupCirclesPage() {
                 return {
                     id: m.id,
                     name: m.network.fullName,
+                    email: m.network.email,
                     role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
                     orbit,
                     status: (m.network.status === 'active' || m.network.status === 'accepted' ? 'active' : 'offline') as any,
@@ -513,6 +531,7 @@ export default function GroupCirclesPage() {
     const [activeMember, setActiveMember] = useState<Member | null>(null);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
+    const [contributionOpen, setContributionOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
     // Chat
@@ -561,6 +580,26 @@ export default function GroupCirclesPage() {
     const selectedCircle = useMemo(() =>
         circles.find(c => c.id === selectedCircleId),
         [circles, selectedCircleId]);
+
+    const myMemberId = useMemo(() => {
+        if (!selectedCircle || !profile || !profile.email) return null;
+
+        const myEmail = profile.email.toLowerCase().trim();
+        const matchedMember = selectedCircle.members.find(m => {
+            const memberEmail = (m as any).email?.toLowerCase().trim();
+            // Also try matching by name/business name if email is missing (last resort)
+            // Use mapped properties since 'network' object is not available in UI member type
+            const memberName = m.name?.toLowerCase().trim();
+            const businessName = m.category?.toLowerCase().trim();
+            const myName = profile.name.toLowerCase().trim();
+
+            return (memberEmail && memberEmail === myEmail) ||
+                (memberName && memberName === myName) ||
+                (businessName && businessName === myName);
+        });
+
+        return matchedMember?.id;
+    }, [selectedCircle, profile]);
 
     // Actions
     const handleCreateMandatory = (name: string) => {
@@ -1064,6 +1103,7 @@ export default function GroupCirclesPage() {
                                             <MultiLayerRadialGraph
                                                 members={selectedCircle.members}
                                                 onMemberClick={setActiveMember}
+                                                currentMemberId={myMemberId}
                                             />
                                         </div>
                                     </div>
@@ -1185,6 +1225,24 @@ export default function GroupCirclesPage() {
                                                     <span className="font-black text-sm uppercase">{activeMember.drawDate ? new Date(activeMember.drawDate).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'TBD'}</span>
                                                 </div>
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {myMemberId && (
+                                        <div className="p-4 bg-orange-50/50 dark:bg-orange-950/10 rounded-2xl border border-orange-100 dark:border-orange-900/20 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-lg bg-orange-500 text-white flex items-center justify-center">
+                                                    <Wallet className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-xs font-bold">Your Wallet</span>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 h-8 rounded-lg font-bold text-[10px]"
+                                                onClick={() => setContributionOpen(true)}
+                                            >
+                                                MAKE CONTRIBUTION
+                                            </Button>
                                         </div>
                                     )}
 
@@ -1348,6 +1406,16 @@ export default function GroupCirclesPage() {
                     onOpenChange={setInviteOpen}
                     onInvite={handleInviteMembers}
                 />
+
+                {selectedCircleId && myMemberId && (
+                    <ContributionDialog
+                        open={contributionOpen}
+                        onOpenChange={setContributionOpen}
+                        circleId={selectedCircleId}
+                        memberId={myMemberId}
+                        defaultAmount={selectedCircle?.contributionAmount || 0}
+                    />
+                )}
             </div>
         </div>
     );

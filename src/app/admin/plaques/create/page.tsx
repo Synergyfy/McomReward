@@ -1,67 +1,76 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal';
+import { QrPlaque } from '@/services/qr-plaques/types';
+import { useCreateAdminQrPlaque } from '@/services/qr-plaques/hook';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal'; // Import the modal
-import { Plaque, mockPlaques } from '@/lib/mock-data/plaques'; // Import Plaque interface and mockPlaques
 
-export default function CreatePlaquePage() {
-  // State for Feedback Dialog
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
-  const [feedbackDialogProps, setFeedbackDialogProps] = useState<{ title: string; description: React.ReactNode; actionText: string }>({
-    title: '',
-    description: '',
-    actionText: 'OK',
-  });
+export default function AdminCreatePlaquePage() {
+    const router = useRouter();
+    const { mutate: createPlaque, isPending } = useCreateAdminQrPlaque();
+    const [showFeedback, setShowFeedback] = React.useState(false);
+    const [feedbackData, setFeedbackData] = React.useState({ title: '', description: '', actionText: 'OK' });
 
-  const handleShowFeedback = (title: string, description: React.ReactNode, actionText?: string) => {
-    setFeedbackDialogProps({ title, description, actionText: actionText || 'OK' });
-    setShowFeedbackDialog(true);
-  };
+    const handleSave = (plaque: any) => { // Using any to accept the raw form data from modal
+        // Map fields to match CreateQrPlaqueRequest strict requirements
+        createPlaque({
+            name: plaque.name,
+            description: plaque.description || '',
+            actionText: plaque.actionText || 'Scan Here',
+            footerText: plaque.footerText || '',
+            contentUrl: plaque.contentUrl, // This should now be populated from modal
+            status: plaque.status,
+            price: plaque.price ?? undefined,
+            assignedBusinessId: plaque.assignedBusinessId, // Modal sends undefined if empty
+            assignedPartnerId: plaque.assignedPartnerId,
+            networkContactId: plaque.networkContactId
+        }, {
+            onSuccess: () => {
+                setFeedbackData({
+                    title: 'Success',
+                    description: 'Plaque created successfully.',
+                    actionText: 'Go to List'
+                });
+                setShowFeedback(true);
+            },
+            onError: (error: any) => {
+                 setFeedbackData({
+                    title: 'Error',
+                    description: error.response?.data?.message?.join(', ') || 'Failed to create plaque.',
+                    actionText: 'Close'
+                });
+                setShowFeedback(true);
+            }
+        });
+    };
 
-  // State for Add/Edit Plaque Modal
-  const [showAddEditPlaqueModal, setShowAddEditPlaqueModal] = useState(false);
+    const handleFeedbackClose = () => {
+        setShowFeedback(false);
+        if (feedbackData.title === 'Success') {
+             router.push('/admin/plaques/list');
+        }
+    };
 
-  const handleSavePlaque = (newPlaque: Plaque) => {
-    setShowAddEditPlaqueModal(false); // Close modal first
-    setTimeout(() => {
-      mockPlaques.push(newPlaque); // Add to mock data
-      handleShowFeedback("Plaque Created", `Plaque "${newPlaque.name}" has been successfully created.`);
-    }, 300);
-  };
+    return (
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Create New Plaque</h1>
+            <AddEditPlaqueModal
+                isOpen={true}
+                onClose={() => router.push('/admin/plaques/list')}
+                onSave={handleSave}
+                onShowFeedback={(t, d, a) => { setFeedbackData({title: t, description: d as string, actionText: a || 'OK'}); setShowFeedback(true); }}
+                isSaving={isPending}
+            />
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Create New Plaque</h1>
-        <p className="text-muted-foreground">Form where admin can choose a group, select owner, enter plaque details, and generate a QR code.</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Plaque</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => setShowAddEditPlaqueModal(true)}><PlusCircle className="mr-2 h-4 w-4" /> Open Create Plaque Form</Button>
-          <p className="text-muted-foreground mt-2">Click the button to open the form for creating a new plaque.</p>
-        </CardContent>
-      </Card>
-
-      <AddEditPlaqueModal
-        isOpen={showAddEditPlaqueModal}
-        onClose={() => setShowAddEditPlaqueModal(false)}
-        onSave={handleSavePlaque}
-        onShowFeedback={handleShowFeedback}
-      />
-
-      <FeedbackDialog
-        isOpen={showFeedbackDialog}
-        onClose={() => setShowFeedbackDialog(false)}
-        {...feedbackDialogProps}
-      />
-    </div>
-  );
+            <FeedbackDialog
+                isOpen={showFeedback}
+                onClose={handleFeedbackClose}
+                title={feedbackData.title}
+                description={feedbackData.description}
+                actionText={feedbackData.actionText}
+            />
+        </div>
+    );
 }

@@ -15,17 +15,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, Save } from 'lucide-react';
-import { mockPlaqueGroups } from '@/lib/mock-data/plaque-groups';
 import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { Plaque } from '@/lib/mock-data/plaques';
+import { QrPlaque } from '@/services/qr-plaques/types';
 
 interface AddEditPlaqueModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Plaque; // Optional data for editing
-  onSave: (plaque: Plaque) => void;
+  initialData?: QrPlaque;
+  onSave: (plaque: any) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
+  isSaving?: boolean;
 }
 
 export function AddEditPlaqueModal({
@@ -34,16 +34,17 @@ export function AddEditPlaqueModal({
   initialData,
   onSave,
   onShowFeedback,
+  isSaving = false,
 }: AddEditPlaqueModalProps) {
+  // State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [groupId, setGroupId] = useState('');
   const [ownerId, setOwnerId] = useState('');
-  const [locationDetails, setLocationDetails] = useState('');
-  const [qrCodeData, setQrCodeData] = useState(''); // To store generated QR code data
-  const [status, setStatus] = useState<Plaque['status']>('Active');
+  const [qrCodeData, setQrCodeData] = useState('');
+  const [contentUrl, setContentUrl] = useState(''); // New State
+  const [status, setStatus] = useState<string>('ACTIVE');
 
-  // State for Feedback Dialog (local to modal for validation errors)
+  // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackDialogProps, setFeedbackDialogProps] = useState<{ title: string; description: React.ReactNode; actionText: string }>({
     title: '',
@@ -58,42 +59,29 @@ export function AddEditPlaqueModal({
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name);
-      setDescription(initialData.description);
-      setGroupId(initialData.groupId);
-      setOwnerId(initialData.ownerId);
-      setLocationDetails(initialData.locationDetails);
-      setQrCodeData(initialData.qrCodeData);
+      setName(initialData.name || '');
+      setDescription(initialData.description || '');
+      setOwnerId(initialData.assignedBusinessId || '');
+      setQrCodeData(initialData.qrCodeUrl || '');
+      setContentUrl(initialData.contentUrl || ''); // Load existing content URL
       setStatus(initialData.status);
     } else {
-      // Reset form for new entry
       setName('');
       setDescription('');
-      setGroupId('');
       setOwnerId('');
-      setLocationDetails('');
       setQrCodeData('');
-      setStatus('Active');
+      setContentUrl(''); // Reset
+      setStatus('ACTIVE');
     }
-  }, [initialData]);
-
-  const handleGenerateQrCode = () => {
-    // In a real application, this would call an API to generate a QR code
-    // For now, we'll use a placeholder base64 image
-    const placeholderQr = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-    setQrCodeData(placeholderQr);
-    handleShowLocalFeedback("QR Code Generated", "A placeholder QR code has been generated.");
-  };
+  }, [initialData, isOpen]);
 
   const handleSave = () => {
     const errors: string[] = [];
 
+    // Basic Validation
     if (!name.trim()) errors.push('Plaque Name is required.');
-    if (!description.trim()) errors.push('Description is required.');
-    if (!groupId.trim()) errors.push('Group is required.');
-    if (!ownerId.trim()) errors.push('Owner is required.');
-    if (!locationDetails.trim()) errors.push('Location Details are required.');
-    if (!qrCodeData.trim()) errors.push('QR Code must be generated.');
+    // if (!contentUrl.trim()) errors.push('Content URL is required.'); // Error said "should not be empty", so adding validation might be good, but letting backend handle strictness is also fine. I'll adding it to be safe.
+    if (!contentUrl.trim()) errors.push('Content URL is required.');
 
     if (errors.length > 0) {
       handleShowLocalFeedback(
@@ -107,26 +95,20 @@ export function AddEditPlaqueModal({
       return;
     }
 
-    const plaqueToSave: Plaque = {
-      id: initialData?.id || `plaque-${Date.now()}`,
-      name,
-      description,
-      groupId,
-      groupName: mockPlaqueGroups.find(g => g.id === groupId)?.name || 'Unknown Group',
-      ownerId,
-      ownerName: mockBusinessUsers.find(u => u.id === ownerId)?.name || 'Unknown Owner',
-      qrCodeData,
-      status,
-      scanCounts: initialData?.scanCounts || 0,
-      lastScanTime: initialData?.lastScanTime || null,
-      transferHistory: initialData?.transferHistory || [],
-      locationDetails,
-      createdAt: initialData?.createdAt || new Date(),
-      updatedAt: new Date(),
+    // Prepare data object
+    const plaqueData = {
+        id: initialData?.id,
+        name,
+        description,
+        assignedBusinessId: ownerId || undefined, // Send undefined if empty to avoid invalid UUID error
+        status,
+        qrCodeUrl: qrCodeData,
+        contentUrl,
+        actionText: 'Scan Here', // Default action text needed for Create
+        footerText: '', // Default footer
     };
 
-    onSave(plaqueToSave);
-    onClose();
+    onSave(plaqueData);
   };
 
   const dialogTitle = initialData ? `Edit Plaque: ${initialData.name}` : 'Create New Plaque';
@@ -144,74 +126,61 @@ export function AddEditPlaqueModal({
             <Label htmlFor="name" className="text-right">Plaque Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Front Desk QR" className="col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="group" className="text-right">Group</Label>
-            <Select value={groupId} onValueChange={setGroupId}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a group" />
-              </SelectTrigger>
-              <SelectContent className="z-[10000]">
-                {mockPlaqueGroups.map(group => (
-                  <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of the plaque's purpose or location." className="col-span-3" />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description..." className="col-span-3" />
           </div>
+
+          {/* New Content URL Input */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="contentUrl" className="text-right">Linked Offer / Content URL</Label>
+            <Input id="contentUrl" value={contentUrl} onChange={(e) => setContentUrl(e.target.value)} placeholder="https://..." className="col-span-3" />
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="owner" className="text-right">Owner (Business)</Label>
             <Select value={ownerId} onValueChange={setOwnerId}>
               <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select an owner" />
+                <SelectValue placeholder="Select an owner (Optional)" />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
+                 {/* This would ideally come from an API too */}
                 {mockBusinessUsers.map(user => (
                   <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="locationDetails" className="text-right">Location Details</Label>
-            <Input id="locationDetails" value={locationDetails} onChange={(e) => setLocationDetails(e.target.value)} placeholder="e.g., Main Entrance, Counter" className="col-span-3" />
-          </div>
-          {initialData && ( // Only show status for editing existing plaques
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">Status</Label>
-              <Select value={status} onValueChange={(value: Plaque['status']) => setStatus(value)}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent className="z-[10000]">
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Sold">Sold</SelectItem>
-                  <SelectItem value="Retired">Retired</SelectItem>
-                  <SelectItem value="Lost">Lost</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <div className="col-span-4 flex justify-center">
-              <Button onClick={handleGenerateQrCode}><QrCode className="mr-2 h-4 w-4" /> Generate QR Code</Button>
-            </div>
-            {qrCodeData && (
-              <div className="col-span-4 flex flex-col items-center mt-4 p-4 border rounded-md">
-                <p className="text-sm text-muted-foreground mb-2">Generated QR Code:</p>
-                <img src={qrCodeData} alt="Generated QR Code" className="w-32 h-32 border p-1" />
-                <p className="text-xs text-muted-foreground mt-2">This is a placeholder QR code.</p>
-              </div>
-            )}
+            <Label htmlFor="status" className="text-right">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent className="z-[10000]">
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="SOLD">Sold</SelectItem>
+                <SelectItem value="RETIRED">Retired</SelectItem>
+                <SelectItem value="LOST">Lost</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+           {/* QR Code URL Input for Admin */}
+           <div className="grid grid-cols-4 items-center gap-4">
+             <Label htmlFor="qrCodeUrl" className="text-right">QR Code URL</Label>
+             <Input id="qrCodeUrl" value={qrCodeData} onChange={(e) => setQrCodeData(e.target.value)} placeholder="https://..." className="col-span-3" />
+           </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Plaque</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            <Save className="mr-2 h-4 w-4" /> {isSaving ? 'Saving...' : 'Save Plaque'}
+          </Button>
         </DialogFooter>
       </DialogContent>
 

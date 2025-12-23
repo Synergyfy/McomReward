@@ -1,32 +1,60 @@
-import { DateRange } from 'react-day-picker';
-
 export interface QrPlaque {
   id: string;
-  partner: string;
-  status: 'Active' | 'Inactive' | 'For Sale' | 'Pending Assignment';
-  scans: number;
-  redemptions: number;
-  linkedOffer: string | null;
-  price: string | null;
+  name: string;
+  description?: string;
+  actionText?: string;
+  footerText?: string;
+  contentUrl?: string;
+  qrCodeUrl?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SOLD' | 'RETIRED' | 'LOST' | 'FOR_SALE';
+  price?: number | null;
+  assignedPartnerId?: string;
+  assignedBusinessId?: string;
+  networkContactId?: string;
+  ownerName?: string;
+  groupName?: string;
+  scans?: number;
+  redemptions?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface QrPlaqueChartData {
-  name: string; // e.g., 'Mon', 'Tue'
-  scans: number;
-  redemptions: number;
+export interface CreateQrPlaqueRequest {
+  name: string;
+  description: string;
+  actionText: string;
+  footerText: string;
+  contentUrl: string;
+  // Optional fields mainly for Admin or specific flows
+  status?: string;
+  price?: number;
+  assignedPartnerId?: string;
+  assignedBusinessId?: string;
+  networkContactId?: string;
 }
 
-export interface QrPlaquesResponse {
-    plaques: QrPlaque[];
-    chartData: QrPlaqueChartData[];
-    // You might also want to include pagination meta data here if the API supports it
-    // total: number;
-    // page: number;
-    // limit: number;
+export interface UpdateQrPlaqueRequest {
+  name?: string;
+  description?: string;
+  actionText?: string;
+  footerText?: string;
+  contentUrl?: string;
+  status?: string;
+  price?: number;
+  assignedPartnerId?: string;
 }
 
-export interface QrPlaqueQueryDto {
-    businessId?: string; // For admin impersonation
-    status?: 'all' | 'active' | 'inactive' | 'for-sale' | 'pending';
-    dateRange?: DateRange;
+export interface AdminUpdateQrPlaqueRequest extends UpdateQrPlaqueRequest {
+  qrCodeUrl?: string;
+  assignedBusinessId?: string;
+  networkContactId?: string;
+}
+
+export interface QrPlaqueResponse {
+  data: QrPlaque[];
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+  };
 }

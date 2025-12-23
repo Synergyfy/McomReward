@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useCreateQrPlaque } from '@/services/qr-plaques/hook';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,14 +18,17 @@ import MediaLibrary, { MediaAsset } from '@/components/dashboard/media-library/M
 // Create QR Plaque Page - Allows creating custom plaques with QR codes from library or device
 export default function CreatePlaquePage() {
     const router = useRouter();
+    const { mutate: createPlaque, isPending } = useCreateQrPlaque();
+
     const [name, setName] = useState('');
     const [actionText, setActionText] = useState('SCAN HERE');
     const [description, setDescription] = useState('FOR PAYMENT');
-    const [extraInfo, setExtraInfo] = useState('');
+    const [footerText, setFooterText] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
+    const contentUrl = qrCodeUrl; // URL for the QR code image
+    const previewQrCodeUrl = qrCodeUrl || '/placeholder-qr-code.png';
     const handleSelectAsset = (asset: MediaAsset) => {
         setQrCodeUrl(asset.url);
         setIsLibraryOpen(false);
@@ -49,35 +53,17 @@ export default function CreatePlaquePage() {
             return;
         }
 
-        try {
-            const existingPlaques = JSON.parse(localStorage.getItem('my_plaques_list') || '[]');
-            const baseCount = 5;
-            const nextNum = baseCount + existingPlaques.length + 1;
-            const newId = `Plaque-${String(nextNum).padStart(3, '0')}`;
-
-            const newPlaque = {
-                id: newId,
-                name: name,
-                partner: name,
-                actionText,
-                description,
-                extraInfo,
-                qrCodeUrl,
-                status: 'Draft',
-                scans: 0,
-                redemptions: 0,
-                linkedOffer: null,
-                price: null,
-                createdAt: new Date().toISOString(),
-            };
-
-            localStorage.setItem('my_plaques_list', JSON.stringify([...existingPlaques, newPlaque]));
-            toast.success("Plaque template saved successfully!");
-            router.push('/dashboard/my-assets/qr-plaques');
-        } catch (error) {
-            console.error("Failed to save plaque", error);
-            toast.error("Failed to save plaque template.");
-        }
+        createPlaque({
+            name,
+            actionText,
+            description,
+            footerText,
+            contentUrl
+        }, {
+            onSuccess: () => {
+                router.push('/dashboard/my-assets/qr-plaques');
+            }
+        });
     };
 
     const handlePrint = () => {
@@ -162,7 +148,7 @@ export default function CreatePlaquePage() {
                             />
                         </div>
 
-                        {/* 4. QR Upload */}
+                        {/* 4. Content URL (Linked Offer) */}
                         <div className="space-y-2">
                             <Label>QR Code Image</Label>
                             <div className="flex flex-col gap-3">
@@ -196,20 +182,21 @@ export default function CreatePlaquePage() {
                             </div>
                         </div>
 
-                        {/* 5. Footer (Extra Info) */}
+                        {/* 5. Footer (Footer Text) */}
                         <div className="space-y-2">
-                            <Label htmlFor="extraInfo">Footer Text (Optional)</Label>
-                            <Textarea
-                                id="extraInfo"
-                                placeholder="e.g. Please check the amount before finalizing."
-                                value={extraInfo}
-                                onChange={(e) => setExtraInfo(e.target.value)}
+                            <Label htmlFor="footerText">Footer Text</Label>
+                            <Input
+                                id="footerText"
+                                placeholder="e.g. Powered by Mcom"
+                                value={footerText}
+                                onChange={(e) => setFooterText(e.target.value)}
                             />
                         </div>
 
                         <div className="pt-4 flex gap-4">
-                            <Button onClick={handleSave} className="flex-1">
-                                <Save className="mr-2 h-4 w-4" /> Save Template
+                            <Button onClick={handleSave} className="flex-1" disabled={isPending}>
+                                <Save className="mr-2 h-4 w-4" />
+                                {isPending ? 'Saving...' : 'Save Template'}
                             </Button>
                         </div>
                     </CardContent>
@@ -230,9 +217,10 @@ export default function CreatePlaquePage() {
                                 title={name}
                                 actionText={actionText}
                                 description={description}
-                                extraInfo={extraInfo}
-                                qrCodeUrl={qrCodeUrl}
+                                extraInfo={footerText}
+                                qrCodeUrl={previewQrCodeUrl}
                             />
+                            <p className="text-xs text-gray-400 mt-2 text-center">QR Code will be generated upon saving.</p>
                         </div>
                     </div>
                 </div>

@@ -13,23 +13,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plaque } from '@/lib/mock-data/plaques';
 import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
+import { QrPlaque } from '@/services/qr-plaques/types';
+import { useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
 
 interface TransferPlaqueModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plaque: Plaque | undefined;
-  onTransfer: (plaqueId: string, newOwnerId: string) => void;
+  plaque: QrPlaque | undefined;
+  onSuccess: () => void;
 }
 
 export function TransferPlaqueModal({
   isOpen,
   onClose,
   plaque,
-  onTransfer,
+  onSuccess,
 }: TransferPlaqueModalProps) {
+  const { mutate: updatePlaque, isPending } = useUpdateAdminQrPlaque();
   const [newOwnerId, setNewOwnerId] = useState('');
 
   // State for Feedback Dialog (local to modal for validation errors)
@@ -58,7 +60,7 @@ export function TransferPlaqueModal({
     if (!newOwnerId.trim()) {
       errors.push('Please select a new owner.');
     }
-    if (newOwnerId === plaque.ownerId) {
+    if (newOwnerId === plaque.assignedBusinessId) {
       errors.push('The new owner cannot be the same as the current owner.');
     }
 
@@ -74,8 +76,18 @@ export function TransferPlaqueModal({
       return;
     }
 
-    onTransfer(plaque.id, newOwnerId);
-    onClose();
+    updatePlaque({
+        id: plaque.id,
+        data: {
+            assignedBusinessId: newOwnerId,
+            status: 'SOLD' // Assuming transfer implies Sold, or keeping existing? Instructions didn't specify, defaulting to SOLD as per original mock logic
+        }
+    }, {
+        onSuccess: () => {
+            onSuccess();
+            onClose();
+        }
+    });
   };
 
   return (
@@ -94,7 +106,7 @@ export function TransferPlaqueModal({
             </Label>
             <Input
               id="currentOwner"
-              value={plaque?.ownerName || ''}
+              value={plaque?.ownerName || plaque?.assignedBusinessId || 'Unassigned'}
               readOnly
               className="col-span-3"
             />
@@ -119,7 +131,9 @@ export function TransferPlaqueModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleTransfer}>Transfer Plaque</Button>
+          <Button onClick={handleTransfer} disabled={isPending}>
+             {isPending ? 'Transferring...' : 'Transfer Plaque'}
+          </Button>
         </DialogFooter>
       </DialogContent>
 

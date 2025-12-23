@@ -8,10 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaquePreview } from '@/components/plaque/PlaquePreview';
-import { ArrowLeft, Save, Printer, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Printer, Upload, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import MediaLibrary, { MediaAsset } from '@/components/dashboard/media-library/MediaLibrary';
 
+// Create QR Plaque Page - Allows creating custom plaques with QR codes from library or device
 export default function CreatePlaquePage() {
     const router = useRouter();
     const [name, setName] = useState('');
@@ -19,7 +22,14 @@ export default function CreatePlaquePage() {
     const [description, setDescription] = useState('FOR PAYMENT');
     const [extraInfo, setExtraInfo] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSelectAsset = (asset: MediaAsset) => {
+        setQrCodeUrl(asset.url);
+        setIsLibraryOpen(false);
+        toast.success(`Selected QR Code: ${asset.name}`);
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -27,6 +37,7 @@ export default function CreatePlaquePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setQrCodeUrl(reader.result as string);
+                toast.success("Image uploaded from device");
             };
             reader.readAsDataURL(file);
         }
@@ -154,14 +165,26 @@ export default function CreatePlaquePage() {
                         {/* 4. QR Upload */}
                         <div className="space-y-2">
                             <Label>QR Code Image</Label>
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" /> Upload QR Code
-                                </Button>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setIsLibraryOpen(true)}
+                                    >
+                                        <ImageIcon className="mr-2 h-4 w-4" /> Select from Library
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <Upload className="mr-2 h-4 w-4" /> Upload from Device
+                                    </Button>
+                                </div>
+
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -169,7 +192,7 @@ export default function CreatePlaquePage() {
                                     className="hidden"
                                     onChange={handleFileChange}
                                 />
-                                {qrCodeUrl && <span className="text-sm text-green-600">Image uploaded</span>}
+                                {qrCodeUrl && <span className="text-sm text-green-600">Image selected</span>}
                             </div>
                         </div>
 
@@ -214,6 +237,21 @@ export default function CreatePlaquePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Media Library Dialog */}
+            <Dialog open={isLibraryOpen} onOpenChange={setIsLibraryOpen}>
+                <DialogContent className="max-w-5xl h-[80vh] flex flex-col p-0 overflow-hidden">
+                    <DialogHeader className="px-6 py-4 border-b">
+                        <DialogTitle>Select from Media Library</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-hidden">
+                        <MediaLibrary
+                            isModal
+                            onSelect={handleSelectAsset}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

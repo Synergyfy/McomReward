@@ -64,7 +64,7 @@ import {
   CreateContactDto,
   UpdateContactDto,
 } from '@/services/network-contacts/types';
-  type SortBy = 'name' | 'newest' | 'oldest' | 'active';
+type SortBy = 'name' | 'newest' | 'oldest' | 'active';
 
 // Tooltip content for tags
 const LOCATION_TAG_INFO = {
@@ -77,7 +77,6 @@ const RELATIONSHIP_TAG_INFO = {
   partner: 'Someone you collaborate with.',
   supplier: 'Someone who provides you items or services.',
   affiliate: 'Promotes your business.',
-  customer: 'Buys from you.',
 };
 
 const SOURCE_TAG_INFO = {
@@ -131,7 +130,7 @@ export default function FormContactsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
-  
+
 
   // Form state
   const [formData, setFormData] = useState<CreateContactDto>({
@@ -140,7 +139,7 @@ export default function FormContactsPage() {
     email: '',
     phone: '',
     locationTag: 'nearby',
-    relationshipTag: 'customer',
+    relationshipTag: 'partner',
     hasPermission: false,
   });
 
@@ -246,7 +245,7 @@ export default function FormContactsPage() {
       email: '',
       phone: '',
       locationTag: 'nearby',
-      relationshipTag: 'customer',
+      relationshipTag: 'partner',
       hasPermission: false,
     });
   };
@@ -429,7 +428,6 @@ export default function FormContactsPage() {
                         <SelectItem value="partner">Partner</SelectItem>
                         <SelectItem value="supplier">Supplier</SelectItem>
                         <SelectItem value="affiliate">Affiliate</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -875,7 +873,7 @@ export default function FormContactsPage() {
                     {/* <SelectItem value="nearby">Nearby</SelectItem>
                     <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
                     <SelectItem value="national">National</SelectItem> */}
-                     <SelectItem value="nearby" textValue="Nearby">
+                    <SelectItem value="nearby" textValue="Nearby">
                       <div className="flex flex-col items-start text-left">
                         <span className="font-medium">Nearby</span>
                         <span className="text-xs text-muted-foreground font-normal">
@@ -919,7 +917,6 @@ export default function FormContactsPage() {
                           <p><strong>Partner:</strong> Someone you collaborate with</p>
                           <p><strong>Supplier:</strong> Provides you items or services</p>
                           <p><strong>Affiliate:</strong> Promotes your business</p>
-                          <p><strong>Customer:</strong> Buys from you</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -935,10 +932,6 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    {/* <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem> */}
                     <SelectItem value="partner" textValue="Partner">
                       <div className="flex flex-col items-start text-left">
                         <span className="font-medium">Partner</span>
@@ -960,14 +953,6 @@ export default function FormContactsPage() {
                         <span className="font-medium">Affiliate</span>
                         <span className="text-xs text-muted-foreground font-normal">
                           {RELATIONSHIP_TAG_INFO.affiliate}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="customer" textValue="Customer">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Customer</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.customer}
                         </span>
                       </div>
                     </SelectItem>
@@ -1175,7 +1160,7 @@ export default function FormContactsPage() {
                     {/* <SelectItem value="nearby">Nearby</SelectItem>
                     <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
                     <SelectItem value="national">National</SelectItem> */}
-                     <SelectItem value="nearby" textValue="Nearby">
+                    <SelectItem value="nearby" textValue="Nearby">
                       <div className="flex flex-col items-start text-left">
                         <span className="font-medium">Nearby</span>
                         <span className="text-xs text-muted-foreground font-normal">
@@ -1219,7 +1204,6 @@ export default function FormContactsPage() {
                           <p><strong>Partner:</strong> Someone you collaborate with</p>
                           <p><strong>Supplier:</strong> Provides you items or services</p>
                           <p><strong>Affiliate:</strong> Promotes your business</p>
-                          <p><strong>Customer:</strong> Buys from you</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -1235,11 +1219,7 @@ export default function FormContactsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    {/* <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem> */}
-                     <SelectItem value="partner" textValue="Partner">
+                    <SelectItem value="partner" textValue="Partner">
                       <div className="flex flex-col items-start text-left">
                         <span className="font-medium">Partner</span>
                         <span className="text-xs text-muted-foreground font-normal">
@@ -1260,14 +1240,6 @@ export default function FormContactsPage() {
                         <span className="font-medium">Affiliate</span>
                         <span className="text-xs text-muted-foreground font-normal">
                           {RELATIONSHIP_TAG_INFO.affiliate}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="customer" textValue="Customer">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Customer</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.customer}
                         </span>
                       </div>
                     </SelectItem>

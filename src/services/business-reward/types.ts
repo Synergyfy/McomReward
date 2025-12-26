@@ -47,6 +47,9 @@ export interface BusinessReward {
   audience?: string;
   expiryDatetime?: string;
   status?: string;
+  is_mall_integrated?: boolean;
+  mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
+  mall_reward_value?: number;
 }
 
 export interface GetBusinessRewardsResponse extends PaginationMeta {
@@ -65,6 +68,9 @@ export interface CreateBusinessRewardDto {
   reward_type?: string;
   stamps_required?: number;
   disabled?: boolean;
+  is_mall_integrated?: boolean;
+  mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
+  mall_reward_value?: number;
 }
 
 export enum RewardStatus {
@@ -84,4 +90,7 @@ export interface UpdateBusinessRewardDto {
   reward_type?: string;
   stamps_required?: number;
   disabled?: boolean;
+  is_mall_integrated?: boolean;
+  mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
+  mall_reward_value?: number;
 }

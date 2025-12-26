@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
-  Image
+  Image,
+  Wallet
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -245,10 +246,7 @@ export default function BusinessSidebar({
             <SubItem href="/dashboard/campaign-performance" label="Performance" />
           </SidebarItem>
 
-          <SidebarItem icon={Ticket} label="Vouchers" hasSubmenu submenuKey="vouchers">
-            <SubItem href="/dashboard/vouchers/list" label="View Vouchers" />
-            <SubItem href="/dashboard/vouchers/create" label="Create Voucher" />
-          </SidebarItem>
+          <SidebarItem icon={Ticket} label="Mall Rewards" href="/dashboard/mall-rewards" />
 
           <SidebarItem icon={Heart} label="Wishlist Insights" href="/dashboard/wishlist-insights" />
 
@@ -281,6 +279,8 @@ export default function BusinessSidebar({
           <SidebarItem icon={User} label="Business Profile" href="/dashboard/profile" />
 
           <SidebarItem icon={Star} label="Tier" href="/dashboard/tier" />
+
+          <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
 
           <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
 

@@ -82,7 +82,7 @@ export interface CampaignResponse {
   footerText: string;
   rewards: Reward[];
   // Added to detect if it is a claimed campaign (has parent campaign)
-  campaign?: { id: string }; 
+  campaign?: { id: string };
   uniqueCode: string | null;
   createdAt: string;
   updatedAt: string;
@@ -137,7 +137,7 @@ export interface PublicCampaignResponse {
   audience_type: string;
   banner_url: string;
   // Adding camelCase alternatives as potential fix for display issues if API returns camelCase
-  bannerUrl?: string; 
+  bannerUrl?: string;
   logo_url: string | null;
   logoUrl?: string | null;
   cta_text: string;
@@ -159,13 +159,13 @@ export interface Business {
 export interface BusinessCampaign {
   id: string;
   uniqueCode: string;
-  
+
   // --- Relations ---
-  business: Business; 
+  business: Business;
   campaign?: { id: string }; // Null for campaigns created from scratch
   businessRewards: BusinessReward[]; // The linked business rewards
   rewards: Reward[]; // Admin rewards
-  
+
   // --- Copied/Set Fields ---
   name: string;
   campaign_type: CampaignType; // Map to CampaignType enum
@@ -181,19 +181,19 @@ export interface BusinessCampaign {
   cta_text_color: string;
   text_color: string;
   background_color: string;
-  
+
   signUpPoint: number;
   reward_type: RewardType; // Map to RewardType enum
   regular_points_threshold: number;
   matching_points_threshold: number;
-  
+
   // --- Statistics & Status ---
   total_points_earned: number;
   total_points_redeemed: number;
   total_matching_points_earned: number;
   matching_points_disabled_by_admin: boolean;
   disabled: boolean;
-  
+
   // --- Page Details ---
   earn_point_page_title: string;
   earn_point_page_description: string;
@@ -204,7 +204,7 @@ export interface BusinessCampaign {
   contact_email: string;
   contact_phone_number: string;
   footer_text: string;
-  
+
   // --- Timestamps ---
   created_at: string;
   updated_at: string;
@@ -226,18 +226,18 @@ export interface PaginatedCampaignsResponse extends PaginationMeta {
 export interface ParticipantCampaignSearchResponse {
   id: string;
   name: string;
-  campaign_type: string;
-  start_date: string;
-  end_date: string;
+  campaignType: string;
+  startDate: string;
+  endDate: string;
   disabled: boolean;
   business: {
     id: string;
     name: string;
   };
-  rewards: {
+  businessRewards: {
     id: string;
     title: string;
-    points_required: number;
+    pointRequired: number;
   }[];
 }
 
@@ -245,6 +245,7 @@ export interface OngoingCampaignReward {
   id: string;
   title: string;
   pointsRequired: number;
+  pointRequired?: number; // Variant from some API responses
   value: number;
   description: string;
   image: string;
@@ -304,6 +305,7 @@ export interface OngoingCampaign {
     name: string;
   };
   rewards: OngoingCampaignReward[];
+  businessRewards?: OngoingCampaignReward[];
   participantCount: number;
 }
 

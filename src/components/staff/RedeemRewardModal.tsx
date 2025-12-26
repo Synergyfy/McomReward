@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Loader2, ScanLine, Gift, Receipt, CheckCircle } from "lucide-react";
-import { useScanParticipant, useGenerateCode } from "@/services/participant-campaign-balance/hook";
+import { Loader2, ScanLine, Gift } from "lucide-react";
+import { useScanParticipant } from "@/services/participant-campaign-balance/hook";
 import { toast } from "sonner";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { OngoingCampaignReward } from "@/services/campaigns/types";
@@ -24,11 +23,7 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
   const [participantCode, setParticipantCode] = useState("");
   const [isScanningQR, setIsScanningQR] = useState(false);
 
-  // Generate Voucher State
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
-
   const { mutateAsync: scanParticipant, isPending: isRedeeming } = useScanParticipant();
-  const { mutateAsync: generateCode, isPending: isGenerating } = useGenerateCode();
 
   const handleRedeemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,26 +45,6 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
     }
   };
 
-  const handleGenerateVoucherSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      // Calculate expiresAt (default: 7 days from now)
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      const result = await generateCode({
-        campaignId,
-        type: 'REDEEM',
-        rewardId: reward.id,
-        expiresAt
-      });
-      setGeneratedCode(result.code);
-      toast.success("Voucher code generated successfully!");
-    } catch (error) {
-      toast.error("Failed to generate voucher code.");
-      console.error(error);
-    }
-  };
-
   const handleQRScan = (result: { rawValue: string }[]) => {
     if (result && result.length > 0) {
       setParticipantCode(result[0].rawValue);
@@ -81,7 +56,6 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
   const resetState = () => {
     setParticipantCode("");
     setIsScanningQR(false);
-    setGeneratedCode(null);
   };
 
   return (
@@ -102,20 +76,7 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="direct" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="direct" className="flex gap-2 items-center">
-              <QrCode className="h-4 w-4" />
-              <span>Direct Redeem</span>
-            </TabsTrigger>
-            <TabsTrigger value="voucher" className="flex gap-2 items-center">
-              <Receipt className="h-4 w-4" />
-              <span>Create Voucher</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Tab 1: Direct Redeem */}
-          <TabsContent value="direct" className="space-y-4 py-4">
+        <div className="space-y-4 py-4">
             {isScanningQR ? (
               <div className="relative w-full aspect-square max-w-[300px] mx-auto bg-black rounded-lg overflow-hidden">
                 <Scanner
@@ -167,35 +128,7 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
                 {isRedeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : `Deduct ${reward.pointsRequired} Points & Redeem`}
               </Button>
             </form>
-          </TabsContent>
-
-          {/* Tab 2: Generate Voucher */}
-          <TabsContent value="voucher" className="space-y-4 py-4">
-            <p className="text-sm text-gray-500">
-              Create a voucher code for this reward that the participant can claim later. The code will expire in 7 days.
-            </p>
-
-            {!generatedCode ? (
-              <form onSubmit={handleGenerateVoucherSubmit} className="space-y-4">
-                <Button type="submit" className="w-full" disabled={isGenerating}>
-                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Voucher Code"}
-                </Button>
-              </form>
-            ) : (
-              <div className="flex flex-col items-center justify-center space-y-4 bg-green-50 p-6 rounded-lg border border-green-100">
-                <CheckCircle className="h-12 w-12 text-green-500" />
-                <div className="text-center">
-                  <p className="text-sm text-green-600 font-medium">Voucher Generated!</p>
-                  <p className="text-3xl font-mono font-bold tracking-widest text-gray-900 mt-2">{generatedCode}</p>
-                  <p className="text-xs text-gray-500 mt-2">Give this code to the participant.</p>
-                </div>
-                <Button variant="outline" onClick={() => setGeneratedCode(null)} className="w-full">
-                  Create Another
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

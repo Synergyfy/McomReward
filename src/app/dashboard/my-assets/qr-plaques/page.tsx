@@ -15,6 +15,7 @@ import { PlaquePreview } from '@/components/plaque/PlaquePreview';
 import { useGetQrPlaques, useUpdateQrPlaque } from '@/services/qr-plaques/hook';
 import { QrPlaque } from '@/services/qr-plaques/types';
 import { format } from 'date-fns';
+import { RelationshipTag, LocationTag } from '@/services/network-contacts/types';
 
 // Import Modals
 import AssignPartnerModal from '@/components/dashboard/my-assets/qr-plaques/AssignPartnerModal';
@@ -115,11 +116,24 @@ export default function QRPlaquesPage() {
         modalSetter(true);
     };
 
-    const handleAssign = () => {
+    const handleAssign = (partnerDetails: {
+        name: string;
+        email: string;
+        businessName: string;
+        relationshipTag: RelationshipTag;
+        locationTag: LocationTag;
+    }) => {
         if (!selectedPlaque) return;
         updatePlaque({
             id: selectedPlaque.id,
-            data: { status: 'PENDING' }
+            data: {
+                status: 'PENDING',
+                assigneeName: partnerDetails.name,
+                assigneeEmail: partnerDetails.email,
+                assigneeBusinessName: partnerDetails.businessName,
+                relationshipTag: partnerDetails.relationshipTag,
+                locationTag: partnerDetails.locationTag
+            }
         }, {
             onSuccess: () => setAssignModalOpen(false)
         });

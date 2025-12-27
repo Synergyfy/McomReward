@@ -1,3 +1,6 @@
+
+import { RelationshipTag, LocationTag } from '../network-contacts/types';
+
 export interface QrPlaque {
   id: string;
   name: string;
@@ -42,6 +45,12 @@ export interface UpdateQrPlaqueRequest {
   status?: string;
   price?: number;
   assignedPartnerId?: string;
+  // Assignment fields
+  assigneeName?: string;
+  assigneeEmail?: string;
+  assigneeBusinessName?: string;
+  relationshipTag?: RelationshipTag;
+  locationTag?: LocationTag;
 }
 
 export interface AdminUpdateQrPlaqueRequest extends UpdateQrPlaqueRequest {

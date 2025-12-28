@@ -14,6 +14,8 @@ interface Reward {
     description: string;
     max_points?: number;
     points_required?: number;
+    max_stamps_required?: number;
+    stamps_required?: number;
     image: string;
     value: number;
     quantity: number;
@@ -24,6 +26,7 @@ interface Reward {
 interface PublicRewardCardProps {
     reward: Reward;
     userPoints?: number;
+    userStamps?: number;
     isMember?: boolean;
     onRedeem?: (reward: Reward) => void;
     className?: string;
@@ -32,12 +35,14 @@ interface PublicRewardCardProps {
 export default function PublicRewardCard({
     reward,
     userPoints = 0,
+    userStamps = 0,
     isMember = false,
     onRedeem,
     className
 }: PublicRewardCardProps) {
     // Handle points property inconsistency
     const pointsRequired = reward.max_points || reward.points_required || 0;
+    const stampsRequired = reward.max_stamps_required || reward.stamps_required || 0;
 
     // State for active image (defaults to main image)
     const [activeImage, setActiveImage] = useState<string>(reward.image || 'https://placehold.co/600x400?text=Reward');
@@ -47,8 +52,20 @@ export default function PublicRewardCard({
         setActiveImage(reward.image || 'https://placehold.co/600x400?text=Reward');
     }, [reward.image]);
 
-    const progress = isMember ? Math.min((userPoints / pointsRequired) * 100, 100) : 0;
-    const canRedeem = isMember && userPoints >= pointsRequired;
+    // Calculate progress based on whatever is required (simple version: use points if present, else stamps)
+    const progress = isMember 
+        ? pointsRequired > 0 
+            ? Math.min((userPoints / pointsRequired) * 100, 100)
+            : stampsRequired > 0
+                ? Math.min((userStamps / stampsRequired) * 100, 100)
+                : 0
+        : 0;
+    
+    const canRedeem = isMember && (
+        (pointsRequired > 0 && userPoints >= pointsRequired) ||
+        (stampsRequired > 0 && userStamps >= stampsRequired) ||
+        (pointsRequired === 0 && stampsRequired === 0)
+    );
 
     return (
         <div className={cn(
@@ -75,13 +92,22 @@ export default function PublicRewardCard({
                     </Badge>
                 </div>
 
-                {/* Points Badge (Floating) */}
-                <div className="absolute bottom-4 right-4">
-                    <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2 border border-white/50">
-                        <Trophy className="w-4 h-4 text-orange-500" />
-                        <span className="font-bold text-lg">{pointsRequired}</span>
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pts</span>
-                    </div>
+                {/* Requirements Badges (Floating) */}
+                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                    {pointsRequired > 0 && (
+                        <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2 border border-white/50">
+                            <Trophy className="w-4 h-4 text-orange-500" />
+                            <span className="font-bold text-lg">{pointsRequired}</span>
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pts</span>
+                        </div>
+                    )}
+                    {stampsRequired > 0 && (
+                        <div className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2 border border-white/50">
+                            <Gift className="w-4 h-4 text-blue-500" />
+                            <span className="font-bold text-lg">{stampsRequired}</span>
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Stamps</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -132,7 +158,14 @@ export default function PublicRewardCard({
                                     "transition-colors",
                                     canRedeem ? "text-green-600" : "text-gray-500"
                                 )}>
-                                    {canRedeem ? "Ready to Redeem!" : `${pointsRequired - userPoints} points to go`}
+                                    {canRedeem 
+                                        ? "Ready to Redeem!" 
+                                        : pointsRequired > 0 && userPoints < pointsRequired
+                                            ? `${pointsRequired - userPoints} points to go`
+                                            : stampsRequired > 0 && userStamps < stampsRequired
+                                                ? `${stampsRequired - userStamps} stamps to go`
+                                                : "Locked"
+                                    }
                                 </span>
                                 <span className="text-gray-400">{Math.round(progress)}%</span>
                             </div>

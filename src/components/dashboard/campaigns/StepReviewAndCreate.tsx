@@ -25,7 +25,7 @@ import ContactUsPagePreview from './previews/ContactUsPagePreview';
 import FooterPreview from './previews/FooterPreview';
 import { useCreateCampaign, useUpdateCampaign } from '@/services/campaigns/hook';
 import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlist';
-import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload } from '@/services/campaigns/types';
+import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload, BusinessCampaign } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
 
@@ -33,9 +33,10 @@ interface StepProps {
   onBack: () => void;
   campaignId?: string;
   isClaimed?: boolean;
+  originalCampaign?: CampaignResponse | BusinessCampaign;
 }
 
-export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = false }: StepProps) {
+export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = false, originalCampaign }: StepProps) {
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -45,6 +46,11 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
   const createCampaignMutation = useCreateCampaign();
   const updateCampaignMutation = useUpdateCampaign();
   const createCampaignFromWishlistMutation = useCreateCampaignFromWishlist();
+
+  // Type guard to determine if the campaign is a BusinessCampaign
+  const isBusinessCampaign = (campaign: CampaignResponse | BusinessCampaign): campaign is BusinessCampaign => {
+    return (campaign as BusinessCampaign).campaign_type !== undefined;
+  };
 
   const transformedCampaign: CampaignResponse = useMemo(() => {
     // Helper function to convert optional Date to ISO string
@@ -139,49 +145,122 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         'wishlist_target': 'target_wishlist'
       };
 
-      const commonPayload = {
-        name: formData.campaignName,
-        campaign_type: campaignTypeMap[formData.campaignType] || 'qr_code',
-        campaign_message: formData.campaignMessage,
-        start_date: formData.startDate?.toISOString() || new Date().toISOString(),
-        end_date: formData.endDate?.toISOString() || new Date().toISOString(),
-        quantity: Number(formData.rewardsAvailable) || 0,
-        audience_type: formData.audienceType.map(t => audienceTypeMap[t] || t).join(','),
-        signUpPoint: 0,
-        banner_url: bannerUrl || '',
-        logo_url: logoUrl || '',
-        cta_text: formData.ctaButtonText,
-        cta_background_color: formData.ctaBgColor,
-        cta_text_color: formData.ctaTextColor,
-        text_color: formData.bgColorTextColor,
-        background_color: formData.bgColor,
-        reward_type: 'regular',
-        regular_points_threshold: 0,
-        matching_points_threshold: 0,
-        earn_point_page_title: formData.earnTitle || '',
-        earn_point_page_description: formData.earnText || '',
-        redeem_reward_page_title: formData.redeemTitle || '',
-        redeem_reward_page_description: formData.redeemText || '',
-        contact_us_page_title: formData.contactTitle || '',
-        contact_us_page_description: formData.contactText || '',
-        contact_email: formData.contactEmail || '',
-        contact_phone_number: formData.contactPhone || '',
-        footer_text: formData.footerText || '',
-        // We handle reward linkage specifically below for updates
-      };
+      const campaign_type = campaignTypeMap[formData.campaignType] || 'qr_code';
+      const audience_type = formData.audienceType.map(t => audienceTypeMap[t] || t).join(',');
 
       if (campaignId) {
         // Update existing campaign
-        const updatePayload: UpdateCampaignPayload = { ...commonPayload };
+        const updatePayload: UpdateCampaignPayload = {};
 
-        if (isClaimed) {
-          // Claimed campaigns (Admin Templates) must use reward_ids
-          updatePayload.reward_ids = formData.rewardIds;
-          delete updatePayload.business_reward_ids;
+        if (originalCampaign) {
+          const currentCampaign = originalCampaign;
+          
+          const oldName = currentCampaign.name;
+          const oldCampaignType = isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_type : currentCampaign.campaignType;
+          const oldCampaignMessage = isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_message : currentCampaign.campaignMessage;
+          const oldStartDate = isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate;
+          const oldEndDate = isBusinessCampaign(currentCampaign) ? currentCampaign.end_date : currentCampaign.endDate;
+          const oldQuantity = currentCampaign.quantity;
+          const oldAudienceType = isBusinessCampaign(currentCampaign) ? currentCampaign.audience_type : currentCampaign.audienceType;
+          const oldBannerUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.banner_url : currentCampaign.bannerUrl;
+          const oldLogoUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.logo_url : currentCampaign.logoUrl;
+          const oldCtaText = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text : currentCampaign.ctaText;
+          const oldCtaBgColor = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_background_color : currentCampaign.ctaBackgroundColor;
+          const oldCtaTextColor = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text_color : currentCampaign.ctaTextColor;
+          const oldTextColor = isBusinessCampaign(currentCampaign) ? currentCampaign.text_color : currentCampaign.textColor;
+          const oldBgColor = isBusinessCampaign(currentCampaign) ? currentCampaign.background_color : currentCampaign.backgroundColor;
+          const oldEarnTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_title : currentCampaign.earnPointPageTitle;
+          const oldEarnText = isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_description : currentCampaign.earnPointPageDescription;
+          const oldRedeemTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_title : currentCampaign.redeemRewardPageTitle;
+          const oldRedeemText = isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_description : currentCampaign.redeemRewardPageDescription;
+          const oldContactTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_title : currentCampaign.contactUsPageTitle;
+          const oldContactText = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_description : currentCampaign.contactUsPageDescription;
+          const oldContactEmail = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_email : currentCampaign.contactEmail;
+          const oldContactPhone = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_phone_number : currentCampaign.contactPhoneNumber;
+          const oldFooterText = isBusinessCampaign(currentCampaign) ? currentCampaign.footer_text : currentCampaign.footerText;
+          
+          const oldRewards = isBusinessCampaign(currentCampaign) ? currentCampaign.businessRewards : currentCampaign.rewards || [];
+          const oldRewardIds = oldRewards.map((r: { id: string }) => r.id).sort();
+          const newRewardIds = [...formData.rewardIds].sort();
+
+          if (formData.campaignName !== oldName) updatePayload.name = formData.campaignName;
+          if (campaign_type !== oldCampaignType) updatePayload.campaign_type = campaign_type;
+          if (formData.campaignMessage !== oldCampaignMessage) updatePayload.campaign_message = formData.campaignMessage;
+          
+          // Date comparisons
+          if (formData.startDate && (!oldStartDate || new Date(formData.startDate).getTime() !== new Date(oldStartDate).getTime())) {
+            updatePayload.start_date = formData.startDate.toISOString();
+          }
+          if (formData.endDate && (!oldEndDate || new Date(formData.endDate).getTime() !== new Date(oldEndDate).getTime())) {
+            updatePayload.end_date = formData.endDate.toISOString();
+          }
+
+          if (Number(formData.rewardsAvailable) !== oldQuantity) updatePayload.quantity = Number(formData.rewardsAvailable);
+          if (audience_type !== oldAudienceType) updatePayload.audience_type = audience_type;
+          if (bannerUrl !== oldBannerUrl) updatePayload.banner_url = bannerUrl || '';
+          if (logoUrl !== oldLogoUrl) updatePayload.logo_url = logoUrl || '';
+          if (formData.ctaButtonText !== oldCtaText) updatePayload.cta_text = formData.ctaButtonText as any;
+          if (formData.ctaBgColor !== oldCtaBgColor) updatePayload.cta_background_color = formData.ctaBgColor;
+          if (formData.ctaTextColor !== oldCtaTextColor) updatePayload.cta_text_color = formData.ctaTextColor;
+          if (formData.bgColorTextColor !== oldTextColor) updatePayload.text_color = formData.bgColorTextColor;
+          if (formData.bgColor !== oldBgColor) updatePayload.background_color = formData.bgColor;
+          
+          if (formData.earnTitle !== oldEarnTitle) updatePayload.earn_point_page_title = formData.earnTitle;
+          if (formData.earnText !== oldEarnText) updatePayload.earn_point_page_description = formData.earnText;
+          if (formData.redeemTitle !== oldRedeemTitle) updatePayload.redeem_reward_page_title = formData.redeemTitle;
+          if (formData.redeemText !== oldRedeemText) updatePayload.redeem_reward_page_description = formData.redeemText;
+          if (formData.contactTitle !== oldContactTitle) updatePayload.contact_us_page_title = formData.contactTitle;
+          if (formData.contactText !== oldContactText) updatePayload.contact_us_page_description = formData.contactText;
+          if (formData.contactEmail !== oldContactEmail) updatePayload.contact_email = formData.contactEmail;
+          if (formData.contactPhone !== oldContactPhone) updatePayload.contact_phone_number = formData.contactPhone;
+          if (formData.footerText !== oldFooterText) updatePayload.footer_text = formData.footerText;
+
+          // Reward IDs comparison
+          const rewardIdsChanged = JSON.stringify(oldRewardIds) !== JSON.stringify(newRewardIds);
+          if (rewardIdsChanged) {
+            if (isClaimed) {
+              updatePayload.reward_ids = formData.rewardIds;
+            } else {
+              updatePayload.business_reward_ids = formData.rewardIds;
+            }
+          }
         } else {
-          // Custom campaigns must use business_reward_ids
-          updatePayload.business_reward_ids = formData.rewardIds;
-          delete updatePayload.reward_ids;
+          // Fallback if originalCampaign is missing
+          updatePayload.name = formData.campaignName;
+          updatePayload.campaign_type = campaign_type;
+          updatePayload.campaign_message = formData.campaignMessage;
+          updatePayload.start_date = formData.startDate?.toISOString() || new Date().toISOString();
+          updatePayload.end_date = formData.endDate?.toISOString() || new Date().toISOString();
+          updatePayload.quantity = Number(formData.rewardsAvailable);
+          updatePayload.audience_type = audience_type;
+          updatePayload.banner_url = bannerUrl || '';
+          updatePayload.logo_url = logoUrl || '';
+          updatePayload.cta_text = formData.ctaButtonText as any;
+          updatePayload.cta_background_color = formData.ctaBgColor;
+          updatePayload.cta_text_color = formData.ctaTextColor;
+          updatePayload.text_color = formData.bgColorTextColor;
+          updatePayload.background_color = formData.bgColor;
+          updatePayload.earn_point_page_title = formData.earnTitle;
+          updatePayload.earn_point_page_description = formData.earnText;
+          updatePayload.redeem_reward_page_title = formData.redeemTitle;
+          updatePayload.redeem_reward_page_description = formData.redeemText;
+          updatePayload.contact_us_page_title = formData.contactTitle;
+          updatePayload.contact_us_page_description = formData.contactText;
+          updatePayload.contact_email = formData.contactEmail;
+          updatePayload.contact_phone_number = formData.contactPhone;
+          updatePayload.footer_text = formData.footerText;
+
+          if (isClaimed) {
+            updatePayload.reward_ids = formData.rewardIds;
+          } else {
+            updatePayload.business_reward_ids = formData.rewardIds;
+          }
+        }
+
+        if (Object.keys(updatePayload).length === 0) {
+          toast.info("No changes detected.");
+          setShowSuccessDialog(true);
+          return;
         }
 
         await updateCampaignMutation.mutateAsync({
@@ -191,7 +270,36 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         toast.success("Campaign updated successfully");
       } else {
         // Create new campaign
-        const createPayload = { ...commonPayload, business_reward_ids: formData.rewardIds };
+        const createPayload = {
+          name: formData.campaignName,
+          campaign_type,
+          campaign_message: formData.campaignMessage,
+          start_date: formData.startDate?.toISOString() || new Date().toISOString(),
+          end_date: formData.endDate?.toISOString() || new Date().toISOString(),
+          quantity: Number(formData.rewardsAvailable) || 0,
+          audience_type,
+          signUpPoint: 0,
+          banner_url: bannerUrl || '',
+          logo_url: logoUrl || '',
+          cta_text: formData.ctaButtonText,
+          cta_background_color: formData.ctaBgColor,
+          cta_text_color: formData.ctaTextColor,
+          text_color: formData.bgColorTextColor,
+          background_color: formData.bgColor,
+          reward_type: 'regular',
+          regular_points_threshold: 0,
+          matching_points_threshold: 0,
+          earn_point_page_title: formData.earnTitle || '',
+          earn_point_page_description: formData.earnText || '',
+          redeem_reward_page_title: formData.redeemTitle || '',
+          redeem_reward_page_description: formData.redeemText || '',
+          contact_us_page_title: formData.contactTitle || '',
+          contact_us_page_description: formData.contactText || '',
+          contact_email: formData.contactEmail || '',
+          contact_phone_number: formData.contactPhone || '',
+          footer_text: formData.footerText || '',
+          business_reward_ids: formData.rewardIds
+        };
 
         if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
           // Create campaign from wishlist

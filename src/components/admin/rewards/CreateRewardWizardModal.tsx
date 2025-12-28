@@ -62,6 +62,7 @@ export default function CreateRewardWizardModal({
   const [description, setDescription] = useState('');
   const [value, setValue] = useState<number | string>(0);
   const [pointsRequired, setPointsRequired] = useState<number | string>(0);
+  const [maxStampsRequired, setMaxStampsRequired] = useState<number | string>(0);
   const [badgeLevel, setBadgeLevel] = useState<string[]>([]);
   const [expiry, setExpiry] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -93,6 +94,7 @@ export default function CreateRewardWizardModal({
     setDescription('');
     setValue(0);
     setPointsRequired(0);
+    setMaxStampsRequired(0);
     setBadgeLevel([]);
     setExpiry(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
     setSelectedFile(null);
@@ -114,6 +116,7 @@ export default function CreateRewardWizardModal({
         setRewardType(reward.type);
         setValue(reward.value);
        setPointsRequired(reward.max_points ?? '');
+       setMaxStampsRequired(reward.max_stamps_required ?? '');
         setExpiry(reward.expiry ? new Date(reward.expiry) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
         setImagePreviewUrl(reward.image);
         if (reward.gallery && Array.isArray(reward.gallery)) {
@@ -180,7 +183,7 @@ export default function CreateRewardWizardModal({
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Max Points or Badge Level is required.';
+    if (Number(pointsRequired) <= 0 && Number(maxStampsRequired) <= 0 && badgeLevel.length === 0) newErrors.pointsOrBadge = 'Max Points, Max Stamps, or Badge Level is required.';
     if (!imagePreviewUrl) newErrors.image = 'Image is required.';
     setErrors(newErrors);
   }, [rewardType, name, description, value, pointsRequired, badgeLevel, imagePreviewUrl]);
@@ -253,6 +256,7 @@ export default function CreateRewardWizardModal({
       const payload: CreateRewardRequest = {
         title: name,
         max_points: Number(pointsRequired),
+        max_stamps_required: Number(maxStampsRequired),
         value: Number(value),
         description,
         image: finalImageUrl,
@@ -392,6 +396,13 @@ export default function CreateRewardWizardModal({
                   <p className="text-xs text-muted-foreground mb-2">Points needed to redeem this reward</p>
                   <Input id="reward-points-input" type="number" placeholder="0" value={pointsRequired} onChange={(e) => setPointsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
                 </div>
+              </div>
+
+              {/* Max Stamps */}
+              <div>
+                <label htmlFor="maxStamps" className="block text-sm font-medium mb-1">Maximum Stamps</label>
+                <p className="text-xs text-muted-foreground mb-2">Stamps needed to redeem this reward (optional)</p>
+                <Input id="reward-stamps-input" type="number" placeholder="0" value={maxStampsRequired} onChange={(e) => setMaxStampsRequired(e.target.value === '' ? '' : Number(e.target.value))} />
               </div>
 
               {/* Badge Level and Status */}
@@ -538,6 +549,7 @@ export default function CreateRewardWizardModal({
                     <div className="flex justify-between"><span className="font-medium">Type:</span><span>{rewardTypes.find(t => t.value === rewardType)?.label}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Value:</span><span>£{value}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Max Points:</span><span>{pointsRequired}</span></div>
+                    <div className="flex justify-between"><span className="font-medium">Max Stamps:</span><span>{maxStampsRequired}</span></div>
                     {badgeLevel.length > 0 && (
                       <div className="flex justify-between">
                         <span className="font-medium">Badge Level:</span>

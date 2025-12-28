@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
+import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,9 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [stampsRequired, setStampsRequired] = useState<number | string>(reward?.stampsRequired || 0);
   const [rewardType, setRewardType] = useState<string>(reward?.rewardType || 'Voucher');
   const [maxPoints, setMaxPoints] = useState<number | string>(reward?.maxPoints || 0);
+  const [isMallIntegrated, setIsMallIntegrated] = useState<boolean>(reward?.is_mall_integrated || false);
+  const [mallRewardType, setMallRewardType] = useState<string>(reward?.mall_reward_type || 'VOUCHER');
+  const [mallRewardValue, setMallRewardValue] = useState<number | string>(reward?.mall_reward_value || 0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
@@ -218,13 +222,18 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         description,
         value: 0, // Value removed from UI, defaulting to 0
         pointsRequired: Number(pointsRequired),
+        points_required: Number(pointsRequired),
         maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
         gallery: finalGalleryUrls,
         quantity: Number(quantity),
         stampsRequired: Number(stampsRequired),
+        stamps_required: Number(stampsRequired),
         rewardType,
         disabled,
+        is_mall_integrated: isMallIntegrated,
+        mall_reward_type: mallRewardType as 'VOUCHER' | 'GIFT_CARD' | 'COUPON',
+        mall_reward_value: Number(mallRewardValue),
         createdAt: reward?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -317,14 +326,56 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Voucher" textValue="Voucher">Voucher</SelectItem>
-                      <SelectItem value="Product" textValue="Product">Product</SelectItem>
-                      <SelectItem value="Service" textValue="Service">Service</SelectItem>
-                      <SelectItem value="Discount" textValue="Discount">Discount</SelectItem>
+                      <SelectItem value="Voucher">Voucher</SelectItem>
+                      <SelectItem value="gift card">Gift Card</SelectItem>
+                      <SelectItem value="coupon">Coupon</SelectItem>
+                      <SelectItem value="point offer">Point Offer</SelectItem>
+                      <SelectItem value="physical product">Physical Product</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500 mt-1">The type of reward.</p>
                 </div>
+              </div>
+
+              <div className="border p-4 rounded-lg space-y-4 bg-orange-50/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium">Mall Integration</label>
+                    <p className="text-xs text-gray-500">Integrate this reward with the Mcom Mall platform.</p>
+                  </div>
+                  <Switch
+                    checked={isMallIntegrated}
+                    onCheckedChange={setIsMallIntegrated}
+                  />
+                </div>
+
+                {isMallIntegrated && (
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Mall Reward Type</label>
+                      <Select value={mallRewardType} onValueChange={setMallRewardType}>
+                        <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Select mall type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="VOUCHER">Voucher</SelectItem>
+                          <SelectItem value="GIFT_CARD">Gift Card</SelectItem>
+                          <SelectItem value="COUPON">Coupon</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Mall Reward Value (£)</label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={mallRewardValue}
+                        onChange={(e) => setMallRewardValue(e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -432,6 +483,21 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                       <span className="font-medium">Type:</span>
                       <span>{rewardType}</span>
                     </div>
+                    {isMallIntegrated && (
+                      <div className="mt-2 pt-2 border-t border-dashed">
+                        <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 mb-2">
+                          Mall Integrated
+                        </Badge>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Mall Type:</span>
+                          <span>{mallRewardType}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Mall Value:</span>
+                          <span>£{mallRewardValue}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

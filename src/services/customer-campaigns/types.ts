@@ -249,22 +249,27 @@ export interface UniqueCodeResponse {
   uniqueCode: string;
 }
 
+import { BusinessReward } from "../business-reward/types";
+
+export type PointHistoryType = 'EARN' | 'REDEEM' | 'MATCHING' | 'PURCHASED_EXTRA';
+
 export interface ParticipantHistoryItem {
   id: string;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  type: 'EARN' | 'REDEEM';
+  type: PointHistoryType;
   points: number;
   redemptionCode: string | null;
   description: string;
   campaign: {
     id: string;
     name: string;
-  };
+  } | null;
   reward: {
     title: string;
   } | null;
+  businessReward: BusinessReward | null;
   business: {
     name: string;
   };

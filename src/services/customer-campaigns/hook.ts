@@ -108,7 +108,9 @@ export const useJoinCampaign = () => {
 
 // Check Join Status
 const checkCampaignJoinStatus = async (campaignId: string): Promise<IsJoinedResponse> => {
-  const { data } = await api.get<IsJoinedResponse>(`/participant-campaign-balance/is-joined/${campaignId}`);
+  const { data } = await api.get<IsJoinedResponse>('/participant-campaign-balance/is-joined', {
+    params: { campaignId }
+  });
   return data;
 };
 
@@ -117,7 +119,7 @@ export const useCheckCampaignJoinStatus = (campaignId: string) => {
     queryKey: ['isJoined', campaignId],
     queryFn: () => checkCampaignJoinStatus(campaignId),
     enabled: !!campaignId,
-    retry: false, // Don't retry if it fails (e.g. 401 if not logged in, though we might want to handle that gracefully)
+    retry: false,
   });
 };
 
@@ -301,5 +303,20 @@ export const useGetMyCampaigns = (page: number = 1, limit: number = 10) => {
   return useQuery({
     queryKey: ['myCampaigns', page, limit],
     queryFn: () => getMyCampaigns(page, limit),
+  });
+};
+
+// Get Participant Mall Reward History
+const getParticipantMallRewardHistory = async (page: number, limit: number): Promise<ParticipantHistoryResponse> => {
+  const { data } = await api.get<ParticipantHistoryResponse>('/participant/mall-reward-history', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetParticipantMallRewardHistory = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['participantMallRewardHistory', page, limit],
+    queryFn: () => getParticipantMallRewardHistory(page, limit),
   });
 };

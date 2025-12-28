@@ -168,6 +168,12 @@ const RewardItem = ({ reward, onEdit, onDuplicate, onDelete }: {
             {/* Use maxPoints from payload, fallback to max_points or pointRequired for safety */}
             <span>{reward.maxPoints || reward.max_points || reward.pointRequired}</span>
           </div>
+          { (reward.max_stamps_required || (reward as any).maxStampsRequired) && (
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-500">Max Stamps:</span>
+              <span>{reward.max_stamps_required || (reward as any).maxStampsRequired}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="font-medium text-gray-500">Created:</span>
             <span>{new Date(reward.createdAt).toLocaleDateString()}</span>

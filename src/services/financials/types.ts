@@ -14,6 +14,7 @@ export interface TierQuotas {
   maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
+  monthlyRewardBudget: number;
   maxTeamMembers: number;
 }
 

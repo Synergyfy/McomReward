@@ -84,21 +84,21 @@ export default function CustomersPage() {
                         <div className="flex items-center text-sm text-gray-600 gap-2">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {new Date(campaign.start_date).toLocaleDateString()} - {new Date(campaign.end_date).toLocaleDateString()}
+                            {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
                           </span>
                         </div>
 
                         <div className="pt-2">
                           <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Rewards Available</p>
                           <div className="flex flex-wrap gap-2">
-                            {campaign.rewards.slice(0, 3).map((reward) => (
+                            {(campaign.businessRewards ?? []).slice(0, 3).map((reward) => (
                               <Badge key={reward.id} variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                                {reward.title} ({reward.points_required} pts)
+                                {reward.title} ({reward.pointRequired} pts)
                               </Badge>
                             ))}
-                            {campaign.rewards.length > 3 && (
+                            {(campaign.businessRewards?.length ?? 0) > 3 && (
                               <Badge variant="outline" className="text-gray-500">
-                                +{campaign.rewards.length - 3} more
+                                +{campaign.businessRewards.length - 3} more
                               </Badge>
                             )}
                           </div>

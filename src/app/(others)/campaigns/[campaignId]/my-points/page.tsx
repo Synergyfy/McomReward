@@ -26,6 +26,7 @@ import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
 import { useGetParticipantBalance, useCheckCampaignJoinStatus, useGetParticipantHistory } from '@/services/customer-campaigns/hook';
+import LoadingSpinner from '@/components/ui/Loading';
 
 
 
@@ -36,13 +37,13 @@ interface PageProps {
 export default function MyPointsPage({ params }: PageProps) {
   const { campaignId } = use(params);
   const { isCampaignJoined } = useCampaignMembership();
-  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
+  const { data: joinStatus, isLoading: isStatusLoading } = useCheckCampaignJoinStatus(campaignId);
   const { data: balance } = useGetParticipantBalance(campaignId);
   const { data: historyData } = useGetParticipantHistory(campaignId);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const router = useRouter();
 
-  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
+  const isMember = !!joinStatus?.isJoined;
 
   const pointBalance = balance?.balance || 0;
 
@@ -58,6 +59,10 @@ export default function MyPointsPage({ params }: PageProps) {
       router.push('/campaigns');
     }
   };
+
+  if (isStatusLoading) {
+    return <LoadingSpinner />;
+  }
 
   if (!isMember) {
     return (

@@ -29,6 +29,7 @@ const defaultConfiguration: TierConfiguration = {
     maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
+    monthlyRewardBudget: 0,
     maxTeamMembers: 1,
   },
   featureFlags: {
@@ -460,6 +461,15 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
             type="number"
             value={quotas.monthlyPointsAllowance ?? ''}
             onChange={(e) => onChange('monthlyPointsAllowance', parseInt(e.target.value))}
+            placeholder="Inherit"
+          />
+        </div>
+        <div>
+          <LabelWithTooltip label="Monthly Reward Budget" tooltip="The monetary budget allocated for Gift Cards, Vouchers, and Coupons rewards each month. Once exhausted, businesses can top up their balance to continue rewarding customers." />
+          <Input
+            type="number"
+            value={quotas.monthlyRewardBudget ?? ''}
+            onChange={(e) => onChange('monthlyRewardBudget', parseInt(e.target.value))}
             placeholder="Inherit"
           />
         </div>

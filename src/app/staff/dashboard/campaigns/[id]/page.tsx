@@ -4,13 +4,14 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetStaffCampaignById } from "@/services/campaigns/hook";
 import Loader from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Users, Flame, Tag, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Flame, Tag, MapPin, Gift } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { OngoingCampaignReward } from "@/services/campaigns/types";
 import { AwardPointsModal } from "@/components/staff/AwardPointsModal";
 import { RedeemRewardModal } from "@/components/staff/RedeemRewardModal";
+import { ProcessRedemptionModal } from "@/components/staff/ProcessRedemptionModal";
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -102,10 +103,44 @@ export default function CampaignDetailsPage() {
             <CardHeader>
               <CardTitle>About this Campaign</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-700 leading-relaxed">
-                {campaign.campaignMessage}
-              </p>
+            <CardContent className="space-y-6">
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                {/* Render HTML if it looks like HTML, otherwise just text */}
+                {/<[a-z][\s\S]*>/i.test(campaign.campaignMessage) ? (
+                  <div dangerouslySetInnerHTML={{ __html: campaign.campaignMessage }} />
+                ) : (
+                  <p>{campaign.campaignMessage}</p>
+                )}
+              </div>
+
+              {/* How to Participate Section */}
+              {campaign.howToEarn && campaign.howToEarn.length > 0 && (
+                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">How to Participate</h3>
+                  <ul className="space-y-3">
+                    {campaign.howToEarn.map((step, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
+                          {index + 1}
+                        </div>
+                        <p className="text-sm text-gray-700 pt-0.5">{step}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Terms Section */}
+              {campaign.termsAndConditions && campaign.termsAndConditions.length > 0 && (
+                <div className="bg-gray-50/50 rounded-xl p-5 border border-dashed border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Terms & Conditions</h3>
+                  <ul className="space-y-2 list-disc pl-5 text-gray-600 text-xs text-muted-foreground">
+                    {campaign.termsAndConditions.map((term, index) => (
+                      <li key={index}>{term}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-4 pt-2">
                 <div className="flex items-center gap-2 text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
@@ -155,24 +190,45 @@ export default function CampaignDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Award Points Section */}
-          <Card className="border-green-100 bg-green-50/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800">
-                <Flame className="h-5 w-5 text-green-600" />
-                Award Points
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-green-700">
-                Select this option to award points to a customer for a purchase or action. You can scan their QR code, generate a receipt code, or manually verify.
-              </p>
-              <AwardPointsModal
-                campaignId={campaign.id}
-                campaignName={campaign.name}
-              />
-            </CardContent>
-          </Card>
+          {/* Award & Redeem Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-green-100 bg-green-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-800">
+                  <Flame className="h-5 w-5 text-green-600" />
+                  Award Points
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-green-700">
+                  Award points to a customer for a purchase or action. Scan QR, generate code, or manual verify.
+                </p>
+                <AwardPointsModal
+                  campaignId={campaign.id}
+                  campaignName={campaign.name}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-orange-100 bg-orange-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-800">
+                  <Gift className="h-5 w-5 text-orange-600" />
+                  Redeem Reward
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-orange-700">
+                  Process a reward redemption for a customer. select a reward and scan their QR code.
+                </p>
+                <ProcessRedemptionModal
+                  campaignId={campaign.id}
+                  campaignName={campaign.name}
+                  businessRewards={campaign.businessRewards || []}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Rewards Section */}
           <div>
@@ -180,9 +236,9 @@ export default function CampaignDetailsPage() {
               <Tag className="h-5 w-5 text-orange-500" />
               Available Rewards
             </h2>
-            {campaign.rewards && campaign.rewards.length > 0 ? (
+            {[...(campaign.rewards || []), ...(campaign.businessRewards || [])].length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {campaign.rewards.map((reward: OngoingCampaignReward) => (
+                {[...(campaign.rewards || []), ...(campaign.businessRewards || [])].map((reward: OngoingCampaignReward) => (
                   <Card key={reward.id} className="overflow-hidden hover:shadow-md transition-shadow">
                     <div className="relative h-32 bg-gray-200">
                       {reward.image ? (
@@ -197,9 +253,9 @@ export default function CampaignDetailsPage() {
                           No Image
                         </div>
                       )}
-                      {reward.pointsRequired > 0 && (
+                      {(reward.pointRequired ?? reward.pointsRequired ?? 0) > 0 && (
                         <Badge className="absolute top-2 right-2 bg-orange-500">
-                          {reward.pointsRequired} pts
+                          {reward.pointRequired ?? reward.pointsRequired} pts
                         </Badge>
                       )}
                     </div>
@@ -274,7 +330,7 @@ export default function CampaignDetailsPage() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm font-medium text-gray-600">Participants</span>
-                  <span className="text-sm font-bold text-gray-900">{campaign.participantCount.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-gray-900">{(campaign.participantCount ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-blue-500 h-2 rounded-full" style={{ width: '100%' }}></div>
@@ -284,11 +340,11 @@ export default function CampaignDetailsPage() {
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Points Earned</p>
-                  <p className="font-bold text-green-600">{campaign.totalPointsEarned.toLocaleString()}</p>
+                  <p className="font-bold text-green-600">{(campaign.totalPointsEarned ?? 0).toLocaleString()}</p>
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Points Redeemed</p>
-                  <p className="font-bold text-orange-600">{campaign.totalPointsRedeemed.toLocaleString()}</p>
+                  <p className="font-bold text-orange-600">{(campaign.totalPointsRedeemed ?? 0).toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>

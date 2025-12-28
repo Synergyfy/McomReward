@@ -131,7 +131,7 @@ function EditCampaignContent() {
       case 8:
         return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
       case 9:
-        return <StepReviewAndCreate onBack={handleBack} campaignId={campaignId} isClaimed={isClaimed} />;
+        return <StepReviewAndCreate onBack={handleBack} campaignId={campaignId} isClaimed={isClaimed} originalCampaign={campaignData} />;
       default:
         return null;
     }

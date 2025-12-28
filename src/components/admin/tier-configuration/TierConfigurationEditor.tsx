@@ -32,6 +32,7 @@ const DEFAULT_QUOTAS: TierQuotas = {
     maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
+    monthlyRewardBudget: 0,
     maxTeamMembers: 1
 };
 

@@ -1,6 +1,7 @@
 export interface CreateRewardRequest {
   title: string;
-  max_points: number;
+  max_points?: number;
+  max_stamps_required?: number;
   value: number;
   description: string;
   image: string;
@@ -19,6 +20,7 @@ export interface UpdateRewardRequest {
   title?: string;
   pointsRequired?: number;
   max_points?: number;
+  max_stamps_required?: number;
   value?: number;
   description?: string;
   image?: string;
@@ -37,6 +39,7 @@ export interface RewardResponse {
   pointRequired: number;
   maxPoints: number; // Corrected to match backend payload
   max_points?: number; // Kept as optional just in case
+  max_stamps_required?: number;
   value: number;
   description: string;
   image: string;

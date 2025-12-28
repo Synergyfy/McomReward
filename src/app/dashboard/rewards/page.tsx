@@ -246,13 +246,16 @@ export default function BusinessRewardsPage() {
           payload: {
             title: rewardData.title,
             description: rewardData.description,
-            point_required: rewardData.pointsRequired,
+            points_required: rewardData.pointsRequired,
             image: rewardData.image,
             gallery: rewardData.gallery,
             quantity: rewardData.quantity,
             reward_type: rewardData.rewardType,
             stamps_required: rewardData.stampsRequired,
             disabled: rewardData.disabled,
+            is_mall_integrated: rewardData.is_mall_integrated,
+            mall_reward_type: rewardData.mall_reward_type,
+            mall_reward_value: rewardData.mall_reward_value,
           },
         }, {
           onSuccess: () => {
@@ -287,7 +290,7 @@ export default function BusinessRewardsPage() {
         const payload: CreateBusinessRewardDto = {
           title: rewardData.title,
           description: rewardData.description,
-          point_required: rewardData.pointsRequired,
+          points_required: rewardData.pointsRequired,
           image: rewardData.image,
           gallery: rewardData.gallery,
           quantity: rewardData.quantity,
@@ -295,6 +298,9 @@ export default function BusinessRewardsPage() {
           reward_type: rewardData.rewardType || 'Voucher',
           stamps_required: rewardData.stampsRequired,
           status: RewardStatus.ACTIVE,
+          is_mall_integrated: rewardData.is_mall_integrated,
+          mall_reward_type: rewardData.mall_reward_type,
+          mall_reward_value: rewardData.mall_reward_value,
         };
 
         addBusinessReward({ rewardId: selectedTemplate.id, payload }).then(() => {
@@ -322,7 +328,7 @@ export default function BusinessRewardsPage() {
         const payload: CreateBusinessRewardDto = {
           title: rewardData.title,
           description: rewardData.description,
-          point_required: rewardData.pointsRequired,
+          points_required: rewardData.pointsRequired,
           image: rewardData.image,
           gallery: rewardData.gallery,
           quantity: rewardData.quantity,
@@ -330,6 +336,9 @@ export default function BusinessRewardsPage() {
           reward_type: rewardData.rewardType || 'Voucher',
           stamps_required: rewardData.stampsRequired,
           status: RewardStatus.ACTIVE,
+          is_mall_integrated: rewardData.is_mall_integrated,
+          mall_reward_type: rewardData.mall_reward_type,
+          mall_reward_value: rewardData.mall_reward_value,
         };
 
         createBusinessReward(payload).then(() => {
@@ -364,8 +373,8 @@ export default function BusinessRewardsPage() {
       gallery: businessReward.gallery,
       value: businessReward.value,
       disabled: businessReward.disabled,
-      pointsRequired: businessReward.pointRequired,
-      stampsRequired: businessReward.stampsRequired,
+      pointsRequired: businessReward.points_required ?? (businessReward as any).pointsRequired ?? businessReward.pointRequired,
+      stampsRequired: businessReward.stamps_required ?? businessReward.stampsRequired,
       rewardType: businessReward.rewardType,
       quantity: businessReward.quantity || 0,
     };
@@ -524,9 +533,17 @@ export default function BusinessRewardsPage() {
                         <div className="flex justify-between">
                           <span className="font-medium">Points:</span>
                           <span>
-                            {businessReward.pointRequired}
+                            {businessReward.points_required ?? (businessReward as any).pointsRequired ?? businessReward.pointRequired ?? 0}
                           </span>
                         </div>
+                        {(businessReward.stamps_required || businessReward.stampsRequired) && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Stamps:</span>
+                            <span>
+                              {businessReward.stamps_required ?? businessReward.stampsRequired}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

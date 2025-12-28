@@ -1,5 +1,27 @@
+export interface WalletTransaction {
+  id: string;
+  amount: string | number;
+  type: string;
+  reference: string;
+  createdAt: string;
+}
+
 export interface Wallet {
-  balance: number;
+  id: string;
+  tierBalance: string | number;
+  topupBalance: string | number;
+  transactions?: WalletTransaction[];
+}
+
+export interface InitiateWalletTopupResponse {
+  clientSecret?: string; // Stripe
+  orderId?: string; // PayPal
+}
+
+export interface VerifyWalletTopupResponse {
+  status: string;
+  amount: number;
+  transactionId: string;
 }
 
 export interface PointHistoryRecord {

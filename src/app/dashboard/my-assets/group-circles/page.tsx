@@ -51,6 +51,8 @@ interface Member {
     contributions?: number; // For Smart Money
     drawDate?: string; // For Smart Money
     relationshipScore?: number; // 0-100 logic for placement
+    locationTag?: string;
+    relationshipTag?: string;
 }
 
 interface GroupCircle {
@@ -139,8 +141,8 @@ const MultiLayerRadialGraph = ({
                             "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed transition-all duration-1000 select-none pointer-events-none",
                             Number(key) % 2 === 0 ? "border-opacity-40" : "border-opacity-20",
                             config.color,
-                            "dark:border-opacity-30",
-                            focusedOrbits && !focusedOrbits.includes(Number(key)) && "opacity-10 scale-95"
+                            "dark:border-opacity-30"
+                            // focusedOrbits logic removed to keep rings persistent
                         )}
                         style={{
                             width: `${config.radius * 2}%`,
@@ -526,7 +528,9 @@ export default function GroupCirclesPage() {
                     category: m.network.businessName || m.network.relationshipTag || "Partner",
                     avatar: undefined,
                     contributions: Number(circle.contributionAmount),
-                    drawDate: m.drawDate
+                    drawDate: m.drawDate,
+                    locationTag: m.network.locationTag ? (m.network.locationTag.charAt(0).toUpperCase() + m.network.locationTag.slice(1)) : "Unknown",
+                    relationshipTag: m.network.relationshipTag ? (m.network.relationshipTag.charAt(0).toUpperCase() + m.network.relationshipTag.slice(1)) : "Network"
                 };
             })
         }));
@@ -1166,37 +1170,49 @@ export default function GroupCirclesPage() {
 
                                 {/* Bottom Visualization Legend */}
                                 <div className="absolute bottom-6 left-6 z-10 flex gap-4">
-                                    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-2xl border p-3 py-2 flex items-center gap-6 shadow-sm">
-                                        <button
+                                    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-2xl border p-2 flex items-center gap-2 shadow-sm">
+                                        <Button
+                                            variant={focusedOrbits?.includes(1) ? "default" : "ghost"}
+                                            size="sm"
                                             onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])}
                                             className={cn(
-                                                "flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
-                                                focusedOrbits?.includes(1) ? "opacity-100" : (focusedOrbits ? "opacity-40 grayscale" : "opacity-100")
+                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
+                                                focusedOrbits?.includes(1)
+                                                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20"
+                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-700"
                                             )}
                                         >
-                                            <div className="w-3 h-3 rounded-full border-2 border-orange-600 bg-orange-100" />
-                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Nearby</span>
-                                        </button>
-                                        <button
+                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(1) ? "bg-white" : "bg-orange-600")} />
+                                            Nearby
+                                        </Button>
+                                        <Button
+                                            variant={focusedOrbits?.includes(3) ? "default" : "ghost"}
+                                            size="sm"
                                             onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])}
                                             className={cn(
-                                                "flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
-                                                focusedOrbits?.includes(3) ? "opacity-100" : (focusedOrbits ? "opacity-40 grayscale" : "opacity-100")
+                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
+                                                focusedOrbits?.includes(3)
+                                                    ? "bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20"
+                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-600"
                                             )}
                                         >
-                                            <div className="w-3 h-3 rounded-full border-2 border-orange-400 bg-orange-50" />
-                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Hyperlocal</span>
-                                        </button>
-                                        <button
+                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(3) ? "bg-white" : "bg-orange-500")} />
+                                            Hyperlocal
+                                        </Button>
+                                        <Button
+                                            variant={focusedOrbits?.includes(5) ? "default" : "ghost"}
+                                            size="sm"
                                             onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])}
                                             className={cn(
-                                                "flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
-                                                focusedOrbits?.includes(5) ? "opacity-100" : (focusedOrbits ? "opacity-40 grayscale" : "opacity-100")
+                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
+                                                focusedOrbits?.includes(5)
+                                                    ? "bg-orange-400 hover:bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-500"
                                             )}
                                         >
-                                            <div className="w-3 h-3 rounded-full border-2 border-orange-200 bg-zinc-50" />
-                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">National</span>
-                                        </button>
+                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(5) ? "bg-white" : "bg-orange-400")} />
+                                            National
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -1288,12 +1304,12 @@ export default function GroupCirclesPage() {
 
                                     <div className="grid grid-cols-2 gap-3 pt-2">
                                         <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
-                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Member Role</span>
-                                            <span className="font-bold text-zinc-800 dark:text-zinc-200">{activeMember.role}</span>
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Location</span>
+                                            <span className="font-bold text-zinc-800 dark:text-zinc-200">{activeMember.locationTag}</span>
                                         </div>
                                         <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
-                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Network Orbit</span>
-                                            <span className="font-bold text-orange-600">{ORBIT_CONFIG[activeMember.orbit]?.label || "Outer"}</span>
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground block mb-2">Relationship</span>
+                                            <span className="font-bold text-orange-600">{activeMember.relationshipTag}</span>
                                         </div>
                                     </div>
 

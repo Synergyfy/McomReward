@@ -15,6 +15,7 @@ import PointPackages from "@/components/pricing/PointPackages" // Import the new
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"quarterly" | "annual">("quarterly")
+  const [activeTab, setActiveTab] = useState("standard")
   const [isChatbotOpen, setIsChatbotOpen] = useState(false)
   const [showFullPage, setShowFullPage] = useState(false)
 
@@ -24,14 +25,20 @@ export default function PricingPage() {
         <Header />
       </section>
 
-      <section className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-12">
-        <BillingToggle billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
-      </section>
+      {activeTab === "standard" && (
+        <section className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-12">
+          <BillingToggle billingCycle={billingCycle} setBillingCycle={setBillingCycle} />
+        </section>
+      )}
 
       <section id="plans" className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
-        <PricingCards billingCycle={billingCycle} />
+        <PricingCards
+          billingCycle={billingCycle}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </section>
-      
+
       {/* New section for Point Packages */}
       <section id="point-packages" className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
         <PointPackages />
@@ -57,9 +64,9 @@ export default function PricingPage() {
         </section>
 
         <section className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
-          <ComparisonTable />
+          <ComparisonTable activeTab={activeTab} />
         </section>
-        
+
         {/* New ProductOwnerCTA component */}
         <section className="slide-up px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
           <ProductOwnerCTA />

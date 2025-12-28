@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface PricingCardsProps {
   billingCycle: BillingCycle
+  activeTab?: string
+  onTabChange?: (value: string) => void
 }
 
 // Map product tier names to their icon components to keep rendering data-driven.
@@ -21,7 +23,7 @@ const iconByTier: Record<string, LucideIcon> = {
   Platinum: Crown,
 }
 
-export default function PricingCards({ billingCycle }: PricingCardsProps) {
+export default function PricingCards({ billingCycle, activeTab, onTabChange }: PricingCardsProps) {
   const { data: tiers, isLoading, error } = useGetTiers();
 
   if (isLoading) {
@@ -80,7 +82,12 @@ export default function PricingCards({ billingCycle }: PricingCardsProps) {
   return (
     <div>
       {seasonalTiers.length > 0 ? (
-        <Tabs defaultValue="standard" className="w-full flex flex-col items-center">
+        <Tabs
+          defaultValue="standard"
+          value={activeTab}
+          onValueChange={onTabChange}
+          className="w-full flex flex-col items-center"
+        >
           <TabsList className="mb-8 grid w-[400px] grid-cols-2">
             <TabsTrigger value="standard">Standard Plans</TabsTrigger>
             <TabsTrigger value="seasonal" className="flex items-center gap-2">

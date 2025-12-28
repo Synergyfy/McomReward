@@ -61,21 +61,13 @@ export interface CreateGroupCircleDto {
     networkIds: string[];
 }
 
+import { NetworkContact } from '../network-contacts/types';
+
 export interface GroupCircleMember {
     id: string;
     role: MemberRole;
     drawDate?: string;
-    network: {
-        id: string;
-        fullName: string;
-        businessName?: string;
-        email?: string;
-        phone?: string;
-        locationTag?: string;
-        relationshipTag?: string;
-        status?: string;
-        hasSharingPermission?: boolean;
-    };
+    network: NetworkContact;
 }
 
 export interface GroupCircle {

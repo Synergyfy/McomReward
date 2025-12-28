@@ -524,7 +524,7 @@ export default function GroupCirclesPage() {
                     email: m.network.email,
                     role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
                     orbit,
-                    status: (m.network.status === 'active' || m.network.status === 'accepted' ? 'active' : 'offline') as any,
+                    status: (m.network.status === 'accepted' ? 'active' : 'offline') as any,
                     category: m.network.businessName || m.network.relationshipTag || "Partner",
                     avatar: undefined,
                     contributions: Number(circle.contributionAmount),

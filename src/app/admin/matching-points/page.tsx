@@ -13,7 +13,7 @@ import { AdjustMatchingPointsModal } from '@/components/admin/matching-points/Ad
 import { EarningActionsManager } from '@/components/admin/matching-points/EarningActionsManager';
 import { ParticipantBadgesManager } from '@/components/admin/matching-points/ParticipantBadgesManager';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { Globe, SlidersHorizontal, Briefcase, Megaphone, BarChart, UserPlus, Loader2, Zap, Trophy } from 'lucide-react';
+import { Briefcase, Megaphone, BarChart, UserPlus, Loader2, Zap, Trophy } from 'lucide-react';
 import { useAwardMatchingPoints, useToggleMatchingPoints } from '@/services/matching-points/hook';
 import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
 
@@ -123,43 +123,7 @@ export default function MatchingPointsSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5" /> Global Settings</CardTitle>
-              <CardDescription>Define the base rules for matching points across the platform.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="baseRatio">Base Matching Point Ratio</Label>
-                <Input
-                  id="baseRatio"
-                  type="number"
-                  step="0.1"
-                  value={settings.baseRatio}
-                  onChange={(e) => setSettings({ ...settings, baseRatio: parseFloat(e.target.value) })}
-                />
-                <p className="text-xs text-muted-foreground">e.g., 1 for 1:1, 0.5 for 1:0.5</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="defaultMinPoints">Default Minimum Points</Label>
-                <Input
-                  id="defaultMinPoints"
-                  type="number"
-                  value={settings.defaultMinPoints}
-                  onChange={(e) => setSettings({ ...settings, defaultMinPoints: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="defaultMaxPoints">Default Maximum Points</Label>
-                <Input
-                  id="defaultMaxPoints"
-                  type="number"
-                  value={settings.defaultMaxPoints}
-                  onChange={(e) => setSettings({ ...settings, defaultMaxPoints: parseInt(e.target.value) })}
-                />
-              </div>
-            </CardContent>
-          </Card>
+
 
           <Card>
             <CardHeader>

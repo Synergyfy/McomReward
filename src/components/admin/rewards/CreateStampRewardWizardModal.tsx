@@ -627,27 +627,37 @@ export default function CreateStampRewardWizardModal({
                                         onValueChange={(value) => setTriggerMethod(value as StampTriggerMethod)}
                                         className="space-y-3"
                                     >
-                                        {(Object.keys(TRIGGER_METHOD_LABELS) as StampTriggerMethod[]).map((method) => (
-                                            <label
-                                                key={method}
-                                                className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${triggerMethod === method
-                                                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30'
-                                                    : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
-                                                    }`}
-                                            >
-                                                <RadioGroupItem value={method} className="mt-1" />
-                                                <div className={`p-2 rounded-lg ${triggerMethod === method
-                                                    ? 'bg-orange-500 text-white'
-                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                                                    }`}>
-                                                    {getTriggerIcon(method)}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{TRIGGER_METHOD_LABELS[method]}</p>
-                                                    <p className="text-sm text-gray-500 mt-0.5">{TRIGGER_METHOD_DESCRIPTIONS[method]}</p>
-                                                </div>
-                                            </label>
-                                        ))}
+                                        {(Object.keys(TRIGGER_METHOD_LABELS) as StampTriggerMethod[]).map((method) => {
+                                            const isComingSoon = method === 'purchase' || method === 'check_in';
+                                            return (
+                                                <label
+                                                    key={method}
+                                                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${triggerMethod === method
+                                                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30'
+                                                        : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                                                        } ${isComingSoon ? 'opacity-40 pointer-events-none grayscale-[0.5]' : 'cursor-pointer'}`}
+                                                >
+                                                    <RadioGroupItem value={method} className="mt-1" disabled={isComingSoon} />
+                                                    <div className={`p-2 rounded-lg ${triggerMethod === method
+                                                        ? 'bg-orange-500 text-white'
+                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                                        }`}>
+                                                        {getTriggerIcon(method)}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="font-medium">{TRIGGER_METHOD_LABELS[method]}</p>
+                                                            {isComingSoon && (
+                                                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 uppercase tracking-tighter bg-gray-100 text-gray-400 border-0">
+                                                                    Disabled
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-sm text-gray-500 mt-0.5">{TRIGGER_METHOD_DESCRIPTIONS[method]}</p>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
                                     </RadioGroup>
                                 </div>
 

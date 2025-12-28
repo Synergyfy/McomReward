@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp } from 'lucide-react';
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp, Image as ImageIcon } from 'lucide-react';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -155,6 +155,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/reporting-analytics" className={linkClasses("/admin/reporting-analytics")}>
             <BarChart className="mr-3" />
             Reporting & Analytics
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/media-library" className={linkClasses("/admin/media-library")}>
+            <ImageIcon className="mr-3" />
+            Media Library
           </Link>
         </li>
         {/* Plaque Management Parent Link with Dropdown */}

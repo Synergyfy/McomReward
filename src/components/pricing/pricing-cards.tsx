@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface PricingCardsProps {
   billingCycle: BillingCycle
+  activeTab?: string
+  onTabChange?: (value: string) => void
 }
 
 // Map product tier names to their icon components to keep rendering data-driven.
@@ -21,7 +23,7 @@ const iconByTier: Record<string, LucideIcon> = {
   Platinum: Crown,
 }
 
-export default function PricingCards({ billingCycle }: PricingCardsProps) {
+export default function PricingCards({ billingCycle, activeTab, onTabChange }: PricingCardsProps) {
   const { data: tiers, isLoading, error } = useGetTiers();
 
   if (isLoading) {
@@ -80,13 +82,24 @@ export default function PricingCards({ billingCycle }: PricingCardsProps) {
   return (
     <div>
       {seasonalTiers.length > 0 ? (
-        <Tabs defaultValue="standard" className="w-full flex flex-col items-center">
-          <TabsList className="mb-8 grid w-[400px] grid-cols-2">
+        <Tabs
+          defaultValue="standard"
+          value={activeTab}
+          onValueChange={onTabChange}
+          className="w-full flex flex-col items-center"
+        >
+          <TabsList className="mb-4 grid w-[400px] grid-cols-2">
             <TabsTrigger value="standard">Standard Plans</TabsTrigger>
             <TabsTrigger value="seasonal" className="flex items-center gap-2">
               Seasonal Offers <Sparkles className="h-3 w-3 text-amber-500" />
             </TabsTrigger>
           </TabsList>
+
+          <p className="text-center text-muted-foreground mb-8 text-sm max-w-lg mx-auto min-h-[20px]">
+            {activeTab === 'seasonal'
+              ? "Exclusive, limited-time packages designed for peak seasons. Pay once, enjoy benefits for the entire duration."
+              : "Flexible recurring subscriptions tailored to grow with your business. choose monthly, quarterly, or annual billing."}
+          </p>
 
           <TabsContent value="standard" className="w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

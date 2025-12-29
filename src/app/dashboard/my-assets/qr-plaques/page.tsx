@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { RelationshipTag, LocationTag } from '@/services/network-contacts/types';
 
 // Import Modals
-import AssignPartnerModal from '@/components/dashboard/my-assets/qr-plaques/AssignPartnerModal';
+import AssignPlaqueWizard from '@/components/dashboard/my-assets/qr-plaques/AssignPlaqueWizard';
 import MarkForSaleModal from '@/components/dashboard/my-assets/qr-plaques/MarkForSaleModal';
 import ConfigurePlaqueModal from '@/components/dashboard/my-assets/qr-plaques/ConfigurePlaqueModal';
 import DeactivateConfirmationModal from '@/components/dashboard/my-assets/qr-plaques/DeactivateConfirmationModal';
@@ -114,29 +114,6 @@ export default function QRPlaquesPage() {
     const handleOpenModal = (plaque: QrPlaque, modalSetter: (open: boolean) => void) => {
         setSelectedPlaque(plaque);
         modalSetter(true);
-    };
-
-    const handleAssign = (partnerDetails: {
-        name: string;
-        email: string;
-        businessName: string;
-        relationshipTag: RelationshipTag;
-        locationTag: LocationTag;
-    }) => {
-        if (!selectedPlaque) return;
-        updatePlaque({
-            id: selectedPlaque.id,
-            data: {
-                status: 'PENDING',
-                assigneeName: partnerDetails.name,
-                assigneeEmail: partnerDetails.email,
-                assigneeBusinessName: partnerDetails.businessName,
-                relationshipTag: partnerDetails.relationshipTag,
-                locationTag: partnerDetails.locationTag
-            }
-        }, {
-            onSuccess: () => setAssignModalOpen(false)
-        });
     };
 
     const handleMarkForSale = (price: string) => {
@@ -316,7 +293,7 @@ export default function QRPlaquesPage() {
             </div>
 
             <PlaqueDetailsModal isOpen={!!viewPlaque} onClose={() => setViewPlaque(null)} plaque={viewPlaque} onPrint={setPlaqueToPrint} />
-            <AssignPartnerModal isOpen={isAssignModalOpen} onClose={() => setAssignModalOpen(false)} onAssign={handleAssign} plaqueId={selectedPlaque?.id || null} />
+            <AssignPlaqueWizard isOpen={isAssignModalOpen} onClose={() => setAssignModalOpen(false)} plaqueId={selectedPlaque?.id || null} />
             <MarkForSaleModal isOpen={isSaleModalOpen} onClose={() => setSaleModalOpen(false)} onConfirm={handleMarkForSale} plaqueId={selectedPlaque?.id || null} />
             <ConfigurePlaqueModal isOpen={isConfigureModalOpen} onClose={() => setConfigureModalOpen(false)} onSave={handleConfigure} plaque={selectedPlaque ? { id: selectedPlaque.id, linkedOffer: selectedPlaque.contentUrl || null, partner: selectedPlaque.name } : null} />
             <DeactivateConfirmationModal isOpen={isDeactivateModalOpen} onClose={() => setDeactivateModalOpen(false)} onConfirm={handleDeactivate} plaqueId={selectedPlaque?.id || null} />

@@ -73,6 +73,11 @@ export default function DealsPage() {
     return dealsData.data.map(adaptToCardDeal);
   }, [dealsData]);
 
+  const totalPages = useMemo(() => {
+    if (!dealsData?.total) return 0;
+    return Math.ceil(dealsData.total / limit);
+  }, [dealsData, limit]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -123,10 +128,10 @@ export default function DealsPage() {
             >
               Previous
             </Button>
-            <span className="p-2">{`Page ${dealsData?.page} of ${dealsData?.totalPages}`}</span>
+            <span className="p-2">{`Page ${dealsData?.page || page} of ${totalPages}`}</span>
             <Button
               onClick={() => setPage(p => p + 1)}
-              disabled={page === dealsData?.totalPages}
+              disabled={page >= totalPages}
             >
               Next
             </Button>

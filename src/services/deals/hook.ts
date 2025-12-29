@@ -20,12 +20,17 @@ const createDeal = async (dealData: CreateDealDto): Promise<Deal> => {
 const getDeals = async (
   params: FilterDealDto,
 ): Promise<PaginatedDealsResponse> => {
-  const { data } = await api.get<PaginatedDealsResponse>('/deals', { params });
+  const { data } = await api.get<PaginatedDealsResponse>('/deals', {
+    params,
+    _skipAuthRedirect: true,
+  } as any);
   return data;
 };
 
 const getDeal = async (id: string): Promise<Deal> => {
-  const { data } = await api.get<Deal>(`/deals/${id}`);
+  const { data } = await api.get<Deal>(`/deals/${id}`, {
+    _skipAuthRedirect: true,
+  } as any);
   return data;
 };
 

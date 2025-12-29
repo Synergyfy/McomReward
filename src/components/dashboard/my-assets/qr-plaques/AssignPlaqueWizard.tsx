@@ -13,7 +13,7 @@ import { Users, UserPlus, Award, Search, ArrowLeft, Loader2 } from 'lucide-react
 import { useAffiliateStats } from '@/services/affiliate/hook';
 import { useGetNetworkContacts } from '@/services/network-contacts/hook';
 import { useUpdateQrPlaque } from '@/services/qr-plaques/hook';
-import { NetworkContact, RelationshipTag, LocationTag } from '@/services/network-contacts/types';
+import { NetworkContact, RelationshipTag, LocationTag, CreateContactDto } from '@/services/network-contacts/types';
 import { ReferredBusiness } from '@/services/affiliate/types';
 import AddContactForm from '@/components/dashboard/my-assets/shared/AddContactForm';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ type WizardStep = 'menu' | 'affiliate_list' | 'contact_list' | 'add_contact';
 export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: AssignPlaqueWizardProps) {
     const [step, setStep] = useState<WizardStep>('menu');
     const [searchQuery, setSearchQuery] = useState('');
+    const [prefillContact, setPrefillContact] = useState<Partial<CreateContactDto>>({});
     const { mutate: updatePlaque } = useUpdateQrPlaque();
 
     // Data Hooks
@@ -39,32 +40,22 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
         search: searchQuery || undefined
     });
 
-    const handleAssign = (contact: {
-        name: string;
-        email: string;
-        businessName: string;
-        relationshipTag: RelationshipTag;
-        locationTag: LocationTag;
-    }) => {
-        if (!plaqueId) return;
+    const handleAssign = (contactId: string) => {
+        if (!plaqueId || !contactId) return;
 
-        // Show loading state implicitly via toast or UI if needed, but mutation is async
         const promise = new Promise((resolve, reject) => {
             updatePlaque({
                 id: plaqueId,
                 data: {
                     status: 'PENDING',
-                    assigneeName: contact.name,
-                    assigneeEmail: contact.email || undefined,
-                    assigneeBusinessName: contact.businessName || undefined,
-                    relationshipTag: contact.relationshipTag,
-                    locationTag: contact.locationTag
+                    networkContactId: contactId
                 }
             }, {
                 onSuccess: () => {
                     resolve(true);
                     onClose();
                     setStep('menu');
+                    setPrefillContact({});
                 },
                 onError: (error) => {
                     reject(error);
@@ -82,6 +73,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
     const handleBack = () => {
         setStep('menu');
         setSearchQuery('');
+        setPrefillContact({});
     };
 
     const renderMenu = () => (
@@ -150,13 +142,16 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                         <div
                             key={index}
                             className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors"
-                            onClick={() => handleAssign({
-                                name: affiliate.name,
-                                email: '', // API doesn't provide email for affiliates yet
-                                businessName: affiliate.name,
-                                relationshipTag: 'affiliate',
-                                locationTag: 'national' // Defaulting to national for affiliates
-                            })}
+                            onClick={() => {
+                                setPrefillContact({
+                                    fullName: affiliate.name,
+                                    businessName: affiliate.name,
+                                    relationshipTag: 'affiliate',
+                                    locationTag: 'national'
+                                });
+                                setStep('add_contact');
+                                toast.info('Please verify contact details to assign', { duration: 3000 });
+                            }}
                         >
                             <div>
                                 <p className="font-medium">{affiliate.name}</p>
@@ -199,13 +194,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                         <div
                             key={contact.id}
                             className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors"
-                            onClick={() => handleAssign({
-                                name: contact.fullName,
-                                email: contact.email || '',
-                                businessName: contact.businessName || '',
-                                relationshipTag: contact.relationshipTag,
-                                locationTag: contact.locationTag
-                            })}
+                            onClick={() => handleAssign(contact.id)}
                         >
                             <div>
                                 <p className="font-medium">{contact.fullName}</p>
@@ -228,14 +217,9 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                 </Button>
             </div>
             <AddContactForm
+                initialData={prefillContact}
                 onSuccess={(newContact) => {
-                    handleAssign({
-                        name: newContact.fullName,
-                        email: newContact.email || '',
-                        businessName: newContact.businessName || '',
-                        relationshipTag: newContact.relationshipTag,
-                        locationTag: newContact.locationTag
-                    });
+                    handleAssign(newContact.id);
                 }}
                 onCancel={handleBack}
             />

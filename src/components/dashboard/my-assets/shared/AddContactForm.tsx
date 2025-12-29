@@ -15,10 +15,12 @@ import {
 import { Info } from 'lucide-react';
 import { useCreateContact } from '@/services/network-contacts/hook';
 import { CreateContactDto, LocationTag, RelationshipTag } from '@/services/network-contacts/types';
+import { toast } from 'sonner';
 
 interface AddContactFormProps {
     onSuccess?: (contact: any) => void;
     onCancel?: () => void;
+    initialData?: Partial<CreateContactDto>;
 }
 
 const LOCATION_TAG_INFO = {
@@ -33,16 +35,16 @@ const RELATIONSHIP_TAG_INFO = {
     affiliate: 'Promotes your business.',
 };
 
-export default function AddContactForm({ onSuccess, onCancel }: AddContactFormProps) {
+export default function AddContactForm({ onSuccess, onCancel, initialData }: AddContactFormProps) {
     const createContact = useCreateContact();
     const [formData, setFormData] = useState<CreateContactDto>({
-        fullName: '',
-        phone: '',
-        email: '',
-        businessName: '',
-        relationshipTag: 'partner',
-        locationTag: 'nearby',
-        hasPermission: false,
+        fullName: initialData?.fullName || '',
+        phone: initialData?.phone || '',
+        email: initialData?.email || '',
+        businessName: initialData?.businessName || '',
+        relationshipTag: initialData?.relationshipTag || 'partner',
+        locationTag: initialData?.locationTag || 'nearby',
+        hasPermission: initialData?.hasPermission || false,
     });
 
     const handleAddContact = async () => {
@@ -53,6 +55,7 @@ export default function AddContactForm({ onSuccess, onCancel }: AddContactFormPr
             }
         } catch (error) {
             console.error('Failed to create contact', error);
+            toast.error('Failed to add contact. Please try again.');
         }
     };
 

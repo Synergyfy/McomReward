@@ -250,6 +250,15 @@ export default function CreateStampRewardWizardModal({
         return !!image;
     }, [image]);
 
+    // Memoized tier filtering - separate standard and seasonal tiers
+    const standardTiers = useMemo(() => {
+        return tiers.filter(tier => tier.type !== 'seasonal');
+    }, [tiers]);
+
+    const seasonalTiers = useMemo(() => {
+        return tiers.filter(tier => tier.type === 'seasonal');
+    }, [tiers]);
+
     const canProceed = () => {
         switch (step) {
             case 1: return step1Valid;
@@ -755,27 +764,27 @@ export default function CreateStampRewardWizardModal({
                                     )}
                                 </div>
 
-                                {/* Tier Restrictions */}
+                                {/* Standard Plan Restrictions */}
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
-                                        <Label className="font-medium">Badge Level Restrictions (Optional)</Label>
+                                        <Label className="font-medium">Standard Plan (Optional)</Label>
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
                                                 </TooltipTrigger>
                                                 <TooltipContent className="max-w-xs">
-                                                    <p>Optionally restrict this reward to customers with specific tier levels. Leave empty for all customers.</p>
+                                                    <p>Optionally restrict this reward to businesses with specific standard tier levels.</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </div>
                                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                                        <div className="space-y-2">
-                                            {tiers.map((tier) => (
+                                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                                            {standardTiers.length > 0 ? standardTiers.map((tier) => (
                                                 <div key={tier.id} className="flex items-center gap-2">
                                                     <Checkbox
-                                                        id={`tier-${tier.id}`}
+                                                        id={`tier-standard-${tier.id}`}
                                                         checked={selectedTiers.includes(tier.id)}
                                                         onCheckedChange={(checked) => {
                                                             if (checked) {
@@ -785,26 +794,111 @@ export default function CreateStampRewardWizardModal({
                                                             }
                                                         }}
                                                     />
-                                                    <Label htmlFor={`tier-${tier.id}`} className="text-sm cursor-pointer">
+                                                    <Label htmlFor={`tier-standard-${tier.id}`} className="text-sm cursor-pointer">
                                                         {tier.name}
                                                     </Label>
                                                 </div>
-                                            ))}
+                                            )) : (
+                                                <p className="text-sm text-gray-500 italic">No standard plans available</p>
+                                            )}
                                         </div>
-                                        {selectedTiers.length > 0 && (
-                                            <div className="mt-3 flex flex-wrap gap-1">
-                                                {selectedTiers.map((tierId) => {
-                                                    const tier = tiers.find(t => t.id === tierId);
-                                                    return tier ? (
-                                                        <Badge key={tierId} variant="secondary" className="text-xs">
+                                    </div>
+                                </div>
+
+                                {/* Seasonal Plan Restrictions */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Label className="font-medium">Seasonal Plan (Optional)</Label>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent className="max-w-xs">
+                                                    <p>Optionally restrict this reward to businesses with seasonal tier levels. Selecting a seasonal plan will auto-fill expiration rules.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+                                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                                            {seasonalTiers.length > 0 ? seasonalTiers.map((tier) => (
+                                                <div key={tier.id} className="flex items-center gap-2">
+                                                    <Checkbox
+                                                        id={`tier-seasonal-${tier.id}`}
+                                                        checked={selectedTiers.includes(tier.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) {
+                                                                setSelectedTiers([...selectedTiers, tier.id]);
+                                                                // Auto-fill expiration rules from seasonal plan dates
+                                                                if (tier.startDate && tier.endDate) {
+                                                                    const startDate = new Date(tier.startDate);
+                                                                    const endDate = new Date(tier.endDate);
+                                                                    const today = new Date();
+
+                                                                    // Calculate days from today to end date for stamp validity
+                                                                    const stampValidityDays = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+                                                                    // Calculate duration of seasonal plan for reward claim days
+                                                                    const rewardClaimDays = Math.max(0, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+                                                                    setExpirationRules({
+                                                                        stampValidityDays,
+                                                                        rewardClaimDays
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                setSelectedTiers(selectedTiers.filter(id => id !== tier.id));
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <Label htmlFor={`tier-seasonal-${tier.id}`} className="text-sm cursor-pointer">
                                                             {tier.name}
-                                                        </Badge>
-                                                    ) : null;
-                                                })}
+                                                        </Label>
+                                                        {tier.startDate && tier.endDate && (
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(tier.startDate).toLocaleDateString()} - {new Date(tier.endDate).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )) : (
+                                                <p className="text-sm text-gray-500 italic">No seasonal plans available</p>
+                                            )}
+                                        </div>
+                                        {seasonalTiers.filter(t => selectedTiers.includes(t.id)).length > 0 && (
+                                            <div className="mt-3 p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                                                <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300">
+                                                    <Info className="h-3.5 w-3.5" />
+                                                    <span>Expiration rules have been auto-filled based on the seasonal plan dates</span>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Selected Tiers Display */}
+                                {selectedTiers.length > 0 && (
+                                    <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                                        <Label className="text-sm text-gray-500 mb-2 block">Selected Plans</Label>
+                                        <div className="flex flex-wrap gap-1">
+                                            {selectedTiers.map((tierId) => {
+                                                const tier = tiers.find(t => t.id === tierId);
+                                                const isSeasonalTier = tier?.type === 'seasonal';
+                                                return tier ? (
+                                                    <Badge
+                                                        key={tierId}
+                                                        variant="secondary"
+                                                        className={`text-xs ${isSeasonalTier ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : ''}`}
+                                                    >
+                                                        {tier.name}
+                                                        {isSeasonalTier && ' (Seasonal)'}
+                                                    </Badge>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Expiration Rules */}
                                 <div className="space-y-3">

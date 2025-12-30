@@ -237,9 +237,9 @@ export default function BusinessSidebar({
         <ul className="space-y-1 text-sm font-medium pb-20">
           <SidebarItem icon={LayoutDashboard} label="Overview" href="/dashboard" />
 
-          <SidebarItem icon={Gift} label="Rewards" href="/dashboard/rewards" />
+          {/* <SidebarItem icon={Gift} label="Rewards" href="/dashboard/rewards" /> */}
 
-          <SidebarItem icon={Stamp} label="Stamp Rewards" href="/dashboard/stamp-rewards" />
+          <SidebarItem icon={Gift} label="All Rewards" href="/dashboard/stamp-rewards" />
 
           <SidebarItem icon={Megaphone} label="Campaigns" hasSubmenu submenuKey="campaigns">
             <SubItem href="/dashboard/campaigns/list" label="View Campaigns" />

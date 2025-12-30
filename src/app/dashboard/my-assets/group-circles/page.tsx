@@ -898,19 +898,7 @@ export default function GroupCirclesPage() {
                     </DropdownMenu>
                 </div>
 
-                <div className="flex-none flex gap-1 pl-2 border-l ml-2">
-                    {['all', 'marketing', 'finance'].map(t => (
-                        <Button
-                            key={t}
-                            size="sm"
-                            variant={activeTab === t ? "secondary" : "ghost"}
-                            className={cn("h-8 text-[10px] capitalize rounded-lg px-2", activeTab === t ? "bg-orange-100 text-orange-700" : "")}
-                            onClick={() => setActiveTab(t as any)}
-                        >
-                            {t}
-                        </Button>
-                    ))}
-                </div>
+
             </div>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogContent className="sm:max-w-[600px]">
@@ -1125,9 +1113,49 @@ export default function GroupCirclesPage() {
                                                 <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Search className="w-4 h-4" /></Button>
                                             </TooltipTrigger><TooltipContent>Search Graph</TooltipContent></Tooltip>
 
-                                            <Tooltip><TooltipTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Filter className="w-4 h-4" /></Button>
-                                            </TooltipTrigger><TooltipContent>Filter Members</TooltipContent></Tooltip>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant={focusedOrbits ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", focusedOrbits ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
+                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 tracking-widest">Filter by Location</p>
+                                                    <DropdownMenuItem
+                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])}
+                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700")}
+                                                    >
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-600" />
+                                                        Nearby
+                                                        {focusedOrbits?.includes(1) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])}
+                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700")}
+                                                    >
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                                                        Hyperlocal
+                                                        {focusedOrbits?.includes(3) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])}
+                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700")}
+                                                    >
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+                                                        National
+                                                        {focusedOrbits?.includes(5) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                    </DropdownMenuItem>
+                                                    {focusedOrbits && (
+                                                        <>
+                                                            <Separator className="my-1" />
+                                                            <DropdownMenuItem
+                                                                onClick={() => setFocusedOrbits(null)}
+                                                                className="cursor-pointer text-zinc-500 rounded-lg"
+                                                            >
+                                                                Clear Filter
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
 
                                             <div className="w-px h-6 bg-zinc-200 my-auto" />
 
@@ -1168,53 +1196,7 @@ export default function GroupCirclesPage() {
                                     </div>
                                 </div>
 
-                                {/* Bottom Visualization Legend */}
-                                <div className="absolute bottom-6 left-6 z-10 flex gap-4">
-                                    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-2xl border p-2 flex items-center gap-2 shadow-sm">
-                                        <Button
-                                            variant={focusedOrbits?.includes(1) ? "default" : "ghost"}
-                                            size="sm"
-                                            onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])}
-                                            className={cn(
-                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
-                                                focusedOrbits?.includes(1)
-                                                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20"
-                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-700"
-                                            )}
-                                        >
-                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(1) ? "bg-white" : "bg-orange-600")} />
-                                            Nearby
-                                        </Button>
-                                        <Button
-                                            variant={focusedOrbits?.includes(3) ? "default" : "ghost"}
-                                            size="sm"
-                                            onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])}
-                                            className={cn(
-                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
-                                                focusedOrbits?.includes(3)
-                                                    ? "bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20"
-                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-600"
-                                            )}
-                                        >
-                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(3) ? "bg-white" : "bg-orange-500")} />
-                                            Hyperlocal
-                                        </Button>
-                                        <Button
-                                            variant={focusedOrbits?.includes(5) ? "default" : "ghost"}
-                                            size="sm"
-                                            onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])}
-                                            className={cn(
-                                                "gap-2 text-[10px] uppercase font-bold tracking-wider rounded-xl h-9",
-                                                focusedOrbits?.includes(5)
-                                                    ? "bg-orange-400 hover:bg-orange-500 text-white shadow-md shadow-orange-500/20"
-                                                    : "text-zinc-600 hover:bg-orange-50 hover:text-orange-500"
-                                            )}
-                                        >
-                                            <div className={cn("w-2 h-2 rounded-full border border-white", focusedOrbits?.includes(5) ? "bg-white" : "bg-orange-400")} />
-                                            National
-                                        </Button>
-                                    </div>
-                                </div>
+
 
                                 {/* Floating Action Buttons (Local Context) */}
                                 <div className="absolute bottom-6 right-6 z-10 flex gap-3">

@@ -108,15 +108,28 @@ export default function FinancialsPage() {
   const [showPlanTypeSelectionModal, setShowPlanTypeSelectionModal] = useState(false);
   const [currentEditPlan, setCurrentEditPlan] = useState<Tier | undefined>(undefined);
   const [selectedPlanType, setSelectedPlanType] = useState<'standard' | 'seasonal'>('standard');
+  const [planTypeFilter, setPlanTypeFilter] = useState<'all' | 'standard' | 'seasonal'>('all');
 
   // State for Add/Edit Point Package Modal
   const [showAddEditPointPackageModal, setShowAddEditPointPackageModal] = useState(false);
   const [currentEditPointPackage, setCurrentEditPointPackage] = useState<PointPackage | undefined>(undefined);
 
+  // Filter plans by type
+  const filteredPlans = plans?.filter(plan => {
+    if (planTypeFilter === 'all') return true;
+    return plan.type === planTypeFilter;
+  }) || [];
+
   const handleAddEditPlan = (plan?: Tier) => {
     setCurrentEditPlan(plan);
-    // Show selection modal for both New and Edit actions to allow type confirmation/change
-    setShowPlanTypeSelectionModal(true);
+    if (plan) {
+      // Editing: use the plan's existing type, skip selection modal
+      setSelectedPlanType(plan.type || 'standard');
+      setShowAddEditPlanModal(true);
+    } else {
+      // Creating: show type selection modal
+      setShowPlanTypeSelectionModal(true);
+    }
   };
 
   const handlePlanTypeSelected = (type: 'standard' | 'seasonal') => {
@@ -492,15 +505,29 @@ export default function FinancialsPage() {
                 <CardTitle>Subscription Plans</CardTitle>
                 <Button onClick={() => handleAddEditPlan()}><PlusCircle className="mr-2 h-4 w-4" /> Create New Plan</Button>
               </div>
+              {/* Plan Type Filter */}
+              <Tabs value={planTypeFilter} onValueChange={(v) => setPlanTypeFilter(v as 'all' | 'standard' | 'seasonal')} className="mt-4">
+                <TabsList>
+                  <TabsTrigger value="all">All Plans</TabsTrigger>
+                  <TabsTrigger value="standard">Standard Plans</TabsTrigger>
+                  <TabsTrigger value="seasonal">Seasonal Plans</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {isLoadingPlans && <p>Loading plans...</p>}
               {plansError && <p>Error loading plans.</p>}
-              {plans?.map((plan) => (
+              {!isLoadingPlans && !plansError && filteredPlans.length === 0 && (
+                <p className="text-muted-foreground col-span-full text-center py-8">No {planTypeFilter === 'all' ? '' : planTypeFilter} plans found.</p>
+              )}
+              {filteredPlans.map((plan) => (
                 <Card key={plan.id}>
                   <CardHeader>
                     <CardTitle className="flex justify-between items-center">
                       {plan.name}
+                      <Badge variant={plan.type === 'seasonal' ? 'secondary' : 'outline'} className="ml-2">
+                        {plan.type === 'seasonal' ? 'Seasonal' : 'Standard'}
+                      </Badge>
                     </CardTitle>
                     <div className="text-3xl font-bold">£{plan.monthlyPrice}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                   </CardHeader>

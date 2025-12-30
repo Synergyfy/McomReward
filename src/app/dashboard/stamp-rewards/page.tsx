@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,6 +29,12 @@ import ActiveStampRewardCard from '@/components/dashboard/stamp-rewards/ActiveSt
 import ActivateTemplateModal from '@/components/dashboard/stamp-rewards/ActivateTemplateModal';
 import AwardStampModal from '@/components/dashboard/stamp-rewards/AwardStampModal';
 import ViewCustomersModal from '@/components/dashboard/stamp-rewards/ViewCustomersModal';
+import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
+import RewardTypeSelectionDialog from '@/components/dashboard/rewards/RewardTypeSelectionDialog';
+import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
+import CreateStampRewardWizardModal from '@/components/admin/rewards/CreateStampRewardWizardModal';
+import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
+import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import {
     useGetAvailableTemplates,
     useGetBusinessStampRewards,
@@ -37,8 +43,11 @@ import {
     useResumeStampReward,
     useDeactivateStampReward,
 } from '@/services/business-stamp-rewards/hook';
+import { useCreateBusinessReward, useGetBusinessRewards } from '@/services/business-reward/hooks';
+import { useGetBusinessTierUsage } from '@/services/business/hook';
 import { StampRewardResponse } from '@/services/stamp-rewards/types';
 import { BusinessStampReward } from '@/services/business-stamp-rewards/types';
+import { Reward, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,6 +58,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { AxiosError } from 'axios';
+
+const currentUser = {
+    plan: 'white-label', // 'starter', 'co-branded', 'white-label'
+};
 
 export default function BusinessStampRewardsPage() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -57,10 +72,20 @@ export default function BusinessStampRewardsPage() {
     const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
     const [rewardToDeactivate, setRewardToDeactivate] = useState<string | null>(null);
 
-    // New modal states
+    // New modal states for stamp rewards
     const [selectedReward, setSelectedReward] = useState<BusinessStampReward | null>(null);
     const [isAwardStampModalOpen, setIsAwardStampModalOpen] = useState(false);
     const [isViewCustomersModalOpen, setIsViewCustomersModalOpen] = useState(false);
+
+    // New modal states for merged rewards functionality
+    const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+    const [isRewardTypeSelectionOpen, setIsRewardTypeSelectionOpen] = useState(false);
+    const [isCreatePointRewardModalOpen, setIsCreatePointRewardModalOpen] = useState(false);
+    const [isCreateStampRewardModalOpen, setIsCreateStampRewardModalOpen] = useState(false);
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [isTierLimitModalOpen, setIsTierLimitModalOpen] = useState(false);
+    const [tierLimitMessage, setTierLimitMessage] = useState('');
+    const [editingReward, setEditingReward] = useState<Reward | null>(null);
 
     // API hooks
     const { data: availableTemplates = [], isLoading: isLoadingTemplates, refetch: refetchTemplates } = useGetAvailableTemplates();
@@ -69,6 +94,8 @@ export default function BusinessStampRewardsPage() {
     const { mutate: pauseReward, isPending: isPausing } = usePauseStampReward();
     const { mutate: resumeReward, isPending: isResuming } = useResumeStampReward();
     const { mutate: deactivateReward, isPending: isDeactivating } = useDeactivateStampReward();
+    const { mutateAsync: createBusinessReward } = useCreateBusinessReward();
+    const { data: tierUsageData } = useGetBusinessTierUsage();
 
     const businessRewards = businessRewardsData?.data || [];
 
@@ -90,13 +117,18 @@ export default function BusinessStampRewardsPage() {
         );
     }, [businessRewards, searchTerm]);
 
-    // Handlers
+    // Handlers for stamp rewards
     const handlePreviewTemplate = (template: StampRewardResponse) => {
         setSelectedTemplate(template);
         setIsActivateModalOpen(true);
     };
 
     const handleActivateTemplate = (template: StampRewardResponse) => {
+        setSelectedTemplate(template);
+        setIsActivateModalOpen(true);
+    };
+
+    const handleActivateFromModal = (template: StampRewardResponse) => {
         setSelectedTemplate(template);
         setIsActivateModalOpen(true);
     };
@@ -138,6 +170,70 @@ export default function BusinessStampRewardsPage() {
         refetchRewards();
     };
 
+    // Handlers for merged rewards functionality
+    const handleOpenClaimModal = useCallback(() => {
+        setIsClaimModalOpen(true);
+    }, []);
+
+    const handleCreateFromScratch = useCallback(() => {
+        setIsClaimModalOpen(false);
+        if (currentUser.plan === 'white-label') {
+            setIsRewardTypeSelectionOpen(true);
+        } else {
+            setIsUpgradeModalOpen(true);
+        }
+    }, []);
+
+    const handleSelectPointReward = useCallback(() => {
+        setIsRewardTypeSelectionOpen(false);
+        setEditingReward(null);
+        setIsCreatePointRewardModalOpen(true);
+    }, []);
+
+    const handleSelectStampReward = useCallback(() => {
+        setIsRewardTypeSelectionOpen(false);
+        setIsCreateStampRewardModalOpen(true);
+    }, []);
+
+    const handleSavePointReward = useCallback(async (rewardData: Reward): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            const payload: CreateBusinessRewardDto = {
+                title: rewardData.title,
+                description: rewardData.description,
+                point_required: rewardData.pointsRequired,
+                image: rewardData.image,
+                gallery: rewardData.gallery,
+                quantity: rewardData.quantity,
+                disabled: rewardData.disabled,
+                reward_type: 'Voucher',
+                status: RewardStatus.ACTIVE,
+            };
+
+            createBusinessReward(payload).then(() => {
+                toast.success('Reward created successfully');
+                setIsCreatePointRewardModalOpen(false);
+                resolve();
+            }).catch((error) => {
+                console.error("Error creating reward:", error);
+                const axiosError = error as AxiosError<{ message: string }>;
+                const errorMessage = axiosError?.response?.data?.message || 'Failed to create reward';
+
+                if (errorMessage.includes("Points required cannot exceed the maximum points set by admin")) {
+                    setTierLimitMessage(errorMessage);
+                    setIsTierLimitModalOpen(true);
+                } else {
+                    toast.error(errorMessage);
+                }
+                reject(error);
+            });
+        });
+    }, [createBusinessReward]);
+
+    const handleStampRewardSuccess = useCallback(() => {
+        refetchTemplates();
+        refetchRewards();
+    }, [refetchTemplates, refetchRewards]);
+
     const isLoading = isLoadingTemplates || isLoadingRewards || isLoadingStats;
 
     if (isLoading) {
@@ -161,13 +257,22 @@ export default function BusinessStampRewardsPage() {
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-                                        Stamp Rewards
+                                        Rewards
                                     </h1>
                                     <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                                        Activate loyalty stamp cards for your customers
+                                        Manage your stamp cards and point rewards for customers
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={handleOpenClaimModal}
+                                className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Reward
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -410,6 +515,51 @@ export default function BusinessStampRewardsPage() {
                     setIsViewCustomersModalOpen(false);
                     setIsAwardStampModalOpen(true);
                 }}
+            />
+
+            {/* Claim Reward Modal (Enhanced with filter tabs) */}
+            <ClaimRewardModal
+                isOpen={isClaimModalOpen}
+                onClose={() => setIsClaimModalOpen(false)}
+                onCreateFromScratch={handleCreateFromScratch}
+                onActivateStampReward={handleActivateFromModal}
+            />
+
+            {/* Reward Type Selection Dialog */}
+            <RewardTypeSelectionDialog
+                isOpen={isRewardTypeSelectionOpen}
+                onClose={() => setIsRewardTypeSelectionOpen(false)}
+                onSelectPointReward={handleSelectPointReward}
+                onSelectStampReward={handleSelectStampReward}
+            />
+
+            {/* Create Point Reward Modal */}
+            <CreateRewardWizardModal
+                isOpen={isCreatePointRewardModalOpen}
+                onClose={() => setIsCreatePointRewardModalOpen(false)}
+                reward={editingReward}
+                onSave={handleSavePointReward}
+            />
+
+            {/* Create Stamp Reward Modal */}
+            <CreateStampRewardWizardModal
+                isOpen={isCreateStampRewardModalOpen}
+                onClose={() => setIsCreateStampRewardModalOpen(false)}
+                mode="create"
+                onSuccess={handleStampRewardSuccess}
+            />
+
+            {/* Upgrade Plan Modal */}
+            <UpgradePlanModal
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+            />
+
+            {/* Tier Limit Modal */}
+            <TierLimitModal
+                isOpen={isTierLimitModalOpen}
+                onClose={() => setIsTierLimitModalOpen(false)}
+                message={tierLimitMessage}
             />
         </div>
     );

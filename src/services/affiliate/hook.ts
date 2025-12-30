@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { AffiliateCodeResponse, AffiliateStats } from './types';
+import { AffiliateCodeResponse, AffiliateStats, TagNetworkDto } from './types';
 
 const AFFILIATE_QUERY_KEY = 'affiliate';
 
@@ -19,13 +19,29 @@ export const useAffiliateCode = () => {
 
 // Fetch Affiliate Stats
 const fetchAffiliateStats = async (): Promise<AffiliateStats> => {
-    const { data } = await api.get<AffiliateStats>('/business/affiliate/analytics');
-    return data;
+  const { data } = await api.get<AffiliateStats>('/business/affiliate/analytics');
+  return data;
 };
 
 export const useAffiliateStats = () => {
-    return useQuery({
-        queryKey: [AFFILIATE_QUERY_KEY, 'stats'],
-        queryFn: fetchAffiliateStats,
-    });
+  return useQuery({
+    queryKey: [AFFILIATE_QUERY_KEY, 'stats'],
+    queryFn: fetchAffiliateStats,
+  });
+};
+
+// Update Referral Tags
+const updateReferralTags = async ({ businessId, tags }: { businessId: string; tags: TagNetworkDto }) => {
+  const { data } = await api.patch(`/network/tag/${businessId}`, tags);
+  return data;
+};
+
+export const useUpdateReferralTags = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateReferralTags,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [AFFILIATE_QUERY_KEY, 'stats'] });
+    },
+  });
 };

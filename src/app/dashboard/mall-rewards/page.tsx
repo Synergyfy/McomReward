@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { mallIntegrationService } from "@/services/mall-integration";
 
 const container = {} as const;
 const itemAnim = {} as const;
@@ -41,10 +42,24 @@ const itemAnim = {} as const;
 export default function BusinessMallRewardsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const limit = 12;
 
   const { data, isLoading, isError, refetch } = useGetMallRewardHistory(page, limit);
   const { data: stats, isLoading: isStatsLoading } = useGetMallRewardStats();
+
+  const handleGoToMall = async () => {
+    try {
+      setIsRedirecting(true);
+      const { redirectUrl } = await mallIntegrationService.getSsoUrl();
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error("SSO Error:", error);
+      toast.error("Failed to connect to Mcom Mall");
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
 
   const history = data?.data || [];
   const totalPages = data?.totalPages || 1;
@@ -294,6 +309,19 @@ export default function BusinessMallRewardsPage() {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
             Sync History
+          </Button>
+
+          <Button
+            className="rounded-xl h-12 bg-orange-600 hover:bg-orange-700 text-white font-bold transition-all shadow-md group"
+            onClick={handleGoToMall}
+            disabled={isRedirecting}
+          >
+            {isRedirecting ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
+            )}
+            Go to Mall Dashboard
           </Button>
         </div>
       </div>

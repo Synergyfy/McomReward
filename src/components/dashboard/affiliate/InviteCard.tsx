@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import QRCode from 'react-qr-code';
 
 interface InviteCardProps {
   referralLink: string;
-  qrCodeUrl: string;
+  qrCodeUrl: string; // Keeping for compatibility, though we'll use dynamic QR
   inviteCode: string;
 }
 
@@ -59,8 +59,13 @@ export default function InviteCard({ referralLink, qrCodeUrl, inviteCode }: Invi
             </Button>
           </div>
         </div>
-        <div className="border-t md:border-t-0 md:border-l pt-6 md:pt-0 md:pl-6 mt-6 md:mt-0">
-          <Image src={qrCodeUrl} alt="Referral QR Code" width={120} height={120} />
+        <div className="border-t md:border-t-0 md:border-l pt-6 md:pt-0 md:pl-6 mt-6 md:mt-0 bg-white p-2 rounded-lg shadow-sm">
+          <QRCode 
+            value={referralLink} 
+            size={120}
+            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            viewBox={`0 0 256 256`}
+          />
         </div>
       </CardContent>
     </Card>

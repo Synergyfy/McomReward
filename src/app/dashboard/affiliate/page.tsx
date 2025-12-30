@@ -12,7 +12,8 @@ export default function AffiliatePage() {
   const { data: affiliateCodeData, isLoading: isLoadingCode, isError: isErrorCode } = useAffiliateCode();
   const { data: statsData, isLoading: isLoadingStats, isError: isErrorStats } = useAffiliateStats();
 
-  const referralLink = `https://mcom.loyal/signup?ref=${affiliateCodeData?.code || ''}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://mcom.loyal';
+  const referralLink = `${baseUrl}/signup?ref=${affiliateCodeData?.code || ''}`;
   const qrCodeUrl = '/placeholder-qr.svg';
 
 

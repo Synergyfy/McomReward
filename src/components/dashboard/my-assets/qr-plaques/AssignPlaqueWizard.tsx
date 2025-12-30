@@ -25,12 +25,13 @@ interface AssignPlaqueWizardProps {
     plaqueId: string | null;
 }
 
-type WizardStep = 'menu' | 'affiliate_list' | 'contact_list' | 'add_contact';
+type WizardStep = 'menu' | 'affiliate_list' | 'contact_list' | 'add_contact' | 'confirm_contact';
 
 export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: AssignPlaqueWizardProps) {
     const [step, setStep] = useState<WizardStep>('menu');
     const [searchQuery, setSearchQuery] = useState('');
     const [prefillContact, setPrefillContact] = useState<Partial<CreateContactDto>>({});
+    const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
     const { mutate: updatePlaque } = useUpdateQrPlaque();
 
     // Data Hooks
@@ -71,9 +72,15 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
     };
 
     const handleBack = () => {
+        if (step === 'confirm_contact') {
+            setStep('contact_list');
+            setSelectedContact(null);
+            return;
+        }
         setStep('menu');
         setSearchQuery('');
         setPrefillContact({});
+        setSelectedContact(null);
     };
 
     const renderMenu = () => (
@@ -146,6 +153,8 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                                 setPrefillContact({
                                     fullName: affiliate.name,
                                     businessName: affiliate.name,
+                                    email: affiliate.email || '',
+                                    phone: affiliate.phone || '',
                                     relationshipTag: 'affiliate',
                                     locationTag: 'national'
                                 });
@@ -194,7 +203,10 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                         <div
                             key={contact.id}
                             className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors"
-                            onClick={() => handleAssign(contact.id)}
+                            onClick={() => {
+                                setSelectedContact(contact);
+                                setStep('confirm_contact');
+                            }}
                         >
                             <div>
                                 <p className="font-medium">{contact.fullName}</p>
@@ -226,6 +238,41 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
         </div>
     );
 
+    const renderConfirmContact = () => {
+        if (!selectedContact) return null;
+        return (
+            <div className="space-y-6 py-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <h3 className="font-semibold text-yellow-800 mb-2">Confirm Assignment</h3>
+                    <p className="text-sm text-yellow-700">
+                        Are you sure you want to assign this plaque to <strong>{selectedContact.fullName}</strong>?
+                    </p>
+                </div>
+
+                <div className="border rounded-lg p-4 space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                        <span className="text-gray-500">Full Name:</span>
+                        <span className="col-span-2 font-medium">{selectedContact.fullName}</span>
+
+                        <span className="text-gray-500">Business:</span>
+                        <span className="col-span-2 font-medium">{selectedContact.businessName || 'N/A'}</span>
+
+                        <span className="text-gray-500">Email:</span>
+                        <span className="col-span-2 font-medium">{selectedContact.email || 'N/A'}</span>
+
+                        <span className="text-gray-500">Relationship:</span>
+                        <span className="col-span-2 capitalize">{selectedContact.relationshipTag}</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={handleBack}>Cancel</Button>
+                    <Button onClick={() => handleAssign(selectedContact.id)}>Confirm & Assign</Button>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -236,6 +283,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                         {step === 'affiliate_list' && "Select a business from your affiliate network."}
                         {step === 'contact_list' && "Select a contact from your network."}
                         {step === 'add_contact' && "Create a new contact to assign this plaque to."}
+                        {step === 'confirm_contact' && "Please confirm the assignment details."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -243,6 +291,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                 {step === 'affiliate_list' && renderAffiliateList()}
                 {step === 'contact_list' && renderContactList()}
                 {step === 'add_contact' && renderAddContact()}
+                {step === 'confirm_contact' && renderConfirmContact()}
 
             </DialogContent>
         </Dialog>

@@ -4,6 +4,8 @@ export interface AffiliateCodeResponse {
 
 export interface ReferredBusiness {
   name: string;
+  email?: string;
+  phone?: string;
   referredAt: string;
   status: 'pending' | 'completed';
 }

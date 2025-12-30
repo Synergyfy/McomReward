@@ -280,7 +280,7 @@ export default function BusinessStampRewardsPage() {
                     payload: {
                         title: rewardData.title,
                         description: rewardData.description,
-                        point_required: rewardData.pointsRequired,
+                        points_required: rewardData.pointsRequired,
                         image: rewardData.image,
                         gallery: rewardData.gallery,
                         quantity: rewardData.quantity,
@@ -313,7 +313,7 @@ export default function BusinessStampRewardsPage() {
                 const payload: CreateBusinessRewardDto = {
                     title: rewardData.title,
                     description: rewardData.description,
-                    point_required: rewardData.pointsRequired,
+                    points_required: rewardData.pointsRequired,
                     image: rewardData.image,
                     gallery: rewardData.gallery,
                     quantity: rewardData.quantity,

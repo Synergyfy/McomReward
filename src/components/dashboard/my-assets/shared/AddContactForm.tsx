@@ -53,9 +53,10 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
             if (onSuccess) {
                 onSuccess(newContact);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to create contact', error);
-            toast.error('Failed to add contact. Please try again.');
+            const errorMessage = error?.response?.data?.message || 'Failed to add contact. Please try again.';
+            toast.error(errorMessage);
         }
     };
 

@@ -25,6 +25,7 @@ import { AddEditPointPackageModal } from '@/components/admin/financials/AddEditP
 import { useDebounce } from '@/hooks/use-debounce';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SeasonManagement } from '@/components/admin/financials/SeasonManagement';
 import { PaymentHistorySearchParams } from '@/services/financials/types';
 
 export default function FinancialsPage() {
@@ -256,6 +257,7 @@ export default function FinancialsPage() {
           <TabsTrigger value="payment-history">Payment History</TabsTrigger>
           <TabsTrigger value="escrow-management">Escrow Management</TabsTrigger>
           <TabsTrigger value="subscription-plans">Subscription Plans</TabsTrigger>
+          <TabsTrigger value="seasons">Seasons</TabsTrigger>
           <TabsTrigger value="payout-requests">Payout Requests</TabsTrigger>
           <TabsTrigger value="point-packages">Point Packages</TabsTrigger>
         </TabsList>
@@ -549,6 +551,11 @@ export default function FinancialsPage() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Seasons Tab */}
+        <TabsContent value="seasons">
+          <SeasonManagement />
         </TabsContent>
 
         {/* Payout Requests Tab */}

@@ -160,7 +160,7 @@ export const getConsumerStampCardById = async (id: string): Promise<ConsumerStam
 // --- MOCK IMPLEMENTATIONS (Missing Endpoints) ---
 
 // Mock data setup
-let mockConsumerStampCards: ConsumerStampCard[] = [
+const mockConsumerStampCards: ConsumerStampCard[] = [
     {
         id: 'csc-101',
         customerId: MOCK_CUSTOMER_ID,

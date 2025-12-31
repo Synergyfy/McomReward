@@ -60,7 +60,7 @@ export interface CreateStampTemplateDto {
     default_image?: string;
 }
 
-export interface UpdateStampTemplateDto extends Partial<CreateStampTemplateDto> { }
+export type UpdateStampTemplateDto = Partial<CreateStampTemplateDto>;
 
 export interface StampRewardTemplateDto {
     id: string;

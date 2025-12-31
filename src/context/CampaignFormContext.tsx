@@ -3,9 +3,12 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 
 export interface CampaignFormData {
+  planType: 'standard' | 'seasonal' | '';
   campaignType: string;
   campaignName: string;
   target_tier_id?: string;
+  target_tier_ids?: string[];
+  tierSpecificDates?: Record<string, { startDate: Date | undefined; endDate: Date | undefined }>;
   maxRewardsPerCampaign?: number;
   rewardIds: string[];
   startDate: Date | undefined;
@@ -57,9 +60,12 @@ interface CampaignFormContextType {
 }
 
 const defaultFormData: CampaignFormData = {
+  planType: '',
   campaignType: '',
   campaignName: '',
   target_tier_id: undefined,
+  target_tier_ids: [],
+  tierSpecificDates: {},
   maxRewardsPerCampaign: undefined,
   rewardIds: [],
   startDate: undefined,

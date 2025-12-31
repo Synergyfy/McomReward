@@ -18,7 +18,7 @@ export function PlanTypeSelectionModal({ isOpen, onClose, onSelectType }: PlanTy
                 <div className="absolute inset-0 z-0 bg-gradient-to-br from-orange-50/50 via-white to-rose-50/50 dark:from-orange-950/20 dark:via-zinc-950 dark:to-rose-950/20" />
 
                 <div className="relative z-10 p-8 sm:p-12">
-                    <DialogHeader className="mb-8 text-center">
+                    <DialogHeader className="mb-8 text-center p-4">
                         <DialogTitle className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-rose-600 dark:from-orange-400 dark:to-rose-400">
                             Choose Plan Type
                         </DialogTitle>

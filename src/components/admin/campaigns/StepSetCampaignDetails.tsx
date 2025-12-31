@@ -16,7 +16,8 @@ import Image from 'next/image';
 import { Calendar, Users, Gift, Tag } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetRewards } from '@/services/rewards/hook';
-import { useGetTiers } from '@/services/tiers/hook'; // Add this import
+import { useGetTiers } from '@/services/tiers/hook';
+import { format } from 'date-fns';
 
 interface RewardOption {
     value: string;
@@ -48,6 +49,45 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     // Fetch rewards from API
     const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
     const rewards = rewardsData?.data || [];
+    const { data: allTiers } = useGetTiers();
+
+    const isSeasonal = formData.planType === 'seasonal';
+    const isMultiTierStandard = !isSeasonal && (formData.target_tier_ids?.length || 0) > 1;
+
+    // Rewards are locked for BOTH Seasonal AND Standard plans now per requirement
+    const isRewardLocked = true;
+
+    // Get selected tiers (seasonal or standard)
+    const selectedTiers = React.useMemo(() => {
+        if (!allTiers) return [];
+        // Both now use target_tier_ids
+        if (formData.target_tier_ids && formData.target_tier_ids.length > 0) {
+             return allTiers.filter(t => formData.target_tier_ids?.includes(t.id));
+        }
+        return allTiers.filter(t => t.id === formData.target_tier_id);
+    }, [allTiers, formData.target_tier_ids, formData.target_tier_id]);
+
+    // Auto-populate Start/End dates ONLY for seasonal campaigns
+    useEffect(() => {
+        if (isSeasonal && selectedTiers.length > 0) {
+            const startDates = selectedTiers.map(t => t.startDate ? new Date(t.startDate) : null).filter(Boolean) as Date[];
+            const endDates = selectedTiers.map(t => t.endDate ? new Date(t.endDate) : null).filter(Boolean) as Date[];
+
+            if (startDates.length > 0) {
+                const minStart = new Date(Math.min(...startDates.map(d => d.getTime())));
+                if (minStart.getTime() !== formData.startDate?.getTime()) {
+                    updateFormData({ startDate: minStart });
+                }
+            }
+
+            if (endDates.length > 0) {
+                const maxEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
+                if (maxEnd.getTime() !== formData.endDate?.getTime()) {
+                    updateFormData({ endDate: maxEnd });
+                }
+            }
+        }
+    }, [isSeasonal, selectedTiers, updateFormData, formData.startDate, formData.endDate]);
 
 
     useEffect(() => {
@@ -81,7 +121,6 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const isFormValid = () => {
         const {
             campaignName,
-            // rewardIds,
             startDate,
             endDate,
             rewardsAvailable,
@@ -89,36 +128,46 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             ctaButtonText,
             audienceType,
             badgeLevels,
-            maxRewardsPerCampaign,
+            tierSpecificDates
         } = formData;
 
         if (
             !campaignName.trim() ||
-            // rewardIds.length === 0 ||
-            !startDate ||
-            !endDate ||
-            Number(rewardsAvailable) <= 0 ||
+            (!isRewardLocked && Number(rewardsAvailable) <= 0) || // Only check if not locked
             !campaignMessage.trim() ||
             !ctaButtonText.trim()
         ) {
             return false;
         }
 
-        // // Check if maxRewardsPerCampaign is enforced
-        // if (maxRewardsPerCampaign && maxRewardsPerCampaign !== -1 && rewardIds.length > maxRewardsPerCampaign) {
-        //     return false;
-        // }
+        // Date Validation
+        if (formData.planType === 'seasonal') { // Only seasonal needs date validation
+            if (!startDate || !endDate) return false;
+        } else {
+            // Standard - Dates removed, so valid
+        }
 
-        // Check if audienceType is empty
         if (audienceType.length === 0) {
             return false;
         }
 
-        // If badge_level is selected, ensure badgeLevels is not empty
         if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) {
             return false;
         }
         return true;
+    };
+
+    const updateTierDate = (tierId: string, field: 'startDate' | 'endDate', date: Date | undefined) => {
+        const currentDates = formData.tierSpecificDates || {};
+        updateFormData({
+            tierSpecificDates: {
+                ...currentDates,
+                [tierId]: {
+                    ...currentDates[tierId],
+                    [field]: date
+                }
+            }
+        });
     };
 
     const rewardOptions = rewards.map(reward => ({ value: reward.id, label: reward.title }));
@@ -126,7 +175,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Step 2: Set Campaign Details</CardTitle>
+                <CardTitle>Step 4: Set Campaign Details</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-4 py-4">
@@ -154,44 +203,67 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                 }
                                 updateFormData({ rewardIds: selectedIds });
                             }}
-                            isOptionDisabled={() => formData.maxRewardsPerCampaign !== undefined && formData.maxRewardsPerCampaign !== -1 && formData.rewardIds.length >= formData.maxRewardsPerCampaign}
+                            isOptionDisabled={() => (formData.maxRewardsPerCampaign !== undefined && formData.maxRewardsPerCampaign !== -1 && formData.rewardIds.length >= formData.maxRewardsPerCampaign) || isRewardLocked}
                             styles={selectErrorStyle}
                             isLoading={isLoadingRewards}
-                            placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
+                            placeholder={isRewardLocked ? "Locked (Business Owners Only)" : (isLoadingRewards ? "Loading rewards..." : "Select...")}
+                            isDisabled={isRewardLocked}
                         />
-                        <p className="text-sm text-gray-500 mt-1">
-                            (Optional) Choose the rewards to be given out in this campaign. Allowed businesses to set the reward.
-                            {formData.maxRewardsPerCampaign && formData.maxRewardsPerCampaign !== -1 && (
-                                <span className="text-red-500 ml-1">
-                                    (Max {formData.maxRewardsPerCampaign} rewards allowed for this tier)
-                                </span>
-                            )}
-                        </p>
+                         {isRewardLocked ? (
+                            <p className="text-sm text-red-500 mt-1">
+                                Only business owners are allowed to add rewards.
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-500 mt-1">
+                                (Optional) Choose the rewards to be given out in this campaign. Allowed businesses to set the reward.
+                                {formData.maxRewardsPerCampaign && formData.maxRewardsPerCampaign !== -1 && (
+                                    <span className="text-red-500 ml-1">
+                                        (Max {formData.maxRewardsPerCampaign} rewards allowed for this tier)
+                                    </span>
+                                )}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label>Start Date & Time</Label>
-                            <div className="flex items-center rounded-md border px-3">
-                                <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                                <DateTimePicker
-                                    date={formData.startDate}
-                                    setDate={(date) => updateFormData({ startDate: date || undefined })}
-                                />
+                    <div className="space-y-4">
+                        {isSeasonal ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label>Start Date & Time</Label>
+                                    <div className="p-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+                                        {selectedTiers.length > 0 ? (
+                                            <ul className="list-disc pl-4 space-y-1">
+                                                {selectedTiers.map(tier => (
+                                                    <li key={tier.id}>
+                                                        <span className="font-semibold">{tier.name}:</span> {tier.startDate ? format(new Date(tier.startDate), 'PPP') : 'N/A'}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <span className="text-gray-400">No seasonal tier selected.</span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">When the campaign will become active.</p>
+                                </div>
+                                <div>
+                                    <Label>End Date & Time</Label>
+                                    <div className="p-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+                                        {selectedTiers.length > 0 ? (
+                                            <ul className="list-disc pl-4 space-y-1">
+                                                {selectedTiers.map(tier => (
+                                                    <li key={tier.id}>
+                                                        <span className="font-semibold">{tier.name}:</span> {tier.endDate ? format(new Date(tier.endDate), 'PPP') : 'N/A'}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <span className="text-gray-400">No seasonal tier selected.</span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">When the campaign will automatically deactivate.</p>
+                                </div>
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">When the campaign will become active.</p>
-                        </div>
-                        <div>
-                            <Label>End Date & Time</Label>
-                            <div className="flex items-center rounded-md border px-3">
-                                <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                                <DateTimePicker
-                                    date={formData.endDate}
-                                    setDate={(date) => updateFormData({ endDate: date || undefined })}
-                                />
-                            </div>
-                            <p className="text-sm text-gray-500 mt-1">When the campaign will automatically deactivate.</p>
-                        </div>
+                        ) : null}
                     </div>
 
                     <div>
@@ -202,8 +274,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                             placeholder="0"
                             value={formData.rewardsAvailable}
                             onChange={(e) => updateFormData({ rewardsAvailable: e.target.value === '' ? '' : Number(e.target.value) })}
+                            disabled={isRewardLocked}
                         />
-                        <p className="text-sm text-gray-500 mt-1">The total number of rewards that can be claimed.</p>
+                         {isRewardLocked ? (
+                             <p className="text-sm text-red-500 mt-1">
+                                 Only business owners are allowed to set availability.
+                             </p>
+                         ) : (
+                            <p className="text-sm text-gray-500 mt-1">The total number of rewards that can be claimed.</p>
+                         )}
                     </div>
 
                     <div>
@@ -395,14 +474,18 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                         <span className="flex items-center font-medium"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span>
                                         <span className="text-right">{Number(formData.rewardsAvailable) > 0 ? formData.rewardsAvailable : 'Unlimited'}</span>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
-                                        <span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span>
-                                        <span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span>
-                                    </div>
+                                    {isSeasonal && (
+                                        <>
+                                            <div className="flex items-center justify-between">
+                                                <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span>
+                                                <span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span>
+                                                <span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span>
+                                            </div>
+                                        </>
+                                    )}
                                     <div className="flex items-center justify-between">
                                         <span className="flex items-center font-medium"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span>
                                         <span className="text-right">

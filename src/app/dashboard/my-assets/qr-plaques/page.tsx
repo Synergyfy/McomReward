@@ -241,6 +241,7 @@ export default function QRPlaquesPage() {
                                 <tr>
                                     <th className="p-4">Plaque ID</th>
                                     <th className="p-4">Name / Price</th>
+                                    <th className="p-4">Assigned To</th>
                                     <th className="p-4">Status</th>
                                     <th className="p-4">Linked Offer</th>
                                     <th className="p-4">Scans</th>
@@ -256,6 +257,20 @@ export default function QRPlaquesPage() {
                                         <tr key={plaque.id} className="border-b hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setViewPlaque(plaque)}>
                                             <td className="p-4 font-medium">{plaque.id}</td>
                                             <td className="p-4">{plaque.status === 'FOR_SALE' ? plaque.price : plaque.name}</td>
+                                            <td className="p-4">
+                                                {plaque.networkContact ? (
+                                                    <div>
+                                                        <div className="font-medium">{plaque.networkContact.fullName}</div>
+                                                        {plaque.networkContact.businessName && (
+                                                            <div className="text-xs text-gray-500">{plaque.networkContact.businessName}</div>
+                                                        )}
+                                                    </div>
+                                                ) : plaque.ownerName ? (
+                                                    plaque.ownerName
+                                                ) : (
+                                                    <span className="text-gray-400 italic">Unassigned</span>
+                                                )}
+                                            </td>
                                             <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(plaque.status)}`}>{plaque.status}</span></td>
                                             <td className="p-4">{plaque.contentUrl || 'N/A'}</td>
                                             <td className="p-4">{plaque.scans || 0}</td>

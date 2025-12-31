@@ -24,7 +24,7 @@ export default function StepCampaignScheduling({ onNext, onBack }: StepProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 4: Campaign Scheduling & Auto Rules</CardTitle>
+        <CardTitle>Step 5: Campaign Scheduling & Auto Rules</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-gray-600">Configure advanced scheduling and automation rules for your campaign.</p>

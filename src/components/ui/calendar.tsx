@@ -32,7 +32,6 @@ function Calendar({
   // Merge the computed disabledDays with any disabled prop passed in
   const mergedDisabled = props.disabled
     ? (Array.isArray(props.disabled) ? [...props.disabled, disabledDays].filter(Boolean) : [props.disabled, disabledDays].filter(Boolean))
-    // @ts-ignore - react-day-picker types can be complex for disabled
     : disabledDays;
 
   return (

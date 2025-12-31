@@ -119,37 +119,35 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
     try {
         // Iterate and create campaign for each tier
         const createPromises = targetTierIds.map(async (tierId) => {
-            let startDate = formData.startDate;
-            let endDate = formData.endDate;
+            let startDateStr = '';
+            let endDateStr = '';
 
             // Date Resolution Logic
             if (formData.planType === 'seasonal') {
                 // For seasonal, get from tier configuration
                 const tier = allTiers?.find(t => t.id === tierId);
                 if (tier?.startDate && tier?.endDate) {
-                    startDate = new Date(tier.startDate);
-                    endDate = new Date(tier.endDate);
+                    startDateStr = new Date(tier.startDate).toISOString();
+                    endDateStr = new Date(tier.endDate).toISOString();
+                } else if (!tier) {
+                     // Fallback if tier not found but selected (shouldn't happen)
+                     throw new Error(`Tier not found for id ${tierId}`);
                 }
-            } else if (isMultiTierStandard) {
-                // For multi-tier standard, get from manual input map
-                const specificDates = formData.tierSpecificDates?.[tierId];
-                if (specificDates?.startDate && specificDates?.endDate) {
-                    startDate = specificDates.startDate;
-                    endDate = specificDates.endDate;
-                }
-            }
-            // Else (Standard Single or Fallback): use global formData.startDate/endDate
 
-            if (!startDate || !endDate) {
-                throw new Error(`Missing dates for tier ${tierId}`);
+                // If seasonal and dates missing, that's an error
+                if (!startDateStr || !endDateStr) {
+                    throw new Error(`Missing dates for seasonal tier ${tierId}`);
+                }
             }
+            // For standard plans, we intentionally leave dates empty/null as requested.
+            // (Previous logic for multi-tier standard dates is removed)
 
             const payload: CreateCampaignPayload = {
               name: formData.campaignName, // Note: Might want to append tier name if names must be unique? Assuming name can be same.
               campaign_type: formData.campaignType || 'qr_code',
               campaign_message: formData.campaignMessage,
-              start_date: startDate.toISOString(),
-              end_date: endDate.toISOString(),
+              start_date: startDateStr,
+              end_date: endDateStr,
               quantity: Number(formData.rewardsAvailable) || 0,
               audience_type: formData.audienceType[0] || 'members',
               signUpPoint: 0,

@@ -219,7 +219,7 @@ export const getStampRewardStats = async (): Promise<StampRewardStats> => {
 // --- MOCK IMPLEMENTATIONS (For endpoints requiring Code/QR or unavailable) ---
 
 // Mock database
-let mockBusinessStampRewards: BusinessStampReward[] = [
+const mockBusinessStampRewards: BusinessStampReward[] = [
     {
         id: 'bsr-1',
         templateId: '1',
@@ -246,7 +246,7 @@ let mockBusinessStampRewards: BusinessStampReward[] = [
     },
 ];
 
-let mockCustomerStampCards: CustomerStampCard[] = [
+const mockCustomerStampCards: CustomerStampCard[] = [
     {
         id: 'csc-1',
         customerId: 'customer-1',

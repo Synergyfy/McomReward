@@ -20,7 +20,6 @@ export default function AdminLayout({
       <div
         className="min-h-screen md:flex"
         style={{
-          // @ts-ignore
           "--primary": "#2563eb",
           "--primary-foreground": "#ffffff",
           "--ring": "#2563eb",

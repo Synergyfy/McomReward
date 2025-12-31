@@ -11,7 +11,11 @@ import { useSearchParams } from "next/navigation";
 function SignupCard() {
   const searchParams = useSearchParams();
   const initialTypeParam = searchParams.get("type");
-  const initialType = (initialTypeParam === "customer" || initialTypeParam === "business") ? initialTypeParam : null;
+  const refCode = searchParams.get("ref");
+  
+  const initialType = (initialTypeParam === "customer" || initialTypeParam === "business") 
+    ? initialTypeParam 
+    : (refCode ? "business" : null);
 
   const [selectedType, setSelectedType] = useState<"customer" | "business" | null>(initialType);
 

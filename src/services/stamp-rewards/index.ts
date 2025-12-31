@@ -206,7 +206,7 @@ export const publishStampReward = async (
 // --- MOCK FUNCTIONS (Endpoints not available in backend yet) ---
 
 // Mock database for fallback
-let mockStampRewards: StampRewardResponse[] = [
+const mockStampRewards: StampRewardResponse[] = [
     {
         id: '1',
         title: 'Buy 5 Coffees, Get 1 Free',

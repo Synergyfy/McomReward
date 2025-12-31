@@ -154,7 +154,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                                     fullName: affiliate.name,
                                     businessName: affiliate.name,
                                     email: affiliate.email || '',
-                                    phone: affiliate.phone || '',
+                                    phone: (affiliate as any).phone || '',
                                     relationshipTag: 'affiliate',
                                     locationTag: 'national'
                                 });

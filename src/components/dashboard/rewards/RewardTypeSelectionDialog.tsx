@@ -9,13 +9,14 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Gift, Stamp, ArrowRight } from 'lucide-react';
+import { Gift, Stamp, ArrowRight, Sparkles } from 'lucide-react';
 
 interface RewardTypeSelectionDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSelectPointReward: () => void;
     onSelectStampReward: () => void;
+    onSelectBoth: () => void;
 }
 
 export default function RewardTypeSelectionDialog({
@@ -23,6 +24,7 @@ export default function RewardTypeSelectionDialog({
     onClose,
     onSelectPointReward,
     onSelectStampReward,
+    onSelectBoth,
 }: RewardTypeSelectionDialogProps) {
     const handleSelectPointReward = () => {
         onClose();
@@ -32,6 +34,11 @@ export default function RewardTypeSelectionDialog({
     const handleSelectStampReward = () => {
         onClose();
         onSelectStampReward();
+    };
+
+    const handleSelectBoth = () => {
+        onClose();
+        onSelectBoth();
     };
 
     return (
@@ -79,10 +86,30 @@ export default function RewardTypeSelectionDialog({
                                 Stamp Reward
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Create a stamp card reward template
+                                Create a reward that customers redeem with stamps
                             </p>
                         </div>
                         <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                    </button>
+
+                    {/* Both Option */}
+                    <button
+                        onClick={handleSelectBoth}
+                        className="group flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 
+                                   hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+                    >
+                        <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                            <Sparkles className="h-6 w-6 text-purple-600 group-hover:text-white" />
+                        </div>
+                        <div className="flex-1 text-left">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                                Both (Points + Stamps)
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Create a hybrid reward that supports both points and stamps
+                            </p>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
                     </button>
                 </div>
 

@@ -99,6 +99,7 @@ export default function BusinessStampRewardsPage() {
     const [tierLimitMessage, setTierLimitMessage] = useState('');
     const [editingReward, setEditingReward] = useState<Reward | null>(null);
     const [editingBusinessRewardId, setEditingBusinessRewardId] = useState<string | null>(null);
+    const [creationRedemptionMode, setCreationRedemptionMode] = useState<{ points: boolean; stamps: boolean }>({ points: true, stamps: false });
 
     // Delete confirmation for point rewards
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -263,18 +264,31 @@ export default function BusinessStampRewardsPage() {
         setIsRewardTypeSelectionOpen(false);
         setEditingReward(null);
         setEditingBusinessRewardId(null);
+        setCreationRedemptionMode({ points: true, stamps: false });
         setIsCreatePointRewardModalOpen(true);
     }, []);
 
     const handleSelectStampReward = useCallback(() => {
         setIsRewardTypeSelectionOpen(false);
-        setIsCreateStampRewardModalOpen(true);
+        setEditingReward(null);
+        setEditingBusinessRewardId(null);
+        setCreationRedemptionMode({ points: false, stamps: true });
+        setIsCreatePointRewardModalOpen(true);
+    }, []);
+
+    const handleSelectBothRewards = useCallback(() => {
+        setIsRewardTypeSelectionOpen(false);
+        setEditingReward(null);
+        setEditingBusinessRewardId(null);
+        setCreationRedemptionMode({ points: true, stamps: true });
+        setIsCreatePointRewardModalOpen(true);
     }, []);
 
     const handleSelectTemplate = useCallback((reward: Reward) => {
         setIsClaimModalOpen(false);
         setEditingReward(reward);
         setEditingBusinessRewardId(null); // Not editing an existing one, but creating from template
+        setCreationRedemptionMode({ points: true, stamps: false }); // Templates are point-based
         setIsCreatePointRewardModalOpen(true);
     }, []);
 
@@ -288,10 +302,17 @@ export default function BusinessStampRewardsPage() {
                         title: rewardData.title,
                         description: rewardData.description,
                         points_required: rewardData.pointsRequired,
+                        stamps_required: rewardData.stampsRequired,
+                        is_points_enabled: rewardData.is_points_enabled,
+                        is_stamps_enabled: rewardData.is_stamps_enabled,
                         image: rewardData.image,
                         gallery: rewardData.gallery,
                         quantity: rewardData.quantity,
                         disabled: rewardData.disabled,
+                        reward_type: rewardData.rewardType as any,
+                        is_mall_integrated: rewardData.is_mall_integrated,
+                        mall_reward_type: rewardData.mall_reward_type,
+                        mall_reward_value: rewardData.mall_reward_value,
                     },
                 }, {
                     onSuccess: () => {
@@ -321,11 +342,17 @@ export default function BusinessStampRewardsPage() {
                     title: rewardData.title,
                     description: rewardData.description,
                     points_required: rewardData.pointsRequired,
+                    stamps_required: rewardData.stampsRequired,
+                    is_points_enabled: rewardData.is_points_enabled,
+                    is_stamps_enabled: rewardData.is_stamps_enabled,
                     image: rewardData.image,
                     gallery: rewardData.gallery,
                     quantity: rewardData.quantity,
                     disabled: rewardData.disabled,
-                    reward_type: 'Voucher',
+                    reward_type: rewardData.rewardType as any,
+                    is_mall_integrated: rewardData.is_mall_integrated,
+                    mall_reward_type: rewardData.mall_reward_type,
+                    mall_reward_value: rewardData.mall_reward_value,
                     status: RewardStatus.ACTIVE,
                 };
 
@@ -800,6 +827,7 @@ export default function BusinessStampRewardsPage() {
                 onClose={() => setIsRewardTypeSelectionOpen(false)}
                 onSelectPointReward={handleSelectPointReward}
                 onSelectStampReward={handleSelectStampReward}
+                onSelectBoth={handleSelectBothRewards}
             />
 
             {/* Create Point Reward Modal */}
@@ -812,6 +840,8 @@ export default function BusinessStampRewardsPage() {
                 }}
                 reward={editingReward}
                 onSave={handleSavePointReward}
+                initialIsPointsEnabled={creationRedemptionMode.points}
+                initialIsStampsEnabled={creationRedemptionMode.stamps}
             />
 
             {/* Create Stamp Reward Modal */}

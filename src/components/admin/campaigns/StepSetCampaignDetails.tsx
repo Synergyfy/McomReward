@@ -70,8 +70,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     // Auto-populate Start/End dates ONLY for seasonal campaigns
     useEffect(() => {
         if (isSeasonal && selectedTiers.length > 0) {
-            const startDates = selectedTiers.map(t => t.startDate ? new Date(t.startDate) : null).filter(Boolean) as Date[];
-            const endDates = selectedTiers.map(t => t.endDate ? new Date(t.endDate) : null).filter(Boolean) as Date[];
+            const startDates = selectedTiers.map(t => t.season?.startDate ? new Date(t.season.startDate) : null).filter(Boolean) as Date[];
+            const endDates = selectedTiers.map(t => t.season?.endDate ? new Date(t.season.endDate) : null).filter(Boolean) as Date[];
 
             if (startDates.length > 0) {
                 const minStart = new Date(Math.min(...startDates.map(d => d.getTime())));
@@ -141,11 +141,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         }
 
         // Date Validation
-        if (formData.planType === 'seasonal') { // Only seasonal needs date validation
-            if (!startDate || !endDate) return false;
-        } else {
-            // Standard - Dates removed, so valid
-        }
+        // Dates are now derived from tiers/seasons for Admin templates, 
+        // or not used for standard templates, so we don't need manual date validation here anymore.
 
         if (audienceType.length === 0) {
             return false;
@@ -235,7 +232,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                             <ul className="list-disc pl-4 space-y-1">
                                                 {selectedTiers.map(tier => (
                                                     <li key={tier.id}>
-                                                        <span className="font-semibold">{tier.name}:</span> {tier.startDate ? format(new Date(tier.startDate), 'PPP') : 'N/A'}
+                                                        <span className="font-semibold">{tier.name}:</span> {tier.season?.startDate ? format(new Date(tier.season.startDate), 'PPP') : 'N/A'}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -252,7 +249,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                             <ul className="list-disc pl-4 space-y-1">
                                                 {selectedTiers.map(tier => (
                                                     <li key={tier.id}>
-                                                        <span className="font-semibold">{tier.name}:</span> {tier.endDate ? format(new Date(tier.endDate), 'PPP') : 'N/A'}
+                                                        <span className="font-semibold">{tier.name}:</span> {tier.season?.endDate ? format(new Date(tier.season.endDate), 'PPP') : 'N/A'}
                                                     </li>
                                                 ))}
                                             </ul>

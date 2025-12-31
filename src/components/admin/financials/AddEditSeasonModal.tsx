@@ -8,11 +8,31 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateSeason, useUpdateSeason } from '@/services/financials';
 import { Season } from '@/services/financials/types';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AddEditSeasonModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialData?: Season;
+}
+
+function LabelWithTooltip({ label, tooltip }: { label: string, tooltip: string }) {
+    return (
+        <div className="flex items-center gap-2 mb-1.5">
+            <Label>{label}</Label>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="max-w-xs text-xs">{tooltip}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
+    );
 }
 
 export function AddEditSeasonModal({ isOpen, onClose, initialData }: AddEditSeasonModalProps) {
@@ -79,43 +99,64 @@ export function AddEditSeasonModal({ isOpen, onClose, initialData }: AddEditSeas
 
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="season-name">Season Name</Label>
+                        <LabelWithTooltip
+                            label="Season Name"
+                            tooltip="A unique name for the season (e.g., 'Summer 2025'). This will be shown in the tier selection dropdown."
+                        />
                         <Input id="season-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Summer 2025" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="start-date">Start Date</Label>
+                            <LabelWithTooltip
+                                label="Start Date"
+                                tooltip="The date and time when this season and its associated plans become active."
+                            />
                             <Input id="start-date" type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="end-date">End Date</Label>
+                            <LabelWithTooltip
+                                label="End Date"
+                                tooltip="The date and time when this season and its associated plans expire."
+                            />
                             <Input id="end-date" type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                         </div>
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
+                        <LabelWithTooltip
+                            label="Description"
+                            tooltip="A brief description of the season for internal reference."
+                        />
                         <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe this season..." />
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="text-color">Text Color</Label>
+                            <LabelWithTooltip
+                                label="Text Color"
+                                tooltip="The color used for text elements in the seasonal card preview."
+                            />
                             <div className="flex gap-2">
                                 <Input id="text-color" type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-12 h-10 p-1" />
                                 <Input value={textColor} onChange={(e) => setTextColor(e.target.value)} className="flex-1" />
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="bg-color">BG Color</Label>
+                            <LabelWithTooltip
+                                label="BG Color"
+                                tooltip="The background color for the seasonal card. Use vibrant brand colors."
+                            />
                             <div className="flex gap-2">
                                 <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-12 h-10 p-1" />
                                 <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="flex-1" />
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="border-color">Border Color</Label>
+                            <LabelWithTooltip
+                                label="Border Color"
+                                tooltip="The border color for the seasonal card, typically a darker shade of the background color."
+                            />
                             <div className="flex gap-2">
                                 <Input id="border-color" type="color" value={borderColor} onChange={(e) => setBorderColor(e.target.value)} className="w-12 h-10 p-1" />
                                 <Input value={borderColor} onChange={(e) => setBorderColor(e.target.value)} className="flex-1" />

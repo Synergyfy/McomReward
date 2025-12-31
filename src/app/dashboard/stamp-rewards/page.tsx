@@ -790,7 +790,6 @@ export default function BusinessStampRewardsPage() {
                 isOpen={isClaimModalOpen}
                 onClose={() => setIsClaimModalOpen(false)}
                 onCreateFromScratch={handleCreateFromScratch}
-                onSelectTemplate={() => {}}
                 onActivateStampReward={handleActivateFromModal}
                 onSelectTemplate={handleSelectTemplate}
             />

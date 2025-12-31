@@ -14,6 +14,7 @@ export interface TierQuotas {
   maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
+  monthlyStampsAllowance: number;
   monthlyRewardBudget: number;
   maxTeamMembers: number;
 }
@@ -89,6 +90,39 @@ export interface TierConfiguration {
   trial?: TrialConfiguration;
 }
 
+export interface Season {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  textColor: string;
+  bgColor: string;
+  borderColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeasonCreateInput {
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+}
+
+export interface SeasonUpdateInput {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+}
+
 export interface Tier {
   id: string;
   createdAt: string;
@@ -96,6 +130,8 @@ export interface Tier {
   deletedAt: string | null;
   name: string;
   type: 'standard' | 'seasonal';
+  season_id?: string;
+  season?: Season;
   startDate?: string;
   endDate?: string;
   fixedPrice?: string;
@@ -119,8 +155,7 @@ export interface Tier {
 export interface TierCreateInput {
   name: string;
   type?: 'standard' | 'seasonal';
-  start_date?: string;
-  end_date?: string;
+  season_id?: string;
   fixed_price?: number;
   monthly_price: number;
   quaterly_price: number;
@@ -132,8 +167,7 @@ export interface TierCreateInput {
 export interface TierUpdateInput {
   name?: string;
   type?: 'standard' | 'seasonal';
-  start_date?: string;
-  end_date?: string;
+  season_id?: string;
   fixed_price?: number;
   monthly_price?: number;
   quaterly_price?: number;

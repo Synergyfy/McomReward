@@ -8,19 +8,33 @@ import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp, useAuth } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
 import Link from "next/link";
 
 export default function BusinessSignupForm() {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get('ref');
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-  } = useForm<BusinessSignUpDto>();
-  const router = useRouter();
+    setValue,
+  } = useForm<BusinessSignUpDto>({
+    defaultValues: {
+      referralCode: refCode || '',
+    }
+  });
 
+  React.useEffect(() => {
+    if (refCode) {
+      setValue('referralCode', refCode);
+    }
+  }, [refCode, setValue]);
+
+  const router = useRouter();
   const { mutateAsync: signUp } = useBusinessSignUp();
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -144,7 +158,7 @@ export default function BusinessSignupForm() {
               Confirm Password <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="referalcode"
+              id="confirmPassword"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...register("confirmPassword", {

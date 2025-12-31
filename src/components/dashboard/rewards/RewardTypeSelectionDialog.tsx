@@ -9,7 +9,7 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Gift, Stamp, CheckCircle2 } from 'lucide-react';
+import { Gift, Stamp, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type RewardType = 'point' | 'stamp';
@@ -43,6 +43,15 @@ export default function RewardTypeSelectionDialog({
             // Reset selection after continuing
             setTimeout(() => setSelectedTypes([]), 300);
         }
+    };
+
+    const handleSelectBoth = () => {
+        setSelectedTypes(['point', 'stamp']);
+        // Small delay to show the selection before continuing
+        setTimeout(() => {
+            onContinue(['point', 'stamp']);
+            setSelectedTypes([]);
+        }, 200);
     };
 
     return (
@@ -122,9 +131,38 @@ export default function RewardTypeSelectionDialog({
                                 Stamp Reward
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Create a stamp card reward template
+                                Create a reward that customers redeem with stamps
                             </p>
                         </div>
+                    </button>
+
+                    {/* Both Option (Combined from dev and HEAD) */}
+                    <button
+                        onClick={handleSelectBoth}
+                        className={cn(
+                            "group flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200",
+                            selectedTypes.includes('point') && selectedTypes.includes('stamp')
+                                ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                                : "border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800"
+                        )}
+                    >
+                        <div className={cn(
+                            "p-3 rounded-xl transition-colors",
+                            selectedTypes.includes('point') && selectedTypes.includes('stamp')
+                                ? "bg-purple-500 text-white"
+                                : "bg-purple-100 dark:bg-purple-900/50 text-purple-600 group-hover:bg-purple-200 dark:group-hover:bg-purple-800"
+                        )}>
+                            <Sparkles className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1 text-left">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                                Both (Points + Stamps)
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Create a hybrid reward that supports both points and stamps
+                            </p>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
                     </button>
                 </div>
 

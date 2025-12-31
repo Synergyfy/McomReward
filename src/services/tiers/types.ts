@@ -41,6 +41,18 @@ export interface TierResponse {
     fixedPrice?: number;
     colorCode?: string;
     description?: string;
+    season?: Season;
+}
+
+export interface Season {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+    textColor?: string;
+    bgColor?: string;
+    borderColor?: string;
 }
 
 export interface GetTiersResponse {

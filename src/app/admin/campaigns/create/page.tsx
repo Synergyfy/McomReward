@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { CampaignFormProvider } from '@/context/CampaignFormContext';
 
+import StepChoosePlanType from '@/components/admin/campaigns/StepChoosePlanType';
 import StepChooseCampaignType from '@/components/admin/campaigns/StepChooseCampaignType';
 import StepSelectTier from '@/components/admin/campaigns/StepSelectTier';
 import StepSetCampaignDetails from '@/components/admin/campaigns/StepSetCampaignDetails';
@@ -11,8 +12,6 @@ import StepConfigureEarnPoints from '@/components/admin/campaigns/StepConfigureE
 import StepConfigureRedeemPoints from '@/components/admin/campaigns/StepConfigureRedeemPoints';
 import StepConfigureContactUs from '@/components/admin/campaigns/StepConfigureContactUs';
 import StepConfigureFooter from '@/components/admin/campaigns/StepConfigureFooter';
-import StepAddDistributionChannels from '@/components/admin/campaigns/StepAddDistributionChannels';
-import StepCampaignScheduling from '@/components/admin/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/admin/campaigns/StepReviewAndCreate';
 import { useSearchParams } from 'next/navigation';
 import { useGuide } from '@/context/GuideContext';
@@ -28,18 +27,19 @@ function CreateCampaignContent() {
     if (shouldStartTour) {
         startGuide('CAMPAIGN');
         // Map wizard steps to guide steps roughly
-        // Step 1 (Type) -> Guide Step 0
-        // Step 3 (Details) -> Guide Step 1
-        // Step 10 (Review) -> Guide Step 2 (assuming minimal guide steps)
+        // Step 1 (Plan) -> Guide Step 0? No, Guide likely expects old flow.
+        // Step 2 (Type) -> Guide Step 0
+        // Step 4 (Details) -> Guide Step 1
+        // Step 9 (Review) -> Guide Step 2 (assuming minimal guide steps)
 
         // You might want to adjust the index mapping based on your guide-content.ts
-        if (currentStep === 1) goToStep(0);
-        else if (currentStep === 3) goToStep(1);
-        else if (currentStep === 10) goToStep(2);
+        if (currentStep === 2) goToStep(0);
+        else if (currentStep === 4) goToStep(1);
+        else if (currentStep === 9) goToStep(2);
     }
   }, [shouldStartTour, startGuide, currentStep, goToStep]);
 
-  const totalSteps = 10; // Adjust based on actual steps
+  const totalSteps = 9; // Adjusted based on removals
 
   const handleNext = () => {
     setCurrentStep((prev) => prev + 1);
@@ -52,25 +52,23 @@ function CreateCampaignContent() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <StepChooseCampaignType onNext={handleNext} onBack={handleBack} />;
+        return <StepChoosePlanType key="step-1" onNext={handleNext} onBack={handleBack} />;
       case 2:
-        return <StepSelectTier onNext={handleNext} onBack={handleBack} />;
+        return <StepChooseCampaignType key="step-2" onNext={handleNext} onBack={handleBack} />;
       case 3:
-        return <StepSetCampaignDetails onNext={handleNext} onBack={handleBack} />;
+        return <StepSelectTier key="step-3" onNext={handleNext} onBack={handleBack} />;
       case 4:
-        return <StepConfigureEarnPoints onNext={handleNext} onBack={handleBack} />;
+        return <StepSetCampaignDetails key="step-4" onNext={handleNext} onBack={handleBack} />;
       case 5:
-        return <StepConfigureRedeemPoints onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureEarnPoints key="step-5" onNext={handleNext} onBack={handleBack} />;
       case 6:
-        return <StepConfigureContactUs onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureRedeemPoints key="step-6" onNext={handleNext} onBack={handleBack} />;
       case 7:
-        return <StepConfigureFooter onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureContactUs key="step-7" onNext={handleNext} onBack={handleBack} />;
       case 8:
-        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
+        return <StepConfigureFooter key="step-8" onNext={handleNext} onBack={handleBack} />;
       case 9:
-        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
-      case 10:
-        return <StepReviewAndCreate onBack={handleBack} />;
+        return <StepReviewAndCreate key="step-9" onBack={handleBack} />;
       default:
         return null;
     }

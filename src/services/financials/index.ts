@@ -10,10 +10,14 @@ import {
   PointPackageUpdateInput,
   PaginatedResponse,
   PaymentHistorySearchParams,
+  Season,
+  SeasonCreateInput,
+  SeasonUpdateInput,
 } from './types';
 
 
 const TIER_QUERY_KEY = 'tiers';
+const SEASON_QUERY_KEY = 'seasons';
 
 // Fetch all tiers
 const getTiers = async (): Promise<Tier[]> => {
@@ -156,6 +160,64 @@ export const useDeletePointPackage = () => {
     mutationFn: deletePointPackage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [POINT_PACKAGE_QUERY_KEY] });
+    },
+  });
+};
+
+// Seasons
+const getSeasons = async (): Promise<Season[]> => {
+  const { data } = await api.get('/season');
+  return data;
+};
+
+export const useGetSeasons = () => {
+  return useQuery<Season[], Error>({
+    queryKey: [SEASON_QUERY_KEY],
+    queryFn: getSeasons,
+  });
+};
+
+const createSeason = async (seasonData: SeasonCreateInput): Promise<Season> => {
+  const { data } = await api.post('/season', seasonData);
+  return data;
+};
+
+export const useCreateSeason = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Season, Error, SeasonCreateInput>({
+    mutationFn: createSeason,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [SEASON_QUERY_KEY] });
+    },
+  });
+};
+
+const updateSeason = async ({ id, ...seasonData }: SeasonUpdateInput & { id: string }): Promise<Season> => {
+  const { data } = await api.patch(`/season/${id}`, seasonData);
+  return data;
+};
+
+export const useUpdateSeason = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Season, Error, SeasonUpdateInput & { id: string }>({
+    mutationFn: updateSeason,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [SEASON_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [SEASON_QUERY_KEY, variables.id] });
+    },
+  });
+};
+
+const deleteSeason = async (id: string): Promise<void> => {
+  await api.delete(`/season/${id}`);
+};
+
+export const useDeleteSeason = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: deleteSeason,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [SEASON_QUERY_KEY] });
     },
   });
 };

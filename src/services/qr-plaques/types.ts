@@ -1,5 +1,5 @@
 
-import { RelationshipTag, LocationTag } from '../network-contacts/types';
+import { RelationshipTag, LocationTag, NetworkContact } from '../network-contacts/types';
 
 export interface QrPlaque {
   id: string;
@@ -14,6 +14,7 @@ export interface QrPlaque {
   assignedPartnerId?: string;
   assignedBusinessId?: string;
   networkContactId?: string;
+  networkContact?: NetworkContact;
   ownerName?: string;
   groupName?: string;
   scans?: number;

@@ -27,7 +27,7 @@ export default function StepChooseCampaignType({ onNext }: StepProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 1: Choose Campaign Type</CardTitle>
+        <CardTitle>Step 2: Choose Campaign Type</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-gray-600">Select the type of campaign you want to create:</p>

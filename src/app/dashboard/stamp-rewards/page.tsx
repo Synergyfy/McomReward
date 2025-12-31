@@ -218,10 +218,20 @@ export default function BusinessStampRewardsPage() {
             value: businessReward.value,
             disabled: businessReward.disabled,
             pointsRequired: businessReward.pointRequired,
+            stampsRequired: businessReward.stampRequired,
+            is_points_enabled: businessReward.is_points_enabled,
+            is_stamps_enabled: businessReward.is_stamps_enabled,
             quantity: businessReward.quantity || 0,
         };
         setEditingReward(mergedReward);
-        setCreationModes(['point']);
+
+        // Construct modes from current reward state
+        const modes: ('point' | 'stamp')[] = [];
+        if (businessReward.is_points_enabled) modes.push('point');
+        if (businessReward.is_stamps_enabled) modes.push('stamp');
+        if (modes.length === 0) modes.push('point'); // Fallback
+
+        setCreationModes(modes);
         setIsCreatePointRewardModalOpen(true);
     }, []);
 
@@ -269,11 +279,16 @@ export default function BusinessStampRewardsPage() {
         setIsCreatePointRewardModalOpen(true);
     }, []);
 
+    const handleSelectStampReward = useCallback(() => {
+        setIsRewardTypeSelectionOpen(false);
+        setIsCreateStampRewardModalOpen(true);
+    }, []);
+
     const handleSelectTemplate = useCallback((reward: Reward) => {
         setIsClaimModalOpen(false);
         setEditingReward(reward);
-        setCreationModes(['point']); // Templates are usually point rewards for now, or we can infer type
-        setEditingBusinessRewardId(null); // Not editing an existing one, but creating from template
+        setCreationModes(['point']); // Templates are usually point rewards for now
+        setEditingBusinessRewardId(null);
         setIsCreatePointRewardModalOpen(true);
     }, []);
 
@@ -287,10 +302,17 @@ export default function BusinessStampRewardsPage() {
                         title: rewardData.title,
                         description: rewardData.description,
                         points_required: rewardData.pointsRequired,
+                        stamps_required: rewardData.stampsRequired,
+                        is_points_enabled: rewardData.is_points_enabled,
+                        is_stamps_enabled: rewardData.is_stamps_enabled,
                         image: rewardData.image,
                         gallery: rewardData.gallery,
                         quantity: rewardData.quantity,
                         disabled: rewardData.disabled,
+                        reward_type: rewardData.rewardType as any,
+                        is_mall_integrated: rewardData.is_mall_integrated,
+                        mall_reward_type: rewardData.mall_reward_type,
+                        mall_reward_value: rewardData.mall_reward_value,
                     },
                 }, {
                     onSuccess: () => {
@@ -320,11 +342,17 @@ export default function BusinessStampRewardsPage() {
                     title: rewardData.title,
                     description: rewardData.description,
                     points_required: rewardData.pointsRequired,
+                    stamps_required: rewardData.stampsRequired,
+                    is_points_enabled: rewardData.is_points_enabled,
+                    is_stamps_enabled: rewardData.is_stamps_enabled,
                     image: rewardData.image,
                     gallery: rewardData.gallery,
                     quantity: rewardData.quantity,
                     disabled: rewardData.disabled,
-                    reward_type: 'Voucher',
+                    reward_type: rewardData.rewardType as any,
+                    is_mall_integrated: rewardData.is_mall_integrated,
+                    mall_reward_type: rewardData.mall_reward_type,
+                    mall_reward_value: rewardData.mall_reward_value,
                     status: RewardStatus.ACTIVE,
                 };
 

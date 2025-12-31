@@ -1,6 +1,6 @@
 
-
 import { BusinessReward } from '../business-reward/types';
+import { TierResponse } from '../tiers/types';
 
 export interface UpdateCampaignPayload extends Partial<CreateCampaignPayload> {
   // reward_ids for claimed campaigns (Admin Rewards)
@@ -49,6 +49,7 @@ export interface CreateCampaignPayload {
   footer_text: string;
   reward_ids?: string[];
   business_reward_ids?: string[];
+  target_tier_ids?: string[];
 }
 
 export interface CampaignResponse {
@@ -93,6 +94,7 @@ export interface CampaignResponse {
   totalMatchingPointsEarned: number;
   matchingPointsDisabledByAdmin: boolean;
   business_reward_ids?: string[];
+  targetTiers?: TierResponse[];
 }
 
 export enum CampaignType {

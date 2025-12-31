@@ -92,7 +92,7 @@ export interface CreateEarningActionDto {
     isActive?: boolean;
 }
 
-export interface UpdateEarningActionDto extends Partial<CreateEarningActionDto> { }
+export type UpdateEarningActionDto = Partial<CreateEarningActionDto>;
 
 // Participant Badges
 export interface ParticipantBadge {
@@ -116,4 +116,4 @@ export interface CreateParticipantBadgeDto {
     color?: string;
 }
 
-export interface UpdateParticipantBadgeDto extends Partial<CreateParticipantBadgeDto> { }
+export type UpdateParticipantBadgeDto = Partial<CreateParticipantBadgeDto>;

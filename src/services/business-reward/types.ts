@@ -13,6 +13,8 @@ export interface Reward {
   disabled: boolean;
   stampsRequired?: number;
   stamps_required?: number;
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
   rewardType?: string;
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
@@ -51,6 +53,8 @@ export interface BusinessReward {
   rewardType?: string;
   stampsRequired?: number;
   stamps_required?: number;
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
   rewardSource?: string;
   audience?: string;
   expiryDatetime?: string;
@@ -105,6 +109,8 @@ export interface CreateBusinessRewardDto {
   status?: RewardStatus;
   reward_type?: string;
   stamps_required?: number;
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
   disabled?: boolean;
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
@@ -127,6 +133,8 @@ export interface UpdateBusinessRewardDto {
   status?: RewardStatus;
   reward_type?: string;
   stamps_required?: number;
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
   disabled?: boolean;
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';

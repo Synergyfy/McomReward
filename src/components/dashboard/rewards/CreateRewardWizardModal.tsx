@@ -32,9 +32,18 @@ interface CreateRewardWizardModalProps {
   onClose: () => void;
   reward?: Reward | null;
   onSave: (rewardData: Reward) => Promise<void> | void;
+  initialIsPointsEnabled?: boolean;
+  initialIsStampsEnabled?: boolean;
 }
 
-export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSave }: CreateRewardWizardModalProps) {
+export default function CreateRewardWizardModal({ 
+  isOpen, 
+  onClose, 
+  reward, 
+  onSave,
+  initialIsPointsEnabled = true,
+  initialIsStampsEnabled = false
+}: CreateRewardWizardModalProps) {
   const router = useRouter();
   const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
   const [step, setStep] = useState(1);
@@ -44,6 +53,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
   const [name, setName] = useState(reward?.title || '');
   const [description, setDescription] = useState(reward?.description || '');
   // const [value, setValue] = useState<number | string>(reward?.value || 0); // Removed Value
+  const [isPointsEnabled, setIsPointsEnabled] = useState(reward?.is_points_enabled ?? initialIsPointsEnabled);
+  const [isStampsEnabled, setIsStampsEnabled] = useState(reward?.is_stamps_enabled ?? initialIsStampsEnabled);
   const [pointsRequired, setPointsRequired] = useState<number | string>(reward?.pointsRequired || 0);
   const [stampsRequired, setStampsRequired] = useState<number | string>(reward?.stampsRequired || 0);
   const [rewardType, setRewardType] = useState<string>(reward?.rewardType || 'Voucher');
@@ -64,6 +75,10 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
   const isEditMode = useMemo(() => !!reward, [reward]);
 
+  const isMallRewardType = useMemo(() => {
+    return ['Voucher', 'gift card', 'coupon'].includes(rewardType);
+  }, [rewardType]);
+
   // Validation: Check if pointsRequired exceeds maxPoints
   const isPointsExceedingMax = useMemo(() => {
     const points = Number(pointsRequired);
@@ -76,6 +91,8 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     setName(reward?.title || '');
     setDescription(reward?.description || '');
     // setValue(reward?.value || 0);
+    setIsPointsEnabled(reward?.is_points_enabled ?? initialIsPointsEnabled);
+    setIsStampsEnabled(reward?.is_stamps_enabled ?? initialIsStampsEnabled);
     setPointsRequired(reward?.pointsRequired || 0);
     setStampsRequired(reward?.stampsRequired || 0);
     setRewardType(reward?.rewardType || 'Voucher');
@@ -94,7 +111,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     if (isOpen) {
       resetForm();
     }
-  }, [isOpen, reward]);
+  }, [isOpen, reward, initialIsPointsEnabled, initialIsStampsEnabled]);
 
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
@@ -166,11 +183,30 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
     if (!name.trim()) newErrors.name = 'Name is required.';
     if (!description.trim()) newErrors.description = 'Description is required.';
     // if (Number(value) <= 0) newErrors.value = 'Value must be greater than 0.';
-    if (Number(pointsRequired) <= 0) newErrors.pointsOrBadge = 'Points Required is required.';
-    if (isPointsExceedingMax) newErrors.pointsExceedingMax = 'Points Required cannot exceed Max Points.';
+    
+    if (isPointsEnabled && Number(pointsRequired) <= 0) {
+      newErrors.pointsOrBadge = 'Points Required is required.';
+    }
+    
+    if (isStampsEnabled && Number(stampsRequired) <= 0) {
+      newErrors.stampsRequired = 'Stamps Required is required.';
+    }
+
+    if (!isPointsEnabled && !isStampsEnabled) {
+      newErrors.redemptionType = 'At least one redemption method (Points or Stamps) must be enabled.';
+    }
+
+    if (isPointsEnabled && isPointsExceedingMax) {
+      newErrors.pointsExceedingMax = 'Points Required cannot exceed Max Points.';
+    }
     if (!isEditMode && !selectedFile) newErrors.image = 'Image is required.';
+    
+    if (isMallRewardType && (Number(mallRewardValue) <= 0)) {
+      newErrors.mallRewardValue = 'Reward Value is required for Vouchers, Gift Cards, and Coupons.';
+    }
+
     setErrors(newErrors);
-  }, [name, description, pointsRequired, maxPoints, selectedFile, isEditMode, isPointsExceedingMax]); // Removed value dependency
+  }, [name, description, pointsRequired, stampsRequired, isPointsEnabled, isStampsEnabled, maxPoints, selectedFile, isEditMode, isPointsExceedingMax, isMallRewardType, mallRewardValue]); // Added mallRewardValue dependency
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -221,14 +257,16 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
         title: name,
         description,
         value: 0, // Value removed from UI, defaulting to 0
-        pointsRequired: Number(pointsRequired),
-        points_required: Number(pointsRequired),
+        pointsRequired: isPointsEnabled ? Number(pointsRequired) : 0,
+        points_required: isPointsEnabled ? Number(pointsRequired) : 0,
         maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
         image: imageUrl,
         gallery: finalGalleryUrls,
         quantity: Number(quantity),
-        stampsRequired: Number(stampsRequired),
-        stamps_required: Number(stampsRequired),
+        stampsRequired: isStampsEnabled ? Number(stampsRequired) : 0,
+        stamps_required: isStampsEnabled ? Number(stampsRequired) : 0,
+        is_points_enabled: isPointsEnabled,
+        is_stamps_enabled: isStampsEnabled,
         rewardType,
         disabled,
         is_mall_integrated: isMallIntegrated,
@@ -267,58 +305,7 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
 
           {step === 1 && (
             <div className="grid gap-4 py-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-                <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">The name of the reward as it will appear to customers.</p>
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
-                <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">A brief explanation of what the reward entails.</p>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
-                {/* Removed Value Input */}
-                <div>
-                  <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
-                  <Input
-                    id="points"
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    max={Number(maxPoints) > 0 ? Number(maxPoints) : undefined}
-                    value={pointsRequired}
-                    onChange={handlePointsChange}
-                    className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
-                  {isPointsExceedingMax && (
-                    <p className="text-xs text-red-500 mt-1">
-                      Points cannot exceed the maximum of {maxPoints} points.
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="stamps" className="block text-sm font-medium mb-1">Stamps Required</label>
-                  <Input
-                    id="stamps"
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    value={stampsRequired}
-                    onChange={handleStampsChange}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">The number of stamps required to redeem this reward.</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="quantity" className="block text-sm font-medium mb-1">Quantity</label>
-                  <Input id="quantity" type="number" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} />
-                  <p className="text-xs text-gray-500 mt-1">The total number of units available for this reward.</p>
-                </div>
                 <div>
                   <label htmlFor="rewardType" className="block text-sm font-medium mb-1">Reward Type</label>
                   <Select value={rewardType} onValueChange={setRewardType}>
@@ -333,8 +320,123 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                       <SelectItem value="physical product">Physical Product</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500 mt-1">The type of reward.</p>
+                  <p className="text-xs text-gray-500 mt-1">Select the category of your reward.</p>
                 </div>
+                <div>
+                  <label htmlFor="quantity" className="block text-sm font-medium mb-1">Total Quantity</label>
+                  <Input id="quantity" type="number" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <p className="text-xs text-gray-500 mt-1">Units available for this reward.</p>
+                </div>
+              </div>
+
+              {isMallRewardType && (
+                <div>
+                  <label htmlFor="mallRewardValue" className="block text-sm font-medium mb-1">Reward Value (£)</label>
+                  <Input
+                    id="mallRewardValue"
+                    type="number"
+                    placeholder="0.00"
+                    step="0.01"
+                    value={mallRewardValue}
+                    onChange={(e) => setMallRewardValue(e.target.value)}
+                    className={errors.mallRewardValue ? 'border-red-500' : ''}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">The monetary value of the {rewardType} (Required).</p>
+                  {errors.mallRewardValue && <p className="text-xs text-red-500 mt-1">{errors.mallRewardValue}</p>}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
+                <Input id="name" placeholder="Reward Name" value={name} onChange={(e) => setName(e.target.value)} />
+                <p className="text-xs text-gray-500 mt-1">The name of the reward as it will appear to customers.</p>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
+                <Textarea id="description" placeholder="Describe the reward" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <p className="text-xs text-gray-500 mt-1">A brief explanation of what the reward entails.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {isPointsEnabled && isStampsEnabled ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
+                      <Input
+                        id="points"
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        max={Number(maxPoints) > 0 ? Number(maxPoints) : undefined}
+                        value={pointsRequired}
+                        onChange={handlePointsChange}
+                        className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Points needed to redeem.</p>
+                      {isPointsExceedingMax && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Cannot exceed {maxPoints} points.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor="stamps" className="block text-sm font-medium mb-1">Stamps Required</label>
+                      <Input
+                        id="stamps"
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        value={stampsRequired}
+                        onChange={handleStampsChange}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Stamps needed to redeem.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {isPointsEnabled && (
+                      <div>
+                        <label htmlFor="points" className="block text-sm font-medium mb-1">Points Required</label>
+                        <Input
+                          id="points"
+                          type="number"
+                          placeholder="0"
+                          min="0"
+                          max={Number(maxPoints) > 0 ? Number(maxPoints) : undefined}
+                          value={pointsRequired}
+                          onChange={handlePointsChange}
+                          className={isPointsExceedingMax ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">The amount of points a customer would earn in a campaign to redeem the reward.</p>
+                        {isPointsExceedingMax && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Points cannot exceed the maximum of {maxPoints} points.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {isStampsEnabled && (
+                      <div>
+                        <label htmlFor="stamps" className="block text-sm font-medium mb-1">Stamps Required</label>
+                        <Input
+                          id="stamps"
+                          type="number"
+                          placeholder="0"
+                          min="0"
+                          value={stampsRequired}
+                          onChange={handleStampsChange}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">The number of stamps required to redeem this reward.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+                {!isPointsEnabled && !isStampsEnabled && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm text-center font-medium">
+                    Please enable at least one redemption method (Points or Stamps) in the previous selection.
+                  </div>
+                )}
               </div>
 
               <div className="border p-4 rounded-lg space-y-4 bg-orange-50/30">
@@ -350,30 +452,19 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                 </div>
 
                 {isMallIntegrated && (
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Mall Reward Type</label>
-                      <Select value={mallRewardType} onValueChange={setMallRewardType}>
-                        <SelectTrigger className="w-full bg-white">
-                          <SelectValue placeholder="Select mall type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="VOUCHER">Voucher</SelectItem>
-                          <SelectItem value="GIFT_CARD">Gift Card</SelectItem>
-                          <SelectItem value="COUPON">Coupon</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Mall Reward Value (£)</label>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={mallRewardValue}
-                        onChange={(e) => setMallRewardValue(e.target.value)}
-                        className="bg-white"
-                      />
-                    </div>
+                  <div className="pt-2">
+                    <label className="block text-sm font-medium mb-1">Mall Category Type</label>
+                    <Select value={mallRewardType} onValueChange={setMallRewardType}>
+                      <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Select mall type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VOUCHER">Voucher</SelectItem>
+                        <SelectItem value="GIFT_CARD">Gift Card</SelectItem>
+                        <SelectItem value="COUPON">Coupon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">Specify how this reward should be categorized within the mall platform.</p>
                   </div>
                 )}
               </div>
@@ -467,14 +558,18 @@ export default function CreateRewardWizardModal({ isOpen, onClose, reward, onSav
                   <p className="text-sm text-gray-600 mb-3">{description}</p>
                   <div className="space-y-2 text-sm">
                     {/* Removed Value Display */}
-                    <div className="flex justify-between">
-                      <span className="font-medium">Points Required:</span>
-                      <span>{pointsRequired}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Stamps Required:</span>
-                      <span>{stampsRequired}</span>
-                    </div>
+                    {isPointsEnabled && (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Points Required:</span>
+                        <span>{pointsRequired}</span>
+                      </div>
+                    )}
+                    {isStampsEnabled && (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Stamps Required:</span>
+                        <span>{stampsRequired}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="font-medium">Quantity:</span>
                       <span>{quantity}</span>

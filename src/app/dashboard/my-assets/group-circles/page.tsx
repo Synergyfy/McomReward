@@ -477,8 +477,8 @@ export default function GroupCirclesPage() {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {missingMandatory.map(m => (
-                            <Button key={m} size="sm" onClick={() => handleCreateMandatory(m)} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        {missingMandatory.map((m, i) => (
+                            <Button key={`${m}-${i}`} size="sm" onClick={() => handleCreateMandatory(m)} className="bg-orange-600 hover:bg-orange-700 text-white">
                                 Create {m}
                             </Button>
                         ))}
@@ -520,13 +520,13 @@ export default function GroupCirclesPage() {
 
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant={(focusedOrbits || relationshipFilter) ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", (focusedOrbits || relationshipFilter) ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
+                                                    <Button size="icon" variant={focusedOrbits ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", focusedOrbits ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
                                                     <p className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 tracking-widest">Filter by Location</p>
-                                                    <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-600" />Nearby</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-500" />Hyperlocal</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-400" />National</DropdownMenuItem>
+                                                    <DropdownMenuItem key="filter-nearby" onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-600" />Nearby</DropdownMenuItem>
+                                                    <DropdownMenuItem key="filter-hyperlocal" onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-500" />Hyperlocal</DropdownMenuItem>
+                                                    <DropdownMenuItem key="filter-national" onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-400" />National</DropdownMenuItem>
                                                     {focusedOrbits && <DropdownMenuItem onClick={() => setFocusedOrbits(null)} className="cursor-pointer text-zinc-500 rounded-lg">Clear Filter</DropdownMenuItem>}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -555,7 +555,7 @@ export default function GroupCirclesPage() {
                                                 onMemberClick={setActiveMember}
                                                 currentMemberId={myMemberId}
                                                 focusedOrbits={focusedOrbits}
-                                                relationshipFilter={relationshipFilter}
+                                                
                                             />
                                         </div>
                                     </div>
@@ -650,6 +650,9 @@ export default function GroupCirclesPage() {
         </div>
     );
 };
+
+
+
 
 
 

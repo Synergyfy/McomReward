@@ -116,10 +116,10 @@ export const MessagingOverlay = React.memo(({
                                     return msg.type === 'DIRECT' && (msg.senderId === chatMemberId || msg.recipientId === chatMemberId);
                                 })
                                 .reverse()
-                                .map((msg: any) => {
+                                .map((msg: any, idx: number) => {
                                     const isMe = msg.senderId === profile?.id;
                                     return (
-                                        <div key={msg.id} className={cn("flex flex-col gap-1.5", isMe ? "items-end" : "items-start")}>
+                                        <div key={msg.id || idx} className={cn("flex flex-col gap-1.5", isMe ? "items-end" : "items-start")}>
                                             {!isMe && chatType === 'GROUP' && (
                                                 <span className="text-[10px] font-black uppercase text-zinc-400 ml-1">{msg.senderName}</span>
                                             )}
@@ -178,3 +178,4 @@ export const MessagingOverlay = React.memo(({
 });
 
 MessagingOverlay.displayName = "MessagingOverlay";
+

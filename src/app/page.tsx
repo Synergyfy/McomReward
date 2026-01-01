@@ -168,13 +168,13 @@ export default function Landing() {
       <section
         ref={ref}
         id="how-it-works"
-        className="py-32 bg-white max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-20 overflow-hidden"
+        className="py-32 bg-white max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center lg:items-start gap-20 overflow-hidden"
       >
         {/* iPhone mockup with scroll-based animation */}
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
           animate={controls}
-          className="relative w-full lg:w-1/2 flex justify-center"
+          className="relative w-full lg:w-1/2 flex justify-center lg:mt-28"
         >
 
 

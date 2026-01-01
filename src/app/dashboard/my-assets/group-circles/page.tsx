@@ -43,6 +43,7 @@ import {
 } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { useAffiliateStats } from "@/services/affiliate/hook";
 
 import { MultiLayerRadialGraph, Member, OrbitLevel } from "./components/MultiLayerRadialGraph";
 import { InviteMemberDialog } from "./components/InviteMemberDialog";
@@ -70,6 +71,7 @@ export default function GroupCirclesPage() {
     const [circleSearch, setCircleSearch] = useState("");
     const [activeMember, setActiveMember] = useState<Member | null>(null);
     const [focusedOrbits, setFocusedOrbits] = useState<number[] | null>(null);
+    const [relationshipFilter, setRelationshipFilter] = useState<string | null>(null);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [contributionOpen, setContributionOpen] = useState(false);
@@ -85,9 +87,11 @@ export default function GroupCirclesPage() {
         duration: 90,
         interactionLevel: 'READ',
         contributionAmount: 0,
-        networkIds: []
+        networkIds: [],
+        referredBusinessIds: []
     });
 
+    const { data: affiliateStats } = useAffiliateStats();
     const createCircleMutation = useCreateGroupCircle();
     const updateCircleMutation = useUpdateGroupCircle();
     const removeMemberMutation = useRemoveGroupCircleMember();
@@ -111,26 +115,27 @@ export default function GroupCirclesPage() {
             durationDays: circle.duration,
             members: circle.members.map(m => {
                 let orbit: OrbitLevel = 6;
-                const loc = m.network.locationTag?.toLowerCase();
+                const network = m.network || {};
+                const loc = network.locationTag?.toLowerCase();
                 if (loc === 'nearby') orbit = 1;
                 else if (loc === 'hyperlocal') orbit = 3;
                 else if (loc === 'national') orbit = 5;
                 else if (m.role === 'OWNER') orbit = 1;
 
                 return {
-                    id: m.network.id,
+                    id: network.id || m.id,
                     memberId: m.id,
-                    name: m.network.fullName,
-                    email: m.network.email,
+                    name: network.fullName || "Unknown Member",
+                    email: network.email || "",
                     role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
                     orbit,
-                    status: (m.network.status === 'accepted' ? 'active' : 'offline') as any,
-                    category: m.network.businessName || m.network.relationshipTag || "Partner",
+                    status: (network.status === 'accepted' ? 'active' : 'offline') as any,
+                    category: network.businessName || network.relationshipTag || "Partner",
                     avatar: undefined,
                     contributions: Number(circle.contributionAmount),
                     drawDate: m.drawDate,
-                    locationTag: m.network.locationTag ? (m.network.locationTag.charAt(0).toUpperCase() + m.network.locationTag.slice(1)) : "Unknown",
-                    relationshipTag: m.network.relationshipTag ? (m.network.relationshipTag.charAt(0).toUpperCase() + m.network.relationshipTag.slice(1)) : "Network"
+                    locationTag: network.locationTag ? (network.locationTag.charAt(0).toUpperCase() + network.locationTag.slice(1)) : "Unknown",
+                    relationshipTag: network.relationshipTag ? (network.relationshipTag.charAt(0).toUpperCase() + network.relationshipTag.slice(1)) : "Network"
                 } as Member;
             })
         }));
@@ -176,6 +181,7 @@ export default function GroupCirclesPage() {
             interactionLevel: 'READ',
             contributionAmount: 0,
             networkIds: [],
+            referredBusinessIds: [],
             type: typeDef.id as GroupCircleType
         });
         setCreateStep(2);
@@ -194,7 +200,8 @@ export default function GroupCirclesPage() {
             duration: apiCircle.duration as any,
             interactionLevel: apiCircle.interactionLevel,
             contributionAmount: Number(apiCircle.contributionAmount),
-            networkIds: apiCircle.members.map(m => m.network.id)
+            networkIds: apiCircle.members.map(m => m.network.id),
+            referredBusinessIds: []
         });
         setCreateStep(2);
         setCreateOpen(true);
@@ -223,7 +230,8 @@ export default function GroupCirclesPage() {
                 duration: 90,
                 interactionLevel: 'READ',
                 contributionAmount: 0,
-                networkIds: []
+                networkIds: [],
+                referredBusinessIds: []
             });
         } catch (error) {
             toast.error(isEditing ? "Failed to update circle" : "Failed to create circle");
@@ -418,35 +426,78 @@ export default function GroupCirclesPage() {
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label>Network Contacts</Label>
-                                <ScrollArea className="h-[120px] w-full border rounded-md p-2">
-                                    <div className="space-y-2">
-                                        {networkContactsData?.data.map((contact) => (
-                                            <div key={contact.id} className="flex items-center space-x-2">
-                                                <Switch
-                                                    id={`contact-${contact.id}`}
-                                                    checked={newCircleData.networkIds?.includes(contact.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        const currentIds = newCircleData.networkIds || [];
-                                                        if (checked) {
-                                                            setNewCircleData({ ...newCircleData, networkIds: [...currentIds, contact.id] });
-                                                        } else {
-                                                            setNewCircleData({ ...newCircleData, networkIds: currentIds.filter(id => id !== contact.id) });
-                                                        }
-                                                    }}
-                                                />
-                                                <Label htmlFor={`contact-${contact.id}`} className="text-sm font-normal cursor-pointer">
-                                                    {contact.fullName} {contact.businessName ? `(${contact.businessName})` : ""}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                        {(!networkContactsData || networkContactsData.data.length === 0) && (
-                                            <p className="text-xs text-muted-foreground text-center py-4">No contacts found</p>
-                                        )}
-                                    </div>
-                                </ScrollArea>
-                                <p className="text-[10px] text-muted-foreground">Select partners from your network to join this circle initially.</p></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Network Contacts</Label>
+                                    <ScrollArea className="h-[150px] w-full border rounded-xl p-3 bg-zinc-50/50">
+                                        <div className="space-y-3">
+                                            {networkContactsData?.data.map((contact) => (
+                                                <div key={contact.id} className="flex items-center space-x-3 group">
+                                                    <Switch
+                                                        id={`contact-${contact.id}`}
+                                                        checked={newCircleData.networkIds?.includes(contact.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            const currentIds = newCircleData.networkIds || [];
+                                                            if (checked) {
+                                                                setNewCircleData({ ...newCircleData, networkIds: [...currentIds, contact.id] });
+                                                            } else {
+                                                                setNewCircleData({ ...newCircleData, networkIds: currentIds.filter(id => id !== contact.id) });
+                                                            }
+                                                        }}
+                                                        className="data-[state=checked]:bg-orange-600"
+                                                    />
+                                                    <Label htmlFor={`contact-${contact.id}`} className="text-xs font-medium cursor-pointer group-hover:text-orange-600 transition-colors truncate flex-1">
+                                                        {contact.fullName}
+                                                        {contact.businessName && <span className="block text-[10px] text-muted-foreground font-normal">{contact.businessName}</span>}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                            {(!networkContactsData || networkContactsData.data.length === 0) && (
+                                                <div className="flex flex-col items-center justify-center py-6 text-center">
+                                                    <Users className="w-8 h-8 text-zinc-200 mb-2" />
+                                                    <p className="text-[10px] text-muted-foreground">No contacts found</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Referred Businesses</Label>
+                                    <ScrollArea className="h-[150px] w-full border rounded-xl p-3 bg-zinc-50/50">
+                                        <div className="space-y-3">
+                                            {affiliateStats?.referredBusinesses.map((referral) => (
+                                                <div key={referral.businessId} className="flex items-center space-x-3 group">
+                                                    <Switch
+                                                        id={`referral-${referral.businessId}`}
+                                                        checked={newCircleData.referredBusinessIds?.includes(referral.businessId)}
+                                                        onCheckedChange={(checked) => {
+                                                            const currentIds = newCircleData.referredBusinessIds || [];
+                                                            if (checked) {
+                                                                setNewCircleData({ ...newCircleData, referredBusinessIds: [...currentIds, referral.businessId] });
+                                                            } else {
+                                                                setNewCircleData({ ...newCircleData, referredBusinessIds: currentIds.filter(id => id !== referral.businessId) });
+                                                            }
+                                                        }}
+                                                        className="data-[state=checked]:bg-indigo-600"
+                                                    />
+                                                    <Label htmlFor={`referral-${referral.businessId}`} className="text-xs font-medium cursor-pointer group-hover:text-indigo-600 transition-colors truncate flex-1">
+                                                        {referral.name}
+                                                        <span className="block text-[10px] text-muted-foreground font-normal capitalize">{referral.relationshipTag || 'Affiliate'}</span>
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                            {(!affiliateStats?.referredBusinesses || affiliateStats.referredBusinesses.length === 0) && (
+                                                <div className="flex flex-col items-center justify-center py-6 text-center">
+                                                    <Briefcase className="w-8 h-8 text-zinc-200 mb-2" />
+                                                    <p className="text-[10px] text-muted-foreground">No referrals found</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-4 italic">You can select partners from your network and your referred businesses to join this circle.</p>
                         </motion.div>
                     </AnimatePresence>
 
@@ -520,14 +571,35 @@ export default function GroupCirclesPage() {
 
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant={focusedOrbits ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", focusedOrbits ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
+                                                    <Button size="icon" variant={(focusedOrbits || relationshipFilter) ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", (focusedOrbits || relationshipFilter) ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
-                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 tracking-widest">Filter by Location</p>
-                                                    <DropdownMenuItem key="filter-nearby" onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-600" />Nearby</DropdownMenuItem>
-                                                    <DropdownMenuItem key="filter-hyperlocal" onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-500" />Hyperlocal</DropdownMenuItem>
-                                                    <DropdownMenuItem key="filter-national" onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])} className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700")}><div className="w-2.5 h-2.5 rounded-full bg-orange-400" />National</DropdownMenuItem>
-                                                    {focusedOrbits && <DropdownMenuItem onClick={() => setFocusedOrbits(null)} className="cursor-pointer text-zinc-500 rounded-lg">Clear Filter</DropdownMenuItem>}
+                                                <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
+                                                    <div className="px-2 py-1.5">
+                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Location Tags</p>
+                                                        <div className="space-y-0.5">
+                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-600" />Nearby{focusedOrbits?.includes(1) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-500" />Hyperlocal{focusedOrbits?.includes(3) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-400" />National{focusedOrbits?.includes(5) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
+                                                        </div>
+                                                    </div>
+
+                                                    <Separator className="my-1 opacity-50" />
+
+                                                    <div className="px-2 py-1.5">
+                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Relationship Tags</p>
+                                                        <div className="space-y-0.5">
+                                                            {['Supplier', 'Partner', 'Affiliate'].map((rel) => (
+                                                                <DropdownMenuItem key={rel} onClick={() => setRelationshipFilter(relationshipFilter === rel ? null : rel)} className={cn("cursor-pointer rounded-lg gap-2 text-xs", relationshipFilter === rel && "bg-orange-50 text-orange-700 font-bold")}><Users className="w-3.5 h-3.5 text-zinc-400" />{rel}{relationshipFilter === rel && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {(focusedOrbits || relationshipFilter) && (
+                                                        <>
+                                                            <Separator className="my-1 opacity-50" />
+                                                            <DropdownMenuItem onClick={() => { setFocusedOrbits(null); setRelationshipFilter(null); }} className="cursor-pointer text-zinc-500 rounded-lg text-xs justify-center font-bold hover:text-red-600 transition-colors">Clear All Filters</DropdownMenuItem>
+                                                        </>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
 
@@ -555,7 +627,8 @@ export default function GroupCirclesPage() {
                                                 onMemberClick={setActiveMember}
                                                 currentMemberId={myMemberId}
                                                 focusedOrbits={focusedOrbits}
-                                                
+                                                profileImage={profile?.profileImage}
+                                                relationshipFilter={relationshipFilter}
                                             />
                                         </div>
                                     </div>

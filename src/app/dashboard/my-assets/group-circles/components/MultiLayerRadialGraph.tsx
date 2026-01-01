@@ -28,8 +28,8 @@ export interface Member {
 
 export const ORBIT_CONFIG: Record<number, { label: string; radius: number; color: string; description: string }> = {
     1: { label: "Core", radius: 12, color: "border-orange-600", description: "Critical partners & team" },
-    2: { label: "Inner", radius: 24, color: "border-orange-500", description: "Frequent collaborators" }, 
-    3: { label: "Local", radius: 36, color: "border-orange-400", description: "Nearby businesses" },      
+    2: { label: "Inner", radius: 24, color: "border-orange-500", description: "Frequent collaborators" },
+    3: { label: "Local", radius: 36, color: "border-orange-400", description: "Nearby businesses" },
     4: { label: "Regional", radius: 48, color: "border-orange-300", description: "State/Regional reach" },
     5: { label: "National", radius: 60, color: "border-orange-200", description: "Country-wide partners" },
     6: { label: "Global", radius: 75, color: "border-zinc-200", description: "International / Peripheral" },
@@ -37,23 +37,26 @@ export const ORBIT_CONFIG: Record<number, { label: string; radius: number; color
 
 interface MultiLayerRadialGraphProps {
     members: Member[];
-    onMemberClick: (m: Member) => void;
     currentMemberId?: string | null;
     focusedOrbits?: number[] | null;
+    profileImage?: string;
+    relationshipFilter?: string | null;
 }
 
 export const MultiLayerRadialGraph = React.memo(({
     members,
     onMemberClick,
     currentMemberId,
-    focusedOrbits = null
+    focusedOrbits = null,
+    profileImage,
+    relationshipFilter = null
 }: MultiLayerRadialGraphProps) => {
     const me = members.find(m => m.id === currentMemberId) ||
         members.find(m => m.role.toLowerCase() === 'owner');
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-visible">
-            <div className="relative w-full aspect-square max-w-[800px] max-h-[800px] mx-auto isolate">   
+            <div className="relative w-full aspect-square max-w-[800px] max-h-[800px] mx-auto isolate">
 
                 {/* Radar Scanner Effect */}
                 <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0 opacity-20">
@@ -92,18 +95,32 @@ export const MultiLayerRadialGraph = React.memo(({
                         }
                     }}
                     className={cn(
-                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 select-none cursor-pointer hover:shadow-orange-500/50 pointer-events-auto"  
+                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30 border-4 border-white dark:border-zinc-900 transition-all hover:scale-105 select-none cursor-pointer hover:shadow-orange-500/50 pointer-events-auto overflow-hidden"
                     )}
                 >
-                    <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse pointer-events-none" />    
-                    <span className="text-[6px] md:text-[8px] font-bold pointer-events-none">YOU</span>   
+                    {profileImage ? (
+                        <img
+                            src={profileImage}
+                            alt="You"
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <>
+                            <Zap className="w-4 h-4 md:w-6 md:h-6 mb-0.5 animate-pulse pointer-events-none" />
+                            <span className="text-[6px] md:text-[8px] font-bold pointer-events-none">YOU</span>
+                        </>
+                    )}
                 </div>
 
                 {/* --- The Particles (Members) --- */}
                 <AnimatePresence>
                     {members
                         .filter(m => m.id !== (me?.id || null))
-                        .filter(m => !focusedOrbits || focusedOrbits.includes(m.orbit))
+                        .filter(m => {
+                            const orbitMatch = !focusedOrbits || focusedOrbits.includes(m.orbit);
+                            const relationMatch = !relationshipFilter || m.relationshipTag?.toLowerCase() === relationshipFilter.toLowerCase();
+                            return orbitMatch && relationMatch;
+                        })
                         .map((member, i) => {
                             const siblings = members.filter(m => m.orbit === member.orbit);
                             const indexInOrbit = siblings.indexOf(member);
@@ -129,7 +146,7 @@ export const MultiLayerRadialGraph = React.memo(({
                                         stiffness: 200,
                                         damping: 20
                                     }}
-                                    className="absolute w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 z-20"     
+                                    className="absolute w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 z-20"
                                     style={{
                                         left: `${x}%`,
                                         top: `${y}%`,
@@ -153,7 +170,7 @@ export const MultiLayerRadialGraph = React.memo(({
                                                 <button
                                                     onClick={() => onMemberClick(member)}
                                                     className={cn(
-                                                        "relative group w-full h-full rounded-full transition-all duration-300 hover:scale-125 hover:z-50 focus:outline-none focus:ring-2 focus:ring-orange-500",   
+                                                        "relative group w-full h-full rounded-full transition-all duration-300 hover:scale-125 hover:z-50 focus:outline-none focus:ring-2 focus:ring-orange-500",
                                                     )}
                                                 >
                                                     <div className={cn(

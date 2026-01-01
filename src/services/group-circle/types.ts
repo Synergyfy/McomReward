@@ -53,9 +53,10 @@ export interface CreateGroupCircleDto {
     description: string;
     type: GroupCircleType;
     duration: GroupCircleDuration;
-interactionLevel: GroupCircleInteractionLevel;
+    interactionLevel: GroupCircleInteractionLevel;
     contributionAmount: number;
     networkIds: string[];
+    referredBusinessIds?: string[];
 }
 
 import { NetworkContact } from '../network-contacts/types';
@@ -73,7 +74,7 @@ export interface GroupCircle {
     description: string;
     type: GroupCircleType;
     duration: number;
-interactionLevel: GroupCircleInteractionLevel;
+    interactionLevel: GroupCircleInteractionLevel;
     status: GroupCircleStatus;
     contributionAmount: number;
     payoutFrequency: PayoutFrequency;
@@ -101,8 +102,9 @@ export interface UpdateGroupCircleDto {
     description?: string;
     type?: GroupCircleType;
     duration?: GroupCircleDuration;
-interactionLevel?: GroupCircleInteractionLevel;
+    interactionLevel?: GroupCircleInteractionLevel;
     networkIds?: string[];
+    referredBusinessIds?: string[];
     contributionAmount?: number;
 }
 export interface SendMessageDto {

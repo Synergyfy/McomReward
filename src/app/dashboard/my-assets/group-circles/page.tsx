@@ -53,6 +53,7 @@ interface Member {
     relationshipScore?: number; // 0-100 logic for placement
     locationTag?: string;
     relationshipTag?: string;
+    email?: string;
 }
 
 interface GroupCircle {
@@ -67,12 +68,12 @@ interface GroupCircle {
 
 // --- Mock Data ---
 const ORBIT_CONFIG: Record<number, { label: string; radius: number; color: string; description: string }> = {
-    1: { label: "Core", radius: 12, color: "border-orange-600", description: "Critical partners & team" },
-    2: { label: "Inner", radius: 24, color: "border-orange-500", description: "Frequent collaborators" },
-    3: { label: "Local", radius: 36, color: "border-orange-400", description: "Nearby businesses" },
-    4: { label: "Regional", radius: 48, color: "border-orange-300", description: "State/Regional reach" },
-    5: { label: "National", radius: 60, color: "border-orange-200", description: "Country-wide partners" },
-    6: { label: "Global", radius: 75, color: "border-zinc-200", description: "International / Peripheral" },
+    1: { label: "Core", radius: 10, color: "border-orange-600", description: "Critical partners & team" },
+    2: { label: "Inner", radius: 18, color: "border-orange-500", description: "Frequent collaborators" },
+    3: { label: "Local", radius: 26, color: "border-orange-400", description: "Nearby businesses" },
+    4: { label: "Regional", radius: 34, color: "border-orange-300", description: "State/Regional reach" },
+    5: { label: "National", radius: 42, color: "border-orange-200", description: "Country-wide partners" },
+    6: { label: "Global", radius: 50, color: "border-zinc-200", description: "International / Peripheral" },
 };
 
 const GROUP_CIRCLE_TYPES = [
@@ -114,15 +115,16 @@ const MultiLayerRadialGraph = ({
     members,
     onMemberClick,
     currentMemberId,
-    focusedOrbits = null
+    focusedOrbits = null,
+    relationshipFilter = null
 }: {
     members: Member[],
     onMemberClick: (m: Member) => void,
     currentMemberId?: string | null,
-    focusedOrbits?: number[] | null
+    focusedOrbits?: number[] | null,
+    relationshipFilter?: string | null
 }) => {
-    const me = members.find(m => m.id === currentMemberId) ||
-        members.find(m => m.role.toLowerCase() === 'owner');
+    const me = members.find(m => m.id === currentMemberId);
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-visible">
@@ -178,7 +180,11 @@ const MultiLayerRadialGraph = ({
                 <AnimatePresence>
                     {members
                         .filter(m => m.id !== (me?.id || null))
-                        .filter(m => !focusedOrbits || focusedOrbits.includes(m.orbit))
+                        .filter(m => {
+                            const orbitMatch = !focusedOrbits || focusedOrbits.includes(m.orbit);
+                            const relationMatch = !relationshipFilter || m.relationshipTag?.toLowerCase() === relationshipFilter.toLowerCase();
+                            return orbitMatch && relationMatch;
+                        })
                         .map((member, i) => {
                             const siblings = members.filter(m => m.orbit === member.orbit);
                             const indexInOrbit = siblings.indexOf(member);
@@ -542,6 +548,7 @@ export default function GroupCirclesPage() {
     // Interaction State
     const [activeMember, setActiveMember] = useState<Member | null>(null);
     const [focusedOrbits, setFocusedOrbits] = useState<number[] | null>(null);
+    const [relationshipFilter, setRelationshipFilter] = useState<string | null>(null);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
     const [contributionOpen, setContributionOpen] = useState(false);
@@ -595,23 +602,22 @@ export default function GroupCirclesPage() {
         [circles, selectedCircleId]);
 
     const myMemberId = useMemo(() => {
-        if (!selectedCircle || !profile || !profile.email) return null;
+        if (!selectedCircle || !profile?.email) return null;
 
         const myEmail = profile.email.toLowerCase().trim();
-        const matchedMember = selectedCircle.members.find(m => {
-            const memberEmail = (m as any).email?.toLowerCase().trim();
-            // Also try matching by name/business name if email is missing (last resort)
-            // Use mapped properties since 'network' object is not available in UI member type
-            const memberName = m.name?.toLowerCase().trim();
-            const businessName = m.category?.toLowerCase().trim();
-            const myName = profile.name.toLowerCase().trim();
 
-            return (memberEmail && memberEmail === myEmail) ||
-                (memberName && memberName === myName) ||
-                (businessName && businessName === myName);
-        });
+        // Find yourself: MUST match your email AND be the Owner.
+        const me = selectedCircle.members.find(m =>
+            m.email?.toLowerCase().trim() === myEmail &&
+            m.role.toLowerCase() === 'owner'
+        );
 
-        return matchedMember?.id;
+        if (me) return me.id;
+
+        // Fallback: Just find the first owner if email match fails 
+        // (handles cases where profile email might not perfectly match circle email)
+        const anyOwner = selectedCircle.members.find(m => m.role.toLowerCase() === 'owner');
+        return anyOwner?.id || null;
     }, [selectedCircle, profile]);
 
     // Actions
@@ -1115,42 +1121,69 @@ export default function GroupCirclesPage() {
 
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant={focusedOrbits ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", focusedOrbits ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
+                                                    <Button size="icon" variant={(focusedOrbits || relationshipFilter) ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", (focusedOrbits || relationshipFilter) ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
-                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 tracking-widest">Filter by Location</p>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])}
-                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700")}
-                                                    >
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-600" />
-                                                        Nearby
-                                                        {focusedOrbits?.includes(1) && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])}
-                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700")}
-                                                    >
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                                                        Hyperlocal
-                                                        {focusedOrbits?.includes(3) && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])}
-                                                        className={cn("cursor-pointer rounded-lg gap-2", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700")}
-                                                    >
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400" />
-                                                        National
-                                                        {focusedOrbits?.includes(5) && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                                    </DropdownMenuItem>
-                                                    {focusedOrbits && (
-                                                        <>
-                                                            <Separator className="my-1" />
+                                                <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
+                                                    <div className="px-2 py-1.5">
+                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Location Tags</p>
+                                                        <div className="space-y-0.5">
                                                             <DropdownMenuItem
-                                                                onClick={() => setFocusedOrbits(null)}
-                                                                className="cursor-pointer text-zinc-500 rounded-lg"
+                                                                onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])}
+                                                                className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700 font-bold")}
                                                             >
-                                                                Clear Filter
+                                                                <div className="w-2 h-2 rounded-full bg-orange-600" />
+                                                                Nearby
+                                                                {focusedOrbits?.includes(1) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])}
+                                                                className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700 font-bold")}
+                                                            >
+                                                                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                                                Hyperlocal
+                                                                {focusedOrbits?.includes(3) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])}
+                                                                className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700 font-bold")}
+                                                            >
+                                                                <div className="w-2 h-2 rounded-full bg-orange-400" />
+                                                                National
+                                                                {focusedOrbits?.includes(5) && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                            </DropdownMenuItem>
+                                                        </div>
+                                                    </div>
+
+                                                    <Separator className="my-1 opacity-50" />
+
+                                                    <div className="px-2 py-1.5">
+                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Relationship Tags</p>
+                                                        <div className="space-y-0.5">
+                                                            {['Supplier', 'Partner', 'Affiliate'].map((rel) => (
+                                                                <DropdownMenuItem
+                                                                    key={rel}
+                                                                    onClick={() => setRelationshipFilter(relationshipFilter === rel ? null : rel)}
+                                                                    className={cn("cursor-pointer rounded-lg gap-2 text-xs", relationshipFilter === rel && "bg-orange-50 text-orange-700 font-bold")}
+                                                                >
+                                                                    <Users className="w-3.5 h-3.5 text-zinc-400" />
+                                                                    {rel}
+                                                                    {relationshipFilter === rel && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {(focusedOrbits || relationshipFilter) && (
+                                                        <>
+                                                            <Separator className="my-1 opacity-50" />
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setFocusedOrbits(null);
+                                                                    setRelationshipFilter(null);
+                                                                }}
+                                                                className="cursor-pointer text-zinc-500 rounded-lg text-xs justify-center font-bold hover:text-red-600 transition-colors"
+                                                            >
+                                                                Clear All Filters
                                                             </DropdownMenuItem>
                                                         </>
                                                     )}
@@ -1191,6 +1224,7 @@ export default function GroupCirclesPage() {
                                                 onMemberClick={setActiveMember}
                                                 currentMemberId={myMemberId}
                                                 focusedOrbits={focusedOrbits}
+                                                relationshipFilter={relationshipFilter}
                                             />
                                         </div>
                                     </div>

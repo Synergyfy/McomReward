@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
-import { MoreVertical, Edit, Trash2, Gift, Star } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Gift, Star, Stamp } from 'lucide-react';
 import { BusinessReward } from '@/services/business-reward/types';
 
 interface PointRewardCardProps {
@@ -58,10 +58,18 @@ export default function PointRewardCard({
                                 >
                                     {!reward.disabled ? 'Active' : 'Disabled'}
                                 </Badge>
-                                <Badge variant="outline" className="text-blue-600 border-blue-300 text-xs">
-                                    <Gift className="h-3 w-3 mr-1" />
-                                    Points
-                                </Badge>
+                                {reward.is_points_enabled && (
+                                    <Badge variant="outline" className="text-blue-600 border-blue-300 text-xs">
+                                        <Gift className="h-3 w-3 mr-1" />
+                                        Points
+                                    </Badge>
+                                )}
+                                {reward.is_stamps_enabled && (
+                                    <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                                        <Stamp className="h-3 w-3 mr-1" />
+                                        Stamps
+                                    </Badge>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -125,18 +133,68 @@ export default function PointRewardCard({
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-center">
-                        <div className="flex items-center justify-center gap-1 text-blue-600 dark:text-blue-400">
-                            <Star className="h-3.5 w-3.5" />
-                            <span className="text-lg font-bold">{reward.pointRequired}</span>
+                    {reward.is_points_enabled ? (
+                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-1 text-blue-600 dark:text-blue-400">
+                                <Star className="h-3.5 w-3.5" />
+                                <span className="text-lg font-bold">
+                                    {reward.points_required ?? (reward as any).pointsRequired ?? reward.pointRequired ?? 0}
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Points Required</p>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Points Required</p>
-                    </div>
+                    ) : reward.is_stamps_enabled ? (
+                        <div className="p-2.5 bg-orange-50 dark:bg-orange-900/30 rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
+                                <Stamp className="h-3.5 w-3.5" />
+                                <span className="text-lg font-bold">
+                                    {reward.stamps_required ?? reward.stampsRequired ?? 0}
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Stamps Required</p>
+                        </div>
+                    ) : (
+                        <div className="p-2.5 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                {reward.points_required ?? 0}
+                            </span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Points Required</p>
+                        </div>
+                    )}
+
                     <div className="p-2.5 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
                             {reward.quantity ?? '∞'}
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Quantity</p>
+                    </div>
+                </div>
+
+                {reward.is_points_enabled && reward.is_stamps_enabled && (
+                    <div className="mt-3 p-2.5 bg-orange-50 dark:bg-orange-900/30 rounded-lg text-center border border-orange-100 dark:border-orange-800/30">
+                        <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
+                            <Stamp className="h-3.5 w-3.5" />
+                            <span className="text-lg font-bold">
+                                {reward.stamps_required ?? reward.stampsRequired ?? 0}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Stamps Required</p>
+                    </div>
+                )}
+
+                {/* Additional Metrics */}
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center border border-purple-100 dark:border-purple-800/30">
+                        <span className="text-lg font-bold text-purple-700 dark:text-purple-400">
+                            {reward.totalRedemptions ?? 0}
+                        </span>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-500 mt-0.5">Total Redemptions</p>
+                    </div>
+                    <div className="p-2.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center border border-orange-100 dark:border-orange-800/30">
+                        <span className="text-lg font-bold text-orange-700 dark:text-orange-400">
+                            {reward.totalPointsRedeemed ?? 0}
+                        </span>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-orange-500 mt-0.5">Points Redeemed</p>
                     </div>
                 </div>
             </CardContent>

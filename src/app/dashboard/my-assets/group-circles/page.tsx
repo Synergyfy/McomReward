@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,7 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCreateGroupCircle, useGetGroupCircles, useUpdateGroupCircle, useRemoveGroupCircleMember, useGetGroupCircleMessages, useSendMessage, useAddCircleMember } from "@/services/group-circle/hook";
-import { CreateGroupCircleDto, UpdateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleVisibility, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle, SendMessageDto, AddMemberDto } from "@/services/group-circle/types";
+import { CreateGroupCircleDto, UpdateGroupCircleDto, GroupCircleType, GroupCircleDuration, GroupCircleInteractionLevel, GroupCircle as ApiGroupCircle, SendMessageDto, AddMemberDto } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
 import { ContributionDialog } from "./ContributionDialog";
@@ -42,6 +42,7 @@ type OrbitLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface Member {
     id: string;
+    memberId: string;
     name: string;
     role: "Owner" | "Admin" | "Member" | "Banker" | "Guest";
     orbit: OrbitLevel; // 1 = Core, 6 = Peripheral
@@ -267,7 +268,7 @@ const MultiLayerRadialGraph = ({
                                             <TooltipContent side="top">
                                                 <div className="text-center">
                                                     <p className="font-bold">{member.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{member.category} • {ORBIT_CONFIG[member.orbit].label}</p>
+                                                    <p className="text-xs text-muted-foreground">{member.category} â€¢ {ORBIT_CONFIG[member.orbit].label}</p>
                                                 </div>
                                             </TooltipContent>
                                         </Tooltip>
@@ -519,7 +520,8 @@ export default function GroupCirclesPage() {
                 else if (m.role === 'OWNER') orbit = 1;
 
                 return {
-                    id: m.id,
+                    id: m.network.id,
+                    memberId: m.id,
                     name: m.network.fullName,
                     email: m.network.email,
                     role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
@@ -557,7 +559,6 @@ export default function GroupCirclesPage() {
     const [createStep, setCreateStep] = useState(1);
     const [newCircleData, setNewCircleData] = useState<Partial<CreateGroupCircleDto>>({
         duration: 90,
-        visibility: 'PRIVATE',
         interactionLevel: 'READ',
         contributionAmount: 0,
         networkIds: []
@@ -636,7 +637,6 @@ export default function GroupCirclesPage() {
             description: apiCircle.description,
             type: apiCircle.type,
             duration: apiCircle.duration as any,
-            visibility: apiCircle.visibility,
             interactionLevel: apiCircle.interactionLevel,
             contributionAmount: Number(apiCircle.contributionAmount),
             networkIds: apiCircle.members.map(m => m.network.id)
@@ -666,7 +666,6 @@ export default function GroupCirclesPage() {
             setCreateStep(1);
             setNewCircleData({
                 duration: 90,
-                visibility: 'PRIVATE',
                 interactionLevel: 'READ',
                 contributionAmount: 0,
                 networkIds: []
@@ -726,7 +725,7 @@ export default function GroupCirclesPage() {
         try {
             await removeMemberMutation.mutateAsync({
                 id: selectedCircleId,
-                memberId: activeMember.id
+                memberId: activeMember.memberId
             });
             toast.success("Member removed from circle");
             setActiveMember(null);
@@ -758,7 +757,6 @@ export default function GroupCirclesPage() {
                             setNewCircleData({
                                 type: 'SMART_MONEY',
                                 duration: 90,
-                                visibility: 'PRIVATE',
                                 interactionLevel: 'READ',
                                 contributionAmount: 0,
                                 networkIds: []
@@ -776,7 +774,6 @@ export default function GroupCirclesPage() {
                             setNewCircleData({
                                 type: 'ADVERTISING',
                                 duration: 90,
-                                visibility: 'PRIVATE',
                                 interactionLevel: 'READ',
                                 contributionAmount: 0,
                                 networkIds: []
@@ -924,7 +921,7 @@ export default function GroupCirclesPage() {
                                         placeholder="e.g. Savings Group 1"
                                         value={newCircleData.name || ""}
                                         onChange={(e) => setNewCircleData({ ...newCircleData, name: e.target.value })}
-                                    />
+                                    /><p className="text-[10px] text-muted-foreground">Give your circle a recognizable name for your partners.</p>
                                 </div>
                                 {newCircleData.type === 'SMART_MONEY' && (
                                     <div className="space-y-2">
@@ -953,25 +950,11 @@ export default function GroupCirclesPage() {
                                     placeholder="Weekly savings circle..."
                                     value={newCircleData.description || ""}
                                     onChange={(e) => setNewCircleData({ ...newCircleData, description: e.target.value })}
-                                />
+                                /><p className="text-[10px] text-muted-foreground">Briefly explain the purpose of this circle to its members.</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="visibility">Visibility</Label>
-                                    <Select
-                                        value={newCircleData.visibility}
-                                        onValueChange={(val) => setNewCircleData({ ...newCircleData, visibility: val as GroupCircleVisibility })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Visibility" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                            <SelectItem value="PRIVATE">Private</SelectItem>
-                                            <SelectItem value="INVITE_ONLY">Invite Only</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <div className="grid grid-cols-1 gap-4">
+                                
                                 <div className="space-y-2">
                                     <Label htmlFor="interaction">Interaction Level</Label>
                                     <Select
@@ -982,11 +965,11 @@ export default function GroupCirclesPage() {
                                             <SelectValue placeholder="Select Interaction" />
                                         </SelectTrigger>
                                         <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                            <SelectItem value="READ">Read</SelectItem>
-                                            <SelectItem value="MESSAGE">Message</SelectItem>
-                                            <SelectItem value="COLLABORATE">Collaborate</SelectItem>
+                                            <SelectItem value="READ"><div className="flex flex-col"><span className="font-medium">Read</span><span className="text-[10px] text-muted-foreground">Broadcast updates only; no member replies.</span></div></SelectItem>
+                                            <SelectItem value="MESSAGE"><div className="flex flex-col"><span className="font-medium">Message</span><span className="text-[10px] text-muted-foreground">Enables group chat and direct messaging.</span></div></SelectItem>
+                                            <SelectItem value="COLLABORATE"><div className="flex flex-col"><span className="font-medium">Collaborate</span><span className="text-[10px] text-muted-foreground">Full interaction including Smart Money tools.</span></div></SelectItem>
                                         </SelectContent>
-                                    </Select>
+                                    </Select><p className="text-[10px] text-muted-foreground">Define participation depth for members.</p>
                                 </div>
                             </div>
 
@@ -994,7 +977,7 @@ export default function GroupCirclesPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="amount">Contribution Amount</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-2.5 text-muted-foreground">£</span>
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground">Â£</span>
                                         <Input
                                             id="amount"
                                             type="number"
@@ -1003,7 +986,7 @@ export default function GroupCirclesPage() {
                                             value={newCircleData.contributionAmount || ""}
                                             onChange={(e) => setNewCircleData({ ...newCircleData, contributionAmount: Number(e.target.value) })}
                                         />
-                                    </div>
+                                    </div><p className="text-[10px] text-muted-foreground">The fixed amount each member contributes per round.</p>
                                 </div>
                             )}
 
@@ -1035,7 +1018,7 @@ export default function GroupCirclesPage() {
                                         )}
                                     </div>
                                 </ScrollArea>
-                            </div>
+                            <p className="text-[10px] text-muted-foreground">Select partners from your network to join this circle initially.</p></div>
                         </motion.div>
                     </AnimatePresence>
 
@@ -1096,9 +1079,9 @@ export default function GroupCirclesPage() {
                                                 <Badge variant="outline" className="text-[10px] py-0 h-4 border-orange-200 text-orange-700 bg-orange-50/50">
                                                     {selectedCircle.type}
                                                 </Badge>
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <span className="font-medium">{selectedCircle.durationDays} Days Duration</span>
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <span className="font-medium text-emerald-600">{selectedCircle.members.length} Members</span>
                                             </div>
                                         </div>
@@ -1223,7 +1206,6 @@ export default function GroupCirclesPage() {
                                         setNewCircleData({
                                             type: 'ADVERTISING',
                                             duration: 90,
-                                            visibility: 'PRIVATE',
                                             interactionLevel: 'READ',
                                             contributionAmount: 0,
                                             networkIds: []
@@ -1304,7 +1286,7 @@ export default function GroupCirclesPage() {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl">
                                                     <span className="text-xs opacity-60">Total Contribution</span>
-                                                    <span className="font-black text-sm uppercase">£{activeMember.contributions || 0}</span>
+                                                    <span className="font-black text-sm uppercase">Â£{activeMember.contributions || 0}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl">
                                                     <span className="text-xs opacity-60">Cycle Draw</span>
@@ -1442,7 +1424,7 @@ export default function GroupCirclesPage() {
                                                                 <p className="leading-relaxed font-medium">{msg.content}</p>
                                                             </div>
                                                             <span className="text-[9px] font-bold text-zinc-400 mx-1 uppercase">
-                                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         </div>
                                                     );
@@ -1506,3 +1488,12 @@ export default function GroupCirclesPage() {
         </div >
     );
 };
+
+
+
+
+
+
+
+
+

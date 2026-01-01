@@ -15,31 +15,31 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";   
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";       
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-import { 
-    useCreateGroupCircle, 
-    useGetGroupCircles, 
-    useUpdateGroupCircle, 
-    useRemoveGroupCircleMember, 
-    useGetGroupCircleMessages, 
-    useSendMessage, 
-    useAddCircleMember 
+import {
+    useCreateGroupCircle,
+    useGetGroupCircles,
+    useUpdateGroupCircle,
+    useRemoveGroupCircleMember,
+    useGetGroupCircleMessages,
+    useSendMessage,
+    useAddCircleMember
 } from "@/services/group-circle/hook";
-import { 
-    CreateGroupCircleDto, 
-    UpdateGroupCircleDto, 
-    GroupCircleType, 
-    GroupCircleDuration, 
-    GroupCircleInteractionLevel, 
-    SendMessageDto, 
-    AddMemberDto 
+import {
+    CreateGroupCircleDto,
+    UpdateGroupCircleDto,
+    GroupCircleType,
+    GroupCircleDuration,
+    GroupCircleInteractionLevel,
+    SendMessageDto,
+    AddMemberDto
 } from "@/services/group-circle/types";
 import { useGetNetworkContacts } from "@/services/network-contacts/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
@@ -122,7 +122,7 @@ export default function GroupCirclesPage() {
                     memberId: m.id,
                     name: m.network.fullName,
                     email: m.network.email,
-                    role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,        
+                    role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
                     orbit,
                     status: (m.network.status === 'accepted' ? 'active' : 'offline') as any,
                     category: m.network.businessName || m.network.relationshipTag || "Partner",
@@ -176,7 +176,7 @@ export default function GroupCirclesPage() {
             interactionLevel: 'READ',
             contributionAmount: 0,
             networkIds: [],
-            type: typeDef.id as GroupCircleType 
+            type: typeDef.id as GroupCircleType
         });
         setCreateStep(2);
         setCreateOpen(true);
@@ -278,7 +278,7 @@ export default function GroupCirclesPage() {
 
     return (
         <div className="w-full min-h-screen bg-zinc-50/20 dark:bg-zinc-950/20 p-4 md:p-6 flex flex-col gap-6 relative">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4"> 
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight font-display text-zinc-900 dark:text-zinc-50">
                         Circles Visualization
@@ -315,7 +315,7 @@ export default function GroupCirclesPage() {
                 </div>
             </div>
 
-            <CircleSelector 
+            <CircleSelector
                 selectedCircle={selectedCircle}
                 circleSearch={circleSearch}
                 setCircleSearch={setCircleSearch}
@@ -329,7 +329,7 @@ export default function GroupCirclesPage() {
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                        <DialogTitle>{isEditing ? "Edit Circle Details" : "Circle Details"}</DialogTitle> 
+                        <DialogTitle>{isEditing ? "Edit Circle Details" : "Circle Details"}</DialogTitle>
                         <DialogDescription>
                             {isEditing ? "Update the details for this circle." : "Fill in the details for your new circle."}
                         </DialogDescription>
@@ -446,14 +446,14 @@ export default function GroupCirclesPage() {
                                         )}
                                     </div>
                                 </ScrollArea>
-                            <p className="text-[10px] text-muted-foreground">Select partners from your network to join this circle initially.</p></div>
+                                <p className="text-[10px] text-muted-foreground">Select partners from your network to join this circle initially.</p></div>
                         </motion.div>
                     </AnimatePresence>
 
                     <DialogFooter className="flex justify-end w-full">
                         <Button
                             onClick={handleSubmitCircle}
-                            disabled={createCircleMutation.isPending || updateCircleMutation.isPending}   
+                            disabled={createCircleMutation.isPending || updateCircleMutation.isPending}
                             className="bg-orange-600 hover:bg-orange-700 text-white"
                         >
                             {createCircleMutation.isPending || updateCircleMutation.isPending ? "Saving..." : (isEditing ? "Update Circle" : "Create Circle")}
@@ -473,7 +473,7 @@ export default function GroupCirclesPage() {
                         <h3 className="font-semibold text-orange-900 dark:text-orange-100">Action Required</h3>
                         <p className="text-sm text-orange-800 dark:text-orange-200">
                             Per platform rules, you must establish the following circles:
-                            <span className="font-bold ml-1">{missingMandatory.join(", ")}</span>.    
+                            <span className="font-bold ml-1">{missingMandatory.join(", ")}</span>.
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -520,7 +520,7 @@ export default function GroupCirclesPage() {
 
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant={focusedOrbits ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", focusedOrbits ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
+                                                    <Button size="icon" variant={(focusedOrbits || relationshipFilter) ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", (focusedOrbits || relationshipFilter) ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
                                                     <p className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 tracking-widest">Filter by Location</p>
@@ -555,6 +555,7 @@ export default function GroupCirclesPage() {
                                                 onMemberClick={setActiveMember}
                                                 currentMemberId={myMemberId}
                                                 focusedOrbits={focusedOrbits}
+                                                relationshipFilter={relationshipFilter}
                                             />
                                         </div>
                                     </div>
@@ -564,8 +565,8 @@ export default function GroupCirclesPage() {
                                     <Button onClick={() => setInviteOpen(true)} className="rounded-full h-12 px-6 bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-lg border">
                                         <UserPlus className="w-4 h-4 mr-2" /> Invite Members
                                     </Button>
-                                    <Button 
-                                        onClick={() => { setChatType('GROUP'); setChatMemberId(null); setIsChatOverlayOpen(true); }} 
+                                    <Button
+                                        onClick={() => { setChatType('GROUP'); setChatMemberId(null); setIsChatOverlayOpen(true); }}
                                         className="rounded-full h-12 px-6 bg-orange-600 text-white hover:bg-orange-700 shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
                                     >
                                         <MessageSquare className="w-4 h-4" /> Circle Chat
@@ -598,7 +599,7 @@ export default function GroupCirclesPage() {
 
                 <AnimatePresence>
                     {activeMember && (
-                        <MemberSidebar 
+                        <MemberSidebar
                             activeMember={activeMember}
                             onClose={() => setActiveMember(null)}
                             selectedCircle={selectedCircle}
@@ -613,7 +614,7 @@ export default function GroupCirclesPage() {
                     )}
                 </AnimatePresence>
 
-                <MessagingOverlay 
+                <MessagingOverlay
                     selectedCircle={selectedCircle}
                     chatType={chatType}
                     chatMemberId={chatMemberId}

@@ -21,6 +21,9 @@ export interface Reward {
   mall_reward_value?: number;
   createdAt: string;
   updatedAt: string;
+  stamp_emoji?: string;
+  image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
+  emoji?: string;
 }
 
 export interface PaginationMeta {
@@ -40,7 +43,9 @@ export interface BusinessReward {
   id: string;
   quantity: number | null;
   pointRequired: number;
+  pointsRequired?: number;
   points_required?: number;
+
   reward: Reward;
   createdAt: string;
   updatedAt: string;
@@ -62,7 +67,13 @@ export interface BusinessReward {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  totalRedemptions?: number;
+  totalPointsRedeemed?: number;
+  stamp_emoji?: string;
+  image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
+  emoji?: string;
 }
+
 
 export interface GetBusinessRewardsResponse extends PaginationMeta {
   data: BusinessReward[];
@@ -115,6 +126,9 @@ export interface CreateBusinessRewardDto {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  stamp_emoji?: string;
+  image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
+  emoji?: string;
 }
 
 export enum RewardStatus {
@@ -139,4 +153,7 @@ export interface UpdateBusinessRewardDto {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  stamp_emoji?: string;
+  image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
+  emoji?: string;
 }

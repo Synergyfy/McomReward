@@ -1,8 +1,6 @@
-export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
+﻿export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
 
 export type GroupCircleDuration = 90 | 180 | 270 | 360;
-
-export type GroupCircleVisibility = 'PRIVATE' | 'INVITE_ONLY';
 
 export type GroupCircleInteractionLevel = 'READ' | 'MESSAGE' | 'COLLABORATE';
 
@@ -55,8 +53,7 @@ export interface CreateGroupCircleDto {
     description: string;
     type: GroupCircleType;
     duration: GroupCircleDuration;
-    visibility: GroupCircleVisibility;
-    interactionLevel: GroupCircleInteractionLevel;
+interactionLevel: GroupCircleInteractionLevel;
     contributionAmount: number;
     networkIds: string[];
 }
@@ -76,8 +73,7 @@ export interface GroupCircle {
     description: string;
     type: GroupCircleType;
     duration: number;
-    visibility: GroupCircleVisibility;
-    interactionLevel: GroupCircleInteractionLevel;
+interactionLevel: GroupCircleInteractionLevel;
     status: GroupCircleStatus;
     contributionAmount: number;
     payoutFrequency: PayoutFrequency;
@@ -105,8 +101,7 @@ export interface UpdateGroupCircleDto {
     description?: string;
     type?: GroupCircleType;
     duration?: GroupCircleDuration;
-    visibility?: GroupCircleVisibility;
-    interactionLevel?: GroupCircleInteractionLevel;
+interactionLevel?: GroupCircleInteractionLevel;
     networkIds?: string[];
     contributionAmount?: number;
 }
@@ -123,7 +118,7 @@ export interface GroupCircleMessage {
     senderName: string;
     senderId: string;
     recipientId?: string;
-    created_at: string;
+    createdAt: string;
 }
 
 export interface MessageQueryParams {
@@ -143,3 +138,5 @@ export interface MessagesResponse {
         prevPage: number | null;
     };
 }
+
+

@@ -45,90 +45,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useUploadToCloudinary } from '@/services/upload/hook';
+import { useCreateLibraryAsset, useGetLibraryAssets, useDeleteLibraryAsset } from '@/services/media-library/hooks';
+import { AssetType, AssetSource } from '@/services/media-library/types';
+import { useGetBusinessProfile } from '@/services/business/hook';
 import Image from 'next/image';
 
 // --- Types ---
+// Using types from @/services/media-library/types
 
-export type MediaType = 'image' | 'video' | 'document' | 'other';
-
-export interface MediaAsset {
-    id: string;
-    name: string;
-    url: string;
-    type: MediaType;
-    size: string;
-    dimensions?: string;
-    uploadedAt: string;
-    folder: string;
-}
-
-// --- Mock Data ---
-
-const MOCK_ASSETS: MediaAsset[] = [
-    {
-        id: '1',
-        name: 'summer-campaign-banner.jpg',
-        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800',
-        type: 'image',
-        size: '1.2 MB',
-        dimensions: '1920x1080',
-        uploadedAt: '2023-11-20T10:00:00Z',
-        folder: 'campaigns'
-    },
-    {
-        id: '2',
-        name: 'logo-transparent.png',
-        url: 'https://images.unsplash.com/photo-1614850523296-e8c1d4704a96?auto=format&fit=crop&q=80&w=400',
-        type: 'image',
-        size: '245 KB',
-        dimensions: '512x512',
-        uploadedAt: '2023-11-18T14:30:00Z',
-        folder: 'branding'
-    },
-    {
-        id: '3',
-        name: 'product-showcase.mp4',
-        url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=800',
-        type: 'video',
-        size: '15.4 MB',
-        uploadedAt: '2023-11-15T09:15:00Z',
-        folder: 'products'
-    },
-    {
-        id: '4',
-        name: 'customer-rewards-guide.pdf',
-        url: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80&w=400',
-        type: 'document',
-        size: '4.1 MB',
-        uploadedAt: '2023-11-10T16:45:00Z',
-        folder: 'guides'
-    },
-    {
-        id: '5',
-        name: 'lifestyle-promo-01.jpg',
-        url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800',
-        type: 'image',
-        size: '890 KB',
-        dimensions: '1200x800',
-        uploadedAt: '2023-11-05T11:20:00Z',
-        folder: 'campaigns'
-    },
-    {
-        id: '6',
-        name: 'winter-sale-ad.png',
-        url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=800',
-        type: 'image',
-        size: '2.1 MB',
-        dimensions: '1080x1350',
-        uploadedAt: '2023-12-01T08:00:00Z',
-        folder: 'campaigns'
-    }
-];
+// --- Component Props ---
 
 // --- Component Props ---
 
 interface MediaLibraryProps {
-    onSelect?: (asset: MediaAsset) => void;
+    onSelect?: (asset: any) => void;
     isModal?: boolean;
     initialSelection?: string; // ID of initially selected asset
 }
@@ -138,56 +68,45 @@ interface MediaLibraryProps {
 export default function MediaLibrary({ onSelect, isModal = false, initialSelection }: MediaLibraryProps) {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterType, setFilterType] = useState<MediaType | 'all'>('all');
-    const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null);
-    const [assets, setAssets] = useState<MediaAsset[]>([]);
-    const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
+    const [filterType, setFilterType] = useState<AssetType | 'all'>('all');
+    const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+    const [activeTab, setActiveTab] = useState<AssetSource>(AssetSource.MINE);
+
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+    const [assetTitle, setAssetTitle] = useState('');
+    const [assetDescription, setAssetDescription] = useState('');
+
+    const [page, setPage] = useState(1);
+    const limit = 20;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
+    const { mutateAsync: createAsset } = useCreateLibraryAsset();
+    const { mutateAsync: deleteAsset } = useDeleteLibraryAsset();
 
-    // Load assets from localStorage on mount
-    useEffect(() => {
-        const savedAssets = localStorage.getItem('business_media_library');
-        if (savedAssets) {
-            try {
-                setAssets(JSON.parse(savedAssets));
-            } catch (e) {
-                console.error("Failed to parse media library from localStorage", e);
-                setAssets(MOCK_ASSETS);
-            }
-        } else {
-            setAssets(MOCK_ASSETS);
-            localStorage.setItem('business_media_library', JSON.stringify(MOCK_ASSETS));
-        }
-        setIsAssetsLoaded(true);
-    }, []);
+    const { data: profile } = useGetBusinessProfile();
 
-    // Save assets to localStorage whenever they change (after initial load)
-    useEffect(() => {
-        if (isAssetsLoaded) {
-            localStorage.setItem('business_media_library', JSON.stringify(assets));
-        }
-    }, [assets, isAssetsLoaded]);
+    const { data: libraryData, isLoading: isLoadingAssets } = useGetLibraryAssets({
+        page,
+        limit,
+        search: searchQuery,
+        type: filterType === 'all' ? undefined : filterType,
+        source: activeTab,
+        sectorId: activeTab === AssetSource.ADMIN ? profile?.sectorId : undefined
+    });
 
-    const filteredAssets = useMemo(() => {
-        return assets.filter(asset => {
-            const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesType = filterType === 'all' || asset.type === filterType;
-            return matchesSearch && matchesType;
-        });
-    }, [assets, searchQuery, filterType]);
+    const assets = libraryData?.data || [];
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
         setPendingFile(file);
+        setAssetTitle(file.name.split('.')[0] || file.name);
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onloadend = () => setPendingPreview(reader.result as string);
@@ -198,26 +117,27 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
     };
 
     const handleStartUpload = async () => {
-        if (!pendingFile) return;
+        if (!pendingFile || !assetTitle) {
+            toast.error('Please select a file and provide a title');
+            return;
+        }
 
         setIsUploading(true);
         try {
-            const folder = 'media-library';
-            const result = await uploadToCloudinary({ file: pendingFile, folder });
+            const folder = 'business-media-library';
+            const cloudinaryResult = await uploadToCloudinary({ file: pendingFile, folder });
 
-            const newAsset: MediaAsset = {
-                id: Math.random().toString(36).substr(2, 9),
-                name: pendingFile.name,
-                url: result.secure_url,
-                type: pendingFile.type.startsWith('image/') ? 'image' :
-                    pendingFile.type.startsWith('video/') ? 'video' :
-                        pendingFile.type.includes('pdf') || pendingFile.type.includes('word') ? 'document' : 'other',
-                size: `${(pendingFile.size / (1024 * 1024)).toFixed(2)} MB`,
-                uploadedAt: new Date().toISOString(),
-                folder: folder
-            };
+            const assetType = pendingFile.type.startsWith('image/') ? AssetType.IMAGE :
+                pendingFile.type.startsWith('video/') ? AssetType.VIDEO :
+                    pendingFile.type.includes('pdf') || pendingFile.type.includes('word') ? AssetType.DOCUMENT : AssetType.OTHER;
 
-            setAssets(prev => [newAsset, ...prev]);
+            const newAsset = await createAsset({
+                url: cloudinaryResult.secure_url,
+                title: assetTitle,
+                description: assetDescription,
+                type: assetType,
+            });
+
             setSelectedAsset(newAsset); // Auto-select the uploaded asset
             toast.success('File uploaded successfully!');
             handleCloseUploadModal();
@@ -233,6 +153,8 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
         setIsUploadModalOpen(false);
         setPendingFile(null);
         setPendingPreview(null);
+        setAssetTitle('');
+        setAssetDescription('');
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -241,10 +163,15 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
         toast.success('URL copied to clipboard');
     };
 
-    const handleDeleteAsset = (id: string) => {
-        setAssets(prev => prev.filter(a => a.id !== id));
-        if (selectedAsset?.id === id) setSelectedAsset(null);
-        toast.success('Asset deleted');
+    const handleDeleteAsset = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this asset?')) return;
+        try {
+            await deleteAsset(id);
+            if (selectedAsset?.id === id) setSelectedAsset(null);
+            toast.success('Asset deleted');
+        } catch (error) {
+            toast.error('Failed to delete asset');
+        }
     };
 
     return (
@@ -252,8 +179,29 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
             {/* Header / Toolbar */}
             <div className="flex flex-col md:flex-row items-center justify-between p-4 border-b border-gray-100 gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    {!isModal && <h1 className="text-2xl font-bold text-gray-800">Media Library</h1>}
+                    {!isModal && (
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-bold text-gray-800">Media Library</h1>
+                            <div className="h-8 w-[1px] bg-gray-200 hidden md:block" />
+                        </div>
+                    )}
+
                     <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                            onClick={() => setActiveTab(AssetSource.MINE)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${activeTab === AssetSource.MINE ? 'bg-white shadow text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            My Media
+                        </button>
+                        <button
+                            onClick={() => setActiveTab(AssetSource.ADMIN)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${activeTab === AssetSource.ADMIN ? 'bg-white shadow text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Library
+                        </button>
+                    </div>
+
+                    <div className="flex bg-gray-100 rounded-lg p-1 ml-2">
                         <button
                             onClick={() => setViewMode('grid')}
                             className={`p-1.5 rounded-md transition ${viewMode === 'grid' ? 'bg-white shadow text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
@@ -286,9 +234,9 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All types</SelectItem>
-                            <SelectItem value="image">Images</SelectItem>
-                            <SelectItem value="video">Videos</SelectItem>
-                            <SelectItem value="document">Documents</SelectItem>
+                            <SelectItem value={AssetType.IMAGE}>Images</SelectItem>
+                            <SelectItem value={AssetType.VIDEO}>Videos</SelectItem>
+                            <SelectItem value={AssetType.DOCUMENT}>Documents</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -362,13 +310,29 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                                             </button>
                                         </div>
 
-                                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">File Name</span>
-                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Size</span>
+                                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-4">
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Asset Title</label>
+                                                    <Input
+                                                        placeholder="Enter title..."
+                                                        value={assetTitle}
+                                                        onChange={(e) => setAssetTitle(e.target.value)}
+                                                        className="bg-white"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Description (Optional)</label>
+                                                    <Input
+                                                        placeholder="Enter description..."
+                                                        value={assetDescription}
+                                                        onChange={(e) => setAssetDescription(e.target.value)}
+                                                        className="bg-white"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="flex justify-between items-center">
-                                                <p className="text-sm font-semibold text-gray-700 truncate max-w-[250px]">{pendingFile.name}</p>
+                                            <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Size</span>
                                                 <p className="text-sm font-semibold text-gray-700">{(pendingFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                                             </div>
                                         </div>
@@ -401,18 +365,27 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden relative">
                 <div className={`flex-1 overflow-y-auto p-6 transition-all duration-300 ${selectedAsset ? 'mr-[350px]' : ''}`}>
-                    {filteredAssets.length === 0 ? (
+                    {isLoadingAssets ? (
+                        <div className="flex flex-col items-center justify-center h-full">
+                            <Loader2 size={40} className="animate-spin text-orange-600 mb-4" />
+                            <p className="text-gray-500">Loading assets...</p>
+                        </div>
+                    ) : assets.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                 <ImageIcon size={32} />
                             </div>
                             <p className="text-lg font-medium">No media assets found</p>
-                            <p className="text-sm">Try adjusting your filters or upload new files</p>
+                            <p className="text-sm">
+                                {activeTab === AssetSource.MINE
+                                    ? "You haven't uploaded any media yet"
+                                    : "There are no admin-suggested media for your sector"}
+                            </p>
                         </div>
                     ) : viewMode === 'grid' ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                             <AnimatePresence mode="popLayout">
-                                {filteredAssets.map((asset) => (
+                                {assets.map((asset) => (
                                     <motion.div
                                         key={asset.id}
                                         layout
@@ -423,25 +396,25 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                                         className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${selectedAsset?.id === asset.id ? 'border-orange-500 ring-2 ring-orange-200' : 'border-transparent hover:border-gray-200 shadow-sm hover:shadow-md'
                                             }`}
                                     >
-                                        {asset.type === 'image' ? (
+                                        {asset.type === AssetType.IMAGE ? (
                                             <Image
                                                 src={asset.url}
-                                                alt={asset.name}
+                                                alt={asset.title}
                                                 fill
                                                 className="object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center gap-2">
-                                                {asset.type === 'video' ? <Video size={36} className="text-gray-400" /> : <FileText size={36} className="text-gray-400" />}
+                                                {asset.type === AssetType.VIDEO ? <Video size={36} className="text-gray-400" /> : <FileText size={36} className="text-gray-400" />}
                                                 <span className="text-[10px] font-semibold text-gray-500 uppercase px-2 py-0.5 bg-white rounded shadow-sm">
-                                                    {asset.name.split('.').pop()}
+                                                    {asset.type}
                                                 </span>
                                             </div>
                                         )}
 
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                                            <p className="text-white text-xs font-medium truncate">{asset.name}</p>
-                                            <p className="text-gray-300 text-[10px]">{asset.size}</p>
+                                            <p className="text-white text-xs font-medium truncate">{asset.title}</p>
+                                            <p className="text-gray-300 text-[10px]">{asset.size || 'N/A'}</p>
                                         </div>
 
                                         {selectedAsset?.id === asset.id && (
@@ -466,7 +439,7 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {filteredAssets.map((asset) => (
+                                    {assets.map((asset) => (
                                         <tr
                                             key={asset.id}
                                             onClick={() => setSelectedAsset(asset)}
@@ -475,23 +448,23 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden relative flex-shrink-0">
-                                                        {asset.type === 'image' ? (
-                                                            <Image src={asset.url} alt={asset.name} fill className="object-cover" />
+                                                        {asset.type === AssetType.IMAGE ? (
+                                                            <Image src={asset.url} alt={asset.title} fill className="object-cover" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center">
-                                                                {asset.type === 'video' ? <Video size={16} className="text-gray-400" /> : <FileText size={16} className="text-gray-400" />}
+                                                                {asset.type === AssetType.VIDEO ? <Video size={16} className="text-gray-400" /> : <FileText size={16} className="text-gray-400" />}
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">{asset.name}</span>
+                                                    <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">{asset.title}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <Badge variant="outline" className="capitalize font-normal text-xs">{asset.type}</Badge>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">{asset.size}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">{asset.size || 'N/A'}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(asset.uploadedAt).toLocaleDateString()}
+                                                {new Date(asset.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                                 <DropdownMenu>
@@ -547,21 +520,28 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-6">
                                 <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden relative shadow-inner">
-                                    {selectedAsset.type === 'image' ? (
-                                        <Image src={selectedAsset.url} alt={selectedAsset.name} fill className="object-contain" />
+                                    {selectedAsset.type === AssetType.IMAGE ? (
+                                        <Image src={selectedAsset.url} alt={selectedAsset.title} fill className="object-contain" />
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-                                            {selectedAsset.type === 'video' ? <Video size={48} className="text-gray-300" /> : <FileText size={48} className="text-gray-300" />}
-                                            <span className="text-xl font-bold text-gray-400 uppercase">{selectedAsset.name.split('.').pop()}</span>
+                                            {selectedAsset.type === AssetType.VIDEO ? <Video size={48} className="text-gray-300" /> : <FileText size={48} className="text-gray-300" />}
+                                            <span className="text-xl font-bold text-gray-400 uppercase">{selectedAsset.type}</span>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
-                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Name</h4>
-                                        <p className="text-sm font-semibold text-zinc-700 break-all">{selectedAsset.name}</p>
+                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Title</h4>
+                                        <p className="text-sm font-semibold text-zinc-700 break-all">{selectedAsset.title}</p>
                                     </div>
+
+                                    {selectedAsset.description && (
+                                        <div>
+                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</h4>
+                                            <p className="text-sm font-medium text-zinc-600 italic">"{selectedAsset.description}"</p>
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -570,17 +550,11 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                                         </div>
                                         <div>
                                             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Size</h4>
-                                            <p className="text-sm font-semibold text-zinc-700">{selectedAsset.size}</p>
+                                            <p className="text-sm font-semibold text-zinc-700">{selectedAsset.size || 'N/A'}</p>
                                         </div>
-                                        {selectedAsset.dimensions && (
-                                            <div>
-                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Dimensions</h4>
-                                                <p className="text-sm font-semibold text-zinc-700">{selectedAsset.dimensions}</p>
-                                            </div>
-                                        )}
                                         <div>
                                             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Uploaded On</h4>
-                                            <p className="text-sm font-semibold text-zinc-700">{new Date(selectedAsset.uploadedAt).toLocaleDateString()}</p>
+                                            <p className="text-sm font-semibold text-zinc-700">{new Date(selectedAsset.createdAt).toLocaleDateString()}</p>
                                         </div>
                                     </div>
 

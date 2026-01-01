@@ -14,6 +14,11 @@ interface SeasonalPricingCardProps {
         endDate?: string
         colorCode?: string
         features: string[]
+        season?: {
+            textColor?: string
+            bgColor?: string
+            borderColor?: string
+        }
     }
 }
 
@@ -30,25 +35,29 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
         });
     };
 
-    // Determine styles based on colorCode or default
-    const customStyle = tier.colorCode ? {
-        borderColor: tier.colorCode,
-        '--theme-color': tier.colorCode
-    } as React.CSSProperties : {};
+    // Determine styles based on season colors, colorCode or default
+    const themeColor = tier.season?.borderColor || tier.colorCode;
+    const backgroundColor = tier.season?.bgColor || tier.colorCode;
+    const textColor = tier.season?.textColor || tier.colorCode;
+
+    const customStyle = {
+        ...(themeColor && { borderColor: themeColor }),
+        ...(backgroundColor && { '--theme-color': backgroundColor }),
+    } as React.CSSProperties;
 
     return (
         <div
             className={cn(
                 "relative rounded-3xl p-8 transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 bg-card text-card-foreground border-2 shadow-md group overflow-hidden",
-                !tier.colorCode && "border-border hover:border-primary"
+                !themeColor && "border-border hover:border-primary"
             )}
             style={customStyle}
         >
             {/* Background Gradient Effect for Seasonal */}
-            {tier.colorCode && (
+            {backgroundColor && (
                 <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"
-                    style={{ backgroundColor: tier.colorCode }}
+                    style={{ backgroundColor: backgroundColor }}
                 />
             )}
 
@@ -56,9 +65,9 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
                 <div
                     className={cn(
                         "inline-flex items-center justify-center w-16 h-16 rounded-2xl transition-all duration-300",
-                        !tier.colorCode ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary" : "text-white"
+                        !backgroundColor ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary" : "text-white"
                     )}
-                    style={tier.colorCode ? { backgroundColor: tier.colorCode } : {}}
+                    style={backgroundColor ? { backgroundColor: backgroundColor } : {}}
                 >
                     <Snowflake
                         className="w-8 h-8"
@@ -73,7 +82,7 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
                 )}
             </div>
 
-            <h3 className="text-2xl font-bold mb-2" style={tier.colorCode ? { color: tier.colorCode } : {}}>{tier.name}</h3>
+            <h3 className="text-2xl font-bold mb-2" style={textColor ? { color: textColor } : {}}>{tier.name}</h3>
 
             <p className="text-sm mb-6 text-foreground/70 min-h-[40px]">
                 {tier.description || "Limited time seasonal offer."}
@@ -94,11 +103,11 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
                     <li key={feature} className="flex items-start gap-3">
                         <span
                             className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 transition-colors duration-300"
-                            style={tier.colorCode ? { backgroundColor: `${tier.colorCode}20` } : {}} // 20% opacity hex
+                            style={themeColor ? { backgroundColor: `${themeColor}20` } : {}} // 20% opacity hex
                         >
                             <Check
-                                className={cn("w-3 h-3", !tier.colorCode && "text-primary")}
-                                style={tier.colorCode ? { color: tier.colorCode } : {}}
+                                className={cn("w-3 h-3", !themeColor && "text-primary")}
+                                style={themeColor ? { color: themeColor } : {}}
                                 strokeWidth={3}
                             />
                         </span>
@@ -111,15 +120,15 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
                 href={`/checkout?plan=${encodeURIComponent(tier.id)}&billing=fixed`}
                 className={cn(
                     "w-full inline-block text-center py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 mb-3 shadow-lg",
-                    !tier.colorCode && "bg-primary text-primary-foreground hover:bg-primary/90",
-                    tier.colorCode && "text-white opacity-90 hover:opacity-100"
+                    !backgroundColor && "bg-primary text-primary-foreground hover:bg-primary/90",
+                    backgroundColor && "text-white opacity-90 hover:opacity-100"
                 )}
-                style={tier.colorCode ? { backgroundColor: tier.colorCode } : {}}
+                style={backgroundColor ? { backgroundColor: backgroundColor } : {}}
             >
                 Get {tier.name} Access
             </Link>
 
-            <p className="text-center text-xs text-muted-foreground" style={tier.colorCode ? { color: tier.colorCode } : {}}>
+            <p className="text-center text-xs text-muted-foreground" style={themeColor ? { color: themeColor } : {}}>
                 Limited Time Offer
             </p>
         </div>

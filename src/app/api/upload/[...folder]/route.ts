@@ -9,7 +9,7 @@ const cloudinaryConfig = cloudinary.config({
   secure: true,
 });
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ folder: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ folder: string[] }> }) {
   // Check for Cloudinary configuration
   if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
     return NextResponse.json(
@@ -19,8 +19,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fol
   }
 
   try {
-    const { folder } = await params;
-    if (!folder || typeof folder !== 'string') {
+    const { folder: folderSegments } = await params;
+    const folder = Array.isArray(folderSegments) ? folderSegments.join('/') : folderSegments;
+
+    if (!folder) {
       return NextResponse.json({ error: 'Folder name is required' }, { status: 400 });
     }
 

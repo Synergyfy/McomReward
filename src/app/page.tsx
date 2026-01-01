@@ -9,68 +9,68 @@ import FrontPageNavbar from "@/components/frontPageNavbar";
 import Image from "next/image";
 
 export default function Landing() {
-      const controls = useAnimation();
-      const ref = useRef<HTMLDivElement | null>(null);
-      const inView = useInView(ref, { amount: 0.4 }); // 👀 detects section visibility
-      useEffect(() => {
-      if (inView) {
+  const controls = useAnimation();
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { amount: 0.4 }); // 👀 detects section visibility
+  useEffect(() => {
+    if (inView) {
       controls.start({
-      x: 0,
-      opacity: 1,
-      transition: { duration: 1.2, ease: "easeOut" },
+        x: 0,
+        opacity: 1,
+        transition: { duration: 1.2, ease: "easeOut" },
       });
-      } else {
+    } else {
       controls.start({
-      x: "100%",
-      opacity: 0,
-      transition: { duration: 1, ease: "easeInOut" },
+        x: "100%",
+        opacity: 0,
+        transition: { duration: 1, ease: "easeInOut" },
       });
-      }
-      }, [inView, controls]);
+    }
+  }, [inView, controls]);
 
-      const testimonials = [
-      {
+  const testimonials = [
+    {
       name: "Toby’s Café",
       role: "Local Coffee Shop Owner",
       quote:
-      "Repeat customers up 40% in 3 months — the QR rewards just work!",
+        "Repeat customers up 40% in 3 months — the QR rewards just work!",
       image: "https://randomuser.me/api/portraits/men/11.jpg",
-      },
-      {
+    },
+    {
       name: "Sunny Bakery",
       role: "Bakery Owner",
       quote: "Simple setup, customers love scanning to earn points!",
       image: "https://randomuser.me/api/portraits/women/32.jpg",
-      },
-      {
+    },
+    {
       name: "City Bookstore",
       role: "Retail Manager",
       quote:
-      "Our referral network grew like crazy with the affiliate system.",
+        "Our referral network grew like crazy with the affiliate system.",
       image: "https://randomuser.me/api/portraits/men/44.jpg",
-      },
-      ];
+    },
+  ];
 
-      const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(0);
 
-      // Auto-slide
-      useEffect(() => {
-      const timer = setInterval(() => {
+  // Auto-slide
+  useEffect(() => {
+    const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % testimonials.length);
-      }, 5000);
-      return () => clearInterval(timer);
-      }, [testimonials.length]);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [testimonials.length]);
 
-      const prev = (current - 1 + testimonials.length) % testimonials.length;
-      const next = (current + 1) % testimonials.length;
+  const prev = (current - 1 + testimonials.length) % testimonials.length;
+  const next = (current + 1) % testimonials.length;
 
-      const [heroCurrent, setHeroCurrent] = useState(0);
-      useEffect(() => {
-      const timer = setInterval(() => {
+  const [heroCurrent, setHeroCurrent] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
       setHeroCurrent((prev) => (prev + 1) % 3);
-      }, 6000);
-      return () => clearInterval(timer);
-      }, []);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <>
       <Head>
@@ -158,9 +158,8 @@ export default function Landing() {
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                current === i ? "bg-white w-6" : "bg-white/50"
-              }`}
+              className={`w-3 h-3 rounded-full transition-all ${current === i ? "bg-white w-6" : "bg-white/50"
+                }`}
             />
           ))}
         </div>
@@ -177,20 +176,20 @@ export default function Landing() {
           animate={controls}
           className="relative w-full lg:w-1/2 flex justify-center"
         >
-              
-     
-        <div className="w-[260px] sm:w-[320px] md:w-[380px] aspect-video rounded-xl overflow-hidden shadow-lg">
-          <iframe
-            className="w-full h-full"
-            src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ"
-            title="YouTube Video Player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </div>
-      </motion.div>
 
-       
+
+          <div className="w-full max-w-[400px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-none lg:w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-orange-50/50">
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ"
+              title="YouTube Video Player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </motion.div>
+
+
 
         {/* Text */}
         <motion.div
@@ -204,7 +203,7 @@ export default function Landing() {
             How It Works
           </h2>
           <p className="text-gray-700 text-xl lg:text-2xl mb-10">
-             MCOM REWARD helps your business grow repeat customers effortlessly — from setup to reward in minutes.
+            MCOM REWARD helps your business grow repeat customers effortlessly — from setup to reward in minutes.
           </p>
           <ul className="space-y-6 text-gray-800 text-lg lg:text-xl leading-relaxed">
             <li><b>Create</b> — Build your reward campaign in minutes.</li>
@@ -304,96 +303,95 @@ export default function Landing() {
           </Link>
         </div>
       </section>
-       {/* 💬 Testimonials Section (Tony Robbins-style) */}
+      {/* 💬 Testimonials Section (Tony Robbins-style) */}
       <section
-            id="testimonials"
-            className="py-28 bg-white text-center px-6 lg:px-10 overflow-hidden relative"
+        id="testimonials"
+        className="py-28 bg-white text-center px-6 lg:px-10 overflow-hidden relative"
+      >
+        <h2 className="text-4xl lg:text-5xl font-bold text-orange-500 mb-16">
+          What Businesses Say
+        </h2>
+
+        <div className="relative max-w-7xl mx-auto flex items-center justify-center">
+          {/* Left card */}
+          <motion.div
+            key={prev}
+            initial={{ opacity: 0, x: -100, scale: 0.8, rotateY: 25 }}
+            animate={{ opacity: 0.6, x: -180, scale: 0.8, rotateY: 25 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.8 }}
+            className="absolute hidden md:block bg-orange-50 shadow-md rounded-2xl p-8 max-w-sm border border-orange-100"
+            style={{ perspective: 1000 }}
           >
-            <h2 className="text-4xl lg:text-5xl font-bold text-orange-500 mb-16">
-              What Businesses Say
-            </h2>
+            <p className="italic text-gray-600">
+              “{testimonials[prev].quote}”
+            </p>
+            <footer className="mt-4 text-orange-500 font-semibold">
+              — {testimonials[prev].name}
+            </footer>
+          </motion.div>
 
-            <div className="relative max-w-7xl mx-auto flex items-center justify-center">
-              {/* Left card */}
-              <motion.div
-                key={prev}
-                initial={{ opacity: 0, x: -100, scale: 0.8, rotateY: 25 }}
-                animate={{ opacity: 0.6, x: -180, scale: 0.8, rotateY: 25 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.8 }}
-                className="absolute hidden md:block bg-orange-50 shadow-md rounded-2xl p-8 max-w-sm border border-orange-100"
-                style={{ perspective: 1000 }}
-              >
-                <p className="italic text-gray-600">
-                  “{testimonials[prev].quote}”
-                </p>
-                <footer className="mt-4 text-orange-500 font-semibold">
-                  — {testimonials[prev].name}
-                </footer>
-              </motion.div>
-
-              {/* Center card */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={current}
-                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -30 }}
-                  transition={{ duration: 0.6, ease: "easeInOut" }}
-                  className="relative bg-white shadow-2xl rounded-3xl p-10 md:p-16 max-w-3xl border border-orange-100 z-10"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <Image
-                      src={testimonials[current].image}
-                      alt={testimonials[current].name}
-                      width={80}
-                      height={80}
-                      className="w-20 h-20 rounded-full object-cover border-4 border-orange-200 mb-6"
-                    />
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">
-                      {testimonials[current].name}
-                    </h3>
-                    <p className="text-gray-500 text-sm mb-6">
-                      {testimonials[current].role}
-                    </p>
-                    <blockquote className="text-gray-700 text-lg md:text-xl italic leading-relaxed">
-                      “{testimonials[current].quote}”
-                    </blockquote>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Right card */}
-              <motion.div
-                key={next}
-                initial={{ opacity: 0, x: 100, scale: 0.8, rotateY: -25 }}
-                animate={{ opacity: 0.6, x: 180, scale: 0.8, rotateY: -25 }}
-                exit={{ opacity: 0, x: 100 }}
-                transition={{ duration: 0.8 }}
-                className="absolute hidden md:block bg-orange-50 shadow-md rounded-2xl p-8 max-w-sm border border-orange-100"
-                style={{ perspective: 1000 }}
-              >
-                <p className="italic text-gray-600">
-                  “{testimonials[next].quote}”
-                </p>
-                <footer className="mt-4 text-orange-500 font-semibold">
-                  — {testimonials[next].name}
-                </footer>
-              </motion.div>
-            </div>
-
-            {/* Dots Navigation */}
-            <div className="flex justify-center gap-3 mt-10">
-              {testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    i === current ? "bg-orange-500 w-5" : "bg-gray-300"
-                  }`}
+          {/* Center card */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -30 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+              className="relative bg-white shadow-2xl rounded-3xl p-10 md:p-16 max-w-3xl border border-orange-100 z-10"
+            >
+              <div className="flex flex-col items-center text-center">
+                <Image
+                  src={testimonials[current].image}
+                  alt={testimonials[current].name}
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 rounded-full object-cover border-4 border-orange-200 mb-6"
                 />
-              ))}
-            </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  {testimonials[current].name}
+                </h3>
+                <p className="text-gray-500 text-sm mb-6">
+                  {testimonials[current].role}
+                </p>
+                <blockquote className="text-gray-700 text-lg md:text-xl italic leading-relaxed">
+                  “{testimonials[current].quote}”
+                </blockquote>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Right card */}
+          <motion.div
+            key={next}
+            initial={{ opacity: 0, x: 100, scale: 0.8, rotateY: -25 }}
+            animate={{ opacity: 0.6, x: 180, scale: 0.8, rotateY: -25 }}
+            exit={{ opacity: 0, x: 100 }}
+            transition={{ duration: 0.8 }}
+            className="absolute hidden md:block bg-orange-50 shadow-md rounded-2xl p-8 max-w-sm border border-orange-100"
+            style={{ perspective: 1000 }}
+          >
+            <p className="italic text-gray-600">
+              “{testimonials[next].quote}”
+            </p>
+            <footer className="mt-4 text-orange-500 font-semibold">
+              — {testimonials[next].name}
+            </footer>
+          </motion.div>
+        </div>
+
+        {/* Dots Navigation */}
+        <div className="flex justify-center gap-3 mt-10">
+          {testimonials.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`w-3 h-3 rounded-full transition-all ${i === current ? "bg-orange-500 w-5" : "bg-gray-300"
+                }`}
+            />
+          ))}
+        </div>
       </section>
       {/* 🚀 CTA */}
       <section className="relative py-28 lg:py-36 bg-gradient-to-br from-orange-600 via-orange-500 to-yellow-400 text-white overflow-hidden">

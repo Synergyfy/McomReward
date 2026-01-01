@@ -24,6 +24,18 @@ export interface Tier {
     description?: string;
     includesNfc?: boolean;
     configuration?: TierConfiguration;
+    season?: Season;
+}
+
+export interface Season {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+    textColor?: string;
+    bgColor?: string;
+    borderColor?: string;
 }
 
 export interface TierConfiguration {

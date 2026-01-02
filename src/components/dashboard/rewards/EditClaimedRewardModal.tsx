@@ -176,8 +176,14 @@ export default function EditClaimedRewardModal({
             {imagePreviewUrl && (
               <div className="mt-4">
                 <p className="text-sm font-medium">Image Preview:</p>
-                <div className="relative h-24 w-24 rounded-lg overflow-hidden">
-                  <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                <div className="relative h-24 w-24 rounded-lg overflow-hidden bg-gray-100">
+                  {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/')) ? (
+                    <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-4xl">
+                      {imagePreviewUrl}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

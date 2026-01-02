@@ -364,36 +364,33 @@ export default function CreateRewardWizardModal({
         ...uploadedGalleryUrls
       ];
 
-      const rewardData: Reward = {
-        id: reward?.id || new Date().toISOString(),
+      const rewardData: any = {
         title: name,
         description,
-        value: 0,
-        pointsRequired: isPointsEnabled ? Number(pointsRequired) : 0,
         points_required: isPointsEnabled ? Number(pointsRequired) : 0,
-        maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
+        stamps_required: isStampsEnabled ? Number(stampsRequired) : 0,
         image: imageUrl,
         gallery: finalGalleryUrls,
         quantity: Number(quantity),
-        stampsRequired: isStampsEnabled ? Number(stampsRequired) : 0,
-        stamps_required: isStampsEnabled ? Number(stampsRequired) : 0,
         is_points_enabled: isPointsEnabled,
         is_stamps_enabled: isStampsEnabled,
-        isPointsEnabled: isPointsEnabled,
-        isStampsEnabled: isStampsEnabled,
-        rewardType,
+        reward_type: rewardType,
         disabled,
         is_mall_integrated: isMallIntegrated,
         mall_reward_type: mallRewardType as 'VOUCHER' | 'GIFT_CARD' | 'COUPON',
         mall_reward_value: Number(mallRewardValue),
-        createdAt: reward?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         image_source_type: imageSourceType,
         stamp_emoji: finalStampEmoji,
         emoji: customEmoji,
+        status: 'active',
+        expiry_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // Default to 1 year from now
       };
 
-      await onSave(rewardData);
+      if (reward?.id) {
+        rewardData.id = reward.id;
+      }
+
+      await onSave(rewardData as Reward);
       setShowConfirmation(false);
       onClose();
     } catch (error) {
@@ -730,7 +727,13 @@ export default function CreateRewardWizardModal({
                       <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-xl border border-dashed">
                         {profile?.profileImage ? (
                           <div className="relative h-20 w-20 rounded-2xl overflow-hidden ring-4 ring-blue-50 shadow-lg">
-                            <Image src={profile.profileImage} alt="Business Logo" layout="fill" objectFit="cover" />
+                            {(profile.profileImage.startsWith('http') || profile.profileImage.startsWith('/')) ? (
+                              <Image src={profile.profileImage} alt="Business Logo" layout="fill" objectFit="cover" />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                                {profile.profileImage}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="h-20 w-20 rounded-2xl bg-gray-50 flex items-center justify-center border-2 border-dashed">
@@ -798,7 +801,13 @@ export default function CreateRewardWizardModal({
                                 <div className="group relative">
                                   {asset?.imageUrl ? (
                                     <div className="relative h-20 w-20 rounded-2xl overflow-hidden ring-4 ring-orange-50 shadow-lg">
-                                      <Image src={asset.imageUrl} alt={asset.name} layout="fill" objectFit="cover" />
+                                      {(asset.imageUrl.startsWith('http') || asset.imageUrl.startsWith('/')) ? (
+                                        <Image src={asset.imageUrl} alt={asset.name} layout="fill" objectFit="cover" />
+                                      ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                                          {asset.imageUrl}
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
                                     <div className="h-20 w-20 rounded-2xl bg-gray-50 flex items-center justify-center border-2 border-dashed">
@@ -878,7 +887,13 @@ export default function CreateRewardWizardModal({
                 {imagePreviewUrl && (
                   <div className="mt-4 flex items-center gap-3">
                     <div className="relative h-20 w-20 rounded-lg overflow-hidden border-2 border-green-200">
-                      <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                      {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/')) ? (
+                        <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                          {imagePreviewUrl}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-green-600">
                       <CheckCircle2 className="h-4 w-4" />
@@ -962,12 +977,18 @@ export default function CreateRewardWizardModal({
                     <div className="flex items-center space-x-3">
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
                         {imagePreviewUrl && (
-                          <Image
-                            src={imagePreviewUrl}
-                            alt={name}
-                            layout="fill"
-                            objectFit="cover"
-                          />
+                          (imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/')) ? (
+                            <Image
+                              src={imagePreviewUrl}
+                              alt={name}
+                              layout="fill"
+                              objectFit="cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                              {imagePreviewUrl}
+                            </div>
+                          )
                         )}
                       </div>
                       <div>

@@ -18,6 +18,8 @@ interface PointRewardCardProps {
     reward: BusinessReward;
     onEdit: (reward: BusinessReward) => void;
     onDelete: (reward: BusinessReward) => void;
+    onView?: (reward: any) => void;
+    onAwardStamp?: (reward: any) => void;
     variant?: 'standard' | 'stamp-card';
 }
 
@@ -25,6 +27,8 @@ export default function PointRewardCard({
     reward,
     onEdit,
     onDelete,
+    onView,
+    onAwardStamp,
     variant = 'standard',
 }: PointRewardCardProps) {
     const isStampCard = variant === 'stamp-card';
@@ -105,6 +109,18 @@ export default function PointRewardCard({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            {onView && (
+                                <DropdownMenuItem onClick={() => onView(reward)}>
+                                    <Star className="h-4 w-4 mr-2" />
+                                    View Customers
+                                </DropdownMenuItem>
+                            )}
+                            {onAwardStamp && (
+                                <DropdownMenuItem onClick={() => onAwardStamp(reward)}>
+                                    <Stamp className="h-4 w-4 mr-2" />
+                                    Award Stamp
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => onEdit(reward)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
@@ -217,6 +233,30 @@ export default function PointRewardCard({
                         <p className="text-[10px] uppercase tracking-wider font-semibold text-orange-500 mt-0.5">Points Redeemed</p>
                     </div>
                 </div>
+
+                {isStampCard && (onView || onAwardStamp) && (
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        {onView && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onView(reward)}
+                                className="flex-1 text-xs h-8"
+                            >
+                                Customers
+                            </Button>
+                        )}
+                        {onAwardStamp && (
+                            <Button
+                                size="sm"
+                                onClick={() => onAwardStamp(reward)}
+                                className="flex-1 text-xs h-8 bg-orange-600 hover:bg-orange-700"
+                            >
+                                Award
+                            </Button>
+                        )}
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

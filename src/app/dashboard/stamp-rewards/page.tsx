@@ -85,7 +85,7 @@ export default function BusinessStampRewardsPage() {
     const [rewardToDeactivate, setRewardToDeactivate] = useState<string | null>(null);
 
     // New modal states for stamp rewards
-    const [selectedReward, setSelectedReward] = useState<BusinessStampReward | null>(null);
+    const [selectedReward, setSelectedReward] = useState<any>(null);
     const [isAwardStampModalOpen, setIsAwardStampModalOpen] = useState(false);
     const [isViewCustomersModalOpen, setIsViewCustomersModalOpen] = useState(false);
 
@@ -696,6 +696,8 @@ export default function BusinessStampRewardsPage() {
                                             reward={reward}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
+                                            onView={handleViewReward}
+                                            onAwardStamp={handleAwardStamp}
                                             variant="stamp-card"
                                         />
                                     ))}

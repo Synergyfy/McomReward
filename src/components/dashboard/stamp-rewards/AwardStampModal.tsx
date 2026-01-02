@@ -28,7 +28,11 @@ import {
     Star
 } from 'lucide-react';
 import { BusinessStampReward } from '@/services/business-stamp-rewards/types';
-import { useAwardStamp } from '@/services/business-stamp-rewards/hook';
+import {
+    useAwardStamp,
+    useGetCustomerStampCards
+} from '@/services/business-stamp-rewards/hook';
+import LoadingSpinner from '@/components/ui/Loading';
 
 interface AwardStampModalProps {
     isOpen: boolean;
@@ -36,35 +40,36 @@ interface AwardStampModalProps {
     reward: BusinessStampReward | null;
 }
 
-// Mock customer data for demonstration
-const mockCustomers = [
-    { id: 'customer-1', name: 'Alice Johnson', email: 'alice@example.com', avatar: 'https://i.pravatar.cc/150?u=alice', currentStamps: 3 },
-    { id: 'customer-2', name: 'Bob Smith', email: 'bob@example.com', avatar: 'https://i.pravatar.cc/150?u=bob', currentStamps: 5 },
-    { id: 'customer-3', name: 'Carol Davis', email: 'carol@example.com', avatar: 'https://i.pravatar.cc/150?u=carol', currentStamps: 2 },
-    { id: 'customer-4', name: 'David Wilson', email: 'david@example.com', avatar: 'https://i.pravatar.cc/150?u=david', currentStamps: 0 },
-    { id: 'customer-5', name: 'Emma Brown', email: 'emma@example.com', avatar: 'https://i.pravatar.cc/150?u=emma', currentStamps: 4 },
-];
-
 export default function AwardStampModal({
     isOpen,
     onClose,
     reward,
 }: AwardStampModalProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCustomer, setSelectedCustomer] = useState<typeof mockCustomers[0] | null>(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
     const [step, setStep] = useState<'search' | 'confirm' | 'success'>('search');
 
+    const { data: customersData, isLoading: isLoadingCustomers } = useGetCustomerStampCards(reward?.id || '', 1, 50);
     const { mutate: awardStamp, isPending: isAwarding } = useAwardStamp();
 
     if (!reward) return null;
 
-    const filteredCustomers = mockCustomers.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const stampsRequired = (reward as any).template?.stampsRequired || (reward as any).stampsRequired || (reward as any).stamps_required || 0;
+
+    const customers = customersData?.data || [];
+    const filteredCustomers = customers.filter(c =>
+        c.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleSelectCustomer = (customer: typeof mockCustomers[0]) => {
-        setSelectedCustomer(customer);
+    const handleSelectCustomer = (customer: any) => {
+        setSelectedCustomer({
+            id: customer.id,
+            name: customer.customerName,
+            email: customer.customerEmail,
+            avatar: customer.customerAvatar || `https://i.pravatar.cc/150?u=${customer.id}`,
+            currentStamps: customer.stampsCollected
+        });
         setStep('confirm');
     };
 
@@ -74,13 +79,23 @@ export default function AwardStampModal({
         awardStamp(
             {
                 businessStampRewardId: reward.id,
-                customerId: selectedCustomer.id,
-                triggerMethod: reward.template.triggerMethod,
+                stampCardId: selectedCustomer.id,
+                triggerMethod: (reward as any).template?.triggerMethod || 'manual',
             },
             {
-                onSuccess: () => {
+                onSuccess: (data) => {
+                    setSelectedCustomer({
+                        id: data.id,
+                        name: data.customerName,
+                        email: data.customerEmail,
+                        avatar: data.customerAvatar || `https://i.pravatar.cc/150?u=${data.id}`,
+                        currentStamps: data.stampsCollected
+                    });
                     setStep('success');
                 },
+                onError: (error: any) => {
+                    console.error('Failed to award stamp', error);
+                }
             }
         );
     };
@@ -107,7 +122,7 @@ export default function AwardStampModal({
                         <div>
                             <DialogTitle className="text-xl">Award Stamp</DialogTitle>
                             <DialogDescription>
-                                {reward.template.title}
+                                {(reward as any).template?.title || (reward as any).title || 'Reward'}
                             </DialogDescription>
                         </div>
                     </div>
@@ -136,15 +151,20 @@ export default function AwardStampModal({
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                                    {filteredCustomers.length === 0 ? (
+                                <div className="space-y-2 max-h-[300px] overflow-y-auto min-h-[100px] relative">
+                                    {isLoadingCustomers ? (
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <LoadingSpinner />
+                                            <p className="text-sm text-gray-500 mt-2">Loading customers...</p>
+                                        </div>
+                                    ) : filteredCustomers.length === 0 ? (
                                         <div className="text-center py-8 text-gray-500">
                                             <User className="h-10 w-10 mx-auto mb-2 opacity-30" />
                                             <p>No customers found</p>
                                         </div>
                                     ) : (
                                         filteredCustomers.map((customer) => {
-                                            const hasCompletedAll = customer.currentStamps >= reward.template.stampsRequired;
+                                            const hasCompletedAll = customer.stampsCollected >= stampsRequired;
                                             return (
                                                 <Card
                                                     key={customer.id}
@@ -155,21 +175,21 @@ export default function AwardStampModal({
                                                         <div className="flex items-center gap-3">
                                                             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                                                                 <Image
-                                                                    src={customer.avatar}
-                                                                    alt={customer.name}
+                                                                    src={customer.customerAvatar || `https://i.pravatar.cc/150?u=${customer.id}`}
+                                                                    alt={customer.customerName}
                                                                     fill
                                                                     className="object-cover"
                                                                 />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="font-medium text-gray-900 truncate">{customer.name}</p>
-                                                                <p className="text-xs text-gray-500 truncate">{customer.email}</p>
+                                                                <p className="font-medium text-gray-900 truncate">{customer.customerName}</p>
+                                                                <p className="text-xs text-gray-500 truncate">{customer.customerEmail}</p>
                                                             </div>
                                                             <div className="text-right">
                                                                 <div className="flex items-center gap-1">
                                                                     <Stamp className="h-4 w-4 text-orange-500" />
                                                                     <span className="text-sm font-medium">
-                                                                        {customer.currentStamps}/{reward.template.stampsRequired}
+                                                                        {customer.stampsCollected}/{stampsRequired}
                                                                     </span>
                                                                 </div>
                                                                 {hasCompletedAll && (
@@ -209,28 +229,16 @@ export default function AwardStampModal({
                                                     },
                                                     {
                                                         onSuccess: (data) => {
-                                                            // We need to map the response to 'selectedCustomer' format to show success screen
-                                                            // data is CustomerStampCard
-                                                            const customerMockFormat = {
-                                                                id: data.customerId,
+                                                            setSelectedCustomer({
+                                                                id: data.id,
                                                                 name: data.customerName,
                                                                 email: data.customerEmail,
-                                                                avatar: data.customerAvatar || `https://i.pravatar.cc/150?u=${data.customerId}`,
-                                                                currentStamps: data.stampsCollected - 1 // Previous count? Or just use current. 
-                                                                // Success screen uses currentStamps + 1 logic.
-                                                                // If data.stampsCollected is the NEW count.
-                                                                // Then we should pass (data.stampsCollected - 1) to match logic?
-                                                                // Or update success screen logic.
-                                                            };
-                                                            // Success screen expects selectedCustomer.currentStamps to be the OLD value.
-                                                            // Let's hack it:
-                                                            setSelectedCustomer({
-                                                                ...customerMockFormat,
-                                                                currentStamps: data.stampsCollected - 1
+                                                                avatar: data.customerAvatar || `https://i.pravatar.cc/150?u=${data.id}`,
+                                                                currentStamps: data.stampsCollected
                                                             });
                                                             setStep('success');
                                                         },
-                                                        onError: (err) => {
+                                                        onError: (err: any) => {
                                                             alert('Failed to award stamp: ' + err.message);
                                                         }
                                                     }
@@ -273,13 +281,13 @@ export default function AwardStampModal({
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm text-gray-500">Current Progress</span>
                                     <span className="text-sm font-medium">
-                                        {selectedCustomer.currentStamps} / {reward.template.stampsRequired} stamps
+                                        {selectedCustomer.currentStamps} / {stampsRequired} stamps
                                     </span>
                                 </div>
 
                                 {/* Visual stamps */}
                                 <div className="flex gap-1.5 justify-center flex-wrap">
-                                    {Array.from({ length: reward.template.stampsRequired }).map((_, i) => (
+                                    {Array.from({ length: stampsRequired }).map((_, i) => (
                                         <div
                                             key={i}
                                             className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${i < selectedCustomer.currentStamps
@@ -290,7 +298,7 @@ export default function AwardStampModal({
                                                 }`}
                                         >
                                             {i < selectedCustomer.currentStamps ? (
-                                                <span className="text-sm">{reward.template.stampIcon || '⭐'}</span>
+                                                <span className="text-sm">{(reward as any).template?.stampIcon || (reward as any).stamp_emoji || (reward as any).stampEmoji || '⭐'}</span>
                                             ) : i === selectedCustomer.currentStamps ? (
                                                 <Sparkles className="h-4 w-4 text-green-500" />
                                             ) : (
@@ -303,8 +311,8 @@ export default function AwardStampModal({
                                 <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <p className="text-sm text-green-700 dark:text-green-400 flex items-center justify-center gap-2">
                                         <Check className="h-4 w-4" />
-                                        After awarding: {selectedCustomer.currentStamps + 1} / {reward.template.stampsRequired}
-                                        {selectedCustomer.currentStamps + 1 >= reward.template.stampsRequired && (
+                                        After awarding: {selectedCustomer.currentStamps + 1} / {stampsRequired}
+                                        {selectedCustomer.currentStamps + 1 >= stampsRequired && (
                                             <span className="ml-1">🎉 Complete!</span>
                                         )}
                                     </p>
@@ -312,11 +320,11 @@ export default function AwardStampModal({
                             </div>
 
                             {/* Hybrid points info */}
-                            {reward.template.hybridSettings.enabled && (
+                            {(reward as any).template?.hybridSettings?.enabled && (
                                 <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-700 dark:text-amber-400">
                                     <Star className="h-5 w-5" />
                                     <span className="text-sm">
-                                        Customer will also earn <strong>{reward.template.hybridSettings.pointsPerStamp} points</strong>
+                                        Customer will also earn <strong>{(reward as any).template?.hybridSettings?.pointsPerStamp} points</strong>
                                     </span>
                                 </div>
                             )}
@@ -333,16 +341,16 @@ export default function AwardStampModal({
                                 Stamp Awarded! 🎉
                             </h3>
                             <p className="text-gray-500 mb-6">
-                                {selectedCustomer.name} now has {selectedCustomer.currentStamps + 1} / {reward.template.stampsRequired} stamps
+                                {selectedCustomer.name} now has {selectedCustomer.currentStamps} / {stampsRequired} stamps
                             </p>
 
-                            {selectedCustomer.currentStamps + 1 >= reward.template.stampsRequired && (
+                            {selectedCustomer.currentStamps >= stampsRequired && (
                                 <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl mb-6">
                                     <p className="text-lg font-semibold text-green-700 dark:text-green-400">
                                         🎊 Customer completed all stamps!
                                     </p>
                                     <p className="text-sm text-green-600 dark:text-green-500">
-                                        They can now redeem: {reward.template.rewardBenefitValue}
+                                        They can now redeem: {(reward as any).template?.rewardBenefitValue || (reward as any).value || 'their reward'}
                                     </p>
                                 </div>
                             )}

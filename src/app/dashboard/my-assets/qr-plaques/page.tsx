@@ -252,7 +252,7 @@ export default function QRPlaquesPage() {
                                     <th className="p-4">Status</th>
                                     <th className="p-4">Linked Offer</th>
                                     {/* <th className="p-4">Scans</th> */}
-                                    <th className="p-4">Redemptions</th>
+                                    {/* <th className="p-4">Redemptions</th> */}
                                     <th className="p-4 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -305,7 +305,7 @@ export default function QRPlaquesPage() {
                                                 )}
                                             </td>
                                             {/* <td className="p-4">{plaque.scans || 0}</td> */}
-                                            <td className="p-4">{plaque.redemptions || 0}</td>
+                                            {/* <td className="p-4">{plaque.redemptions || 0}</td> */}
                                             <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>

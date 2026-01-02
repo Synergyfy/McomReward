@@ -4,6 +4,8 @@ import React, { useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, Hash, Hand, User } from "lucide-react";
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ interface PageProps {
 
 export default function EarnPointsPage({ params }: PageProps) {
   const { campaignId } = use(params);
+  const router = useRouter();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isEnterCodeModalOpen, setIsEnterCodeModalOpen] = useState(false);
   const [isMerchantEnterCodeModalOpen, setIsMerchantEnterCodeModalOpen] = useState(false);
@@ -41,25 +44,49 @@ export default function EarnPointsPage({ params }: PageProps) {
       icon: QrCode,
       title: 'QR Code',
       description: 'Present your unique QR code to the merchant for scanning.',
-      action: () => setIsQrModalOpen(true),
+      action: () => {
+        if (!Cookies.get('access')) {
+          router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
+          return;
+        }
+        setIsQrModalOpen(true);
+      },
     },
     {
       icon: Hash,
       title: 'Enter Code',
       description: 'Enter a code provided by the merchant to earn points.',
-      action: () => setIsEnterCodeModalOpen(true),
+      action: () => {
+        if (!Cookies.get('access')) {
+          router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
+          return;
+        }
+        setIsEnterCodeModalOpen(true);
+      },
     },
     {
       icon: Hand,
       title: 'Merchant Enters Code',
       description: 'Allow the merchant to enter a secure code on your device.',
-      action: () => setIsMerchantEnterCodeModalOpen(true),
+      action: () => {
+        if (!Cookies.get('access')) {
+          router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
+          return;
+        }
+        setIsMerchantEnterCodeModalOpen(true);
+      },
     },
     {
       icon: User,
       title: 'Customer Number',
       description: 'Provide your customer number to the merchant to add points.',
-      action: () => setIsCustomerNumberModalOpen(true),
+      action: () => {
+        if (!Cookies.get('access')) {
+          router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
+          return;
+        }
+        setIsCustomerNumberModalOpen(true);
+      },
     },
   ];
 

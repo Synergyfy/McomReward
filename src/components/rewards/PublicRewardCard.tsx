@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Gift, Lock, Unlock } from "lucide-react";
+import { Trophy, Gift, Lock, Unlock, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Reward {
@@ -14,13 +14,27 @@ interface Reward {
     description: string;
     max_points?: number;
     points_required?: number;
+    pointsRequired?: number;
     max_stamps_required?: number;
     stamps_required?: number;
+    stampsRequired?: number;
     image: string;
     value: number;
     quantity: number;
     remainingQuantity: number;
     gallery?: string[] | null;
+    isMallIntegrated?: boolean;
+    is_mall_integrated?: boolean;
+    mallRewardValue?: string | number;
+    mall_reward_value?: string | number;
+    mallRewardType?: string;
+    mall_reward_type?: string;
+    rewardType?: string;
+    rewardSource?: string;
+    reward_source?: string;
+    expiryDatetime?: string;
+    expiry_datetime?: string;
+    pointRequired?: number;
 }
 
 interface PublicRewardCardProps {
@@ -40,9 +54,14 @@ export default function PublicRewardCard({
     onRedeem,
     className
 }: PublicRewardCardProps) {
-    // Handle points property inconsistency
-    const pointsRequired = reward.max_points || reward.points_required || 0;
-    const stampsRequired = reward.max_stamps_required || reward.stamps_required || 0;
+    // Handle property inconsistency between snake_case and camelCase, and singular vs plural
+    const pointsRequired = reward.pointsRequired ?? reward.pointRequired ?? reward.max_points ?? reward.points_required ?? 0;
+    const stampsRequired = reward.stampsRequired ?? reward.max_stamps_required ?? reward.stamps_required ?? 0;
+    const isMallIntegrated = reward.isMallIntegrated ?? reward.is_mall_integrated ?? false;
+    const mallValue = reward.mallRewardValue ?? reward.mall_reward_value;
+    const mallType = reward.mallRewardType ?? reward.mall_reward_type;
+    const source = reward.rewardSource ?? reward.reward_source;
+    const expiry = reward.expiryDatetime ?? reward.expiry_datetime;
 
     // State for active image (defaults to main image)
     const [activeImage, setActiveImage] = useState<string>(reward.image || 'https://placehold.co/600x400?text=Reward');
@@ -53,14 +72,14 @@ export default function PublicRewardCard({
     }, [reward.image]);
 
     // Calculate progress based on whatever is required (simple version: use points if present, else stamps)
-    const progress = isMember 
-        ? pointsRequired > 0 
+    const progress = isMember
+        ? pointsRequired > 0
             ? Math.min((userPoints / pointsRequired) * 100, 100)
             : stampsRequired > 0
                 ? Math.min((userStamps / stampsRequired) * 100, 100)
                 : 0
         : 0;
-    
+
     const canRedeem = isMember && (
         (pointsRequired > 0 && userPoints >= pointsRequired) ||
         (stampsRequired > 0 && userStamps >= stampsRequired) ||
@@ -86,10 +105,21 @@ export default function PublicRewardCard({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
 
                 {/* Top Badges */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-                    <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 px-3 py-1.5 text-xs font-medium uppercase tracking-wider shadow-sm">
-                        {reward.remainingQuantity > 0 ? `${reward.remainingQuantity} Left` : 'Unlimited'}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-start gap-2">
+                    <Badge className="bg-white text-gray-900 border-none px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-tight shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform duration-300">
+                        {reward.remainingQuantity > 0 ? (
+                            <span className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                {reward.remainingQuantity} Left
+                            </span>
+                        ) : 'Unlimited'}
                     </Badge>
+                    {isMallIntegrated && (
+                        <Badge className="bg-blue-600/90 backdrop-blur-md text-white border-none px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-tight shadow-[0_4px_12px_rgba(37,99,235,0.4)] flex items-center gap-1.5 hover:scale-105 transition-transform duration-300">
+                            <Tag className="w-3.5 h-3.5" />
+                            Mall Integrated
+                        </Badge>
+                    )}
                 </div>
 
                 {/* Requirements Badges (Floating) */}
@@ -113,7 +143,7 @@ export default function PublicRewardCard({
 
             {reward.gallery && reward.gallery.length > 0 && (
                 <div
-                    className="px-6 pt-4 grid grid-cols-2 gap-2"
+                    className="px-6 pt-4 grid grid-cols-4 gap-2"
                     onMouseLeave={() => setActiveImage(reward.image || 'https://placehold.co/600x400?text=Reward')}
                 >
                     {/* Gallery Images */}
@@ -141,12 +171,63 @@ export default function PublicRewardCard({
             <div className="p-6 flex-grow flex flex-col relative">
                 {/* Title & Description */}
                 <div className="mb-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-orange-600 transition-colors">
-                        {reward.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                            {reward.title}
+                        </h3>
+                        <div className="flex flex-col items-end gap-1">
+                            {reward.rewardType && (
+                                <Badge variant="outline" className="shrink-0 text-[10px] uppercase font-bold py-0 h-5 bg-gray-50">
+                                    {reward.rewardType}
+                                </Badge>
+                            )}
+                            {source && (
+                                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-tighter">
+                                    via {source}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mb-4">
                         {reward.description}
                     </p>
+
+                    {/* Mall Details Section */}
+                    {isMallIntegrated && (mallValue || mallType) && (
+                        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100/50 mb-4 animate-in fade-in slide-in-from-top-1 duration-500">
+                            <div className="flex flex-wrap gap-4">
+                                {mallValue !== undefined && mallValue !== null && (
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Mall Benefit</span>
+                                        <span className="text-sm font-extrabold text-blue-700 tracking-tight flex items-center gap-1">
+                                            {typeof mallValue === 'number'
+                                                ? `£${mallValue.toFixed(2)}`
+                                                : mallValue.toString().startsWith('£') || mallValue.toString().startsWith('$')
+                                                    ? mallValue
+                                                    : `£${mallValue}`
+                                            }
+                                        </span>
+                                    </div>
+                                )}
+                                {mallType && (
+                                    <div className="flex flex-col border-l border-blue-200 pl-4">
+                                        <span className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Issuance Type</span>
+                                        <span className="text-sm font-extrabold text-blue-700 tracking-tight uppercase">
+                                            {mallType.replace('_', ' ')}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Expiry Badge */}
+                    {expiry && (
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-400 mb-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            Expires: {new Date(expiry).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Progress Section (Only for Members) */}
@@ -158,8 +239,8 @@ export default function PublicRewardCard({
                                     "transition-colors",
                                     canRedeem ? "text-green-600" : "text-gray-500"
                                 )}>
-                                    {canRedeem 
-                                        ? "Ready to Redeem!" 
+                                    {canRedeem
+                                        ? "Ready to Redeem!"
                                         : pointsRequired > 0 && userPoints < pointsRequired
                                             ? `${pointsRequired - userPoints} points to go`
                                             : stampsRequired > 0 && userStamps < stampsRequired

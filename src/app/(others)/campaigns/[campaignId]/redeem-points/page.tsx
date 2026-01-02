@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Trophy } from "lucide-react";
 import Image from 'next/image';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
 import { useGetPublicCampaignDetails, useGetParticipantBalance, useRedeemReward } from '@/services/customer-campaigns/hook';
@@ -19,6 +21,7 @@ interface PageProps {
 
 export default function RedeemPointsPage({ params }: PageProps) {
     const { campaignId } = use(params);
+    const router = useRouter();
     console.log('RedeemPointsPage campaignId:', campaignId);
     const { data: campaign, isLoading, error } = useGetPublicCampaignDetails(campaignId);
     const { data: balance } = useGetParticipantBalance(campaignId);
@@ -31,7 +34,13 @@ export default function RedeemPointsPage({ params }: PageProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<{ title: string } | null>(null);
 
+    const isAuthenticated = !!Cookies.get('access');
+
     const handleRedeemClick = (reward: RewardResponse) => {
+        if (!isAuthenticated) {
+            router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/redeem-points`);
+            return;
+        }
         if (userPoints >= reward.pointRequired) {
             // In a real app, we would need the staffId and participantId here.
             // Since this is a customer-facing app, we might need to adjust the endpoint or flow.

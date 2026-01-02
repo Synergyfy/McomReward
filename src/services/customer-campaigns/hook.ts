@@ -138,7 +138,9 @@ export const useSignUp = () => {
 
 // Get Unique Code
 const getUniqueCode = async (): Promise<UniqueCodeResponse> => {
-  const { data } = await api.get<UniqueCodeResponse>('/auth/unique-code');
+  const { data } = await api.get<UniqueCodeResponse>('/auth/unique-code', {
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -151,7 +153,9 @@ export const useGetUniqueCode = () => {
 
 // Get Participant Balance
 const getParticipantBalance = async (campaignId: string): Promise<ParticipantBalance> => {
-  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`);
+  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`, {
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -238,7 +242,8 @@ export const useDualScan = () => {
 const getParticipantHistory = async (campaignId: string, page: number, limit: number): Promise<ParticipantHistoryResponse> => {
   const { data } = await api.get<ParticipantHistoryResponse>(`/participant-campaign-balance/history/${campaignId}`, {
     params: { page, limit },
-  });
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 

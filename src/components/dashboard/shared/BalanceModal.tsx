@@ -2,9 +2,9 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, Star, Wallet } from "lucide-react";
+import { ArrowUp, ArrowDown, Star } from "lucide-react";
 import { useGetStampRewardStats } from "@/services/business-stamp-rewards/hook";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReactNode } from "react";
 
 interface BalanceModalProps {
   summary: {
@@ -14,9 +14,10 @@ interface BalanceModalProps {
   };
   isTrial?: boolean;
   trialQuota?: number;
+  trigger?: ReactNode; // Allow custom trigger
 }
 
-export const BalanceModal = ({ summary, isTrial, trialQuota }: BalanceModalProps) => {
+export const BalanceModal = ({ summary, isTrial, trialQuota, trigger }: BalanceModalProps) => {
   const { data: stampStats } = useGetStampRewardStats();
 
   // Trial View Logic
@@ -99,15 +100,7 @@ export const BalanceModal = ({ summary, isTrial, trialQuota }: BalanceModalProps
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Card className="shadow-md border-none bg-white lg:col-span-2 cursor-pointer hover:shadow-lg transition-shadow">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold">Balances</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             <Button variant="outline" className="w-full">View Balance</Button>
-          </CardContent>
-        </Card>
+        {trigger ? trigger : <Button variant="outline">View Balance</Button>}
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>

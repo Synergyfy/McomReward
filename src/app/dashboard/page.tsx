@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Users, Gift, Megaphone, Flame, Percent, Star, Plus, Minus } from "lucide-react";
+import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
 import Loader from "@/components/ui/loader";
 import { ChartQueryDto } from "@/services/business-dashboard/types";
-import { BalanceModal } from "@/components/dashboard/shared/BalanceModal";
 
 type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
 
@@ -55,7 +54,7 @@ export default function BusinessDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} />
-        <BalanceModal
+        <PointsSummary
           summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }}
           isTrial={subscription?.isTrial}
           trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
@@ -188,3 +187,85 @@ const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) =>
     </CardContent>
   </Card>
 );
+
+const PointsSummary = ({
+  summary,
+  isTrial,
+  trialQuota,
+}: {
+  summary: { earned: number; spent: number; matchingAvailable: number };
+  isTrial?: boolean;
+  trialQuota?: number;
+}) => {
+  if (isTrial) {
+    const remaining = (trialQuota || 0) - summary.spent;
+    const isExhausted = remaining <= 0;
+
+    return (
+      <Card className="shadow-md border-none bg-white lg:col-span-2 relative overflow-hidden">
+        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">
+          Trial Limit Active
+        </div>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            Trial Points
+            {isExhausted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Exhausted</span>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-sm text-gray-500">Allocated</p>
+            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-indigo-600">
+              {(trialQuota || 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Used</p>
+            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-orange-600">
+              {summary.spent.toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Remaining</p>
+            <p className={`text-2xl font-bold ${remaining > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              {Math.max(0, remaining).toLocaleString()}
+            </p>
+          </div>
+          {isExhausted && (
+            <div className="col-span-1 sm:col-span-3 mt-2">
+              <a href="/dashboard/subscription" className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+                Upgrade to continue
+              </a>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="shadow-md border-none bg-white lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Points Summary</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+        <div>
+          <p className="text-sm text-gray-500">Earned</p>
+          <p className="text-2xl font-bold flex items-center justify-center gap-1 text-green-600">
+            <ArrowUp size={20} /> {summary.earned.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Spent</p>
+          <p className="text-2xl font-bold flex items-center justify-center gap-1 text-red-600">
+            <ArrowDown size={20} /> {summary.spent.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Matching Available</p>
+          <p className="text-2xl font-bold text-orange-600">{summary.matchingAvailable.toLocaleString()}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

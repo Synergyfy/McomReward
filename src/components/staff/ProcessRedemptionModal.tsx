@@ -17,10 +17,19 @@ interface ProcessRedemptionModalProps {
     campaignId: string;
     campaignName: string;
     businessRewards: OngoingCampaignReward[];
-    rewardMode?: 'points' | 'stamps';
+    rewardMode?: 'points' | 'stamps' | 'both';
+    canAwardPoints?: boolean;
+    canAwardStamps?: boolean;
 }
 
-export function ProcessRedemptionModal({ campaignId, campaignName, businessRewards = [], rewardMode = 'points' }: ProcessRedemptionModalProps) {
+export function ProcessRedemptionModal({ 
+    campaignId, 
+    campaignName, 
+    businessRewards = [], 
+    rewardMode = 'points',
+    canAwardPoints,
+    canAwardStamps
+}: ProcessRedemptionModalProps) {
     const isStampMode = rewardMode === 'stamps';
     const [isOpen, setIsOpen] = useState(false);
     const [selectedRewardId, setSelectedRewardId] = useState<string>("");

@@ -37,17 +37,17 @@ export const useAdminParticipantDetails = (id: string) => {
     });
 };
 
-const getAdminParticipantHistory = async (id: string, page = 1, limit = 10): Promise<PaginatedResponse<ParticipantHistoryItem>> => {
+const getAdminParticipantHistory = async (id: string, page = 1, limit = 10, historyType: 'both' | 'points' | 'stamps' = 'both'): Promise<PaginatedResponse<ParticipantHistoryItem>> => {
     const { data } = await api.get<PaginatedResponse<ParticipantHistoryItem>>(`/admin/participants/${id}/history`, {
-        params: { page, limit }
+        params: { page, limit, type: historyType }
     });
     return data;
 }
 
-export const useAdminParticipantHistory = (id: string, page = 1, limit = 10) => {
+export const useAdminParticipantHistory = (id: string, page = 1, limit = 10, historyType: 'both' | 'points' | 'stamps' = 'both') => {
     return useQuery<PaginatedResponse<ParticipantHistoryItem>>({
-        queryKey: ['admin-participant-history', id, page, limit],
-        queryFn: () => getAdminParticipantHistory(id, page, limit),
+        queryKey: ['admin-participant-history', id, page, limit, historyType],
+        queryFn: () => getAdminParticipantHistory(id, page, limit, historyType),
         enabled: !!id,
         placeholderData: keepPreviousData,
     });

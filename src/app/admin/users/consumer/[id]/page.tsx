@@ -19,10 +19,11 @@ export default function ConsumerDetailsPage() {
   const id = params?.id as string;
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  const [historyType, setHistoryType] = useState<'both' | 'points' | 'stamps'>('both');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { data: user, isLoading: isUserLoading } = useAdminParticipantDetails(id);
-  const { data: historyData, isLoading: isHistoryLoading } = useAdminParticipantHistory(id, page, limit);
+  const { data: historyData, isLoading: isHistoryLoading } = useAdminParticipantHistory(id, page, limit, historyType);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -57,15 +58,15 @@ export default function ConsumerDetailsPage() {
     // Add missing fields with defaults or correct mapping
     role: 'consumer',
     uniqueCode: 'N/A',
-    global_total_points: user.globalTotalPoints,
-    matching_points: user.matchingPoints,
-    point_utilization: 0, // Not available in AdminParticipant
-    total_points_earned: 0, // Not available
-    total_points_redeemed: user.rewardsRedeemed, // Approximation or 0
+    globalTotalPoints: user.globalTotalPoints,
+    matchingPoints: user.matchingPoints,
+    pointUtilization: 0, // Not available in AdminParticipant
+    totalPointsEarned: 0, // Not available
+    totalPointsRedeemed: user.rewardsRedeemed, // Approximation or 0
     isDisabled: false,
-    created_at: user.joinedDate,
-    updated_at: new Date().toISOString(),
-    campaign_balances: [] // Not fetched
+    createdAt: user.joinedDate,
+    updatedAt: new Date().toISOString(),
+    campaignBalances: [] // Not fetched
   };
 
   const balanceData: ParticipantGlobalBalanceResponse = {
@@ -137,6 +138,7 @@ export default function ConsumerDetailsPage() {
                   <PointsBalanceDisplay
                     totalPoints={totalPoints}
                     matchingPoints={matchingPoints}
+                    totalStamps={0}
                     utilization={utilization}
                     badgeLevel={badgeLevel}
                     isLoading={isUserLoading}
@@ -148,6 +150,8 @@ export default function ConsumerDetailsPage() {
                     page={page}
                     totalPages={totalPages}
                     onPageChange={setPage}
+                    historyType={historyType}
+                    onHistoryTypeChange={setHistoryType}
                   />
 
                   {/* Join Campaign Button (Visual only or disabled for Admin) */}

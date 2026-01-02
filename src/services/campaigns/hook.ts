@@ -206,13 +206,7 @@ export const useGetCampaignAnalytics = (page: number = 1, limit: number = 10) =>
 
 // Get Detailed Campaign Analytics
 const getDetailedCampaignAnalytics = async (campaignId: string): Promise<DetailedCampaignAnalytics> => {
-  // Use the admin/global endpoint for analytics, filtered by campaign ID if possible
-  // NOTE: User requested /api/v1/campaigns/analytics.
-  // Assuming it accepts campaignId as a query param or returns a list we filter.
-  // If it's a direct replacement, we map it here.
-  const { data } = await api.get<DetailedCampaignAnalytics>('/campaigns/analytics', {
-    params: { campaignId }
-  });
+  const { data } = await api.get<DetailedCampaignAnalytics>(`/campaigns/${campaignId}/analytics/tiers`);
   return data;
 };
 

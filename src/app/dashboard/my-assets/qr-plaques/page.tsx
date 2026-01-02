@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer, Eye, Search, ExternalLink } from 'lucide-react';
+import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer, Eye, Search, ExternalLink, Copy, QrCode } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -147,6 +148,11 @@ export default function QRPlaquesPage() {
         });
     };
 
+    const handleCopyId = (id: string) => {
+        navigator.clipboard.writeText(id);
+        toast.success('Plaque ID copied to clipboard');
+    };
+
     const getStatusClass = (status: string) => {
         switch (status) {
             case 'ACTIVE': return 'bg-green-100 text-green-800';
@@ -260,9 +266,11 @@ export default function QRPlaquesPage() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => setViewPlaque(plaque)}
+                                                    onClick={() => handleCopyId(plaque.id)}
+                                                    className="flex items-center gap-2"
                                                 >
-                                                    {plaque.id}
+                                                    {plaque.id.length > 8 ? `${plaque.id.substring(0, 8)}...` : plaque.id}
+                                                    <Copy className="h-3 w-3" />
                                                 </Button>
                                             </td>
                                             <td className="p-4">{plaque.status === 'FOR_SALE' ? plaque.price : plaque.name}</td>
@@ -286,11 +294,11 @@ export default function QRPlaquesPage() {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => window.open(plaque.contentUrl, '_blank')}
+                                                        onClick={() => setViewPlaque(plaque)}
                                                         className="flex items-center gap-2"
                                                     >
-                                                        <ExternalLink className="h-3 w-3" />
-                                                        Linked Offer Image
+                                                        <QrCode className="h-3 w-3" />
+                                                        View QR Code
                                                     </Button>
                                                 ) : (
                                                     <span className="text-gray-400 text-sm">N/A</span>

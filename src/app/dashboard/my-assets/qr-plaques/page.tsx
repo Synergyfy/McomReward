@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer, Eye, Search } from 'lucide-react';
+import { Download, Link as LinkIcon, Pencil, Trash2, MoreVertical, Settings, Plus, Printer, Eye, Search, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -24,15 +24,15 @@ import ConfigurePlaqueModal from '@/components/dashboard/my-assets/qr-plaques/Co
 import DeactivateConfirmationModal from '@/components/dashboard/my-assets/qr-plaques/DeactivateConfirmationModal';
 import PlaqueDetailsModal from '@/components/dashboard/my-assets/qr-plaques/PlaqueDetailsModal';
 
-const chartData = [
-    { name: 'Mon', scans: 0, redemptions: 0 },
-    { name: 'Tue', scans: 0, redemptions: 0 },
-    { name: 'Wed', scans: 0, redemptions: 0 },
-    { name: 'Thu', scans: 0, redemptions: 0 },
-    { name: 'Fri', scans: 0, redemptions: 0 },
-    { name: 'Sat', scans: 0, redemptions: 0 },
-    { name: 'Sun', scans: 0, redemptions: 0 },
-];
+// const chartData = [
+//     { name: 'Mon', scans: 0, redemptions: 0 },
+//     { name: 'Tue', scans: 0, redemptions: 0 },
+//     { name: 'Wed', scans: 0, redemptions: 0 },
+//     { name: 'Thu', scans: 0, redemptions: 0 },
+//     { name: 'Fri', scans: 0, redemptions: 0 },
+//     { name: 'Sat', scans: 0, redemptions: 0 },
+//     { name: 'Sun', scans: 0, redemptions: 0 },
+// ];
 
 interface PaginatedPlaques {
     data: QrPlaque[];
@@ -244,7 +244,7 @@ export default function QRPlaquesPage() {
                                     <th className="p-4">Assigned To</th>
                                     <th className="p-4">Status</th>
                                     <th className="p-4">Linked Offer</th>
-                                    <th className="p-4">Scans</th>
+                                    {/* <th className="p-4">Scans</th> */}
                                     <th className="p-4">Redemptions</th>
                                     <th className="p-4 text-center">Actions</th>
                                 </tr>
@@ -255,7 +255,15 @@ export default function QRPlaquesPage() {
                                 ) : (
                                     plaques.map((plaque: QrPlaque) => (
                                         <tr key={plaque.id} className="border-b hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setViewPlaque(plaque)}>
-                                            <td className="p-4 font-medium">{plaque.id}</td>
+                                            <td className="p-4 font-medium" onClick={(e) => e.stopPropagation()}>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setViewPlaque(plaque)}
+                                                >
+                                                    {plaque.id}
+                                                </Button>
+                                            </td>
                                             <td className="p-4">{plaque.status === 'FOR_SALE' ? plaque.price : plaque.name}</td>
                                             <td className="p-4">
                                                 {plaque.networkContact ? (
@@ -272,8 +280,22 @@ export default function QRPlaquesPage() {
                                                 )}
                                             </td>
                                             <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(plaque.status)}`}>{plaque.status}</span></td>
-                                            <td className="p-4">{plaque.contentUrl || 'N/A'}</td>
-                                            <td className="p-4">{plaque.scans || 0}</td>
+                                            <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                                                {plaque.contentUrl ? (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => window.open(plaque.contentUrl, '_blank')}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <ExternalLink className="h-3 w-3" />
+                                                        Linked Offer Image
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-gray-400 text-sm">N/A</span>
+                                                )}
+                                            </td>
+                                            {/* <td className="p-4">{plaque.scans || 0}</td> */}
                                             <td className="p-4">{plaque.redemptions || 0}</td>
                                             <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                                                 <DropdownMenu>
@@ -296,7 +318,7 @@ export default function QRPlaquesPage() {
                     )}
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
+                {/* <div className="bg-white p-6 rounded-lg shadow">
                     <h3 className="text-lg font-semibold mb-4">Scans & Redemptions</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={chartData}>
@@ -304,7 +326,7 @@ export default function QRPlaquesPage() {
                             <Bar dataKey="scans" fill="#fb923c" /><Bar dataKey="redemptions" fill="#ea580c" />
                         </BarChart>
                     </ResponsiveContainer>
-                </div>
+                </div> */}
             </div>
 
             <PlaqueDetailsModal isOpen={!!viewPlaque} onClose={() => setViewPlaque(null)} plaque={viewPlaque} onPrint={setPlaqueToPrint} />

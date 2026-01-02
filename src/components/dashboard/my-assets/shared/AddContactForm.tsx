@@ -12,10 +12,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, AlertCircle } from 'lucide-react';
 import { useCreateContact } from '@/services/network-contacts/hook';
 import { CreateContactDto, LocationTag, RelationshipTag } from '@/services/network-contacts/types';
-import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AddContactFormProps {
     onSuccess?: (contact: any) => void;
@@ -23,13 +23,13 @@ interface AddContactFormProps {
     initialData?: Partial<CreateContactDto>;
 }
 
-const LOCATION_TAG_INFO = {
+export const LOCATION_TAG_INFO = {
     nearby: 'Very close, neighbourhood radius.',
     hyperlocal: 'Wider local area but still nearby.',
     national: 'Anywhere within the country.',
 };
 
-const RELATIONSHIP_TAG_INFO = {
+export const RELATIONSHIP_TAG_INFO = {
     partner: 'Someone you collaborate with.',
     supplier: 'Someone who provides you items or services.',
     affiliate: 'Promotes your business.',
@@ -46,8 +46,10 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
         locationTag: initialData?.locationTag || 'nearby',
         hasPermission: initialData?.hasPermission || false,
     });
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const handleAddContact = async () => {
+        setErrorMessage(null);
         try {
             const newContact = await createContact.mutateAsync(formData);
             if (onSuccess) {
@@ -55,13 +57,21 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
             }
         } catch (error: any) {
             console.error('Failed to create contact', error);
-            const errorMessage = error?.response?.data?.message || 'Failed to add contact. Please try again.';
-            toast.error(errorMessage);
+            const msg = error?.response?.data?.message || 'Failed to add contact. Please try again.';
+            setErrorMessage(msg);
         }
     };
 
     return (
         <div className="space-y-4 py-4">
+             {errorMessage && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
                 {/* Full Name */}
                 <div className="col-span-2">

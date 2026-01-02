@@ -25,6 +25,7 @@ import {
 } from '@/services/affiliate/types';
 import { useUpdateReferralTags } from '@/services/affiliate/hook';
 import { toast } from 'sonner';
+import { LOCATION_TAG_INFO, RELATIONSHIP_TAG_INFO } from '@/components/dashboard/my-assets/shared/AddContactForm';
 
 interface UpdateTagsModalProps {
     business: ReferredBusiness;
@@ -79,9 +80,30 @@ export default function UpdateTagsModal({ business, isOpen, onClose }: UpdateTag
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="null">None</SelectItem>
-                                    <SelectItem value={NetworkLocationTag.NEARBY}>Nearby</SelectItem>
-                                    <SelectItem value={NetworkLocationTag.HYPERLOCAL}>Hyperlocal</SelectItem>
-                                    <SelectItem value={NetworkLocationTag.NATIONAL}>National</SelectItem>
+                                    <SelectItem value={NetworkLocationTag.NEARBY} textValue="Nearby">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">Nearby</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {LOCATION_TAG_INFO.nearby}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value={NetworkLocationTag.HYPERLOCAL} textValue="Hyperlocal">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">Hyperlocal</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {LOCATION_TAG_INFO.hyperlocal}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value={NetworkLocationTag.NATIONAL} textValue="National">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">National</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {LOCATION_TAG_INFO.national}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -100,12 +122,35 @@ export default function UpdateTagsModal({ business, isOpen, onClose }: UpdateTag
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="null">None</SelectItem>
-                                    <SelectItem value={NetworkRelationshipTag.PARTNER}>Partner</SelectItem>
-                                    <SelectItem value={NetworkRelationshipTag.CUSTOMER}>Customer</SelectItem>
-                                    <SelectItem value={NetworkRelationshipTag.SUPPLIER}>Supplier</SelectItem>
-                                    <SelectItem value={NetworkRelationshipTag.AFFILIATE}>Affiliate</SelectItem>
+                                    <SelectItem value={NetworkRelationshipTag.PARTNER} textValue="Partner">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">Partner</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.partner}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value={NetworkRelationshipTag.SUPPLIER} textValue="Supplier">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">Supplier</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.supplier}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value={NetworkRelationshipTag.AFFILIATE} textValue="Affiliate">
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">Affiliate</span>
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.affiliate}
+                                            </span>
+                                        </div>
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Select a relationship tag.
+                            </p>
                         </div>
                     </div>
                 </div>

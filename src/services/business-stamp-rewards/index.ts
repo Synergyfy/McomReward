@@ -373,17 +373,16 @@ export const getCustomerStampCards = async (
 
 /**
  * Award a stamp
- * Backend: POST /business/stamps/scan
+ * Backend: POST /participant-campaign-balance/award-stamps
  */
 export const awardStamp = async (payload: AwardStampRequest): Promise<CustomerStampCard> => {
     try {
-        const dto: ScanParticipantQrDto = {
-            businessStampRewardId: payload.businessStampRewardId,
-            customerId: payload.customerId,
-            participantUniqueCode: payload.participantUniqueCode
+        const dto = {
+            participantUniqueCode: payload.participantUniqueCode,
+            stampCardId: payload.stampCardId
         };
 
-        const { data } = await apiClient.post<StampCardDto>('/business/stamps/scan', dto);
+        const { data } = await apiClient.post<StampCardDto>('/participant-campaign-balance/award-stamps', dto);
         return mapStampCardDtoToCustomerCard(data);
     } catch (error) {
         console.error('Failed to award stamp', error);

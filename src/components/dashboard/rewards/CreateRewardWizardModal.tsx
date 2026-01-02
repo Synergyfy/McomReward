@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Reward } from '@/services/business-reward/types';
 import { useUploadToCloudinary } from '@/services/upload/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
 import { toast } from 'sonner';
 import { AlertCircle, CheckCircle2, Star } from 'lucide-react';
 import {
@@ -97,11 +98,16 @@ export default function CreateRewardWizardModal({
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Stamp Icon Customization
-  const [imageSourceType, setImageSourceType] = useState<'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL'>(reward?.image_source_type || 'BUSINESS_LOGO');
+  const [imageSourceType, setImageSourceType] = useState<'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL'>(reward?.image_source_type || 'EMOJI');
   const [stampEmoji, setStampEmoji] = useState(reward?.stamp_emoji || '☕');
   const [customEmoji, setCustomEmoji] = useState(reward?.emoji || '🚀');
   const [selectedStampFile, setSelectedStampFile] = useState<File | null>(null);
   const [stampImagePreviewUrl, setStampImagePreviewUrl] = useState<string | null>(null);
+  const [mcomAssetType, setMcomAssetType] = useState<'sector' | 'category'>('sector');
+
+  const { data: profile } = useGetBusinessProfile();
+
+  const businessEmojis = ['☕', '🍔', '💰', '📦', '🚜', '🍕', '🛍️', '🎁', '🚀', '⭐'];
 
   // Track which fields have been touched/attempted
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -144,7 +150,7 @@ export default function CreateRewardWizardModal({
     setShowAllErrors(false);
     setIsSubmitting(false);
     setShowConfirmation(false);
-    setImageSourceType(reward?.image_source_type || 'BUSINESS_LOGO');
+    setImageSourceType(reward?.image_source_type || 'EMOJI');
     setStampEmoji(reward?.stamp_emoji || '☕');
     setCustomEmoji(reward?.emoji || '🚀');
     setSelectedStampFile(null);
@@ -335,9 +341,11 @@ export default function CreateRewardWizardModal({
       }
 
       let finalStampEmoji = stampEmoji;
-      if (imageSourceType === 'BUSINESS_LOGO' && selectedStampFile) {
-        const stampUploadResult = await uploadToCloudinary({ file: selectedStampFile, folder: 'rewards/stamps' });
-        finalStampEmoji = stampUploadResult.secure_url;
+      if (imageSourceType === 'BUSINESS_LOGO') {
+        finalStampEmoji = profile?.profileImage || '';
+      } else if (imageSourceType === 'LIBRARY_ASSET') {
+        const asset = mcomAssetType === 'sector' ? profile?.sector : profile?.category;
+        finalStampEmoji = asset?.imageUrl || '';
       }
 
       // Upload gallery images
@@ -356,19 +364,14 @@ export default function CreateRewardWizardModal({
         ...uploadedGalleryUrls
       ];
 
-      const rewardData: Reward = {
-        id: reward?.id || new Date().toISOString(),
+      const rewardData: any = {
         title: name,
         description,
-        value: 0,
-        pointsRequired: isPointsEnabled ? Number(pointsRequired) : 0,
         points_required: isPointsEnabled ? Number(pointsRequired) : 0,
-        maxPoints: Number(maxPoints) > 0 ? Number(maxPoints) : Number(pointsRequired),
+        stamps_required: isStampsEnabled ? Number(stampsRequired) : 0,
         image: imageUrl,
         gallery: finalGalleryUrls,
         quantity: Number(quantity),
-        stampsRequired: isStampsEnabled ? Number(stampsRequired) : 0,
-        stamps_required: isStampsEnabled ? Number(stampsRequired) : 0,
         is_points_enabled: isPointsEnabled,
         is_stamps_enabled: isStampsEnabled,
         rewardType,
@@ -376,14 +379,18 @@ export default function CreateRewardWizardModal({
         is_mall_integrated: isMallIntegrated,
         mall_reward_type: mallRewardType as 'VOUCHER' | 'GIFT_CARD' | 'COUPON',
         mall_reward_value: Number(mallRewardValue),
-        createdAt: reward?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         image_source_type: imageSourceType,
         stamp_emoji: finalStampEmoji,
         emoji: customEmoji,
+        status: 'active',
+        expiry_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // Default to 1 year from now
       };
 
-      await onSave(rewardData);
+      if (reward?.id) {
+        rewardData.id = reward.id;
+      }
+
+      await onSave(rewardData as Reward);
       setShowConfirmation(false);
       onClose();
     } catch (error) {
@@ -446,7 +453,15 @@ export default function CreateRewardWizardModal({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="rewardType" className="block text-sm font-medium mb-1">Reward Type</label>
-                  <Select value={rewardType} onValueChange={setRewardType}>
+                  <Select
+                    value={rewardType}
+                    onValueChange={(val) => {
+                      setRewardType(val);
+                      if (val === 'Voucher') setMallRewardType('VOUCHER');
+                      if (val === 'gift card') setMallRewardType('GIFT_CARD');
+                      if (val === 'coupon') setMallRewardType('COUPON');
+                    }}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -692,7 +707,7 @@ export default function CreateRewardWizardModal({
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wider">Stamp Icon Source</label>
                       <Select value={imageSourceType} onValueChange={(val: any) => setImageSourceType(val)}>
@@ -701,50 +716,119 @@ export default function CreateRewardWizardModal({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="BUSINESS_LOGO">Business Logo</SelectItem>
-                          <SelectItem value="LIBRARY_ASSET">Library Asset</SelectItem>
-                          <SelectItem value="EMOJI">Emoji</SelectItem>
-                          <SelectItem value="CUSTOM_URL">Custom URL</SelectItem>
+                          <SelectItem value="EMOJI">Emoji Stickers</SelectItem>
+                          <SelectItem value="LIBRARY_ASSET">Mcom Assets</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="stamp_emoji" className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wider">
-                          {imageSourceType === 'BUSINESS_LOGO' ? 'Stamp Logo' : 'Stamp Emoji'}
-                        </label>
-                        {imageSourceType === 'BUSINESS_LOGO' ? (
-                          <div className="space-y-3">
-                            <CloudinaryUpload onFileSelect={handleStampImageSelect} />
-                            {stampImagePreviewUrl && (
-                              <div className="relative h-12 w-12 rounded-lg overflow-hidden border bg-white">
-                                <Image src={stampImagePreviewUrl} alt="Stamp Preview" layout="fill" objectFit="cover" />
+                    {/* Source: BUSINESS_LOGO */}
+                    {imageSourceType === 'BUSINESS_LOGO' && (
+                      <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-xl border border-dashed">
+                        {profile?.profileImage ? (
+                          <div className="relative h-20 w-20 rounded-2xl overflow-hidden ring-4 ring-blue-50 shadow-lg">
+                            {(profile.profileImage.startsWith('http') || profile.profileImage.startsWith('/')) ? (
+                              <Image src={profile.profileImage} alt="Business Logo" layout="fill" objectFit="cover" />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                                {profile.profileImage}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <Input
-                            id="stamp_emoji"
-                            placeholder="e.g. ☕"
-                            value={stampEmoji}
-                            onChange={(e) => setStampEmoji(e.target.value)}
-                            className="bg-white"
-                          />
+                          <div className="h-20 w-20 rounded-2xl bg-gray-50 flex items-center justify-center border-2 border-dashed">
+                            <AlertCircle className="h-8 w-8 text-gray-400" />
+                          </div>
                         )}
-                      </div>
-                      {imageSourceType === 'EMOJI' && (
-                        <div>
-                          <label htmlFor="emoji" className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wider">Specific Emoji</label>
-                          <Input
-                            id="emoji"
-                            placeholder="e.g. 🚀"
-                            value={customEmoji}
-                            onChange={(e) => setCustomEmoji(e.target.value)}
-                            className="bg-white"
-                          />
+                        <div className="text-center">
+                          <p className="text-sm font-medium">Auto-fetching logo...</p>
+                          <p className="text-xs text-gray-500">Your profile logo will be used as the stamp icon.</p>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+
+                    {/* Source: EMOJI */}
+                    {imageSourceType === 'EMOJI' && (
+                      <div className="space-y-3">
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Select a Sticker</label>
+                        <div className="grid grid-cols-5 gap-2">
+                          {businessEmojis.map((e) => (
+                            <button
+                              key={e}
+                              type="button"
+                              onClick={() => setCustomEmoji(e)}
+                              className={`h-12 flex items-center justify-center text-2xl rounded-xl transition-all ${customEmoji === e
+                                ? 'bg-blue-500 text-white scale-110 shadow-md ring-4 ring-blue-100'
+                                : 'bg-white hover:bg-gray-50 border shadow-sm'
+                                }`}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Source: LIBRARY_ASSET (Mcom Assets) */}
+                    {imageSourceType === 'LIBRARY_ASSET' && (
+                      <div className="space-y-4">
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={mcomAssetType === 'sector' ? 'default' : 'outline'}
+                            className="flex-1 h-9"
+                            onClick={() => setMcomAssetType('sector')}
+                          >
+                            Sector Asset
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={mcomAssetType === 'category' ? 'default' : 'outline'}
+                            className="flex-1 h-9"
+                            onClick={() => setMcomAssetType('category')}
+                          >
+                            Category Asset
+                          </Button>
+                        </div>
+
+                        {/* Mcom Asset Preview */}
+                        <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-xl border">
+                          {(() => {
+                            const asset = mcomAssetType === 'sector' ? profile?.sector : profile?.category;
+
+                            return (
+                              <>
+                                <div className="group relative">
+                                  {asset?.imageUrl ? (
+                                    <div className="relative h-20 w-20 rounded-2xl overflow-hidden ring-4 ring-orange-50 shadow-lg">
+                                      {(asset.imageUrl.startsWith('http') || asset.imageUrl.startsWith('/')) ? (
+                                        <Image src={asset.imageUrl} alt={asset.name} layout="fill" objectFit="cover" />
+                                      ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                                          {asset.imageUrl}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="h-20 w-20 rounded-2xl bg-gray-50 flex items-center justify-center border-2 border-dashed">
+                                      <CheckCircle2 className="h-8 w-8 text-gray-400" />
+                                    </div>
+                                  )}
+                                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl z-50">
+                                    {asset?.name || 'Not Available'}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900" />
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium capitalize">{mcomAssetType} Icon</p>
+                                  <p className="text-xs text-gray-500">Previewing your business {mcomAssetType} asset.</p>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -803,7 +887,13 @@ export default function CreateRewardWizardModal({
                 {imagePreviewUrl && (
                   <div className="mt-4 flex items-center gap-3">
                     <div className="relative h-20 w-20 rounded-lg overflow-hidden border-2 border-green-200">
-                      <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                      {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/')) ? (
+                        <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                          {imagePreviewUrl}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-green-600">
                       <CheckCircle2 className="h-4 w-4" />
@@ -887,12 +977,18 @@ export default function CreateRewardWizardModal({
                     <div className="flex items-center space-x-3">
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200">
                         {imagePreviewUrl && (
-                          <Image
-                            src={imagePreviewUrl}
-                            alt={name}
-                            layout="fill"
-                            objectFit="cover"
-                          />
+                          (imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/')) ? (
+                            <Image
+                              src={imagePreviewUrl}
+                              alt={name}
+                              layout="fill"
+                              objectFit="cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                              {imagePreviewUrl}
+                            </div>
+                          )
                         )}
                       </div>
                       <div>

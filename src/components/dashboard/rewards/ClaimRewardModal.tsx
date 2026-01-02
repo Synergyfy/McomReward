@@ -278,12 +278,18 @@ export default function ClaimRewardModal({
                       <CardHeader>
                         <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gray-200 mb-4">
                           {reward.image && (
-                            <Image
-                              src={reward.image}
-                              alt={reward.title}
-                              layout="fill"
-                              objectFit="cover"
-                            />
+                            (reward.image.startsWith('http') || reward.image.startsWith('/')) ? (
+                              <Image
+                                src={reward.image}
+                                alt={reward.title}
+                                layout="fill"
+                                objectFit="cover"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-4xl">
+                                {reward.image}
+                              </div>
+                            )
                           )}
                         </div>
                         <CardTitle className="text-lg">{reward.title}</CardTitle>
@@ -339,12 +345,18 @@ export default function ClaimRewardModal({
                       <CardHeader>
                         <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 mb-4">
                           {template.image ? (
-                            <Image
-                              src={template.image}
-                              alt={template.title}
-                              layout="fill"
-                              objectFit="cover"
-                            />
+                            (template.image.startsWith('http') || template.image.startsWith('/')) ? (
+                              <Image
+                                src={template.image}
+                                alt={template.title}
+                                layout="fill"
+                                objectFit="cover"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-4xl">
+                                {template.image}
+                              </div>
+                            )
                           ) : (
                             <div className="flex items-center justify-center h-full">
                               <Stamp className="h-12 w-12 text-orange-400" />

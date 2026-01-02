@@ -16,11 +16,13 @@ export interface Reward {
   is_points_enabled?: boolean;
   is_stamps_enabled?: boolean;
   rewardType?: string;
+  reward_type?: string;
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
   createdAt: string;
   updatedAt: string;
+  expiry_datetime?: string;
   stamp_emoji?: string;
   stampEmoji?: string;
   image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
@@ -59,6 +61,7 @@ export interface BusinessReward {
   value: number;
   disabled: boolean;
   rewardType?: string;
+  reward_type?: string;
   stampsRequired?: number;
   stamps_required?: number;
   is_points_enabled?: boolean;
@@ -68,6 +71,7 @@ export interface BusinessReward {
   rewardSource?: string;
   audience?: string;
   expiryDatetime?: string;
+  expiry_datetime?: string;
   status?: string;
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
@@ -122,7 +126,7 @@ export interface CreateBusinessRewardDto {
   description?: string;
   image?: string;
   gallery?: string[];
-  expiry_datetime?: Date;
+  expiry_datetime?: string;
   status?: RewardStatus;
   reward_type?: string;
   stamps_required?: number;
@@ -149,7 +153,7 @@ export interface UpdateBusinessRewardDto {
   description?: string;
   image?: string;
   gallery?: string[];
-  expiry_datetime?: Date;
+  expiry_datetime?: string;
   status?: RewardStatus;
   reward_type?: string;
   stamps_required?: number;

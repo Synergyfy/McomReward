@@ -51,13 +51,17 @@ export default function PointRewardCard({
                             ? 'bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/50 dark:to-amber-900/50 ring-2 ring-white dark:ring-gray-800'
                             : 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50'
                             }`}>
-                            {reward.image ? (
+                            {reward.image && (reward.image.startsWith('http') || reward.image.startsWith('/')) ? (
                                 <Image
                                     src={reward.image}
                                     alt={reward.title}
                                     layout="fill"
                                     objectFit="cover"
                                 />
+                            ) : reward.image ? (
+                                <div className="flex items-center justify-center h-full text-3xl">
+                                    {reward.image}
+                                </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full">
                                     {isStampCard ? (

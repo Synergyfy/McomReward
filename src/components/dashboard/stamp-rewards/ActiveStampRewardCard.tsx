@@ -98,13 +98,17 @@ export default function ActiveStampRewardCard({
                 <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/50 dark:to-amber-900/50 flex-shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-lg">
-                            {reward.customImage || template.image ? (
+                            {(reward.customImage || template.image) && ((reward.customImage || template.image || '').startsWith('http') || (reward.customImage || template.image || '').startsWith('/')) ? (
                                 <Image
                                     src={reward.customImage || template.image || ''}
                                     alt={template.title}
                                     fill
                                     className="object-cover"
                                 />
+                            ) : (reward.customImage || template.image) ? (
+                                <div className="absolute inset-0 flex items-center justify-center text-3xl">
+                                    {reward.customImage || template.image}
+                                </div>
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <Stamp className="h-7 w-7 text-orange-500" />

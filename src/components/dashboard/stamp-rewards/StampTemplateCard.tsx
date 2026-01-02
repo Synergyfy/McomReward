@@ -91,13 +91,17 @@ export default function StampTemplateCard({
                 {/* Image and title */}
                 <div className="flex items-start gap-4 mb-4">
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/50 dark:to-amber-900/50 flex-shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-lg">
-                        {template.image ? (
+                        {template.image && (template.image.startsWith('http') || template.image.startsWith('/')) ? (
                             <Image
                                 src={template.image}
                                 alt={template.title}
                                 fill
                                 className="object-cover"
                             />
+                        ) : template.image ? (
+                            <div className="absolute inset-0 flex items-center justify-center text-4xl">
+                                {template.image}
+                            </div>
                         ) : (
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <Stamp className="h-8 w-8 text-orange-500" />

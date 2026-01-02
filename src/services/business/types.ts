@@ -78,9 +78,9 @@ export interface BusinessProfile {
   profileImage?: string;
   banner?: string;
   description?: string;
-  category?: { id: string; name: string };
-  sectorId?: string;
-  subCategoryId?: string;
+  category?: { id: string; name: string; imageUrl?: string | null };
+  sector?: { id: string; name: string; imageUrl?: string | null };
+  subCategory?: { id: string; name: string; imageUrl?: string | null };
   socialMedia: { name: string; link: string }[];
   uniqueCode: string;
   role: string;

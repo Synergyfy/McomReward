@@ -340,15 +340,15 @@ export default function BusinessStampRewardsPage() {
                     payload: {
                         title: rewardData.title,
                         description: rewardData.description,
-                        points_required: rewardData.pointsRequired,
-                        stamps_required: rewardData.stampsRequired,
+                        points_required: rewardData.points_required,
+                        stamps_required: rewardData.stamps_required,
                         is_points_enabled: rewardData.is_points_enabled,
                         is_stamps_enabled: rewardData.is_stamps_enabled,
                         image: rewardData.image,
                         gallery: rewardData.gallery,
                         quantity: rewardData.quantity,
                         disabled: rewardData.disabled,
-                        reward_type: rewardData.rewardType as any,
+                        reward_type: rewardData.reward_type,
                         is_mall_integrated: rewardData.is_mall_integrated,
                         mall_reward_type: rewardData.mall_reward_type,
                         mall_reward_value: rewardData.mall_reward_value,
@@ -391,7 +391,7 @@ export default function BusinessStampRewardsPage() {
                     gallery: rewardData.gallery,
                     quantity: rewardData.quantity,
                     disabled: rewardData.disabled,
-                    reward_type: rewardData.rewardType as any,
+                    reward_type: rewardData.reward_type,
                     is_mall_integrated: rewardData.is_mall_integrated,
                     mall_reward_type: rewardData.mall_reward_type,
                     mall_reward_value: rewardData.mall_reward_value,
@@ -399,6 +399,7 @@ export default function BusinessStampRewardsPage() {
                     stamp_emoji: rewardData.stamp_emoji,
                     emoji: rewardData.emoji,
                     status: RewardStatus.ACTIVE,
+                    expiry_datetime: rewardData.expiry_datetime,
                 };
 
                 createBusinessReward(payload).then(() => {

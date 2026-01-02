@@ -152,13 +152,17 @@ export default function ActivateTemplateModal({
                                 <CardContent className="p-4">
                                     <div className="flex items-center gap-4 mb-4">
                                         <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-orange-100">
-                                            {template.image ? (
+                                            {template.image && (template.image.startsWith('http') || template.image.startsWith('/')) ? (
                                                 <Image
                                                     src={template.image}
                                                     alt={template.title}
                                                     fill
                                                     className="object-cover"
                                                 />
+                                            ) : template.image ? (
+                                                <div className="absolute inset-0 flex items-center justify-center text-4xl">
+                                                    {template.image}
+                                                </div>
                                             ) : (
                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                     <Stamp className="h-8 w-8 text-orange-500" />

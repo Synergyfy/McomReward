@@ -181,7 +181,7 @@ export default function QRPlaquesPage() {
                             actionText={plaqueToPrint.actionText || "SCAN HERE"}
                             description={plaqueToPrint.description || "FOR PAYMENT"}
                             extraInfo={plaqueToPrint.footerText || ""}
-                            qrCodeUrl={plaqueToPrint.qrCodeUrl || ""}
+                            qrCodeUrl={plaqueToPrint.contentUrl || plaqueToPrint.qrCodeUrl || ""}
                         />
                     </div>
                  </div>

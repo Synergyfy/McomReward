@@ -273,6 +273,7 @@ export default function BusinessSidebar({
             <SubItem href="/dashboard/my-assets/qr-plaques" label="QR Plaques" />
             <SubItem href="/dashboard/affiliate" label="Affiliate" />
             <SubItem href="/dashboard/my-assets/nfc-cards" label="NFC Cards" />
+            <SubItem href="/dashboard/my-assets/customer-contact" label="Customer Contact" />
             <SubItem href="/dashboard/customer-activities" label="Customer Activities" />
           </SidebarItem>
 

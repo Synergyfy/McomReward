@@ -215,7 +215,22 @@ export default function ActiveStampRewardCard({
                             <TooltipTrigger asChild>
                                 <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 cursor-help">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Stamp className="h-4 w-4 text-orange-500" />
+                                        {(template.stampIcon) ? (
+                                            (template.stampIcon.startsWith('http') || template.stampIcon.startsWith('/')) ? (
+                                                <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                                                    <Image
+                                                        src={template.stampIcon}
+                                                        alt="Stamp"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm leading-none">{template.stampIcon}</span>
+                                            )
+                                        ) : (
+                                            <Stamp className="h-4 w-4 text-orange-500" />
+                                        )}
                                         <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Stamps</span>
                                     </div>
                                     <p className="text-xl font-bold text-gray-900 dark:text-white">

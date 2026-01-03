@@ -174,14 +174,53 @@ export default function PointRewardCard({
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-3">
                     {(reward.is_stamps_enabled || reward.isStampsEnabled || (Number(reward.stampsRequired) > 0) || (Number(reward.stamps_required) > 0)) ? (
-                        <div className={`p-2.5 rounded-lg text-center ${isStampCard ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50' : 'bg-orange-50 dark:bg-orange-900/30'}`}>
-                            <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
-                                <Stamp className="h-3.5 w-3.5" />
-                                <span className="text-lg font-bold">
-                                    {reward.stampsRequired ?? reward.stamps_required ?? 0}
-                                </span>
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Stamps Required</p>
+                        <div className={`p-3 rounded-lg text-center ${isStampCard ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50' : 'bg-orange-50 dark:bg-orange-900/30'}`}>
+                            {isStampCard ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="flex flex-wrap items-center justify-center gap-1.5 mb-1.5 max-w-[180px]">
+                                        {Array.from({ length: Math.min(Number(reward.stampsRequired ?? reward.stamps_required ?? 0), 10) }).map((_, i) => {
+                                            const iconSrc = reward.stamp_emoji || reward.emoji;
+                                            return (
+                                                <div key={i} className="relative w-5 h-5 flex-shrink-0">
+                                                    {iconSrc && (iconSrc.startsWith('http') || iconSrc.startsWith('/')) ? (
+                                                        <div className="relative w-full h-full rounded-full overflow-hidden shadow-sm ring-1 ring-orange-200 bg-white">
+                                                            <Image
+                                                                src={iconSrc}
+                                                                alt="Stamp"
+                                                                layout="fill"
+                                                                objectFit="cover"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xl leading-none block drop-shadow-sm">{iconSrc || '⭐️'}</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                        {(Number(reward.stampsRequired ?? reward.stamps_required ?? 0) > 10) && (
+                                            <div className="flex items-center justify-center h-5 w-auto px-1.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold">
+                                                +{Number(reward.stampsRequired ?? reward.stamps_required ?? 0) - 10}
+                                            </div>
+                                        )}
+                                        {(Number(reward.stampsRequired ?? reward.stamps_required ?? 0) === 0) && (
+                                            <span className="text-gray-400 text-sm">0</span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                                        {reward.stampsRequired ?? reward.stamps_required ?? 0} Stamps Required
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
+                                        <Stamp className="h-3.5 w-3.5" />
+                                        <span className="text-lg font-bold">
+                                            {reward.stampsRequired ?? reward.stamps_required ?? 0}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Stamps Required</p>
+                                </>
+                            )}
                         </div>
                     ) : (reward.is_points_enabled || reward.isPointsEnabled || (Number(reward.pointsRequired) > 0) || (Number(reward.points_required) > 0) || (Number(reward.pointRequired) > 0)) ? (
                         <div className={`p-2.5 rounded-lg text-center ${isStampCard ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50' : 'bg-blue-50 dark:bg-blue-900/30'}`}>

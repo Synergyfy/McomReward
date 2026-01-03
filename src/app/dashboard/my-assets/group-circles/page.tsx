@@ -463,7 +463,7 @@ export default function GroupCirclesPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Referred Businesses</Label>
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Affiliate Businesses</Label>
                                     <ScrollArea className="h-[150px] w-full border rounded-xl p-3 bg-zinc-50/50">
                                         <div className="space-y-3">
                                             {affiliateStats?.referredBusinesses.map((referral) => (
@@ -490,14 +490,14 @@ export default function GroupCirclesPage() {
                                             {(!affiliateStats?.referredBusinesses || affiliateStats.referredBusinesses.length === 0) && (
                                                 <div className="flex flex-col items-center justify-center py-6 text-center">
                                                     <Briefcase className="w-8 h-8 text-zinc-200 mb-2" />
-                                                    <p className="text-[10px] text-muted-foreground">No referrals found</p>
+                                                    <p className="text-[10px] text-muted-foreground">No affiliates found</p>
                                                 </div>
                                             )}
                                         </div>
                                     </ScrollArea>
                                 </div>
                             </div>
-                            <p className="text-[10px] text-muted-foreground mt-4 italic">You can select partners from your network and your referred businesses to join this circle.</p>
+                            <p className="text-[10px] text-muted-foreground mt-4 italic">You can select partners from your network and your affiliate businesses to join this circle.</p>
                         </motion.div>
                     </AnimatePresence>
 

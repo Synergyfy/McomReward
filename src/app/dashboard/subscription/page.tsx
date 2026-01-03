@@ -17,12 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles } from 'lucide-react';
 import SeasonalPricingCard from '@/components/pricing/seasonal-pricing-card';
 
-type PlanFrequency = 'monthly' | 'quarterly' | 'annually';
+type PlanFrequency = 'quarterly' | 'annually';
 
 export default function SubscriptionPage() {
   const router = useRouter();
   const [autoRenew, setAutoRenew] = useState(true);
-  const [planFrequency, setPlanFrequency] = useState<PlanFrequency>('monthly');
+  const [planFrequency, setPlanFrequency] = useState<PlanFrequency>('quarterly');
 
 
   const { data: tiersData, isLoading: isLoadingTiers, isError: isErrorTiers } = useGetTiers();
@@ -40,9 +40,6 @@ export default function SubscriptionPage() {
     }).map(tier => {
       let price;
       switch (planFrequency) {
-        case 'monthly':
-          price = tier.monthlyPrice ? `£${tier.monthlyPrice}/mo` : 'N/A';
-          break;
         case 'quarterly':
           price = tier.quaterlyPrice ? `£${tier.quaterlyPrice}/qu` : 'N/A';
           break;
@@ -136,14 +133,10 @@ export default function SubscriptionPage() {
 
           <TabsContent value="standard" className="mt-0">
             <RadioGroup
-              defaultValue="monthly"
+              defaultValue="quarterly"
               onValueChange={handleFrequencyChange}
               className="flex space-x-4"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="monthly" id="monthly" />
-                <Label htmlFor="monthly">Monthly</Label>
-              </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="quarterly" id="quarterly" />
                 <Label htmlFor="quarterly">Quarterly</Label>

@@ -17,7 +17,7 @@ import { Reward } from '@/services/business-reward/types';
 import { useUploadToCloudinary } from '@/services/upload/hook';
 import { useGetBusinessProfile } from '@/services/business/hook';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Star } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Star, Lock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -122,12 +122,16 @@ export default function CreateRewardWizardModal({
     return ['Voucher', 'gift card', 'coupon'].includes(rewardType);
   }, [rewardType]);
 
-  // Validation: Check if pointsRequired exceeds maxPoints
   const isPointsExceedingMax = useMemo(() => {
     const points = Number(pointsRequired);
     const max = Number(maxPoints);
     return points > max && max > 0;
   }, [pointsRequired, maxPoints]);
+
+  // Determine if Mall Category should be locked based on Reward Type
+  const isMallCategoryLocked = useMemo(() => {
+    return !['Voucher', 'gift card', 'coupon'].includes(rewardType);
+  }, [rewardType]);
 
   const resetForm = () => {
     setStep(1);
@@ -852,9 +856,24 @@ export default function CreateRewardWizardModal({
                 </div>
 
                 {isMallIntegrated && (
-                  <div className="pt-2 border-t border-orange-200/50">
-                    <label className="block text-sm font-medium mb-1">Mall Category Type</label>
-                    <Select value={mallRewardType} onValueChange={setMallRewardType}>
+                  <div className={`pt-2 border-t border-orange-200/50 relative ${isMallCategoryLocked ? 'opacity-60' : ''}`}>
+                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                      Mall Category Type
+                      {isMallCategoryLocked && <Lock className="h-3 w-3 text-gray-500" />}
+                    </label>
+                    <Select
+                      value={mallRewardType}
+                      onValueChange={(val) => {
+                        setMallRewardType(val);
+                        // Also sync reward type if not locked
+                        if (!isMallCategoryLocked) {
+                          if (val === 'VOUCHER') setRewardType('Voucher');
+                          if (val === 'GIFT_CARD') setRewardType('gift card');
+                          if (val === 'COUPON') setRewardType('coupon');
+                        }
+                      }}
+                      disabled={isMallCategoryLocked}
+                    >
                       <SelectTrigger className="w-full bg-white">
                         <SelectValue placeholder="Select mall type" />
                       </SelectTrigger>
@@ -864,7 +883,11 @@ export default function CreateRewardWizardModal({
                         <SelectItem value="COUPON">Coupon</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-1">Specify how this reward should be categorized within the mall platform.</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isMallCategoryLocked
+                        ? "Not applicable for this reward type."
+                        : "Specify how this reward should be categorized within the mall platform."}
+                    </p>
                   </div>
                 )}
               </div>

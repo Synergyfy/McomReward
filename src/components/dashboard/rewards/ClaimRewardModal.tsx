@@ -1,224 +1,80 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useGetUnaddedRewards } from '@/services/business-reward/hooks';
-import { useGetAvailableTemplates } from '@/services/business-stamp-rewards/hook';
-import { StampRewardResponse } from '@/services/stamp-rewards/types';
 import LoadingSpinner from '@/components/ui/Loading';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Search, Gift, Stamp } from 'lucide-react';
+import { Search, Gift, Stamp, Filter } from 'lucide-react';
 import SubscriptionRequiredModal from './SubscriptionRequiredModal';
 import { useDebounce } from 'use-debounce';
 import { Reward } from '@/services/business-reward/types';
+import { cn } from '@/lib/utils';
 
-type RewardFilterType = 'point' | 'stamp';
+type RewardFilterType = 'all' | 'point' | 'stamp';
 
 interface ClaimRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateFromScratch: () => void;
   onSelectTemplate: (reward: Reward) => void;
-  onActivateStampReward?: (template: StampRewardResponse) => void;
 }
-
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  limit: number;
-  onPageChange: (page: number) => void;
-}
-
-const Pagination = ({
-  currentPage,
-  totalPages,
-  totalItems,
-  limit,
-  onPageChange,
-}: PaginationProps) => {
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 3; // Reduced for modal space
-    const ellipsis = <MoreHorizontal className="h-4 w-4" />;
-
-    if (totalPages <= maxVisiblePages + 2) {
-      for (let i = 1; i <= totalPages; i++) {
-        items.push(
-          <Button
-            key={i}
-            variant={currentPage === i ? 'default' : 'outline'}
-            size="icon"
-            className="w-8 h-8"
-            onClick={() => onPageChange(i)}
-          >
-            {i}
-          </Button>
-        );
-      }
-    } else {
-      items.push(
-        <Button
-          key={1}
-          variant={currentPage === 1 ? 'default' : 'outline'}
-          size="icon"
-          className="w-8 h-8"
-          onClick={() => onPageChange(1)}
-        >
-          1
-        </Button>
-      );
-
-      if (currentPage > 2) {
-        items.push(
-          <div
-            key="start-ellipsis"
-            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
-          >
-            {ellipsis}
-          </div>
-        );
-      }
-
-      const startPage = Math.max(2, currentPage - 1);
-      const endPage = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = startPage; i <= endPage; i++) {
-        items.push(
-          <Button
-            key={i}
-            variant={currentPage === i ? 'default' : 'outline'}
-            size="icon"
-            className="w-8 h-8"
-            onClick={() => onPageChange(i)}
-          >
-            {i}
-          </Button>
-        );
-      }
-
-      if (currentPage < totalPages - 1) {
-        items.push(
-          <div
-            key="end-ellipsis"
-            className="flex items-center justify-center w-8 h-8 text-muted-foreground"
-          >
-            {ellipsis}
-          </div>
-        );
-      }
-
-      items.push(
-        <Button
-          key={totalPages}
-          variant={currentPage === totalPages ? 'default' : 'outline'}
-          size="icon"
-          className="w-8 h-8"
-          onClick={() => onPageChange(totalPages)}
-        >
-          {totalPages}
-        </Button>
-      );
-    }
-
-    return items;
-  };
-
-  return (
-    <div className="flex items-center justify-between mt-4 border-t pt-4">
-      <div className="text-sm text-gray-500 hidden sm:block">
-        {(currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, totalItems)} of {totalItems}
-      </div>
-      <div className="flex items-center space-x-2 mx-auto sm:mx-0">
-        <Button
-          variant="outline"
-          size="icon"
-          className="w-8 h-8"
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center space-x-1">
-          {renderPaginationItems()}
-        </div>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="w-8 h-8"
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 export default function ClaimRewardModal({
   isOpen,
   onClose,
   onCreateFromScratch,
   onSelectTemplate,
-  onActivateStampReward,
 }: ClaimRewardModalProps) {
-  const [activeFilter, setActiveFilter] = useState<RewardFilterType>('point');
-  const [page, setPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState<RewardFilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
-  const limit = 6;
+  const page = 1;
+  const limit = 50; // Fetch more since we filter client side for now or unified list
 
-  // Point rewards data
-  const { data: unaddedRewards, isLoading: isLoadingPointRewards, isError: isErrorPointRewards, refetch: refetchPointRewards } = useGetUnaddedRewards(page, limit, debouncedSearchQuery, { enabled: isOpen && activeFilter === 'point' });
-
-  // Stamp rewards data
-  const { data: stampTemplates = [], isLoading: isLoadingStampRewards, refetch: refetchStampRewards } = useGetAvailableTemplates();
+  // Unified rewards data
+  const { data: unaddedRewards, isLoading, isError } = useGetUnaddedRewards(page, limit, debouncedSearchQuery, { enabled: isOpen });
 
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
 
-  // Filter stamp templates based on search
-  const filteredStampTemplates = stampTemplates.filter((template) =>
-    template.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    template.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-  );
-
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearchQuery, activeFilter]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (activeFilter === 'point') {
-        refetchPointRewards();
-      } else {
-        refetchStampRewards();
-      }
-    }
-  }, [isOpen, refetchPointRewards, refetchStampRewards, page, debouncedSearchQuery, activeFilter]);
-
-  useEffect(() => {
-    if (isErrorPointRewards && isOpen && activeFilter === 'point') {
+    if (isError && isOpen) {
       setIsSubscriptionModalOpen(true);
       onClose();
     }
-  }, [isErrorPointRewards, isOpen, onClose, activeFilter]);
+  }, [isError, isOpen, onClose]);
 
-  const handleActivateStamp = (template: StampRewardResponse) => {
-    if (onActivateStampReward) {
-      onClose();
-      onActivateStampReward(template);
+  const filteredRewards = useMemo(() => {
+    if (!unaddedRewards?.data) return [];
+
+    return unaddedRewards.data.filter(reward => {
+      // Filter by type
+      if (activeFilter === 'point') {
+        return (reward.isPointsEnabled || (reward.pointsRequired > 0) || reward.rewardType === 'point offer') && !reward.isStampsEnabled;
+      }
+      if (activeFilter === 'stamp') {
+        return (reward.isStampsEnabled || (reward.stampsRequired && reward.stampsRequired > 0));
+      }
+      return true;
+    });
+  }, [unaddedRewards, activeFilter]);
+
+  const getRewardBadge = (reward: Reward) => {
+    const isStamp = reward.isStampsEnabled || (reward.stampsRequired && reward.stampsRequired > 0);
+    const isPoint = reward.isPointsEnabled || (reward.pointsRequired > 0) || reward.rewardType === 'point offer';
+
+    if (isStamp && isPoint) {
+      return <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-200 border-purple-200">Hybrid Reward</Badge>;
     }
+    if (isStamp) {
+      return <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-200 border-orange-200">Stamp Reward</Badge>;
+    }
+    return <Badge className="bg-blue-100 text-blue-600 hover:bg-blue-200 border-blue-200">Point Reward</Badge>;
   };
-
-  const isLoading = activeFilter === 'point' ? isLoadingPointRewards : isLoadingStampRewards;
 
   return (
     <>
@@ -231,186 +87,141 @@ export default function ClaimRewardModal({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Filter Tabs */}
-          <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as RewardFilterType)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="point" className="gap-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-                <Gift className="h-4 w-4" />
+          <div className="flex flex-col md:flex-row gap-4 mb-4 items-center justify-between">
+            {/* Filter Buttons */}
+            <div className="flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg self-start">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  activeFilter === 'all'
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                )}
+              >
+                All Rewards
+              </button>
+              <button
+                onClick={() => setActiveFilter('point')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  activeFilter === 'point'
+                    ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                )}
+              >
+                <Gift className="h-3.5 w-3.5" />
                 Point Rewards
-                {unaddedRewards && unaddedRewards.total > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {unaddedRewards.total}
-                  </Badge>
+              </button>
+              <button
+                onClick={() => setActiveFilter('stamp')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  activeFilter === 'stamp'
+                    ? "bg-white dark:bg-gray-700 text-orange-600 dark:text-orange-400 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="stamp" className="gap-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                <Stamp className="h-4 w-4" />
+              >
+                <Stamp className="h-3.5 w-3.5" />
                 Stamp Rewards
-                {stampTemplates.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {stampTemplates.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              </button>
+            </div>
 
-          <div className="relative my-2 px-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder={activeFilter === 'point' ? "Search point rewards..." : "Search stamp rewards..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+            {/* Search */}
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search rewards..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
           </div>
 
-          <div className="flex-grow overflow-y-auto p-1">
-            {isLoading && <LoadingSpinner />}
-
-            {/* Point Rewards Content */}
-            {activeFilter === 'point' && !isLoading && (
+          <div className="flex-grow overflow-y-auto p-1 min-h-[300px]">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <LoadingSpinner />
+              </div>
+            ) : (
               <>
-                {isErrorPointRewards && !isSubscriptionModalOpen && <p className="text-red-500">Error fetching rewards.</p>}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {unaddedRewards?.data.map((reward) => (
-                    <Card key={reward.id} className="flex flex-col">
-                      <CardHeader>
-                        <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gray-200 mb-4">
-                          {reward.image && (
-                            (reward.image.startsWith('http') || reward.image.startsWith('/')) ? (
-                              <Image
-                                src={reward.image}
-                                alt={reward.title}
-                                layout="fill"
-                                objectFit="cover"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-full text-4xl">
-                                {reward.image}
-                              </div>
-                            )
-                          )}
-                        </div>
-                        <CardTitle className="text-lg">{reward.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <p className="text-sm text-gray-600 mb-3 h-20 overflow-hidden">{reward.description}</p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-xs">Value:</span>
-                            <span className='text-xs'>£{reward.value}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-xs">Maximum Points:</span>
-                            <span className='text-xs'>{reward.maxPoints}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button
-                          className="w-full"
-                          onClick={() => onSelectTemplate(reward)}
-                        >
-                          Add Reward
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-                {unaddedRewards && unaddedRewards.data.length > 0 && (
-                  <Pagination
-                    currentPage={page}
-                    totalPages={unaddedRewards.totalPages || 1}
-                    totalItems={unaddedRewards.total || 0}
-                    limit={limit}
-                    onPageChange={setPage}
-                  />
-                )}
-                {unaddedRewards && unaddedRewards.data.length === 0 && (
+                {unaddedRewards?.data?.length === 0 ? (
                   <div className="text-center py-12">
                     <Gift className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No point rewards available to add.</p>
+                    <p className="text-gray-500">No rewards available to add.</p>
                   </div>
-                )}
-              </>
-            )}
-
-            {/* Stamp Rewards Content */}
-            {activeFilter === 'stamp' && !isLoading && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredStampTemplates.map((template) => (
-                    <Card key={template.id} className="flex flex-col border-orange-100 dark:border-orange-900/30 hover:border-orange-300 transition-colors">
-                      <CardHeader>
-                        <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 mb-4">
-                          {template.image ? (
-                            (template.image.startsWith('http') || template.image.startsWith('/')) ? (
-                              <Image
-                                src={template.image}
-                                alt={template.title}
-                                layout="fill"
-                                objectFit="cover"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-full text-4xl">
-                                {template.image}
-                              </div>
-                            )
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <Stamp className="h-12 w-12 text-orange-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg flex-1">{template.title}</CardTitle>
-                          <Badge variant="outline" className="text-orange-600 border-orange-300">
-                            {template.stampsRequired} stamps
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 h-16 overflow-hidden">
-                          {template.description}
-                        </p>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Reward:</span>
-                            <span className="font-medium text-orange-600">{template.rewardBenefitValue}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Trigger:</span>
-                            <span className="capitalize">{template.triggerMethod.replace('_', ' ')}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button
-                          className="w-full bg-orange-500 hover:bg-orange-600"
-                          onClick={() => handleActivateStamp(template)}
-                        >
-                          Activate
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-                {filteredStampTemplates.length === 0 && (
+                ) : filteredRewards.length === 0 ? (
                   <div className="text-center py-12">
-                    <Stamp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      {searchQuery ? 'No stamp rewards match your search.' : 'No stamp reward templates available.'}
-                    </p>
+                    <Filter className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No rewards match your filter.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredRewards.map((reward) => (
+                      <Card key={reward.id} className="flex flex-col hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gray-100 mb-3">
+                            {reward.image && (
+                              (reward.image.startsWith('http') || reward.image.startsWith('/')) ? (
+                                <Image
+                                  src={reward.image}
+                                  alt={reward.title}
+                                  layout="fill"
+                                  objectFit="cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-4xl">
+                                  {reward.image}
+                                </div>
+                              )
+                            )}
+                            <div className="absolute top-2 right-2">
+                              {getRewardBadge(reward)}
+                            </div>
+                          </div>
+                          <CardTitle className="text-lg leading-tight">{reward.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow pb-2">
+                          <p className="text-sm text-gray-600 mb-3 h-10 overflow-hidden line-clamp-2">{reward.description}</p>
+                          <div className="space-y-1.5 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
+                            {(reward.isPointsEnabled || reward.pointsRequired > 0) && (
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Points Required:</span>
+                                <span className='font-semibold text-blue-600'>{reward.pointsRequired || reward.maxPoints || 0}</span>
+                              </div>
+                            )}
+                            {(reward.isStampsEnabled || (reward.stampsRequired && reward.stampsRequired > 0)) && (
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Stamps Required:</span>
+                                <span className='font-semibold text-orange-600'>{reward.stampsRequired || 0}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center text-xs pt-1 border-t border-dashed border-gray-200">
+                              <span className="font-medium text-gray-500">Value:</span>
+                              <span className='text-gray-700 font-medium'>£{reward.value}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="pt-2">
+                          <Button
+                            className="w-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                            onClick={() => onSelectTemplate(reward)}
+                          >
+                            Add Reward
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </>
             )}
           </div>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 pt-4 border-t text-center">
             <p className="text-sm text-gray-500 mb-2">Want full control?</p>
-            <Button variant="secondary" onClick={onCreateFromScratch}>
+            <Button variant="outline" onClick={onCreateFromScratch}>
               Create a Reward from Scratch
             </Button>
           </div>

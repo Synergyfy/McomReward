@@ -332,6 +332,10 @@ export default function GroupCirclesPage() {
                 selectedCircleId={selectedCircleId}
                 setSelectedCircleId={setSelectedCircleId}
                 groupCircleTypes={GROUP_CIRCLE_TYPES}
+                focusedOrbits={focusedOrbits}
+                setFocusedOrbits={setFocusedOrbits}
+                relationshipFilter={relationshipFilter}
+                setRelationshipFilter={setRelationshipFilter}
             />
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -562,60 +566,24 @@ export default function GroupCirclesPage() {
                                     </div>
                                 </div>
 
-                                <div className="absolute top-6 right-6 z-10 flex gap-2">
+                                <div className="absolute top-6 right-6 z-10">
                                     <TooltipProvider>
-                                        <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur p-1 rounded-2xl border flex gap-1 shadow-sm">
-                                            <Tooltip><TooltipTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Search className="w-4 h-4" /></Button>
-                                            </TooltipTrigger><TooltipContent>Search Graph</TooltipContent></Tooltip>
-
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant={(focusedOrbits || relationshipFilter) ? "default" : "ghost"} className={cn("h-9 w-9 rounded-xl transition-colors", (focusedOrbits || relationshipFilter) ? "bg-orange-600 text-white hover:bg-orange-700" : "hover:bg-orange-50 hover:text-orange-600")}><Filter className="w-4 h-4" /></Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-2 rounded-xl">
-                                                    <div className="px-2 py-1.5">
-                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Location Tags</p>
-                                                        <div className="space-y-0.5">
-                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(1) ? null : [1, 2])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(1) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-600" />Nearby{focusedOrbits?.includes(1) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(3) ? null : [3, 4])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(3) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-500" />Hyperlocal{focusedOrbits?.includes(3) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setFocusedOrbits(focusedOrbits?.includes(5) ? null : [5, 6])} className={cn("cursor-pointer rounded-lg gap-2 text-xs", focusedOrbits?.includes(5) && "bg-orange-50 text-orange-700 font-bold")}><div className="w-2 h-2 rounded-full bg-orange-400" />National{focusedOrbits?.includes(5) && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
-                                                        </div>
-                                                    </div>
-
-                                                    <Separator className="my-1 opacity-50" />
-
-                                                    <div className="px-2 py-1.5">
-                                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-2">Relationship Tags</p>
-                                                        <div className="space-y-0.5">
-                                                            {['Supplier', 'Partner', 'Affiliate'].map((rel) => (
-                                                                <DropdownMenuItem key={rel} onClick={() => setRelationshipFilter(relationshipFilter === rel ? null : rel)} className={cn("cursor-pointer rounded-lg gap-2 text-xs", relationshipFilter === rel && "bg-orange-50 text-orange-700 font-bold")}><Users className="w-3.5 h-3.5 text-zinc-400" />{rel}{relationshipFilter === rel && <Check className="w-3.5 h-3.5 ml-auto" />}</DropdownMenuItem>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    {(focusedOrbits || relationshipFilter) && (
-                                                        <>
-                                                            <Separator className="my-1 opacity-50" />
-                                                            <DropdownMenuItem onClick={() => { setFocusedOrbits(null); setRelationshipFilter(null); }} className="cursor-pointer text-zinc-500 rounded-lg text-xs justify-center font-bold hover:text-red-600 transition-colors">Clear All Filters</DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-
-                                            <div className="w-px h-6 bg-zinc-200 my-auto" />
-
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"><Settings className="w-4 h-4" /></Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-40 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-1 rounded-xl">
-                                                    <DropdownMenuItem onClick={() => handleEditCircle(selectedCircle)} className="cursor-pointer hover:bg-orange-50 text-orange-700 rounded-lg"><Settings className="w-3.5 h-3.5 mr-2" /> Circle Settings</DropdownMenuItem>
-                                                    <Separator className="my-1" />
-                                                    <DropdownMenuItem className="cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg"><AlertCircle className="w-3.5 h-3.5 mr-2" /> Disband Circle</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-10 w-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors shadow-sm border border-zinc-200">
+                                                    <Settings className="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-44 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-1 rounded-xl">
+                                                <DropdownMenuItem onClick={() => handleEditCircle(selectedCircle)} className="cursor-pointer hover:bg-orange-50 text-orange-700 rounded-lg">
+                                                    <Settings className="w-3.5 h-3.5 mr-2" /> Circle Settings
+                                                </DropdownMenuItem>
+                                                <Separator className="my-1" />
+                                                <DropdownMenuItem className="cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg">
+                                                    <AlertCircle className="w-3.5 h-3.5 mr-2" /> Disband Circle
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TooltipProvider>
                                 </div>
 

@@ -17,17 +17,15 @@ import {
     ArrowUpDown,
     LayoutGrid,
     List,
-    Sparkles
+    Sparkles,
+    MapPin,
+    Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
     Select,
     SelectContent,
@@ -46,6 +44,11 @@ interface CircleSelectorProps {
     selectedCircleId: string | null;
     setSelectedCircleId: (id: string) => void;
     groupCircleTypes: any[];
+    // Graph filters
+    focusedOrbits: number[] | null;
+    setFocusedOrbits: (orbits: number[] | null) => void;
+    relationshipFilter: string | null;
+    setRelationshipFilter: (filter: string | null) => void;
 }
 
 export const CircleSelector = React.memo(({
@@ -56,7 +59,11 @@ export const CircleSelector = React.memo(({
     circles,
     selectedCircleId,
     setSelectedCircleId,
-    groupCircleTypes
+    groupCircleTypes,
+    focusedOrbits,
+    setFocusedOrbits,
+    relationshipFilter,
+    setRelationshipFilter
 }: CircleSelectorProps) => {
     const [showFilters, setShowFilters] = useState(false);
     const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -100,20 +107,27 @@ export const CircleSelector = React.memo(({
         return result;
     }, [circles, circleSearch, typeFilter, sortBy]);
 
-    // Get unique circle types for filter
-    const circleTypes = useMemo(() => {
-        const types = new Set(circles.map(c => c.type));
-        return Array.from(types);
-    }, [circles]);
-
     const activeFiltersCount = [
         typeFilter !== "all",
+        focusedOrbits !== null,
+        relationshipFilter !== null,
     ].filter(Boolean).length;
 
-    const clearFilters = () => {
+    const clearAllFilters = () => {
         setTypeFilter("all");
         setCircleSearch("");
+        setFocusedOrbits(null);
+        setRelationshipFilter(null);
     };
+
+    // Location tag options for graph filtering
+    const locationTags = [
+        { id: "nearby", label: "Nearby", orbits: [1, 2], color: "bg-orange-600" },
+        { id: "hyperlocal", label: "Hyperlocal", orbits: [3, 4], color: "bg-orange-500" },
+        { id: "national", label: "National", orbits: [5, 6], color: "bg-orange-400" },
+    ];
+
+    const relationshipTags = ["Supplier", "Partner", "Affiliate"];
 
     return (
         <motion.div
@@ -221,7 +235,7 @@ export const CircleSelector = React.memo(({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800"
+                        className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex-wrap"
                     >
                         <span className="text-xs text-zinc-500">Active filters:</span>
                         {typeFilter !== "all" && (
@@ -234,10 +248,30 @@ export const CircleSelector = React.memo(({
                                 <X className="w-3 h-3 ml-1" />
                             </Badge>
                         )}
+                        {focusedOrbits && (
+                            <Badge
+                                variant="secondary"
+                                className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 cursor-pointer"
+                                onClick={() => setFocusedOrbits(null)}
+                            >
+                                Location: {locationTags.find(t => t.orbits.toString() === focusedOrbits.toString())?.label || "Custom"}
+                                <X className="w-3 h-3 ml-1" />
+                            </Badge>
+                        )}
+                        {relationshipFilter && (
+                            <Badge
+                                variant="secondary"
+                                className="bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 cursor-pointer"
+                                onClick={() => setRelationshipFilter(null)}
+                            >
+                                Relationship: {relationshipFilter}
+                                <X className="w-3 h-3 ml-1" />
+                            </Badge>
+                        )}
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={clearFilters}
+                            onClick={clearAllFilters}
                             className="text-xs text-zinc-500 hover:text-red-600 ml-auto"
                         >
                             Clear All
@@ -256,7 +290,7 @@ export const CircleSelector = React.memo(({
                         className="overflow-hidden"
                     >
                         <div className="p-4 bg-zinc-50/80 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
                                     <Filter className="w-4 h-4" />
                                     Advanced Filters
@@ -271,7 +305,8 @@ export const CircleSelector = React.memo(({
                                     Close
                                 </Button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {/* Circle Type Quick Filters */}
                                 <div>
                                     <label className="text-xs font-medium text-zinc-500 mb-2 block">Quick Type Filters</label>
@@ -293,29 +328,61 @@ export const CircleSelector = React.memo(({
                                     </div>
                                 </div>
 
-                                {/* Member Count Range */}
+                                {/* Location Tags - Graph Filter */}
                                 <div>
-                                    <label className="text-xs font-medium text-zinc-500 mb-2 block">Members</label>
-                                    <div className="flex gap-2">
-                                        <select className="flex-1 h-9 px-3 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800">
-                                            <option value="">Any</option>
-                                            <option value="1-5">1-5 members</option>
-                                            <option value="6-10">6-10 members</option>
-                                            <option value="10+">10+ members</option>
-                                        </select>
+                                    <label className="text-xs font-medium text-zinc-500 mb-2 flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5" />
+                                        Location Tags (Graph)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {locationTags.map(tag => {
+                                            const isActive = focusedOrbits?.toString() === tag.orbits.toString();
+                                            return (
+                                                <button
+                                                    key={tag.id}
+                                                    onClick={() => setFocusedOrbits(isActive ? null : tag.orbits)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5",
+                                                        isActive
+                                                            ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30"
+                                                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-blue-300 hover:text-blue-600"
+                                                    )}
+                                                >
+                                                    <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-white" : tag.color)} />
+                                                    {tag.label}
+                                                    {isActive && <Check className="w-3 h-3" />}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
-                                {/* Duration Filter */}
+                                {/* Relationship Tags - Graph Filter */}
                                 <div>
-                                    <label className="text-xs font-medium text-zinc-500 mb-2 block">Duration</label>
-                                    <select className="w-full h-9 px-3 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800">
-                                        <option value="">Any Duration</option>
-                                        <option value="90">90 Days</option>
-                                        <option value="180">180 Days</option>
-                                        <option value="270">270 Days</option>
-                                        <option value="360">360 Days</option>
-                                    </select>
+                                    <label className="text-xs font-medium text-zinc-500 mb-2 flex items-center gap-1.5">
+                                        <Users className="w-3.5 h-3.5" />
+                                        Relationship Tags (Graph)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {relationshipTags.map(tag => {
+                                            const isActive = relationshipFilter === tag;
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => setRelationshipFilter(isActive ? null : tag)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5",
+                                                        isActive
+                                                            ? "bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-500/30"
+                                                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-purple-300 hover:text-purple-600"
+                                                    )}
+                                                >
+                                                    {tag}
+                                                    {isActive && <Check className="w-3 h-3" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
 
                                 {/* View Mode Toggle */}
@@ -349,6 +416,16 @@ export const CircleSelector = React.memo(({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Graph Filter Info */}
+                            {(focusedOrbits || relationshipFilter) && (
+                                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2">
+                                    <Target className="w-4 h-4 text-blue-600" />
+                                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                                        Graph filters are active. Members on the visualization are filtered based on your selection.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -392,7 +469,7 @@ export const CircleSelector = React.memo(({
                                     variant="outline"
                                     size="sm"
                                     className="mt-4"
-                                    onClick={clearFilters}
+                                    onClick={clearAllFilters}
                                 >
                                     Clear Filters
                                 </Button>

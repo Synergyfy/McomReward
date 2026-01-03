@@ -541,7 +541,7 @@ export default function GroupCirclesPage() {
                 </motion.div>
             )}
 
-            <div className="flex-1 min-h-[1120px] flex gap-6 relative">
+            <div className="flex-1 min-h-[1125px] flex gap-6 relative">
                 <div className="flex-1 relative flex flex-col">
                     <Card className="flex-1 relative overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-3xl shadow-xl shadow-orange-500/5">
                         {selectedCircle ? (

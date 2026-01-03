@@ -14,31 +14,26 @@ import {
 import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
-import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
+import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
 import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { BusinessProfile } from '@/services/business/types';
 import { BalanceModal } from '@/components/dashboard/shared/BalanceModal';
-
-interface SubscriptionType {
-  tier?: { name: string };
-  // Add other relevant properties from your Subscription type
-}
+import { Subscription } from '@/services/tiers/types';
 
 interface MonthlyBalanceType {
   remaining?: number;
   monthlyLimit?: number;
   used?: number;
-  // Add other relevant properties from your MonthlyBalance type
 }
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
   // Optional props for impersonation mode
   profile?: Partial<BusinessProfile>;
-  subscription?: SubscriptionType;
+  subscription?: Subscription;
   monthlyBalance?: MonthlyBalanceType;
   isLoading?: boolean; // Unified loading prop for impersonation
   isError?: boolean; // Unified error prop for impersonation

@@ -10,6 +10,7 @@ import {
   PaginatedCampaignsResponse,
   PaginatedCampaignAnalyticsResponse,
   DetailedCampaignAnalytics,
+  CampaignTierAnalyticsResponse,
   PaginatedAdminCampaignsResponse,
   PaginatedCustomerActivityResponseDto,
   PaginatedOngoingCampaignsResponse,

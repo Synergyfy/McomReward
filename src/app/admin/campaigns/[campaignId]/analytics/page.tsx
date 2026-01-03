@@ -131,7 +131,7 @@ export default function CampaignAnalyticsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tierAnalytics.map((tier) => (
+                  {tierAnalytics.map((tier: CampaignTierAnalytics) => (
                     <TableRow key={tier.tierId}>
                       <TableCell className="font-medium">{tier.tierName}</TableCell>
                       <TableCell className="text-right">{tier.claimsCount}</TableCell>

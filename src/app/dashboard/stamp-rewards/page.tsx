@@ -902,8 +902,14 @@ export default function BusinessStampRewardsPage() {
                 isOpen={isClaimModalOpen}
                 onClose={() => setIsClaimModalOpen(false)}
                 onCreateFromScratch={handleCreateFromScratch}
-                onActivateStampReward={handleActivateFromModal}
-                onSelectTemplate={handleSelectTemplate}
+                onSelectTemplate={(reward) => {
+                    // Check if it's a stamp reward based on properties
+                    if (reward.isStampsEnabled || (reward.stampsRequired && reward.stampsRequired > 0)) {
+                        handleActivateFromModal(reward as any); // Cast to StampRewardResponse if compatible, or adjust handleActivateFromModal type
+                    } else {
+                        handleSelectTemplate(reward);
+                    }
+                }}
             />
 
             {/* Reward Type Selection Dialog */}

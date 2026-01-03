@@ -3,6 +3,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useGetCampaignTierAnalytics, useGetCampaignById } from '@/services/campaigns/hook';
+import { CampaignTierAnalytics } from '@/services/campaigns/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,9 +45,9 @@ export default function CampaignAnalyticsPage() {
     );
   }
 
-  const totalParticipants = tierAnalytics.reduce((acc: number, tier) => acc + tier.totalParticipants, 0);
-  const totalClaims = tierAnalytics.reduce((acc: number, tier) => acc + tier.claimsCount, 0);
-  const totalPointsGiven = tierAnalytics.reduce((acc: number, tier) => acc + tier.totalPointsEarned, 0);
+  const totalParticipants = tierAnalytics.reduce((acc: number, tier: CampaignTierAnalytics) => acc + tier.totalParticipants, 0);
+  const totalClaims = tierAnalytics.reduce((acc: number, tier: CampaignTierAnalytics) => acc + tier.claimsCount, 0);
+  const totalPointsGiven = tierAnalytics.reduce((acc: number, tier: CampaignTierAnalytics) => acc + tier.totalPointsEarned, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

@@ -33,7 +33,7 @@ interface BusinessHeaderProps {
   onMenuClick: () => void;
   // Optional props for impersonation mode
   profile?: Partial<BusinessProfile>;
-  subscription?: Subscription;
+  subscription?: Partial<Subscription>; // Updated to Partial to allow incomplete objects in Admin views
   monthlyBalance?: MonthlyBalanceType;
   isLoading?: boolean; // Unified loading prop for impersonation
   isError?: boolean; // Unified error prop for impersonation

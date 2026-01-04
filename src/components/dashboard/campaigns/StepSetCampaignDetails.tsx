@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Select, { CSSObjectWithLabel } from 'react-select';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,15 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     value: r.id,
     label: r.title
   })) || [];
+
+  // Merge selectedRewards from context into options if they aren't already there
+  const mergedRewardOptions = useMemo(() => {
+    const existingIds = new Set(rewardOptions.map(o => o.value));
+    const extraOptions = (formData.selectedRewards || [])
+      .filter(r => !existingIds.has(r.id))
+      .map(r => ({ value: r.id, label: r.title }));
+    return [...rewardOptions, ...extraOptions];
+  }, [rewardOptions, formData.selectedRewards]);
 
   const wishlistOptions = wishlistInsights.map(item => ({
     value: item.itemName,
@@ -140,8 +149,8 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
             <Select
               isMulti
-              options={rewardOptions}
-              value={rewardOptions.filter(opt => formData.rewardIds.includes(opt.value))}
+              options={mergedRewardOptions}
+              value={mergedRewardOptions.filter(opt => formData.rewardIds.includes(opt.value))}
               onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })}
               styles={errors.rewardIds ? selectErrorStyle : {}}
               placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}

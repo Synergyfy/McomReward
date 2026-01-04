@@ -65,6 +65,7 @@ function EditCampaignContent() {
 
       updateFormData({
         campaignName: currentCampaign.name,
+        selectedRewards: rewards.map((r: { id: string; title: string }) => ({ id: r.id, title: r.title })),
         campaignType: reverseCampaignTypeMap[campaignType] || campaignType,
         campaignMessage: isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_message : currentCampaign.campaignMessage,
         startDate: (isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate) ? new Date(isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate) : undefined,

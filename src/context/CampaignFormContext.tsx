@@ -11,6 +11,7 @@ export interface CampaignFormData {
   tierSpecificDates?: Record<string, { startDate: Date | undefined; endDate: Date | undefined }>;
   maxRewardsPerCampaign?: number;
   rewardIds: string[];
+  selectedRewards?: { id: string; title: string }[]; // Added to store full reward objects for pre-filling
   startDate: Date | undefined;
   endDate: Date | undefined;
   rewardsAvailable: number | string;
@@ -68,6 +69,7 @@ const defaultFormData: CampaignFormData = {
   tierSpecificDates: {},
   maxRewardsPerCampaign: undefined,
   rewardIds: [],
+  selectedRewards: [],
   startDate: undefined,
   endDate: undefined,
   rewardsAvailable: 0,

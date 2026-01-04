@@ -135,7 +135,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             !campaignName.trim() ||
             (!isRewardLocked && Number(rewardsAvailable) <= 0) || // Only check if not locked
             !campaignMessage.trim() ||
-            !ctaButtonText.trim()
+            !ctaButtonText || !ctaButtonText.trim()
         ) {
             return false;
         }

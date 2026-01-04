@@ -84,9 +84,15 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
       campaignMessage: formData.campaignMessage,
       startDate: toISOString(formData.startDate),
       endDate: toISOString(formData.endDate),
+      quantity: Number(formData.schedulingRules.stopAfterClaims) || 0,
       audienceType: formData.audienceType.join(','), // Assuming AudienceType is a comma-separated string
       bannerUrl: formData.imageUrl || '',
       logoUrl: formData.logoUrl || '',
+      ctaText: formData.ctaButtonText || 'Join Now',
+      ctaBackgroundColor: formData.ctaBgColor || '',
+      ctaTextColor: formData.ctaTextColor || '',
+      textColor: formData.bgColorTextColor || '',
+      backgroundColor: formData.bgColor || '',
       signUpPoint: 0, // Not available in CampaignFormData, default to 0
       rewardType: '', // Not available in CampaignFormData, default to empty string
       regularPointsThreshold: 0, // Not available in CampaignFormData, default to 0
@@ -273,16 +279,22 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         toast.success("Campaign updated successfully");
       } else {
         // Create new campaign
-        const createPayload = {
+        const createPayload: CreateCampaignPayload = {
           name: formData.campaignName,
           campaign_type,
           campaign_message: formData.campaignMessage,
           start_date: formData.startDate?.toISOString() || new Date().toISOString(),
           end_date: formData.endDate?.toISOString() || new Date().toISOString(),
+          quantity: Number(formData.schedulingRules.stopAfterClaims) || 0,
           audience_type,
           signUpPoint: 0,
           banner_url: bannerUrl || '',
           logo_url: logoUrl || '',
+          cta_text: formData.ctaButtonText || 'Join Now',
+          cta_background_color: formData.ctaBgColor || '',
+          cta_text_color: formData.ctaTextColor || '',
+          text_color: formData.bgColorTextColor || '',
+          background_color: formData.bgColor || '',
           reward_type: 'regular',
           regular_points_threshold: 0,
           matching_points_threshold: 0,
@@ -301,9 +313,26 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
           // Create campaign from wishlist
           const wishlistPayload: CreateCampaignFromWishlistDto = {
-            ...createPayload,
             wishlistAggregateId: formData.wishlistAggregateId,
+            name: createPayload.name,
+            campaign_type: createPayload.campaign_type,
+            campaign_message: createPayload.campaign_message,
+            start_date: createPayload.start_date,
+            end_date: createPayload.end_date,
+            quantity: createPayload.quantity,
             audience_type: 'target_wishlist',
+            banner_url: createPayload.banner_url,
+            logo_url: createPayload.logo_url,
+            cta_text: createPayload.cta_text,
+            cta_background_color: createPayload.cta_background_color,
+            cta_text_color: createPayload.cta_text_color,
+            text_color: createPayload.text_color,
+            background_color: createPayload.background_color,
+            signUpPoint: createPayload.signUpPoint,
+            reward_type: createPayload.reward_type,
+            regular_points_threshold: createPayload.regular_points_threshold,
+            matching_points_threshold: createPayload.matching_points_threshold,
+            business_reward_ids: formData.rewardIds,
             reward_ids: [],
           };
           await createCampaignFromWishlistMutation.mutateAsync(wishlistPayload);
@@ -366,7 +395,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
                <h2 className="font-bold text-gray-800 text-lg">Campaign Preview</h2>
                <div className="bg-gray-100 rounded-lg p-1 flex items-center gap-1">
                  <Button 
-                   variant={previewMode === 'desktop' ? 'white' : 'ghost'} 
+                   variant={previewMode === 'desktop' ? 'outline' : 'ghost'} 
                    size="sm"
                    className={`h-8 px-3 ${previewMode === 'desktop' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900'}`}
                    onClick={() => setPreviewMode('desktop')}
@@ -375,7 +404,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
                    Desktop
                  </Button>
                  <Button 
-                   variant={previewMode === 'mobile' ? 'white' : 'ghost'} 
+                   variant={previewMode === 'mobile' ? 'outline' : 'ghost'} 
                    size="sm"
                    className={`h-8 px-3 ${previewMode === 'mobile' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900'}`}
                    onClick={() => setPreviewMode('mobile')}

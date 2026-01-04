@@ -45,6 +45,12 @@ export interface CampaignFormData {
   footerText?: string;
   howToEarn: string[];
   termsAndConditions: string[];
+  rewardsAvailable?: number | string;
+  ctaButtonText?: 'Claim Reward' | 'Join Now' | 'Refer & Earn';
+  ctaBgColor?: string;
+  ctaTextColor?: string;
+  bgColorTextColor?: string;
+  bgColor?: string;
 }
 
 interface CampaignFormContextType {
@@ -96,6 +102,12 @@ const defaultFormData: CampaignFormData = {
   footerText: '',
   howToEarn: [],
   termsAndConditions: [],
+  rewardsAvailable: 0,
+  ctaButtonText: 'Join Now',
+  ctaBgColor: '',
+  ctaTextColor: '',
+  bgColorTextColor: '',
+  bgColor: '',
 };
 
 const CampaignFormContext = createContext<CampaignFormContextType | undefined>(undefined);

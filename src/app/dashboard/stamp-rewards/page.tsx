@@ -706,6 +706,7 @@ export default function BusinessStampRewardsPage() {
                                             key={reward.id}
                                             reward={reward}
                                             onView={handleViewReward}
+                                            onAwardStamp={handleAwardStamp}
                                             onPause={handlePause}
                                             onResume={handleResume}
                                             onDeactivate={handleDeactivate}

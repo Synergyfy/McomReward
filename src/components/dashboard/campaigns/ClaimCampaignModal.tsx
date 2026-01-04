@@ -79,16 +79,16 @@ export default function ClaimCampaignModal({
               ))}
             </div>
           </div>
+        </div>
 
-          <div className="text-center border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-800">Or Start Fresh</h3>
-            <p className="text-sm text-gray-500 my-2">
-              Have a specific idea? Upgrade to our White-Label plan for full creative control.
-            </p>
-            <Button onClick={onCreateFromScratch}>
-              Create a Campaign from Scratch
-            </Button>
-          </div>
+        <div className="text-center border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800">Or Start Fresh</h3>
+          <p className="text-sm text-gray-500 my-2">
+            Have a specific idea? Upgrade to our White-Label plan for full creative control.
+          </p>
+          <Button onClick={onCreateFromScratch}>
+            Create a Campaign from Scratch
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

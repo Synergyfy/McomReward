@@ -20,8 +20,9 @@ import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRe
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { BusinessProfile } from '@/services/business/types';
-import { BalanceModal } from '@/components/dashboard/shared/BalanceModal';
 import { Subscription } from '@/services/tiers/types';
+import { useGetStampPackagesBalance } from '@/services/business-stamp-rewards/hook-stamp-packages';
+import { useGetStampRewardStats } from '@/services/business-stamp-rewards/hook';
 
 interface MonthlyBalanceType {
   remaining?: number;
@@ -56,6 +57,8 @@ export default function BusinessHeader({
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
   const { data: businessSubscription } = useGetBusinessSubscription();
   const { data: pointPackageBalance } = useGetPointPackageBalance();
+  const { data: stampPackagesBalance } = useGetStampPackagesBalance();
+  const { data: stampStats } = useGetStampRewardStats();
 
   // Notification hooks
   const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
@@ -129,21 +132,45 @@ export default function BusinessHeader({
       {/* Right-side elements */}
       <div className="flex items-center gap-4 md:gap-6">
         {!isFreeTier && (
-           <BalanceModal
-              summary={{
-                earned: monthlyBalance?.monthlyLimit ?? 0, // Using Monthly Limit as 'Earned' (Allocated) proxy for header context
-                spent: monthlyBalance?.used ?? 0,
-                matchingAvailable: 5000 // Keeping logic from dashboard
-              }}
-              isTrial={subscription?.isTrial}
-              trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
-              trigger={
-                <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-                   <Wallet className="h-4 w-4" />
-                   <span>View Balance</span>
-                </Button>
-              }
-           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                <span>View Balance</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Monthly Points</DropdownMenuLabel>
+              <div className="px-2 py-1.5 text-sm">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-muted-foreground">Total / Remaining</span>
+                  <span className="font-medium text-green-600">
+                    {monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0} / {monthlyBalance?.remaining?.toLocaleString() ?? 0}
+                  </span>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Add-on Points</DropdownMenuLabel>
+              <div className="px-2 py-1.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Add-ons</span>
+                  <span className="font-medium">
+                    {pointPackageBalance?.totalBalance?.toLocaleString() ?? 0}
+                  </span>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Stamps</DropdownMenuLabel>
+              <div className="px-2 py-1.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Used / Available</span>
+                  <span className="font-medium text-blue-600">
+                    {stampStats?.totalStampsAwarded?.toLocaleString() ?? 0} / {stampPackagesBalance?.totalBalance?.toLocaleString() ?? 0}
+                  </span>
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {/* Notifications */}

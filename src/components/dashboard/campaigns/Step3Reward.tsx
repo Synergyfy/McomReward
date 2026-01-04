@@ -39,6 +39,8 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
         status: 'active',
         expiry: new Date().toISOString(),
         badgeLevel: [],
+        is_points_enabled: businessReward.reward.is_points_enabled ?? false,
+        is_stamps_enabled: businessReward.reward.is_stamps_enabled ?? false,
       }));
 
       setAllRewards((prev) => {

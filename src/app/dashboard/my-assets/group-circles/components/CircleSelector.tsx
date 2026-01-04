@@ -334,27 +334,33 @@ export const CircleSelector = React.memo(({
                                         <MapPin className="w-3.5 h-3.5" />
                                         Location Tags (Graph)
                                     </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {locationTags.map(tag => {
-                                            const isActive = focusedOrbits?.toString() === tag.orbits.toString();
-                                            return (
-                                                <button
-                                                    key={tag.id}
-                                                    onClick={() => setFocusedOrbits(isActive ? null : tag.orbits)}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5",
-                                                        isActive
-                                                            ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30"
-                                                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-blue-300 hover:text-blue-600"
-                                                    )}
-                                                >
-                                                    <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-white" : tag.color)} />
-                                                    {tag.label}
-                                                    {isActive && <Check className="w-3 h-3" />}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                    <Select
+                                        value={focusedOrbits ? focusedOrbits.toString() : "all"}
+                                        onValueChange={(val) => {
+                                            if (val === "all") {
+                                                setFocusedOrbits(null);
+                                            } else {
+                                                // Find the tag that matches the comma-separated string
+                                                const tag = locationTags.find(t => t.orbits.toString() === val);
+                                                if (tag) setFocusedOrbits(tag.orbits);
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-9 w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-lg text-xs">
+                                            <SelectValue placeholder="All Locations" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Locations</SelectItem>
+                                            {locationTags.map(tag => (
+                                                <SelectItem key={tag.id} value={tag.orbits.toString()}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn("w-2 h-2 rounded-full", tag.color)} />
+                                                        {tag.label}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* Relationship Tags - Graph Filter */}
@@ -363,26 +369,22 @@ export const CircleSelector = React.memo(({
                                         <Users className="w-3.5 h-3.5" />
                                         Relationship Tags (Graph)
                                     </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {relationshipTags.map(tag => {
-                                            const isActive = relationshipFilter === tag;
-                                            return (
-                                                <button
-                                                    key={tag}
-                                                    onClick={() => setRelationshipFilter(isActive ? null : tag)}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5",
-                                                        isActive
-                                                            ? "bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-500/30"
-                                                            : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-purple-300 hover:text-purple-600"
-                                                    )}
-                                                >
+                                    <Select
+                                        value={relationshipFilter || "all"}
+                                        onValueChange={(val) => setRelationshipFilter(val === "all" ? null : val)}
+                                    >
+                                        <SelectTrigger className="h-9 w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-lg text-xs">
+                                            <SelectValue placeholder="All Relationships" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Relationships</SelectItem>
+                                            {relationshipTags.map(tag => (
+                                                <SelectItem key={tag} value={tag}>
                                                     {tag}
-                                                    {isActive && <Check className="w-3 h-3" />}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* View Mode Toggle */}

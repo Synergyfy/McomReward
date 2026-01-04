@@ -121,6 +121,8 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
       audience: 'all_businesses',
       sector_ids: [],
       tier_ids: [],
+      is_points_enabled: true,
+      is_stamps_enabled: false,
     };
 
     createReward(rewardData, {
@@ -156,7 +158,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
             {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
           </div>
           <div>
-             <label htmlFor="pointsRequired" className="block text-sm font-medium mb-1">Maximum point</label>
+            <label htmlFor="pointsRequired" className="block text-sm font-medium mb-1">Maximum point</label>
             <Input id="pointsRequired" placeholder="Maximum point" type="number" value={pointsRequired} onChange={(e) => { setPointsRequired(Number(e.target.value)); setErrors({ ...errors, pointsRequired: '' }); }} className={errors.pointsRequired ? 'border-red-500' : ''} />
             {errors.pointsRequired && <p className="text-red-500 text-xs mt-1">{errors.pointsRequired}</p>}
           </div>

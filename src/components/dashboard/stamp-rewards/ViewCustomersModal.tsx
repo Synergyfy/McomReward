@@ -140,14 +140,7 @@ export default function ViewCustomersModal({
                                 </DialogHeader>
                             </div>
                         </div>
-                        <Button
-                            onClick={onAwardStamp}
-                            size="sm"
-                            className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                        >
-                            <QrCode className="h-4 w-4" />
-                            Award Stamp
-                        </Button>
+
                     </div>
                 </div>
 

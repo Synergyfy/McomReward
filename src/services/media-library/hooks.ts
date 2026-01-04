@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import api from '../api';
 import {
     CreateLibraryAssetDto,
@@ -54,5 +55,27 @@ export const useDeleteLibraryAsset = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [MEDIA_LIBRARY_QUERY_KEY] });
         },
+    });
+};
+
+// Update Library Asset
+const updateLibraryAsset = async ({ id, data }: { id: string; data: Partial<CreateLibraryAssetDto> }): Promise<LibraryAsset> => {
+    const { data: responseData } = await api.patch<LibraryAsset>(`/library-assets/${id}`, data);
+    return responseData;
+};
+
+export const useUpdateLibraryAsset = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateLibraryAsset,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [MEDIA_LIBRARY_QUERY_KEY] });
+            toast.success('Asset updated successfully');
+        },
+        onError: (error) => {
+            console.error('Failed to update asset:', error);
+            toast.error('Failed to update asset');
+        }
     });
 };

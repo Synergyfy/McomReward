@@ -21,6 +21,16 @@ export interface CreateLibraryAssetDto {
     subCategoryId?: string;
 }
 
+export interface UpdateLibraryAssetDto {
+    url?: string;
+    title?: string;
+    description?: string;
+    type?: AssetType;
+    sectorId?: string;
+    categoryId?: string;
+    subCategoryId?: string;
+}
+
 export interface LibraryAsset {
     id: string;
     url: string;

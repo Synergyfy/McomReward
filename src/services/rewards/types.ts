@@ -14,6 +14,9 @@ export interface CreateRewardRequest {
   status: string;
   sector_ids: string[];
   tier_ids: string[];
+  is_points_enabled: boolean;
+  is_stamps_enabled: boolean;
+  stamp_emoji?: string;
 }
 
 export interface UpdateRewardRequest {
@@ -31,6 +34,12 @@ export interface UpdateRewardRequest {
   status?: string;
   expiry?: string;
   badgeLevel?: string[];
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
+  stamp_emoji?: string;
+  audience?: string;
+  sector_ids?: string[];
+  tier_ids?: string[];
 }
 
 export interface RewardResponse {
@@ -55,6 +64,10 @@ export interface RewardResponse {
   expiry: string;
   expiryDatetime?: string; // Corrected to match backend payload
   badgeLevel: string | string[];
+  is_points_enabled: boolean;
+  is_stamps_enabled: boolean;
+  stamp_emoji?: string;
+  audience?: string;
 }
 
 export interface GetRewardsResponse {

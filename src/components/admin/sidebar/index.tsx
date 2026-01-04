@@ -14,7 +14,7 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isPlaqueManagementOpen, setIsPlaqueManagementOpen] = useState(false);
   const [isSalesManagementOpen, setIsSalesManagementOpen] = useState(false);
-  const [isRewardsOpen, setIsRewardsOpen] = useState(false);
+
 
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
@@ -48,33 +48,10 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           </Link>
         </li>
         <li>
-          {/* Rewards Parent Link with Dropdown */}
-          <div
-            className={parentLinkClasses("/admin/rewards")}
-            onClick={() => setIsRewardsOpen(!isRewardsOpen)}
-          >
-            <div className="flex items-center">
-              <Award className="mr-3" />
-              Rewards
-            </div>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isRewardsOpen ? 'rotate-180' : ''}`} />
-          </div>
-          {isRewardsOpen && (
-            <ul className="ml-4 mt-1 space-y-1">
-              <li>
-                <Link href="/admin/rewards" className={linkClasses("/admin/rewards")}>
-                  <Award className="mr-3 h-4 w-4" />
-                  All Rewards
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/rewards/stamp-rewards" className={linkClasses("/admin/rewards/stamp-rewards")}>
-                  <Stamp className="mr-3 h-4 w-4" />
-                  Stamp Rewards
-                </Link>
-              </li>
-            </ul>
-          )}
+          <Link href="/admin/rewards" className={linkClasses("/admin/rewards")}>
+            <Award className="mr-3" />
+            Rewards
+          </Link>
         </li>
         <li>
           {/* User Management Parent Link with Dropdown */}

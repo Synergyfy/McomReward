@@ -48,8 +48,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useUploadToCloudinary } from '@/services/upload/hook';
-import { useCreateLibraryAsset, useGetLibraryAssets, useDeleteLibraryAsset } from '@/services/media-library/hooks';
-import { AssetType, AssetSource } from '@/services/media-library/types';
+import { useCreateLibraryAsset, useGetLibraryAssets, useDeleteLibraryAsset, useUpdateLibraryAsset } from '@/services/media-library/hooks';
+import { AssetType, AssetSource, UpdateLibraryAssetDto } from '@/services/media-library/types';
 import { useGetSectors, useGetCategoriesBySector } from '@/services/sectors/hook';
 import Image from 'next/image';
 
@@ -81,6 +81,7 @@ export default function AdminMediaLibraryPage() {
     const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
     const { mutateAsync: createAsset } = useCreateLibraryAsset();
     const { mutateAsync: deleteAsset } = useDeleteLibraryAsset();
+    const { mutateAsync: updateAsset } = useUpdateLibraryAsset();
 
     const { data: sectorsData } = useGetSectors();
     const { data: categoriesData } = useGetCategoriesBySector(selectedSectorId);
@@ -170,6 +171,38 @@ export default function AdminMediaLibraryPage() {
             toast.error('Failed to delete asset');
         }
     };
+
+    const handleUpdateAsset = async (id: string, updates: UpdateLibraryAssetDto) => {
+        try {
+            await updateAsset({ id, data: updates });
+            // Update the selected asset locally to reflect changes immediately
+            setSelectedAsset((prev: any) => ({ ...prev, ...updates }));
+            setIsEditMode(false);
+        } catch (error) {
+            // Toast handled in hook
+        }
+    };
+
+    // Edit Mode State
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const [editSectorId, setEditSectorId] = useState('');
+    const [editCategoryId, setEditCategoryId] = useState('');
+
+    // Reset edit state when an asset is selected
+    React.useEffect(() => {
+        if (selectedAsset) {
+            setIsEditMode(false);
+            setEditTitle(selectedAsset.title || '');
+            setEditDescription(selectedAsset.description || '');
+            setEditSectorId(selectedAsset.sectorId || '');
+            setEditCategoryId(selectedAsset.categoryId || '');
+        }
+    }, [selectedAsset]);
+
+    // Fetch categories for the edit form based on currently selected edit sector
+    const { data: editCategoriesData } = useGetCategoriesBySector(editSectorId);
 
     return (
         <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100 m-6">
@@ -534,49 +567,125 @@ export default function AdminMediaLibraryPage() {
                                     )}
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Title</h4>
-                                        <p className="text-sm font-semibold text-zinc-700 break-all">{selectedAsset.title}</p>
-                                    </div>
-
-                                    {selectedAsset.description && (
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</h4>
-                                            <p className="text-sm font-medium text-zinc-600 italic">"{selectedAsset.description}"</p>
+                                {isEditMode ? (
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Title</label>
+                                            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                                         </div>
-                                    )}
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Type</h4>
-                                            <p className="text-sm font-semibold text-zinc-700 capitalize">{selectedAsset.type}</p>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Description</label>
+                                            <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
                                         </div>
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Size</h4>
-                                            <p className="text-sm font-semibold text-zinc-700">{selectedAsset.size || 'N/A'}</p>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sector</label>
+                                            <Select value={editSectorId} onValueChange={setEditSectorId}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Sector" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {sectorsData?.map((sector: any) => (
+                                                        <SelectItem key={sector.id} value={sector.id}>{sector.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Uploaded On</h4>
-                                            <p className="text-sm font-semibold text-zinc-700">{new Date(selectedAsset.createdAt).toLocaleDateString()}</p>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Category</label>
+                                            <Select value={editCategoryId} onValueChange={setEditCategoryId} disabled={!editSectorId}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Category" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {editCategoriesData?.data?.map((cat: any) => (
+                                                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Internal Link</h4>
-                                        <div className="flex gap-2">
-                                            <Input value={selectedAsset.url} readOnly className="text-xs h-8 bg-gray-50" />
-                                            <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => copyToClipboard(selectedAsset.url)}>
-                                                <Copy size={14} />
+                                        <div className="flex gap-2 pt-2">
+                                            <Button size="sm" onClick={() => handleUpdateAsset(selectedAsset.id, {
+                                                title: editTitle,
+                                                description: editDescription,
+                                                sectorId: editSectorId,
+                                                categoryId: editCategoryId
+                                            })} className="bg-orange-600 text-white flex-1">
+                                                Save Changes
                                             </Button>
-                                            <Button size="sm" variant="outline" className="h-8 px-2" asChild>
-                                                <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer">
-                                                    <ExternalLink size={14} />
-                                                </a>
+                                            <Button size="sm" variant="outline" onClick={() => setIsEditMode(false)} className="flex-1">
+                                                Cancel
                                             </Button>
                                         </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Title</h4>
+                                                <p className="text-sm font-semibold text-zinc-700 break-all">{selectedAsset.title}</p>
+                                            </div>
+                                            <Button variant="ghost" size="sm" className="h-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 p-0 px-2" onClick={() => setIsEditMode(true)}>
+                                                Edit
+                                            </Button>
+                                        </div>
+
+                                        {selectedAsset.description && (
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</h4>
+                                                <p className="text-sm font-medium text-zinc-600 italic">"{selectedAsset.description}"</p>
+                                            </div>
+                                        )}
+
+                                        {(selectedAsset.activeSectorId || selectedAsset.sectorId) && ( // Check for sectorId or a populated sector object if available
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sector & Category</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {/* In a real scenario, we might want to lookup the name from the ID if not populated, but for now we display IDs or assume backend populates names in a real response */}
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100">
+                                                        {sectorsData?.find((s: any) => s.id === selectedAsset.sectorId)?.name || 'Unknown Sector'}
+                                                    </Badge>
+                                                    {selectedAsset.categoryId && (
+                                                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100">
+                                                            {/* We may not have all categories loaded to lookup name easily without fetching, so using ID or a placeholder if name isn't on asset */}
+                                                            {/* Ideally asset response includes sectorName/categoryName */}
+                                                            Category: {selectedAsset.categoryId.substring(0, 8)}...
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Type</h4>
+                                                <p className="text-sm font-semibold text-zinc-700 capitalize">{selectedAsset.type}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Size</h4>
+                                                <p className="text-sm font-semibold text-zinc-700">{selectedAsset.size || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Uploaded On</h4>
+                                                <p className="text-sm font-semibold text-zinc-700">{new Date(selectedAsset.createdAt).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Internal Link</h4>
+                                            <div className="flex gap-2">
+                                                <Input value={selectedAsset.url} readOnly className="text-xs h-8 bg-gray-50" />
+                                                <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => copyToClipboard(selectedAsset.url)}>
+                                                    <Copy size={14} />
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="h-8 px-2" asChild>
+                                                    <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer">
+                                                        <ExternalLink size={14} />
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="p-4 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-3">

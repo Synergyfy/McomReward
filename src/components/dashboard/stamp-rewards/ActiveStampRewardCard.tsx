@@ -296,15 +296,6 @@ export default function ActiveStampRewardCard({
                         <Eye className="h-4 w-4" />
                         View Customers
                     </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => onAwardStamp(reward)}
-                        disabled={reward.status !== 'active'}
-                        className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50"
-                    >
-                        <QrCode className="h-4 w-4" />
-                        Award Stamp
-                    </Button>
                 </div>
 
                 {/* Activated date */}

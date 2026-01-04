@@ -33,17 +33,31 @@ export const useCreateReward = () => {
 };
 
 // Get Rewards
-const getRewards = async (page: number, limit: number): Promise<GetRewardsResponse> => {
+interface GetRewardsOptions {
+  is_stamps_enabled?: boolean;
+  is_points_enabled?: boolean;
+  reward_type?: string;
+  status?: string;
+  search?: string;
+  sortBy?: string;
+  min_points?: number;
+  max_points?: number;
+  min_stamps?: number;
+  max_stamps?: number;
+  audience?: string;
+}
+
+const getRewards = async (page: number, limit: number, options?: GetRewardsOptions): Promise<GetRewardsResponse> => {
   const { data } = await api.get<GetRewardsResponse>('/rewards/admin/rewards', {
-    params: { page, limit },
+    params: { page, limit, ...options },
   });
   return data;
 };
 
-export const useGetRewards = (page: number, limit: number) => {
+export const useGetRewards = (page: number, limit: number, options?: GetRewardsOptions) => {
   return useQuery({
-    queryKey: [REWARDS_QUERY_KEY, page, limit],
-    queryFn: () => getRewards(page, limit),
+    queryKey: [REWARDS_QUERY_KEY, page, limit, options],
+    queryFn: () => getRewards(page, limit, options),
   });
 };
 

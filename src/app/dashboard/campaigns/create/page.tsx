@@ -12,8 +12,6 @@ import StepConfigureEarnPoints from '@/components/dashboard/campaigns/StepConfig
 import StepConfigureRedeemPoints from '@/components/dashboard/campaigns/StepConfigureRedeemPoints';
 import StepConfigureContactUs from '@/components/dashboard/campaigns/StepConfigureContactUs';
 import StepConfigureFooter from '@/components/dashboard/campaigns/StepConfigureFooter';
-import StepAddDistributionChannels from '@/components/dashboard/campaigns/StepAddDistributionChannels';
-import StepCampaignScheduling from '@/components/dashboard/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/dashboard/campaigns/StepReviewAndCreate';
 
 import { useGetMySubscription } from '@/services/tiers/hook';
@@ -26,7 +24,7 @@ export default function CreateCampaignPage() {
   const { data: subscription, isLoading: isSubLoading } = useGetMySubscription();
   const { data: analytics, isLoading: isAnalyticsLoading } = useGetGeneralAnalytics();
 
-  const totalSteps = 9; // Updated total steps
+  const totalSteps = 7; // Updated total steps
 
   const handleNext = () => {
     setCurrentStep((prev) => prev + 1);
@@ -51,10 +49,6 @@ export default function CreateCampaignPage() {
       case 6:
         return <StepConfigureFooter onNext={handleNext} onBack={handleBack} />;
       case 7:
-        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
-      case 8:
-        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
-      case 9:
         return <StepReviewAndCreate onBack={handleBack} />;
       default:
         return null;

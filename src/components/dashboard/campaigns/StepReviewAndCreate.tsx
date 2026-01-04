@@ -361,7 +361,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Step 9: Review and {campaignId ? 'Update' : 'Create'} Campaign</CardTitle>
+          <CardTitle>Step 7: Review and {campaignId ? 'Update' : 'Create'} Campaign</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Preview Launch Section */}

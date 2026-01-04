@@ -14,8 +14,6 @@ import StepConfigureEarnPoints from '@/components/dashboard/campaigns/StepConfig
 import StepConfigureRedeemPoints from '@/components/dashboard/campaigns/StepConfigureRedeemPoints';
 import StepConfigureContactUs from '@/components/dashboard/campaigns/StepConfigureContactUs';
 import StepConfigureFooter from '@/components/dashboard/campaigns/StepConfigureFooter';
-import StepAddDistributionChannels from '@/components/dashboard/campaigns/StepAddDistributionChannels';
-import StepCampaignScheduling from '@/components/dashboard/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/dashboard/campaigns/StepReviewAndCreate';
 
 function EditCampaignContent() {
@@ -24,7 +22,7 @@ function EditCampaignContent() {
   const { updateFormData } = useCampaignForm();
   const [currentStep, setCurrentStep] = useState(1);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const totalSteps = 9;
+  const totalSteps = 7;
 
   const { data: campaignData, isLoading, isError } = useGetCampaignById(campaignId);
 
@@ -127,10 +125,6 @@ function EditCampaignContent() {
       case 6:
         return <StepConfigureFooter onNext={handleNext} onBack={handleBack} />;
       case 7:
-        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
-      case 8:
-        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
-      case 9:
         return <StepReviewAndCreate onBack={handleBack} campaignId={campaignId} isClaimed={isClaimed} originalCampaign={campaignData} />;
       default:
         return null;

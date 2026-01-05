@@ -223,7 +223,7 @@ export default function BusinessHeader({
             {tierName && (
               <Badge variant="secondary" className="gap-1">
                 <Crown className="h-3 w-3 text-orange-500" />
-                {tierName}
+                {tierName} Badge
               </Badge>
             )}
           </div>

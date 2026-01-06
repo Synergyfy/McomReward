@@ -209,6 +209,13 @@ const getBusinessMonthlyBalance = async (): Promise<BusinessMonthlyBalance> => {
 
 export const useGetBusinessMonthlyBalance = () => useQuery({ queryKey: ['businessMonthlyBalance'], queryFn: getBusinessMonthlyBalance });
 
+const getBusinessMonthlyStampBalance = async (): Promise<any> => {
+  const { data } = await api.get('/business/stamps/balance/monthly');
+  return data;
+};
+
+export const useGetBusinessMonthlyStampBalance = () => useQuery({ queryKey: ['businessMonthlyStampBalance'], queryFn: getBusinessMonthlyStampBalance });
+
 const getBusinessTierUsage = async (): Promise<TierUsageResponse> => {
   const { data } = await api.get('/business/tier-usage');
   return data;

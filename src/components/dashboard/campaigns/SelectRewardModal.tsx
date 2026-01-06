@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
@@ -14,16 +14,25 @@ import { Badge } from "@/components/ui/badge";
 interface SelectRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProceed: (selectedRewardIds: string[]) => void;
+  onProceed: (selectedRewardIds: string[], selectedRewards: BusinessReward[]) => void;
+  initialSelectedIds?: string[];
 }
 
 export default function SelectRewardModal({
   isOpen,
   onClose,
   onProceed,
+  initialSelectedIds = [],
 }: SelectRewardModalProps) {
   const [selectedRewards, setSelectedRewards] = useState<string[]>([]);
   const { data: rewardsData, isLoading, error } = useGetBusinessRewards(1, 100);
+
+  // Initialize selected rewards when modal opens or initialSelectedIds changes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedRewards(initialSelectedIds);
+    }
+  }, [isOpen, initialSelectedIds]);
 
   const handleToggleReward = (rewardId: string) => {
     setSelectedRewards(prev =>
@@ -38,18 +47,41 @@ export default function SelectRewardModal({
       toast.error('Please select at least one reward.');
       return;
     }
-    onProceed(selectedRewards);
+
+    const allRewards = rewardsData?.data || [];
+    const selectedRewardObjects = allRewards.filter(r => selectedRewards.includes(r.id));
+
+    onProceed(selectedRewards, selectedRewardObjects);
     onClose();
   };
 
-  // Helper to determine cost display
-  const getCostDisplay = (reward: BusinessReward) => {
-    const costs = [];
-    // Prioritize business-level override, fallback to nested reward definition
-    const points = reward.pointRequired ?? (reward as any).pointsRequired ?? (reward as any).points_required ?? (reward.reward as any)?.pointRequired ?? (reward.reward as any)?.pointsRequired ?? 0;
-    const stamps = reward.stampsRequired ?? (reward as any).stamps_required ?? reward.reward?.stampsRequired ?? 0;
+  /**
+   * Safe helper to extract points/stamps regardless of naming convention
+   * Handles top-level properties and nested 'reward' object properties
+   */
+  const getRewardMetrics = (reward: any) => {
+    const points = 
+      reward.pointRequired ?? 
+      reward.pointsRequired ?? 
+      reward.points_required ?? 
+      reward.reward?.pointRequired ?? 
+      reward.reward?.pointsRequired ?? 
+      0;
 
-    // We can also check explicit flags if available, but value > 0 is usually safe
+    const stamps = 
+      reward.stampsRequired ?? 
+      reward.stamps_required ?? 
+      reward.reward?.stampsRequired ?? 
+      reward.reward?.stamps_required ?? 
+      0;
+
+    return { points, stamps };
+  };
+
+  const getCostDisplay = (reward: BusinessReward) => {
+    const { points, stamps } = getRewardMetrics(reward);
+    const costs = [];
+
     if (points > 0) costs.push(`${points} Pts`);
     if (stamps > 0) costs.push(`${stamps} Stamps`);
 
@@ -86,20 +118,18 @@ export default function SelectRewardModal({
     );
   };
 
+  // Filter Logic
   const pointsRewards = rewardsData?.data.filter(r => {
-    // Check if points are enabled OR if points cost > 0
-    const points = r.pointRequired ?? (r as any).pointsRequired ?? (r as any).points_required ?? (r.reward as any)?.pointRequired ?? 0;
-    return (r.is_points_enabled || (r as any).isPointsEnabled) || (points > 0);
+    const { points } = getRewardMetrics(r);
+    const isEnabled = r.is_points_enabled || (r as any).isPointsEnabled;
+    return isEnabled || points > 0;
   }) || [];
 
   const stampRewards = rewardsData?.data.filter(r => {
-    // Check if stamps are enabled OR if stamps cost > 0
-    const stamps = r.stampsRequired ?? (r as any).stamps_required ?? r.reward?.stampsRequired ?? 0;
-    return (r.is_stamps_enabled || (r as any).isStampsEnabled) || (stamps > 0);
+    const { stamps } = getRewardMetrics(r);
+    const isEnabled = r.is_stamps_enabled || (r as any).isStampsEnabled;
+    return isEnabled || stamps > 0;
   }) || [];
-
-  // If a reward has both, it appears in both lists. This is usually acceptable as it's a "Points Reward" AND a "Stamp Reward".
-  // If we want strict separation, we'd need to prioritize, but "Select any of them or both" implies flexibility.
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -111,24 +141,24 @@ export default function SelectRewardModal({
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading && <p>Loading rewards...</p>}
-        {error && <p className='text-red-500'>Error fetching rewards.</p>}
+        {isLoading && <p className="text-center py-4">Loading rewards...</p>}
+        {error && <p className='text-red-500 text-center py-4'>Error fetching rewards.</p>}
 
         {!isLoading && rewardsData && (
           <Tabs defaultValue="points" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="points">Points Rewards ({pointsRewards.length})</TabsTrigger>
-              <TabsTrigger value="stamps">Stamp Rewards ({stampRewards.length})</TabsTrigger>
+              <TabsTrigger value="points">Points ({pointsRewards.length})</TabsTrigger>
+              <TabsTrigger value="stamps">Stamps ({stampRewards.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="points">
-              <ScrollArea className="max-h-60 v-scrollbar-thin mt-2">
+              <ScrollArea className="h-[300px] mt-2">
                 {renderRewardList(pointsRewards, "No points rewards available.")}
               </ScrollArea>
             </TabsContent>
 
             <TabsContent value="stamps">
-              <ScrollArea className="max-h-60 v-scrollbar-thin mt-2">
+              <ScrollArea className="h-[300px] mt-2">
                 {renderRewardList(stampRewards, "No stamp rewards available.")}
               </ScrollArea>
             </TabsContent>
@@ -137,7 +167,9 @@ export default function SelectRewardModal({
 
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleProceed}>Proceed ({selectedRewards.length})</Button>
+          <Button onClick={handleProceed} disabled={isLoading}>
+            Proceed ({selectedRewards.length})
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

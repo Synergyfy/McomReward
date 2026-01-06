@@ -18,8 +18,11 @@ interface PointRewardCardProps {
     reward: BusinessReward;
     onEdit: (reward: BusinessReward) => void;
     onDelete: (reward: BusinessReward) => void;
-    onView?: (reward: any) => void;
-    onAwardStamp?: (reward: any) => void;
+    onView?: (reward: BusinessReward) => void;
+    onAwardStamp?: (reward: BusinessReward) => void;
+    onPause?: (id: string) => void;
+    onResume?: (id: string) => void;
+    onDeactivate?: (id: string) => void;
     variant?: 'standard' | 'stamp-card' | 'hybrid';
 }
 
@@ -29,6 +32,9 @@ export default function PointRewardCard({
     onDelete,
     onView,
     onAwardStamp,
+    onPause,
+    onResume,
+    onDeactivate,
     variant = 'standard',
 }: PointRewardCardProps) {
     const isStampCard = variant === 'stamp-card';
@@ -134,7 +140,7 @@ export default function PointRewardCard({
                         <DropdownMenuContent align="end">
                             {onView && (
                                 <DropdownMenuItem onClick={() => onView(reward)}>
-                                    <Star className="h-4 w-4 mr-2" />
+                                    <Users className="h-4 w-4 mr-2" />
                                     View Customers
                                 </DropdownMenuItem>
                             )}
@@ -142,6 +148,27 @@ export default function PointRewardCard({
                                 <DropdownMenuItem onClick={() => onAwardStamp(reward)}>
                                     <Stamp className="h-4 w-4 mr-2" />
                                     Award Stamp
+                                </DropdownMenuItem>
+                            )}
+                            {reward.disabled ? (
+                                onResume && (
+                                    <DropdownMenuItem onClick={() => onResume(reward.id)}>
+                                        <Star className="h-4 w-4 mr-2 text-emerald-500" />
+                                        Resume
+                                    </DropdownMenuItem>
+                                )
+                            ) : (
+                                onPause && (
+                                    <DropdownMenuItem onClick={() => onPause(reward.id)}>
+                                        <Star className="h-4 w-4 mr-2 text-orange-500" />
+                                        Pause
+                                    </DropdownMenuItem>
+                                )
+                            )}
+                            {onDeactivate && (
+                                <DropdownMenuItem onClick={() => onDeactivate(reward.id)} className="text-orange-600">
+                                    <Star className="h-4 w-4 mr-2" />
+                                    Deactivate
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem onClick={() => onEdit(reward)}>
@@ -296,10 +323,10 @@ export default function PointRewardCard({
                     <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                         {onView && (
                             <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => onView(reward)}
-                                className="flex-1 gap-2 text-xs h-8"
+                                className="flex-1 gap-2 text-xs h-9 bg-gray-50/50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-semibold border border-gray-100 dark:border-gray-700 rounded-xl transition-all duration-200"
                             >
                                 <Users className="h-3.5 w-3.5" />
                                 View Customers

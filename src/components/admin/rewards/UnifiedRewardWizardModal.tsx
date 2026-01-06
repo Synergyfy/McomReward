@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import NextImage from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -133,6 +134,12 @@ export default function UnifiedRewardWizardModal({
     const [image, setImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+    // New Sector Fields
+    const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>('');
+    const [rewardEmoji, setRewardEmoji] = useState('🎁');
+
     // Initialization
     useEffect(() => {
         if (isOpen) {
@@ -174,6 +181,13 @@ export default function UnifiedRewardWizardModal({
 
                 setStatus(mode === 'duplicate' ? 'draft' : reward.status);
 
+                // Populate sector fields if they exist (need to check if they are in RewardResponse in real scenarios)
+                // Assuming they might be mapped or added to the response
+                setSelectedSectorId((reward as any).sector_id || '');
+                setSelectedCategoryId((reward as any).category_id || '');
+                setSelectedSubCategoryId((reward as any).sub_category_id || '');
+                setRewardEmoji((reward as any).emoji || '🎁');
+
             } else {
                 // New Reward logic
                 resetForm();
@@ -204,6 +218,10 @@ export default function UnifiedRewardWizardModal({
         setSelectedFile(null);
         setIsPointsEnabled(false);
         setIsStampsEnabled(false);
+        setSelectedSectorId('');
+        setSelectedCategoryId('');
+        setSelectedSubCategoryId('');
+        setRewardEmoji('🎁');
     };
 
     // Validation
@@ -309,6 +327,11 @@ export default function UnifiedRewardWizardModal({
                 image: finalImageUrl,
                 expiry_datetime: expiryDate ? new Date(expiryDate).toISOString() : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
                 reward_type: 'Voucher', // Defaulting to Voucher for now as per requirements mostly being about type
+                sector_id: selectedSectorId || undefined,
+                category_id: selectedCategoryId || undefined,
+                sub_category_id: selectedSubCategoryId || undefined,
+                emoji: rewardEmoji,
+                image_source_type: 'CUSTOM_URL', // Defaulting as per example payload
             };
 
             if (mode === 'edit' && reward) {
@@ -330,7 +353,12 @@ export default function UnifiedRewardWizardModal({
                         status,
                         image: finalImageUrl,
                         expiry: expiryDate,
-                        quantity: Number(quantity)
+                        quantity: Number(quantity),
+                        sector_id: selectedSectorId,
+                        category_id: selectedCategoryId,
+                        sub_category_id: selectedSubCategoryId,
+                        emoji: rewardEmoji,
+                        image_source_type: 'CUSTOM_URL'
                     },
                     {
                         onSuccess: () => {
@@ -601,6 +629,77 @@ export default function UnifiedRewardWizardModal({
                                                         {opt.value}
                                                     </button>
                                                 ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Sector Icon (New Feature) */}
+                                        <div className="space-y-4 pt-4 border-t">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-sm font-semibold text-gray-700">Sector Icon</Label>
+                                                <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-200 uppercase tracking-tighter">New Backend Sync</Badge>
+                                            </div>
+                                            <div className="grid grid-cols-5 sm:grid-cols-8 gap-3">
+                                                {sectors.map((sector: any) => (
+                                                    <TooltipProvider key={sector.id}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    className={cn(
+                                                                        "relative w-12 h-12 rounded-xl border flex items-center justify-center overflow-hidden transition-all duration-300",
+                                                                        selectedSectorId === sector.id
+                                                                            ? "ring-2 ring-orange-500 border-orange-500 ring-offset-2 scale-110 shadow-lg"
+                                                                            : "hover:border-gray-300 hover:scale-105 bg-gray-50 dark:bg-gray-800"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        setSelectedSectorId(sector.id);
+                                                                        // Set default category if available
+                                                                        if (sector.categories?.[0]) {
+                                                                            setSelectedCategoryId(sector.categories[0].id);
+                                                                            // Sub-categories are not directly in the sector object tree according to types
+                                                                            // So we leave it to backend or future selection
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {sector.imageUrl ? (
+                                                                        <NextImage
+                                                                            src={sector.imageUrl}
+                                                                            alt={sector.name}
+                                                                            fill
+                                                                            className="object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <Store className="h-6 w-6 text-gray-400" />
+                                                                    )}
+                                                                    {selectedSectorId === sector.id && (
+                                                                        <div className="absolute inset-0 bg-orange-500/10 backdrop-blur-[1px] flex items-center justify-center text-orange-600">
+                                                                            <CheckCircle2 className="h-4 w-4 fill-white" />
+                                                                        </div>
+                                                                    )}
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="bottom">
+                                                                <p className="text-xs">{sector.name}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ))}
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 italic font-medium">Selecting a sector icon ensures your reward is correctly categorized for AI discovery.</p>
+                                        </div>
+
+                                        {/* Optional Emoji (New Feature) */}
+                                        <div className="space-y-4 pt-4 mt-2 border-t">
+                                            <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Reward Primary Emoji</Label>
+                                            <div className="flex gap-3">
+                                                <Input
+                                                    value={rewardEmoji}
+                                                    onChange={e => setRewardEmoji(e.target.value)}
+                                                    className="w-16 h-12 text-2xl text-center rounded-xl border-2 focus:ring-orange-500/20"
+                                                    maxLength={2}
+                                                />
+                                                <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 border rounded-xl flex items-center text-xs text-gray-500">
+                                                    This emoji will be used in push notifications and quick previews for this reward.
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>

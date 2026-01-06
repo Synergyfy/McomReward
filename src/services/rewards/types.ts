@@ -17,6 +17,12 @@ export interface CreateRewardRequest {
   is_points_enabled: boolean;
   is_stamps_enabled: boolean;
   stamp_emoji?: string;
+  image_source_type?: string;
+  library_asset_id?: string;
+  sector_id?: string;
+  category_id?: string;
+  sub_category_id?: string;
+  emoji?: string;
 }
 
 export interface UpdateRewardRequest {
@@ -37,6 +43,12 @@ export interface UpdateRewardRequest {
   is_points_enabled?: boolean;
   is_stamps_enabled?: boolean;
   stamp_emoji?: string;
+  image_source_type?: string;
+  library_asset_id?: string;
+  sector_id?: string;
+  category_id?: string;
+  sub_category_id?: string;
+  emoji?: string;
   audience?: string;
   sector_ids?: string[];
   tier_ids?: string[];

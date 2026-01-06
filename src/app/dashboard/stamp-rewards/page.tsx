@@ -27,26 +27,17 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import LoadingSpinner from '@/components/ui/Loading';
-import StampTemplateCard from '@/components/dashboard/stamp-rewards/StampTemplateCard';
-import ActiveStampRewardCard from '@/components/dashboard/stamp-rewards/ActiveStampRewardCard';
 import PointRewardCard from '@/components/dashboard/rewards/PointRewardCard';
-import ActivateTemplateModal from '@/components/dashboard/stamp-rewards/ActivateTemplateModal';
-import AwardStampModal from '@/components/dashboard/stamp-rewards/AwardStampModal';
-import ViewCustomersModal from '@/components/dashboard/stamp-rewards/ViewCustomersModal';
 import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
+import UnifiedViewCustomersModal from '@/components/dashboard/rewards/UnifiedViewCustomersModal';
 import RewardTypeSelectionDialog from '@/components/dashboard/rewards/RewardTypeSelectionDialog';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
 import UnifiedRewardWizardModal from '@/components/admin/rewards/UnifiedRewardWizardModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
 import {
-    useGetAvailableTemplates,
-    useGetBusinessStampRewards,
-    useGetStampRewardStats,
-    usePauseStampReward,
-    useResumeStampReward,
-    useDeactivateStampReward,
-} from '@/services/business-stamp-rewards/hook';
+    useGetGeneralAnalytics,
+} from '@/services/business-dashboard/hook';
 import {
     useCreateBusinessReward,
     useGetBusinessRewards,
@@ -54,8 +45,6 @@ import {
     useRemoveBusinessReward
 } from '@/services/business-reward/hooks';
 import { useGetBusinessTierUsage } from '@/services/business/hook';
-import { StampRewardResponse } from '@/services/stamp-rewards/types';
-import { BusinessStampReward } from '@/services/business-stamp-rewards/types';
 import { Reward, BusinessReward, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import {
     AlertDialog,
@@ -80,16 +69,11 @@ export default function BusinessStampRewardsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('active');
     const [activeRewardFilter, setActiveRewardFilter] = useState<ActiveRewardFilter>('all');
-    const [selectedTemplate, setSelectedTemplate] = useState<StampRewardResponse | null>(null);
-    const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
     const [rewardToDeactivate, setRewardToDeactivate] = useState<string | null>(null);
 
-    // New modal states for stamp rewards
-    const [selectedReward, setSelectedReward] = useState<any>(null);
-    const [isAwardStampModalOpen, setIsAwardStampModalOpen] = useState(false);
-    const [isViewCustomersModalOpen, setIsViewCustomersModalOpen] = useState(false);
-
     // New modal states for merged rewards functionality
+    const [selectedRewardForView, setSelectedRewardForView] = useState<BusinessReward | null>(null);
+    const [isViewCustomersModalOpen, setIsViewCustomersModalOpen] = useState(false);
     const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
     const [isRewardTypeSelectionOpen, setIsRewardTypeSelectionOpen] = useState(false);
     const [isCreatePointRewardModalOpen, setIsCreatePointRewardModalOpen] = useState(false);
@@ -106,34 +90,17 @@ export default function BusinessStampRewardsPage() {
     const [pointRewardToDelete, setPointRewardToDelete] = useState<BusinessReward | null>(null);
 
     // API hooks
-    const { data: availableTemplates = [], isLoading: isLoadingTemplates, refetch: refetchTemplates } = useGetAvailableTemplates();
-    const { data: businessRewardsData, isLoading: isLoadingRewards, refetch: refetchRewards } = useGetBusinessStampRewards(1, 20);
-    const { data: stats, isLoading: isLoadingStats } = useGetStampRewardStats();
-    const { mutate: pauseReward, isPending: isPausing } = usePauseStampReward();
-    const { mutate: resumeReward, isPending: isResuming } = useResumeStampReward();
-    const { mutate: deactivateReward, isPending: isDeactivating } = useDeactivateStampReward();
-
-    // Point rewards hooks
-    const { data: pointRewardsData, isLoading: isLoadingPointRewards, refetch: refetchPointRewards } = useGetBusinessRewards(1, 50);
+    const { data: analytics } = useGetGeneralAnalytics();
+    const { data: pointRewardsData, isLoading: isLoadingPointRewards, refetch: refetchPointRewards } = useGetBusinessRewards(1, 100);
     const { mutateAsync: createBusinessReward } = useCreateBusinessReward();
     const { mutate: updateBusinessReward } = useUpdateBusinessReward();
     const { mutate: removeBusinessReward, isPending: isDeletingReward } = useRemoveBusinessReward();
     const { data: tierUsageData } = useGetBusinessTierUsage();
 
-    const businessRewards = businessRewardsData?.data || [];
     const pointRewards = pointRewardsData?.data || [];
 
     // Combine counts for stats
-    const totalActiveRewards = businessRewards.length + pointRewards.filter(r => !r.disabled).length;
-
-    // Filter templates
-    const filteredTemplates = useMemo(() => {
-        if (!searchTerm) return availableTemplates;
-        return availableTemplates.filter(t =>
-            t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            t.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [availableTemplates, searchTerm]);
+    const totalActiveRewards = pointRewards.filter(r => !r.disabled).length;
 
     // Wizard-based rewards filtered by type
     // Hybrid rewards: have BOTH stamps and points enabled
@@ -168,14 +135,6 @@ export default function BusinessStampRewardsPage() {
     }, [pointRewards]);
 
     // Filtered lists for UI
-    const filteredTemplateStampRewards = useMemo(() => {
-        if (!searchTerm) return businessRewards;
-        return businessRewards.filter(r =>
-            r.template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            r.template.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [businessRewards, searchTerm]);
-
     const filteredWizardStampRewards = useMemo(() => {
         if (!searchTerm) return wizardStampRewards;
         return wizardStampRewards.filter(r =>
@@ -200,38 +159,24 @@ export default function BusinessStampRewardsPage() {
         );
     }, [wizardHybridRewards, searchTerm]);
 
-    // Handlers for stamp rewards
-    const handlePreviewTemplate = (template: StampRewardResponse) => {
-        setSelectedTemplate(template);
-        setIsActivateModalOpen(true);
-    };
-
-    const handleActivateTemplate = (template: StampRewardResponse) => {
-        setSelectedTemplate(template);
-        setIsActivateModalOpen(true);
-    };
-
-    const handleActivateFromModal = (template: StampRewardResponse) => {
-        setSelectedTemplate(template);
-        setIsActivateModalOpen(true);
-    };
-
-    const handleViewReward = (reward: BusinessStampReward) => {
-        setSelectedReward(reward);
+    const handleViewCustomers = useCallback((reward: BusinessReward) => {
+        setSelectedRewardForView(reward);
         setIsViewCustomersModalOpen(true);
-    };
+    }, []);
 
-    const handleAwardStamp = (reward: BusinessStampReward) => {
-        setSelectedReward(reward);
-        setIsAwardStampModalOpen(true);
-    };
-
+    // Handlers for rewards status
     const handlePause = (id: string) => {
-        pauseReward(id);
+        updateBusinessReward({
+            rewardId: id,
+            payload: { disabled: true }
+        });
     };
 
     const handleResume = (id: string) => {
-        resumeReward(id);
+        updateBusinessReward({
+            rewardId: id,
+            payload: { disabled: false }
+        });
     };
 
     const handleDeactivate = (id: string) => {
@@ -240,17 +185,19 @@ export default function BusinessStampRewardsPage() {
 
     const confirmDeactivate = () => {
         if (rewardToDeactivate) {
-            deactivateReward(rewardToDeactivate, {
+            removeBusinessReward(rewardToDeactivate, {
                 onSuccess: () => {
+                    toast.success('Reward deactivated successfully');
                     setRewardToDeactivate(null);
+                    refetchPointRewards();
+                },
+                onError: (error: Error) => {
+                    const axiosError = error as AxiosError<{ message: string }>;
+                    const errorMessage = axiosError?.response?.data?.message || 'Failed to deactivate reward';
+                    toast.error(errorMessage);
                 },
             });
         }
-    };
-
-    const handleActivationSuccess = () => {
-        refetchTemplates();
-        refetchRewards();
     };
 
     // Handlers for point rewards
@@ -306,6 +253,7 @@ export default function BusinessStampRewardsPage() {
                 toast.success('Reward deleted successfully');
                 setDeleteDialogOpen(false);
                 setPointRewardToDelete(null);
+                refetchPointRewards();
             },
             onError: (error: Error) => {
                 const axiosError = error as AxiosError<{ message: string }>;
@@ -313,7 +261,7 @@ export default function BusinessStampRewardsPage() {
                 toast.error(errorMessage);
             },
         });
-    }, [pointRewardToDelete, removeBusinessReward]);
+    }, [pointRewardToDelete, removeBusinessReward, refetchPointRewards]);
 
     // Handlers for merged rewards functionality
     const handleOpenClaimModal = useCallback(() => {
@@ -453,11 +401,10 @@ export default function BusinessStampRewardsPage() {
     }, [editingBusinessRewardId, updateBusinessReward, createBusinessReward, refetchPointRewards]);
 
     const handleStampRewardSuccess = useCallback(() => {
-        refetchTemplates();
-        refetchRewards();
-    }, [refetchTemplates, refetchRewards]);
+        refetchPointRewards();
+    }, [refetchPointRewards]);
 
-    const isLoading = isLoadingTemplates || isLoadingRewards || isLoadingStats || isLoadingPointRewards;
+    const isLoading = isLoadingPointRewards;
 
     if (isLoading) {
         return (
@@ -527,8 +474,8 @@ export default function BusinessStampRewardsPage() {
                                     <Users className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalCustomersEnrolled || 0}</p>
-                                    <p className="text-xs text-gray-500">Enrolled</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.totalCustomers || 0}</p>
+                                    <p className="text-xs text-gray-500">Total Customers</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -540,8 +487,8 @@ export default function BusinessStampRewardsPage() {
                                     <BarChart3 className="h-5 w-5 text-amber-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalStampsAwarded || 0}</p>
-                                    <p className="text-xs text-gray-500">Stamps</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalActiveRewards}</p>
+                                    <p className="text-xs text-gray-500">Active Rewards</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -553,8 +500,8 @@ export default function BusinessStampRewardsPage() {
                                     <Stamp className="h-5 w-5 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalCompletions || 0}</p>
-                                    <p className="text-xs text-gray-500">Completed</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{wizardStampRewards.length}</p>
+                                    <p className="text-xs text-gray-500">Stamp Cards</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -566,8 +513,8 @@ export default function BusinessStampRewardsPage() {
                                     <Gift className="h-5 w-5 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalRedemptions || 0}</p>
-                                    <p className="text-xs text-gray-500">Redeemed</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.totalRewardsRedeemed || 0}</p>
+                                    <p className="text-xs text-gray-500">Total Redeemed</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -616,7 +563,7 @@ export default function BusinessStampRewardsPage() {
                                     <Filter className="h-3.5 w-3.5" />
                                     All
                                     <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
-                                        {filteredTemplateStampRewards.length + filteredWizardStampRewards.length + filteredWizardPointRewards.length + filteredWizardHybridRewards.length}
+                                        {filteredWizardStampRewards.length + filteredWizardPointRewards.length + filteredWizardHybridRewards.length}
                                     </Badge>
                                 </Button>
                                 <Button
@@ -628,7 +575,7 @@ export default function BusinessStampRewardsPage() {
                                     <Stamp className="h-3.5 w-3.5" />
                                     Stamp Cards
                                     <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
-                                        {filteredTemplateStampRewards.length + filteredWizardStampRewards.length}
+                                        {filteredWizardStampRewards.length}
                                     </Badge>
                                 </Button>
                                 <Button
@@ -659,7 +606,7 @@ export default function BusinessStampRewardsPage() {
                         </div>
 
                         {/* Empty state when no rewards at all */}
-                        {filteredTemplateStampRewards.length === 0 && filteredWizardStampRewards.length === 0 && filteredWizardPointRewards.length === 0 && filteredWizardHybridRewards.length === 0 && (
+                        {filteredWizardStampRewards.length === 0 && filteredWizardPointRewards.length === 0 && filteredWizardHybridRewards.length === 0 && (
                             <Card className="border-0 shadow-lg">
                                 <CardContent className="py-16 text-center">
                                     <div className="p-4 bg-orange-100 dark:bg-orange-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -686,7 +633,7 @@ export default function BusinessStampRewardsPage() {
                         )}
 
                         {/* Stamp Rewards Section */}
-                        {showStampRewards && (filteredTemplateStampRewards.length > 0 || filteredWizardStampRewards.length > 0) && (
+                        {showStampRewards && (filteredWizardStampRewards.length > 0) && (
                             <div className="space-y-4">
                                 {activeRewardFilter === 'all' && (
                                     <div className="flex items-center gap-2">
@@ -695,23 +642,11 @@ export default function BusinessStampRewardsPage() {
                                         </div>
                                         <h3 className="font-semibold text-gray-900 dark:text-white">Stamp Cards</h3>
                                         <Badge variant="outline" className="text-orange-600 border-orange-300">
-                                            {filteredTemplateStampRewards.length + filteredWizardStampRewards.length}
+                                            {filteredWizardStampRewards.length}
                                         </Badge>
                                     </div>
                                 )}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* Template-based stamp rewards */}
-                                    {filteredTemplateStampRewards.map((reward) => (
-                                        <ActiveStampRewardCard
-                                            key={reward.id}
-                                            reward={reward}
-                                            onView={handleViewReward}
-                                            onAwardStamp={handleAwardStamp}
-                                            onPause={handlePause}
-                                            onResume={handleResume}
-                                            onDeactivate={handleDeactivate}
-                                        />
-                                    ))}
                                     {/* Wizard-based stamp rewards */}
                                     {filteredWizardStampRewards.map((reward) => (
                                         <PointRewardCard
@@ -719,8 +654,11 @@ export default function BusinessStampRewardsPage() {
                                             reward={reward}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
-                                            onView={handleViewReward}
+                                            onView={handleViewCustomers}
                                             variant="stamp-card"
+                                            onPause={handlePause}
+                                            onResume={handleResume}
+                                            onDeactivate={handleDeactivate}
                                         />
                                     ))}
                                 </div>
@@ -748,7 +686,10 @@ export default function BusinessStampRewardsPage() {
                                             reward={reward}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
-                                            onView={handleViewReward}
+                                            onView={handleViewCustomers}
+                                            onPause={handlePause}
+                                            onResume={handleResume}
+                                            onDeactivate={handleDeactivate}
                                         />
                                     ))}
                                 </div>
@@ -776,7 +717,11 @@ export default function BusinessStampRewardsPage() {
                                             reward={reward}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
+                                            onView={handleViewCustomers}
                                             variant="hybrid"
+                                            onPause={handlePause}
+                                            onResume={handleResume}
+                                            onDeactivate={handleDeactivate}
                                         />
                                     ))}
                                 </div>
@@ -784,7 +729,7 @@ export default function BusinessStampRewardsPage() {
                         )}
 
                         {/* Show empty states for individual filters */}
-                        {activeRewardFilter === 'stamps' && filteredTemplateStampRewards.length === 0 && filteredWizardStampRewards.length === 0 && (
+                        {activeRewardFilter === 'stamps' && filteredWizardStampRewards.length === 0 && (
                             <Card className="border-0 shadow-lg border-orange-100">
                                 <CardContent className="py-12 text-center">
                                     <Stamp className="h-10 w-10 text-orange-300 mx-auto mb-3" />
@@ -814,22 +759,8 @@ export default function BusinessStampRewardsPage() {
                             </Card>
                         )}
                     </TabsContent>
-
-                    {/* Template Library Tab */}
-
                 </Tabs>
             </div>
-
-            {/* Activate Template Modal */}
-            <ActivateTemplateModal
-                isOpen={isActivateModalOpen}
-                onClose={() => {
-                    setIsActivateModalOpen(false);
-                    setSelectedTemplate(null);
-                }}
-                template={selectedTemplate}
-                onSuccess={handleActivationSuccess}
-            />
 
             {/* Deactivate Stamp Confirmation Dialog */}
             <AlertDialog open={!!rewardToDeactivate} onOpenChange={() => setRewardToDeactivate(null)}>
@@ -837,21 +768,20 @@ export default function BusinessStampRewardsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <Stamp className="h-5 w-5 text-red-500" />
-                            Deactivate Stamp Reward?
+                            Deactivate Reward?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will remove the stamp reward from your business. Customers who have started
-                            collecting stamps will no longer be able to earn new stamps or redeem rewards.
+                            This will remove the reward from your business. Customers will no longer be able to earn or redeem this reward.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDeactivate}
-                            disabled={isDeactivating}
+                            disabled={isDeletingReward}
                             className="bg-red-600 hover:bg-red-700"
                         >
-                            {isDeactivating ? 'Deactivating...' : 'Deactivate'}
+                            {isDeletingReward ? 'Deactivating...' : 'Deactivate'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -881,30 +811,6 @@ export default function BusinessStampRewardsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            {/* Award Stamp Modal */}
-            <AwardStampModal
-                isOpen={isAwardStampModalOpen}
-                onClose={() => {
-                    setIsAwardStampModalOpen(false);
-                    setSelectedReward(null);
-                }}
-                reward={selectedReward}
-            />
-
-            {/* View Customers Modal */}
-            <ViewCustomersModal
-                isOpen={isViewCustomersModalOpen}
-                onClose={() => {
-                    setIsViewCustomersModalOpen(false);
-                    setSelectedReward(null);
-                }}
-                reward={selectedReward}
-                onAwardStamp={() => {
-                    setIsViewCustomersModalOpen(false);
-                    setIsAwardStampModalOpen(true);
-                }}
-            />
 
             {/* Claim Reward Modal (Enhanced with filter tabs) */}
             <ClaimRewardModal
@@ -960,6 +866,15 @@ export default function BusinessStampRewardsPage() {
                 isOpen={isTierLimitModalOpen}
                 onClose={() => setIsTierLimitModalOpen(false)}
                 message={tierLimitMessage}
+            />
+            {/* Unified View Customers Modal */}
+            <UnifiedViewCustomersModal
+                isOpen={isViewCustomersModalOpen}
+                onClose={() => {
+                    setIsViewCustomersModalOpen(false);
+                    setSelectedRewardForView(null);
+                }}
+                reward={selectedRewardForView}
             />
         </div>
     );

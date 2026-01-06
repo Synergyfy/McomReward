@@ -75,12 +75,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   };
 
   const handleCreateCampaign = async () => {
-    // Basic date validation check (if not multi-tier standard, handled in step 4 usually but good safety)
-    const isMultiTierStandard = formData.planType !== 'seasonal' && (formData.target_tier_ids?.length || 0) > 1;
-    if (!isMultiTierStandard && (!formData.startDate || !formData.endDate)) {
-      alert("Start date and end date are required.");
-      return;
-    }
 
     setIsUploading(true);
     let bannerUrl = formData.imageUrl;

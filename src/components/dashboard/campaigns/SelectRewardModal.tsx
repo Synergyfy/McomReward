@@ -88,7 +88,7 @@ export default function SelectRewardModal({
 
   const pointsRewards = rewardsData?.data.filter(r => {
     // Check if points are enabled OR if points cost > 0
-    const points = r.pointRequired ?? r.pointsRequired ?? r.points_required ?? r.reward?.pointRequired ?? 0;
+    const points = r.pointRequired ?? r.pointsRequired ?? r.points_required ?? r.reward?.pointsRequired ?? 0;
     return (r.is_points_enabled || r.isPointsEnabled) || (points > 0);
   }) || [];
 

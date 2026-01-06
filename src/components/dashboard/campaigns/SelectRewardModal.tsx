@@ -46,8 +46,8 @@ export default function SelectRewardModal({
   const getCostDisplay = (reward: BusinessReward) => {
     const costs = [];
     // Prioritize business-level override, fallback to nested reward definition
-    const points = reward.pointRequired ?? reward.pointsRequired ?? reward.points_required ?? reward.reward?.pointRequired ?? reward.reward?.pointsRequired ?? 0;
-    const stamps = reward.stampsRequired ?? reward.stamps_required ?? reward.reward?.stampsRequired ?? 0;
+    const points = reward.pointRequired ?? reward.pointsRequired ?? reward.points_required ?? reward.reward?.pointsRequired ?? reward.reward?.points_required ?? 0;
+    const stamps = reward.stampsRequired ?? reward.stamps_required ?? reward.reward?.stampsRequired ?? reward.reward?.stamps_required ?? 0;
 
     // We can also check explicit flags if available, but value > 0 is usually safe
     if (points > 0) costs.push(`${points} Pts`);

@@ -70,7 +70,12 @@ export default function CampaignPreviewPage() {
   }
 
   if (!campaign) {
-    return <div className="p-8 text-center">Campaign not found or not claimable.</div>;
+    return (
+      <div className="p-8 text-center">
+        <p className="text-lg text-red-600 mb-2">Campaign not found or not claimable.</p>
+        <p className="text-sm text-gray-500">ID: {Array.isArray(campaignId) ? campaignId.join(',') : campaignId}</p>
+      </div>
+    );
   }
 
   return (

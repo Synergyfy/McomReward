@@ -35,7 +35,11 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
   const handleClaimWithRewards = (selectedRewardIds: string[]) => {
     const payload = {
       business_reward_ids: selectedRewardIds,
+      start_date: campaign.startDate || new Date().toISOString(),
+      end_date: campaign.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     };
+
+    console.log('Claiming campaign with payload:', payload);
 
     claimCampaign({ campaignId: campaign.id, payload }, {
       onSuccess: () => {

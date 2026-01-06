@@ -110,6 +110,8 @@ export const useGetClaimableCampaigns = (page: number = 1, limit: number = 10) =
 // Claim Campaign
 interface ClaimCampaignPayload {
   business_reward_ids?: string[];
+  start_date?: string;
+  end_date?: string;
 }
 
 const claimCampaign = async ({ campaignId, payload }: { campaignId: string; payload: ClaimCampaignPayload }): Promise<BusinessCampaign> => {

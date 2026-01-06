@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
@@ -14,16 +14,25 @@ import { Badge } from "@/components/ui/badge";
 interface SelectRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProceed: (selectedRewardIds: string[]) => void;
+  onProceed: (selectedRewardIds: string[], selectedRewards: BusinessReward[]) => void;
+  initialSelectedIds?: string[];
 }
 
 export default function SelectRewardModal({
   isOpen,
   onClose,
   onProceed,
+  initialSelectedIds = [],
 }: SelectRewardModalProps) {
   const [selectedRewards, setSelectedRewards] = useState<string[]>([]);
   const { data: rewardsData, isLoading, error } = useGetBusinessRewards(1, 100);
+
+  // Initialize selected rewards when modal opens or initialSelectedIds changes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedRewards(initialSelectedIds);
+    }
+  }, [isOpen, initialSelectedIds]);
 
   const handleToggleReward = (rewardId: string) => {
     setSelectedRewards(prev =>
@@ -38,7 +47,12 @@ export default function SelectRewardModal({
       toast.error('Please select at least one reward.');
       return;
     }
-    onProceed(selectedRewards);
+
+    // Find full reward objects
+    const allRewards = rewardsData?.data || [];
+    const selectedRewardObjects = allRewards.filter(r => selectedRewards.includes(r.id));
+
+    onProceed(selectedRewards, selectedRewardObjects);
     onClose();
   };
 
@@ -46,8 +60,9 @@ export default function SelectRewardModal({
   const getCostDisplay = (reward: BusinessReward) => {
     const costs = [];
     // Prioritize business-level override, fallback to nested reward definition
-    const points = reward.pointRequired ?? reward.pointsRequired ?? reward.points_required ?? reward.reward?.pointRequired ?? reward.reward?.pointsRequired ?? 0;
-    const stamps = reward.stampsRequired ?? reward.stamps_required ?? reward.reward?.stampsRequired ?? 0;
+    // Safe access checking for points/stamps properties on reward and nested reward object
+    const points = reward.pointRequired ?? reward.pointsRequired ?? reward.points_required ?? reward.reward?.pointsRequired ?? reward.reward?.points_required ?? 0;
+    const stamps = reward.stampsRequired ?? reward.stamps_required ?? reward.reward?.stampsRequired ?? reward.reward?.stamps_required ?? 0;
 
     // We can also check explicit flags if available, but value > 0 is usually safe
     if (points > 0) costs.push(`${points} Pts`);
@@ -88,18 +103,15 @@ export default function SelectRewardModal({
 
   const pointsRewards = rewardsData?.data.filter(r => {
     // Check if points are enabled OR if points cost > 0
-    const points = r.pointRequired ?? r.pointsRequired ?? r.points_required ?? r.reward?.pointRequired ?? 0;
+    const points = r.pointRequired ?? r.pointsRequired ?? r.points_required ?? r.reward?.pointsRequired ?? r.reward?.points_required ?? 0;
     return (r.is_points_enabled || r.isPointsEnabled) || (points > 0);
   }) || [];
 
   const stampRewards = rewardsData?.data.filter(r => {
     // Check if stamps are enabled OR if stamps cost > 0
-    const stamps = r.stampsRequired ?? r.stamps_required ?? r.reward?.stampsRequired ?? 0;
+    const stamps = r.stampsRequired ?? r.stamps_required ?? r.reward?.stampsRequired ?? r.reward?.stamps_required ?? 0;
     return (r.is_stamps_enabled || r.isStampsEnabled) || (stamps > 0);
   }) || [];
-
-  // If a reward has both, it appears in both lists. This is usually acceptable as it's a "Points Reward" AND a "Stamp Reward".
-  // If we want strict separation, we'd need to prioritize, but "Select any of them or both" implies flexibility.
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

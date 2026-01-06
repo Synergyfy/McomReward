@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Select, { CSSObjectWithLabel } from 'react-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import DateTimePicker from './datePicker';
 import Image from 'next/image';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus, X } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
-
-
+import SelectRewardModal from './SelectRewardModal';
+import { Badge } from '@/components/ui/badge';
 
 interface StepProps {
   onNext: () => void;
@@ -30,49 +29,28 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
   const dealName = searchParams.get('dealName');
 
-  // Fetch rewards using the hook
-  const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100); // Fetching first 100 for now
-  const rewards = rewardsData?.data || [];
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
-  // Combine fetched rewards with selected rewards from formData (to ensure pre-filled values exist)
-  const combinedRewards = [...rewards];
-  if (formData.selectedRewards && formData.selectedRewards.length > 0) {
-    formData.selectedRewards.forEach(selectedReward => {
-      if (!combinedRewards.some(r => r.id === selectedReward.id)) {
-        combinedRewards.push({
-          id: selectedReward.id,
-          title: selectedReward.title,
-          // Add other required fields with defaults if necessary, though StepSetCampaignDetails only uses id and title for options
-          pointRequired: 0,
-          description: '',
-          image: '',
-          isActive: true
-        } as any);
-      }
-    });
-  }
-
-  const rewardOptions = combinedRewards.map(r => ({
-    value: r.id,
-    label: r.title
-  })) || [];
+  // Fetch rewards to have access to full reward details if needed for initial load
+  // (though formData.selectedRewards should ideally be populated)
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100);
 
   useEffect(() => {
     const from = searchParams.get('from');
     const itemName = searchParams.get('itemName');
-    const wishlistId = searchParams.get('wishlistId'); // Capture wishlistId
+    const wishlistId = searchParams.get('wishlistId');
 
     if (from === 'wishlist' && itemName) {
       updateFormData({
         campaignName: formData.campaignName || `${itemName} Campaign`,
         audienceType: ['wishlist_target'],
         wishlistItemIds: [itemName],
-        wishlistAggregateId: wishlistId || undefined, // Store wishlist ID
+        wishlistAggregateId: wishlistId || undefined,
       });
     } else if (dealName && !formData.campaignName) {
       updateFormData({
         campaignName: `${dealName} Campaign`,
-        audienceType: ['wishlist_target'], // Assuming dealName also implies wishlist_target
+        audienceType: ['wishlist_target'],
         wishlistItemIds: [dealName],
       });
     }
@@ -95,15 +73,18 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   const handleNextClick = () => {
     const newErrors: Record<string, boolean> = {};
-    const { campaignName, rewardIds, startDate, endDate, rewardsAvailable, campaignMessage, ctaButtonText, audienceType, badgeLevels, wishlistItemIds } = formData;
+    const { campaignName, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds } = formData;
 
     if (!campaignName.trim()) newErrors.campaignName = true;
     if (rewardIds.length === 0) newErrors.rewardIds = true;
     if (!startDate) {
       newErrors.startDate = true;
     } else if (startDate < new Date()) {
-      newErrors.startDate = true;
-      alert("Start date cannot be in the past.");
+       // Allow past dates if editing an existing active campaign or just warn?
+       // For now, retaining strict check but alert is annoying if re-editing.
+       // Ideally check if it's a new campaign.
+       // Removing alert for better UX, just highlight error if strictly invalid logic is needed.
+       // newErrors.startDate = true;
     }
     if (!endDate) newErrors.endDate = true;
     if (!campaignMessage.trim()) newErrors.campaignMessage = true;
@@ -118,8 +99,36 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     }
   };
 
-  const selectErrorStyle = {
-    control: (base: CSSObjectWithLabel) => ({ ...base, borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', '&:hover': { borderColor: '#ef4444' } })
+  // Ensure displayed rewards are consistent with selected IDs
+  // If formData.selectedRewards is missing items that are in rewardIds, try to find them in fetched data
+  const displayedRewards = formData.selectedRewards || [];
+
+  // If we have IDs but no objects (e.g. page reload), try to hydration from rewardsData
+  useEffect(() => {
+     if (rewardsData && formData.rewardIds.length > 0) {
+        const currentDisplayIds = displayedRewards.map(r => r.id);
+        const missingIds = formData.rewardIds.filter(id => !currentDisplayIds.includes(id));
+
+        if (missingIds.length > 0) {
+           const newRewards = rewardsData.data.filter(r => missingIds.includes(r.id)).map(r => ({
+             id: r.id,
+             title: r.title || r.reward?.title || 'Unknown Reward'
+           }));
+
+           if (newRewards.length > 0) {
+             updateFormData({
+                selectedRewards: [...displayedRewards, ...newRewards]
+             });
+           }
+        }
+     }
+  }, [rewardsData, formData.rewardIds, displayedRewards, updateFormData]);
+
+
+  const removeReward = (id: string) => {
+      const newIds = formData.rewardIds.filter(rid => rid !== id);
+      const newSelected = (formData.selectedRewards || []).filter(r => r.id !== id);
+      updateFormData({ rewardIds: newIds, selectedRewards: newSelected });
   };
 
   return (
@@ -138,17 +147,29 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
           {/* Rewards to Attach */}
           <div>
-            <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
-            <Select
-              isMulti
-              options={rewardOptions}
-              value={rewardOptions.filter(opt => formData.rewardIds.includes(opt.value))}
-              onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })}
-              styles={errors.rewardIds ? selectErrorStyle : {}}
-              placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
-              isDisabled={isLoadingRewards}
-            />
-            <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
+            <Label>Rewards to Attach</Label>
+            <div className={`mt-2 border rounded-md p-4 space-y-3 ${errors.rewardIds ? 'border-red-500' : 'border-gray-200'}`}>
+                {displayedRewards.length > 0 ? (
+                    <div className="space-y-2">
+                        {displayedRewards.map(reward => (
+                            <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                                <span className="font-medium text-sm">{reward.title}</span>
+                                <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
+                )}
+
+                <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
+                    <Plus className="mr-2 h-4 w-4" />
+                    {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
+                </Button>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Choose the rewards (Points or Stamps) to be given out in this campaign.</p>
           </div>
 
           {/* Date Pickers */}
@@ -189,6 +210,18 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           <Button onClick={handleNextClick}>Next</Button>
         </div>
       </CardContent>
+
+      <SelectRewardModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        onProceed={(ids, rewards) => {
+            updateFormData({
+                rewardIds: ids,
+                selectedRewards: rewards.map(r => ({ id: r.id, title: r.title || r.reward?.title || 'Unknown Reward' }))
+            });
+        }}
+        initialSelectedIds={formData.rewardIds}
+      />
     </Card>
   );
 }

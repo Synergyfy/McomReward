@@ -1,5 +1,12 @@
 import { RewardResponse } from "@/services/rewards/types";
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface CampaignBusiness {
   id: string;
   name: string;

@@ -1,7 +1,10 @@
 import api from '../api';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { AdminParticipant, AdminBusiness, PaginatedResponse, AdminBusinessDetails } from './types';
-import type { ParticipantHistoryItem } from '../customer-campaigns/types';
+import type { ParticipantHistoryItem, MyCampaign } from '../customer-campaigns/types';
+import { GetMallRewardHistoryResponse } from '../business-reward/types';
+import { WishlistItem } from '../wishlist/types';
+import { ConsumerStampCard, DiscoverableStampReward, StampStats } from '../consumer-stamp-rewards/types';
 
 // Admin Participants
 const getAdminParticipants = async (page = 1, limit = 10, search = ''): Promise<PaginatedResponse<AdminParticipant>> => {
@@ -50,6 +53,107 @@ export const useAdminParticipantHistory = (id: string, page = 1, limit = 10, his
         queryFn: () => getAdminParticipantHistory(id, page, limit, historyType),
         enabled: !!id,
         placeholderData: keepPreviousData,
+    });
+};
+
+// Admin Participant Sub-resources
+
+// Mall Rewards
+const getAdminParticipantMallRewards = async (id: string, page = 1, limit = 10): Promise<GetMallRewardHistoryResponse> => {
+    const { data } = await api.get<GetMallRewardHistoryResponse>(`/admin/participants/${id}/mall-rewards`, {
+        params: { page, limit }
+    });
+    return data;
+};
+
+export const useAdminParticipantMallRewards = (id: string, page = 1, limit = 10) => {
+    return useQuery<GetMallRewardHistoryResponse>({
+        queryKey: ['admin-participant-mall-rewards', id, page, limit],
+        queryFn: () => getAdminParticipantMallRewards(id, page, limit),
+        enabled: !!id,
+        placeholderData: keepPreviousData,
+    });
+};
+
+// Campaigns
+const getAdminParticipantCampaigns = async (id: string, page = 1, limit = 10): Promise<PaginatedResponse<MyCampaign>> => {
+    const { data } = await api.get<PaginatedResponse<MyCampaign>>(`/admin/participants/${id}/campaigns`, {
+        params: { page, limit }
+    });
+    return data;
+};
+
+export const useAdminParticipantCampaigns = (id: string, page = 1, limit = 10) => {
+    return useQuery<PaginatedResponse<MyCampaign>>({
+        queryKey: ['admin-participant-campaigns', id, page, limit],
+        queryFn: () => getAdminParticipantCampaigns(id, page, limit),
+        enabled: !!id,
+        placeholderData: keepPreviousData,
+    });
+};
+
+// Wishlist
+const getAdminParticipantWishlist = async (id: string, page = 1, limit = 10): Promise<PaginatedResponse<WishlistItem>> => {
+    const { data } = await api.get<PaginatedResponse<WishlistItem>>(`/admin/participants/${id}/wishlist`, {
+        params: { page, limit }
+    });
+    return data;
+};
+
+export const useAdminParticipantWishlist = (id: string, page = 1, limit = 10) => {
+    return useQuery<PaginatedResponse<WishlistItem>>({
+        queryKey: ['admin-participant-wishlist', id, page, limit],
+        queryFn: () => getAdminParticipantWishlist(id, page, limit),
+        enabled: !!id,
+        placeholderData: keepPreviousData,
+    });
+};
+
+// Stamp Cards
+const getAdminParticipantStampCards = async (id: string, status?: 'in_progress' | 'completed' | 'redeemed' | 'all', page = 1, limit = 10): Promise<PaginatedResponse<ConsumerStampCard>> => {
+    const { data } = await api.get<PaginatedResponse<ConsumerStampCard>>(`/admin/participants/${id}/stamp-cards`, {
+        params: { status, page, limit }
+    });
+    return data;
+};
+
+export const useAdminParticipantStampCards = (id: string, status?: 'in_progress' | 'completed' | 'redeemed' | 'all', page = 1, limit = 10) => {
+    return useQuery<PaginatedResponse<ConsumerStampCard>>({
+        queryKey: ['admin-participant-stamp-cards', id, status, page, limit],
+        queryFn: () => getAdminParticipantStampCards(id, status, page, limit),
+        enabled: !!id,
+        placeholderData: keepPreviousData,
+    });
+};
+
+// Stamp Stats
+const getAdminParticipantStampStats = async (id: string): Promise<StampStats> => {
+    const { data } = await api.get<StampStats>(`/admin/participants/${id}/stamp-stats`);
+    return data;
+};
+
+export const useAdminParticipantStampStats = (id: string) => {
+    return useQuery<StampStats>({
+        queryKey: ['admin-participant-stamp-stats', id],
+        queryFn: () => getAdminParticipantStampStats(id),
+        enabled: !!id,
+    });
+};
+
+// Discoverable Rewards (Assuming this is global, but maybe context aware)
+// For now we will use the same endpoint as customer but mocked if needed, or if admin has a specific one.
+// Let's assume Admin just sees what's available globally or if there is an admin endpoint.
+// Given strict patterns, let's try `/admin/participants/${id}/discoverable-stamp-rewards`
+const getAdminDiscoverableStampRewards = async (id: string): Promise<DiscoverableStampReward[]> => {
+    const { data } = await api.get<DiscoverableStampReward[]>(`/admin/participants/${id}/discoverable-stamp-rewards`);
+    return data;
+};
+
+export const useAdminDiscoverableStampRewards = (id: string) => {
+    return useQuery<DiscoverableStampReward[]>({
+        queryKey: ['admin-discoverable-stamp-rewards', id],
+        queryFn: () => getAdminDiscoverableStampRewards(id),
+        enabled: !!id,
     });
 };
 

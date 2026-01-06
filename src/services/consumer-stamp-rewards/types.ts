@@ -104,6 +104,9 @@ export interface ConsumerStampStats {
     // Missing in backend?
 }
 
+// Export alias to match usage
+export type StampStats = ConsumerStampStats;
+
 // QR code data for redemption
 export interface StampCardRedemptionQR {
     stampCardId: string;
@@ -113,4 +116,11 @@ export interface StampCardRedemptionQR {
     rewardValue: string;
     expiresAt: string;
     qrCode: string; // The data string to generate QR
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    total: number;
+    page: number;
+    limit: number;
 }

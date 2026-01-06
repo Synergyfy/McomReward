@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
-import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance } from '@/services/business/hook';
+import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance, useGetBusinessMonthlyStampBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
@@ -21,8 +21,6 @@ import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { BusinessProfile } from '@/services/business/types';
 import { Subscription } from '@/services/tiers/types';
-import { useGetStampPackagesBalance } from '@/services/business-stamp-rewards/hook-stamp-packages';
-import { useGetStampRewardStats } from '@/services/business-stamp-rewards/hook';
 
 interface MonthlyBalanceType {
   remaining?: number;
@@ -57,8 +55,7 @@ export default function BusinessHeader({
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
   const { data: businessSubscription } = useGetBusinessSubscription();
   const { data: pointPackageBalance } = useGetPointPackageBalance();
-  const { data: stampPackagesBalance } = useGetStampPackagesBalance();
-  const { data: stampStats } = useGetStampRewardStats();
+  const { data: stampMonthlyBalance } = useGetBusinessMonthlyStampBalance();
 
   // Notification hooks
   const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
@@ -163,9 +160,9 @@ export default function BusinessHeader({
               <DropdownMenuLabel>Stamps</DropdownMenuLabel>
               <div className="px-2 py-1.5 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Used / Available</span>
+                  <span className="text-muted-foreground">Used / Monthly Limit</span>
                   <span className="font-medium text-blue-600">
-                    {stampStats?.totalStampsAwarded?.toLocaleString() ?? 0} / {stampPackagesBalance?.totalBalance?.toLocaleString() ?? 0}
+                    {stampMonthlyBalance?.used?.toLocaleString() ?? 0} / {stampMonthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}
                   </span>
                 </div>
               </div>

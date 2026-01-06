@@ -322,18 +322,30 @@ export default function CampaignsListPage() {
               </p>
 
               <div className="space-y-2 text-sm text-gray-800 my-5 border-t pt-4">
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-600">
-                    Reward:
-                  </span>
-                  <span className="font-semibold text-right">
-                    {campaign.businessRewards && campaign.businessRewards.length > 0
-                      ? campaign.businessRewards[0].title
-                      : (campaign.rewards && campaign.rewards.length > 0
-                        ? campaign.rewards[0].title
-                        : 'N/A')}
-                  </span>
-                </div>
+                {(() => {
+                  const rewardsList = (campaign.businessRewards && campaign.businessRewards.length > 0)
+                    ? campaign.businessRewards
+                    : (campaign.rewards || []);
+
+                  return (
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-gray-600 shrink-0">
+                        {rewardsList.length > 1 ? 'Rewards:' : 'Reward:'}
+                      </span>
+                      <div className="flex flex-col text-right">
+                        {rewardsList.length > 0 ? (
+                          rewardsList.map((reward) => (
+                            <span key={reward.id} className="font-semibold block">
+                              {reward.title}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="font-semibold">N/A</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600">
                     Available:

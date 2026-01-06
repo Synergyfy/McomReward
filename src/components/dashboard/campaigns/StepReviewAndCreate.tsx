@@ -234,7 +234,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           const rewardIdsChanged = JSON.stringify(oldRewardIds) !== JSON.stringify(newRewardIds);
           if (rewardIdsChanged) {
             if (isClaimed) {
-              updatePayload.reward_ids = formData.rewardIds;
+              // Claimed campaigns cannot have their rewards updated via this endpoint
             } else {
               updatePayload.business_reward_ids = formData.rewardIds;
             }
@@ -260,7 +260,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           updatePayload.footer_text = formData.footerText;
 
           if (isClaimed) {
-            updatePayload.reward_ids = formData.rewardIds;
+            // Claimed campaigns cannot have their rewards updated via this endpoint
           } else {
             updatePayload.business_reward_ids = formData.rewardIds;
           }

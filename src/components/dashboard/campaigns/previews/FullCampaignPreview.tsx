@@ -21,6 +21,10 @@ export default function FullCampaignPreview({ formData, isMobile = false }: Full
   // Mock member status for preview
   const isMember = false;
 
+  const isValidSrc = (src: string) => {
+    return src && (src.startsWith('http') || src.startsWith('https') || src.startsWith('/'));
+  };
+
   // Fetch rewards to display real data if possible
   const { data: rewardsData } = useGetBusinessRewards(1, 100);
   
@@ -30,7 +34,8 @@ export default function FullCampaignPreview({ formData, isMobile = false }: Full
   }, [rewardsData, formData.rewardIds]);
 
   // Fallback image
-  const bannerImage = formData.imageUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+  const rawBannerImage = formData.imageUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+  const bannerImage = isValidSrc(rawBannerImage) ? rawBannerImage : 'https://placehold.co/1920x600?text=Campaign+Banner';
 
   // Format dates
   const startDate = formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'TBD';
@@ -52,7 +57,7 @@ export default function FullCampaignPreview({ formData, isMobile = false }: Full
           <div className={`max-w-7xl mx-auto w-full flex flex-col ${isMobile ? 'items-start' : 'md:flex-row items-end md:items-center'} gap-6 md:gap-8`}>
             {/* Logo Overlay */}
             <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white`}>
-              {formData.logoUrl ? (
+              {isValidSrc(formData.logoUrl) ? (
                 <Image
                   src={formData.logoUrl}
                   alt="Campaign Logo"

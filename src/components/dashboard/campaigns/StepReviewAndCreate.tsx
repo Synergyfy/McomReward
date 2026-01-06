@@ -233,11 +233,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           // Reward IDs comparison
           const rewardIdsChanged = JSON.stringify(oldRewardIds) !== JSON.stringify(newRewardIds);
           if (rewardIdsChanged) {
-            if (isClaimed) {
-              updatePayload.reward_ids = formData.rewardIds;
-            } else {
-              updatePayload.business_reward_ids = formData.rewardIds;
-            }
+            updatePayload.business_reward_ids = formData.rewardIds;
           }
         } else {
           // Fallback if originalCampaign is missing
@@ -259,11 +255,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           updatePayload.contact_phone_number = formData.contactPhone;
           updatePayload.footer_text = formData.footerText;
 
-          if (isClaimed) {
-            updatePayload.reward_ids = formData.rewardIds;
-          } else {
-            updatePayload.business_reward_ids = formData.rewardIds;
-          }
+          updatePayload.business_reward_ids = formData.rewardIds;
         }
 
         if (Object.keys(updatePayload).length === 0) {

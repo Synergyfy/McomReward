@@ -42,7 +42,7 @@ export default function BusinessOnboardingWizard() {
     setValue,
   } = useForm<OnboardingFormInputs>({
     mode: "onTouched",
-    resolver: zodResolver(createBusinessSchema),
+    resolver: zodResolver(createBusinessSchema) as any,
     defaultValues: {
       socialMedia: [],
     },

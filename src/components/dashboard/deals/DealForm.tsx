@@ -96,7 +96,7 @@ export default function DealForm() {
   }, [categoriesData]);
 
   const form = useForm<DealFormValues>({
-    resolver: zodResolver(dealSchema),
+    resolver: zodResolver(dealSchema) as any,
     defaultValues: {
       title: '',
       shortDescription: '',

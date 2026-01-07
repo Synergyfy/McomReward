@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Deal, CreateDealDto } from '@/services/deals/types';
 import { initialSectors } from '@/lib/mock-data/sectors';
@@ -193,12 +194,12 @@ export function AddEditDealModal({
               </SelectTrigger>
               <SelectContent className="z-[10000]">
                 {allCategories.length > 0 ? (
-                    allCategories.map(cat => (
+                  allCategories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))
+                  ))
                 ) : (
-                    // Fallback if no categories are found in mock data
-                    <SelectItem value="default">Default Category</SelectItem>
+                  // Fallback if no categories are found in mock data
+                  <SelectItem value="default">Default Category</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -241,25 +242,25 @@ export function AddEditDealModal({
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="startDate" className="text-right">Start Date</Label>
             <div className="col-span-3">
-                <DatePicker
+              <DatePicker
                 selected={startDate}
                 onChange={(date: Date | null) => setStartDate(date)}
                 dateFormat="Pp"
                 showTimeSelect
                 className="w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
-                />
+              />
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="endDate" className="text-right">End Date</Label>
             <div className="col-span-3">
-                <DatePicker
+              <DatePicker
                 selected={endDate}
                 onChange={(date: Date | null) => setEndDate(date)}
                 dateFormat="Pp"
                 showTimeSelect
                 className="w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
-                />
+              />
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

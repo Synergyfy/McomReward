@@ -34,6 +34,7 @@ export type ActionHandlers = {
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
   onViewDetails: (userId: string) => void; // This handler is now for navigation
+  onImpersonate?: (businessId: string) => void;
 };
 
 // Reusable Action Column
@@ -83,7 +84,13 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
           ) : ( // Business user actions
             <>
               <DropdownMenuItem
-                onClick={() => router.push(`/admin/users/business/${item.id}`)}
+                onClick={() => {
+                   if (handlers.onImpersonate) {
+                     handlers.onImpersonate(item.id);
+                   } else {
+                     router.push(`/admin/users/business/${item.id}`)
+                   }
+                }}
               >
                 View Dashboard
               </DropdownMenuItem>

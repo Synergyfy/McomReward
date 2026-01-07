@@ -30,6 +30,15 @@ export const removeBearerToken = () => {
   delete api.defaults.headers.common['Authorization'];
 };
 
+// Functions to handle business impersonation
+export const setBusinessRequest = (businessId: string) => {
+  api.defaults.headers.common['x-business-id'] = businessId;
+};
+
+export const clearBusinessRequest = () => {
+  delete api.defaults.headers.common['x-business-id'];
+};
+
 // Initialize the token from cookies when the application loads
 const initialToken = Cookies.get('access');
 if (initialToken) {

@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
   onViewDetails: (userId: string) => void;
+  onImpersonate?: (businessId: string) => void;
   router: ReturnType<typeof useRouter>; // Add router prop
 }
 
@@ -48,6 +49,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
   onAdjustUserPoints,
   onSuspendUser,
   onViewDetails,
+  onImpersonate,
   router,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -136,6 +138,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
       onOpenEditBusinessUserModal: handleOpenEditBusinessUserModal,
       onOpenEditConsumerUserModal: handleOpenEditConsumerUserModal,
       onViewDetails: onViewDetails, // Use the prop directly
+      onImpersonate: onImpersonate,
       onDeleteUser: onDeleteUser,
       onAdjustUserPoints: onAdjustUserPoints,
       onSuspendUser: onSuspendUser,
@@ -144,6 +147,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
   }, [
     columns,
     onViewDetails,
+    onImpersonate,
     onDeleteUser,
     onAdjustUserPoints,
     onSuspendUser,

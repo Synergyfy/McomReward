@@ -30,7 +30,7 @@ export const useGetReferralStats = () => useQuery({ queryKey: ['referralStats'],
 
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 // ... rest of your code
@@ -185,8 +185,20 @@ const getBusinessProfile = async (businessId?: string): Promise<BusinessProfile>
   return data;
 };
 
-export const useGetBusinessProfile = (businessId?: string) =>
-  useQuery({ queryKey: ['businessProfile', businessId], queryFn: () => getBusinessProfile(businessId) });
+export const useGetBusinessProfile = (
+  businessIdOrOptions?: string | Omit<UseQueryOptions<BusinessProfile, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<BusinessProfile, Error>, 'queryKey' | 'queryFn'>
+) => {
+  const isId = typeof businessIdOrOptions === 'string';
+  const businessId = isId ? businessIdOrOptions : undefined;
+  const queryOptions = isId ? options : businessIdOrOptions;
+
+  return useQuery<BusinessProfile, Error>({
+    queryKey: ['businessProfile', businessId],
+    queryFn: () => getBusinessProfile(businessId),
+    ...(queryOptions as any)
+  });
+};
 
 const updateBusinessProfile = async (updateData: UpdateBusinessProfileDto, businessId?: string): Promise<BusinessProfile> => {
   const { data } = await api.patch('/business/profile', updateData, { params: { businessId } });

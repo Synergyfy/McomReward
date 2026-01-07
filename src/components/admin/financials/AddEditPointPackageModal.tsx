@@ -19,8 +19,8 @@ import { AxiosError } from 'axios';
 const pointPackageSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  points: z.coerce.number().int().positive('Points must be a positive integer'),
-  price: z.coerce.number().nonnegative('Price cannot be negative'),
+  points: z.number().int().positive('Points must be a positive integer'),
+  price: z.number().min(0, 'Price cannot be negative'),
   currency: z.string().optional(),
   tier_ids: z.array(z.string()).optional(),
   is_active: z.boolean().optional(),
@@ -54,7 +54,7 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     reset,
     formState: { errors },
   } = useForm<FormInput>({
-    resolver: zodResolver(pointPackageSchema),
+    resolver: zodResolver(pointPackageSchema) as any,
     defaultValues: {
       name: '',
       description: '',
@@ -136,12 +136,12 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
             </div>
             <div className="space-y-2">
               <Label htmlFor="points">Points</Label>
-              <Input id="points" type="number" {...register('points')} />
+              <Input id="points" type="number" {...register('points', { valueAsNumber: true })} />
               {errors.points && <p className="text-red-500 text-sm">{errors.points.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="price">Price (£)</Label>
-              <Input id="price" type="number" step="0.01" {...register('price')} />
+              <Input id="price" type="number" step="0.01" {...register('price', { valueAsNumber: true })} />
               {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
             </div>
             <div className="space-y-2">

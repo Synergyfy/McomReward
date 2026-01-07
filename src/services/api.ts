@@ -53,8 +53,13 @@ api.interceptors.request.use((config) => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.isImpersonating && parsed.businessId) {
-          config.headers['x-business-id'] = parsed.businessId;
+        if (parsed.isImpersonating && parsed.businessId && config.headers) {
+          // Use .set() if available (Axios v1+), fallback to assignment
+          if (typeof config.headers.set === 'function') {
+             config.headers.set('x-business-id', parsed.businessId);
+          } else {
+             config.headers['x-business-id'] = parsed.businessId;
+          }
         }
       } catch (e) {
         // Silently fail if parsing fails

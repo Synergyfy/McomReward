@@ -82,6 +82,7 @@ export default function GroupCirclesPage() {
     const [chatMemberId, setChatMemberId] = useState<string | null>(null);
     const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
+    const [showGraphFilters, setShowGraphFilters] = useState(false);
 
     const [newCircleData, setNewCircleData] = useState<Partial<CreateGroupCircleDto>>({
         duration: 90,
@@ -297,9 +298,37 @@ export default function GroupCirclesPage() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto">
+                    <CircleSelector
+                        selectedCircle={selectedCircle}
+                        circleSearch={circleSearch}
+                        setCircleSearch={setCircleSearch}
+                        isLoadingCircles={isLoadingCircles}
+                        circles={circles}
+                        selectedCircleId={selectedCircleId}
+                        setSelectedCircleId={setSelectedCircleId}
+                        groupCircleTypes={GROUP_CIRCLE_TYPES}
+                        onCreateNew={() => { setCreateStep(1); setCreateOpen(true); }}
+                    />
+
                     <Button
                         variant="outline"
-                        className="hidden md:flex border-zinc-200"
+                        className="flex items-center gap-2 rounded-xl border-zinc-200"
+                        onClick={() => setShowGraphFilters(!showGraphFilters)}
+                    >
+                        <Filter className="h-4 w-4" />
+                        Filters
+                        {(focusedOrbits || relationshipFilter) && (
+                            <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">
+                                {(focusedOrbits ? 1 : 0) + (relationshipFilter ? 1 : 0)}
+                            </Badge>
+                        )}
+                    </Button>
+
+                    <Separator orientation="vertical" className="h-10 mx-2 hidden lg:block" />
+
+                    <Button
+                        variant="outline"
+                        className="hidden lg:flex border-zinc-200 rounded-xl"
                         onClick={() => {
                             setIsEditing(false);
                             setNewCircleData({ type: 'SMART_MONEY', duration: 90, interactionLevel: 'READ', contributionAmount: 0, networkIds: [] });
@@ -310,7 +339,7 @@ export default function GroupCirclesPage() {
                         <Briefcase className="w-4 h-4 mr-2" /> Create Smart Money Circle
                     </Button>
                     <Button
-                        className="bg-orange-600 hover:bg-orange-700 text-white shadow-md flex-1 md:flex-none"
+                        className="bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl flex-1 md:flex-none"
                         onClick={() => {
                             setIsEditing(false);
                             setNewCircleData({ type: 'ADVERTISING', duration: 90, interactionLevel: 'READ', contributionAmount: 0, networkIds: [] });
@@ -323,20 +352,87 @@ export default function GroupCirclesPage() {
                 </div>
             </div>
 
-            <CircleSelector
-                selectedCircle={selectedCircle}
-                circleSearch={circleSearch}
-                setCircleSearch={setCircleSearch}
-                isLoadingCircles={isLoadingCircles}
-                circles={circles}
-                selectedCircleId={selectedCircleId}
-                setSelectedCircleId={setSelectedCircleId}
-                groupCircleTypes={GROUP_CIRCLE_TYPES}
-                focusedOrbits={focusedOrbits}
-                setFocusedOrbits={setFocusedOrbits}
-                relationshipFilter={relationshipFilter}
-                setRelationshipFilter={setRelationshipFilter}
-            />
+            <AnimatePresence>
+                {showGraphFilters && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <Card className="p-4 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm space-y-4 mb-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Filter Options</h3>
+                                {(focusedOrbits || relationshipFilter) && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => { setFocusedOrbits(null); setRelationshipFilter(null); }}
+                                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 h-8 px-2"
+                                    >
+                                        Clear All
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Location</Label>
+                                    <Select
+                                        value={focusedOrbits ? String(focusedOrbits[0]) : "all"}
+                                        onValueChange={(val) => {
+                                            if (val === "all") setFocusedOrbits(null);
+                                            else if (val === "1") setFocusedOrbits([1, 2]);
+                                            else if (val === "3") setFocusedOrbits([3, 4]);
+                                            else if (val === "5") setFocusedOrbits([5, 6]);
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-10 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm focus:ring-orange-500/20">
+                                            <SelectValue placeholder="All Locations" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-orange-100 z-[10001]">
+                                            <SelectItem value="all">All Locations</SelectItem>
+                                            <SelectItem value="1">Nearby</SelectItem>
+                                            <SelectItem value="3">Hyperlocal</SelectItem>
+                                            <SelectItem value="5">National</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Relationship</Label>
+                                    <Select
+                                        value={relationshipFilter || "all"}
+                                        onValueChange={(val) => setRelationshipFilter(val === "all" ? null : val)}
+                                    >
+                                        <SelectTrigger className="h-10 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm focus:ring-orange-500/20">
+                                            <SelectValue placeholder="All Relationships" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-orange-100 z-[10001]">
+                                            <SelectItem value="all">All Relationships</SelectItem>
+                                            <SelectItem value="Supplier">Supplier</SelectItem>
+                                            <SelectItem value="Partner">Partner</SelectItem>
+                                            <SelectItem value="Affiliate">Affiliate</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="flex items-end">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full h-10 rounded-xl text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+                                        onClick={() => setShowGraphFilters(false)}
+                                    >
+                                        <ChevronDown className="w-4 h-4 mr-2 rotate-180" />
+                                        Close Panel
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogContent className="sm:max-w-[600px]">
@@ -566,7 +662,7 @@ export default function GroupCirclesPage() {
                                     </div>
                                 </div>
 
-                                <div className="absolute top-6 right-6 z-10">
+                                <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
                                     <TooltipProvider>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>

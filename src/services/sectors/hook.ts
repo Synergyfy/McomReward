@@ -3,6 +3,7 @@ import api from '../api';
 import {
   CreateSectorRequest,
   SectorResponse,
+  CategoryInSector,
   CreateCategoryRequest,
   CategoryResponse,
   CreateSubCategoryRequest,
@@ -45,6 +46,21 @@ export const useGetSectors = () => {
   return useQuery({
     queryKey: [SECTORS_QUERY_KEY],
     queryFn: getSectors,
+  });
+};
+
+// Get Global Categories
+const getCategories = async (): Promise<CategoryInSector[]> => {
+  const { data } = await api.get<CategoryInSector[]>('/categories', {
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+export const useGetCategories = () => {
+  return useQuery({
+    queryKey: [CATEGORIES_QUERY_KEY],
+    queryFn: getCategories,
   });
 };
 

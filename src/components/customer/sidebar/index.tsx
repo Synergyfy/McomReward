@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wallet, Megaphone, Heart, Settings, HandCoins, Stamp, Ticket } from 'lucide-react';
+import { Wallet, Megaphone, Heart, Settings, HandCoins, Stamp, Ticket, Trophy } from 'lucide-react';
 
 interface CustomerSidebarProps {
   isOpen: boolean;
@@ -28,12 +28,18 @@ export default function CustomerSidebar({ isOpen, activePath }: CustomerSidebarP
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
     >
-      <h2 className="text-2xl font-bold mb-6 text-orange-600">Menu</h2>
+      <h2 className="text-2xl font-bold mb-6 text-orange-600 tracking-tighter">M-Com Rewards</h2>
       <ul className="space-y-2">
         <li className="mb-2">
           <Link href="/wallet" className={linkClasses("/wallet")}>
             <Wallet className="mr-3" />
             Wallet
+          </Link>
+        </li>
+        <li className="mb-2">
+          <Link href="/progression" className={linkClasses("/progression")}>
+            <Trophy className="mr-3 text-amber-500" />
+            My Progression
           </Link>
         </li>
         <li className="mb-2">
@@ -60,12 +66,6 @@ export default function CustomerSidebar({ isOpen, activePath }: CustomerSidebarP
             Stamp Rewards
           </Link>
         </li>
-        {/* <li className="mb-2">
-          <Link href="/points" className={linkClasses("/points")}>
-            <Wallet className="mr-3" />
-            Point
-          </Link>
-        </li> */}
         <li className="mb-2">
           <Link href="/redemption" className={linkClasses("/redemption")}>
             <HandCoins className="mr-3" />

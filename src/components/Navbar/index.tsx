@@ -35,14 +35,14 @@ export default function DashboardNavbar() {
           Loyalty CardX
         </Link>
 
-         {/* 🔹 Desktop Nav Links */}
+        {/* 🔹 Desktop Nav Links */}
         <div className="hidden md:flex items-center gap-8 text-gray-700 font-medium">
           <Link href="/features" className="hover:text-orange-500 transition">
             Feature
           </Link>
           <Link href="/pricing" className="hover:text-orange-500 transition">
-      
-           Pricing
+
+            Pricing
 
           </Link>
           <Link href="deals" className="hover:text-orange-500 transition">
@@ -54,10 +54,10 @@ export default function DashboardNavbar() {
         </div>
 
 
-   {/* 🧩 Tier Badge + Avatar / Dropdown */}
+        {/* 🧩 Tier Badge + Avatar / Dropdown */}
         <div ref={dropdownRef} className="relative flex items-center gap-3">
           <div className="hidden sm:block">
-            <Link href="/dashboard/tier">
+            <Link href="/dashboard/progression">
               <TierBadge tier="Gold" />
             </Link>
           </div>

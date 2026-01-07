@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
 import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard } from 'lucide-react';
+import Image from "next/image";
+import { useGetBusinessProfile } from '@/services/business/hook';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
@@ -34,6 +36,10 @@ const FrontPageNavbar = () => {
     setIsAuthenticated(!!Cookies.get('access'));
     setUserRole(localStorage.getItem('userRole'));
   }, []);
+
+  const { data: businessProfile } = useGetBusinessProfile({
+    enabled: isAuthenticated && userRole === 'Business'
+  });
 
   const { mutate: logoutMutation } = useLogout();
 
@@ -117,8 +123,18 @@ const FrontPageNavbar = () => {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-bold cursor-pointer">
-                  <CircleUserRound size={24} />
+                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-bold cursor-pointer overflow-hidden border border-orange-100">
+                  {userRole === 'Business' && businessProfile?.profileImage ? (
+                    <Image
+                      src={businessProfile.profileImage}
+                      alt="Profile"
+                      width={40}
+                      height={40}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <CircleUserRound size={24} />
+                  )}
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">

@@ -279,7 +279,7 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={User} label="Business Profile" href="/dashboard/profile" />
 
-          <SidebarItem icon={Star} label="Tier" href="/dashboard/tier" />
+          <SidebarItem icon={Star} label="Progression" href="/dashboard/progression" />
 
           <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
 

@@ -5,46 +5,38 @@ export interface TierRequirement {
   target: number;
 }
 
-export interface Tier {
-  name: 'Starter' | 'Active' | 'Trusted' | 'Partner';
+export interface Progression {
+  name: 'Standard' | 'Pro' | 'Pro Plus';
   benefits: string[];
   requirements: TierRequirement[];
 }
 
-export const tierData: Tier[] = [
+export const progressionData: Progression[] = [
   {
-    name: 'Starter',
-    benefits: ['Basic Dashboard Access', 'Create 1 Campaign'],
+    name: 'Standard',
+    benefits: ['Basic Dashboard Access', 'Standard Campaign Tools', 'Community Support'],
     requirements: [],
   },
   {
-    name: 'Active',
-    benefits: ['Advanced Campaign Analytics', 'Create up to 5 Campaigns'],
+    name: 'Pro',
+    benefits: ['Advanced Analytics', 'Priority Support', 'Custom Branding', 'Up to 10 active campaigns'],
     requirements: [
       { id: 'req1', description: 'Run 5 campaigns', current: 3, target: 5 },
       { id: 'req2', description: 'Get 20 redemptions', current: 15, target: 20 },
     ],
   },
   {
-    name: 'Trusted',
-    benefits: ['B2B Exchange Access', 'Co-Brand Eligibility'],
+    name: 'Pro Plus',
+    benefits: ['Expert Consultations', 'White-labeling', 'API Access', 'Unlimited Campaigns'],
     requirements: [
-      { id: 'req3', description: 'Run 15 campaigns', current: 10, target: 15 },
-      { id: 'req4', description: 'Maintain a 4-star rating', current: 4.5, target: 4 },
-    ],
-  },
-  {
-    name: 'Partner',
-    benefits: ['White-Label Eligibility', 'Commission Tier'],
-    requirements: [
-      { id: 'req5', description: 'Complete 5 B2B trades', current: 2, target: 5 },
-      { id: 'req6', description: 'Refer 10 new businesses', current: 8, target: 10 },
+      { id: 'req3', description: 'Complete 15 campaigns', current: 10, target: 15 },
+      { id: 'req4', description: 'Refer 5 businesses', current: 2, target: 5 },
     ],
   },
 ];
 
-export const userTierStatus = {
-  currentTier: 'Active',
-  nextTier: 'Trusted',
-  progress: 66, // Example progress percentage
+export const userProgressionStatus = {
+  currentLevel: 'Pro',
+  nextLevel: 'Pro Plus',
+  progress: 65,
 };

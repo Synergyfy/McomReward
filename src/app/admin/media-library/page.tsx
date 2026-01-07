@@ -646,9 +646,7 @@ export default function AdminMediaLibraryPage() {
                                                     </Badge>
                                                     {selectedAsset.categoryId && (
                                                         <Badge variant="secondary" className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-100">
-                                                            {/* We may not have all categories loaded to lookup name easily without fetching, so using ID or a placeholder if name isn't on asset */}
-                                                            {/* Ideally asset response includes sectorName/categoryName */}
-                                                            Category: {selectedAsset.categoryId.substring(0, 8)}...
+                                                            {editCategoriesData?.data?.find((c: any) => c.id === selectedAsset.categoryId)?.name || `Category: ${selectedAsset.categoryId.substring(0, 8)}...`}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -659,10 +657,6 @@ export default function AdminMediaLibraryPage() {
                                             <div>
                                                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Type</h4>
                                                 <p className="text-sm font-semibold text-zinc-700 capitalize">{selectedAsset.type}</p>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">File Size</h4>
-                                                <p className="text-sm font-semibold text-zinc-700">{selectedAsset.size || 'N/A'}</p>
                                             </div>
                                             <div>
                                                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Uploaded On</h4>

@@ -8,6 +8,7 @@ export interface ScanParticipantPayload {
   type: TransactionType;
   rewardId?: string;
   redemptionMethod?: 'points' | 'stamps';
+  idempotencyKey?: string;
 }
 
 export interface GenerateCodePayload {

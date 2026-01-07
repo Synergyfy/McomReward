@@ -45,6 +45,25 @@ if (initialToken) {
   setBearerToken(initialToken);
 }
 
+// Request Interceptor to ensure headers are up-to-date from storage
+api.interceptors.request.use((config) => {
+  // Check for impersonation state in localStorage
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('impersonation_state');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.isImpersonating && parsed.businessId) {
+          config.headers['x-business-id'] = parsed.businessId;
+        }
+      } catch (e) {
+        // Silently fail if parsing fails
+      }
+    }
+  }
+  return config;
+});
+
 // Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -161,4 +180,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

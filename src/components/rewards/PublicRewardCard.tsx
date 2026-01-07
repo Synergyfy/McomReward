@@ -86,6 +86,10 @@ export default function PublicRewardCard({
         (pointsRequired === 0 && stampsRequired === 0)
     );
 
+    const isValidSrc = (src: string) => {
+        return src.startsWith('http') || src.startsWith('https') || src.startsWith('/');
+    };
+
     return (
         <div className={cn(
             "group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col h-full border border-gray-100",
@@ -94,7 +98,7 @@ export default function PublicRewardCard({
             {/* Image Section */}
             <div className="relative h-72 w-full overflow-hidden">
                 <Image
-                    src={activeImage}
+                    src={isValidSrc(activeImage) ? activeImage : 'https://placehold.co/600x400?text=Reward'}
                     alt={reward.title}
                     layout="fill"
                     objectFit="cover"
@@ -157,7 +161,7 @@ export default function PublicRewardCard({
                             onMouseEnter={() => setActiveImage(img)}
                         >
                             <Image
-                                src={img}
+                                src={isValidSrc(img) ? img : 'https://placehold.co/600x400?text=Reward'}
                                 alt={`Gallery ${idx}`}
                                 layout="fill"
                                 objectFit="cover"

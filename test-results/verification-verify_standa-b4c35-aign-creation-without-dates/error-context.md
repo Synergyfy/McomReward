@@ -1,0 +1,160 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - region "Notifications alt+T"
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Admin Panel" [level=2] [ref=e5]
+      - list [ref=e6]:
+        - listitem [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /admin/dashboard
+            - img [ref=e9]
+            - text: Dashboard
+        - listitem [ref=e14]:
+          - link "Rewards" [ref=e15] [cursor=pointer]:
+            - /url: /admin/rewards
+            - img [ref=e16]
+            - text: Rewards
+        - listitem [ref=e19]:
+          - generic [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - text: User Management
+            - img [ref=e27]
+        - listitem [ref=e29]:
+          - link "Campaigns" [ref=e30] [cursor=pointer]:
+            - /url: /admin/campaigns/list
+            - img [ref=e31]
+            - text: Campaigns
+        - listitem [ref=e34]:
+          - link "Sectors" [ref=e35] [cursor=pointer]:
+            - /url: /admin/sectors
+            - img [ref=e36]
+            - text: Sectors
+        - listitem [ref=e39]:
+          - link "Points Log" [ref=e40] [cursor=pointer]:
+            - /url: /admin/points-log
+            - img [ref=e41]
+            - text: Points Log
+        - listitem [ref=e45]:
+          - link "Matching Points Settings" [ref=e46] [cursor=pointer]:
+            - /url: /admin/matching-points
+            - img [ref=e47]
+            - text: Matching Points Settings
+        - listitem [ref=e48]:
+          - link "Tier & Badge Control" [ref=e49] [cursor=pointer]:
+            - /url: /admin/tier-badge-control
+            - img [ref=e50]
+            - text: Tier & Badge Control
+        - listitem [ref=e53]:
+          - link "Deals Management" [ref=e54] [cursor=pointer]:
+            - /url: /admin/deals-management
+            - img [ref=e55]
+            - text: Deals Management
+        - listitem [ref=e58]:
+          - link "Partner Management" [ref=e59] [cursor=pointer]:
+            - /url: /admin/partner-management
+            - img [ref=e60]
+            - text: Partner Management
+        - listitem [ref=e65]:
+          - link "Notifications Control" [ref=e66] [cursor=pointer]:
+            - /url: /admin/notifications-control
+            - img [ref=e67]
+            - text: Notifications Control
+        - listitem [ref=e70]:
+          - link "Reporting & Analytics" [ref=e71] [cursor=pointer]:
+            - /url: /admin/reporting-analytics
+            - img [ref=e72]
+            - text: Reporting & Analytics
+        - listitem [ref=e73]:
+          - link "Media Library" [ref=e74] [cursor=pointer]:
+            - /url: /admin/media-library
+            - img [ref=e75]
+            - text: Media Library
+        - listitem [ref=e79]:
+          - generic [ref=e80] [cursor=pointer]:
+            - generic [ref=e81]:
+              - img [ref=e82]
+              - text: Plaque Management
+            - img [ref=e88]
+        - listitem [ref=e90]:
+          - generic [ref=e91] [cursor=pointer]:
+            - generic [ref=e92]:
+              - img [ref=e93]
+              - text: Sales Management
+            - img [ref=e97]
+        - listitem [ref=e99]:
+          - link "Wishlist Insights" [ref=e100] [cursor=pointer]:
+            - /url: /admin/wishlist-insights
+            - img [ref=e101]
+            - text: Wishlist Insights
+        - listitem [ref=e103]:
+          - link "Financials" [ref=e104] [cursor=pointer]:
+            - /url: /admin/financials
+            - img [ref=e105]
+            - text: Financials
+        - listitem [ref=e108]:
+          - link "Resources" [ref=e109] [cursor=pointer]:
+            - /url: /admin/resources
+            - img [ref=e110]
+            - text: Resources
+        - listitem [ref=e114]:
+          - link "Security" [ref=e115] [cursor=pointer]:
+            - /url: /admin/security
+            - img [ref=e116]
+            - text: Security
+        - listitem [ref=e118]:
+          - link "Summary" [ref=e119] [cursor=pointer]:
+            - /url: /admin/summary
+            - img [ref=e120]
+            - text: Summary
+    - generic [ref=e123]:
+      - banner [ref=e124]:
+        - generic [ref=e125]:
+          - generic [ref=e128]:
+            - img [ref=e129]
+            - searchbox "Search rewards, campaigns, users..." [ref=e132]
+          - generic [ref=e133]:
+            - button "3" [ref=e134]:
+              - img
+              - generic [ref=e135]: "3"
+            - button "A Admin User admin@mcom.com" [ref=e136]:
+              - generic [ref=e137]: A
+              - generic [ref=e138]:
+                - generic [ref=e139]: Admin User
+                - generic [ref=e140]: admin@mcom.com
+              - img
+      - main [ref=e141]:
+        - generic [ref=e143]:
+          - heading "Create New Campaign" [level=1] [ref=e144]
+          - paragraph [ref=e145]: Follow the steps to set up your loyalty campaign.
+          - progressbar [ref=e146]
+          - generic [ref=e148]:
+            - generic [ref=e150]: "Step 2: Choose Campaign Type"
+            - generic [ref=e151]:
+              - paragraph [ref=e152]: "Select the type of campaign you want to create:"
+              - generic [ref=e153]:
+                - generic [ref=e154] [cursor=pointer]:
+                  - heading "QR Code Campaign" [level=4] [ref=e155]
+                  - paragraph [ref=e156]: For in-store rewards. A customer scans a code to claim or earn points.
+                - generic [ref=e157] [cursor=pointer]:
+                  - heading "Referral Campaign" [level=4] [ref=e158]
+                  - paragraph [ref=e159]: To reward users who invite friends (works with PerkZilla integration).
+                - generic [ref=e160] [cursor=pointer]:
+                  - heading "Social or Email Campaign" [level=4] [ref=e161]
+                  - paragraph [ref=e162]: For sharing reward offers through social media or newsletters.
+                - generic [ref=e163] [cursor=pointer]:
+                  - heading "Special Occasion / Event Campaign" [level=4] [ref=e164]
+                  - paragraph [ref=e165]: For birthdays, holidays, or promotions.
+              - generic [ref=e166]:
+                - button "Next" [disabled]
+  - generic [ref=e167]:
+    - img [ref=e169]
+    - button "Open Tanstack query devtools" [ref=e217] [cursor=pointer]:
+      - img [ref=e218]
+  - button "Open Next.js Dev Tools" [ref=e271] [cursor=pointer]:
+    - img [ref=e272]
+  - alert [ref=e275]
+```

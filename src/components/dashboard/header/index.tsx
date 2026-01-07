@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Loader2, Bell, Menu, User, Wallet } from 'lucide-react';
+import { Loader2, Bell, Menu, User, Wallet, Coins, Star, Gift, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
-import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance } from '@/services/business/hook';
+import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance, useGetBusinessMonthlyStampBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
@@ -20,7 +21,6 @@ import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRe
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { BusinessProfile } from '@/services/business/types';
-import { BalanceModal } from '@/components/dashboard/shared/BalanceModal';
 import { Subscription } from '@/services/tiers/types';
 
 interface MonthlyBalanceType {
@@ -56,6 +56,7 @@ export default function BusinessHeader({
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
   const { data: businessSubscription } = useGetBusinessSubscription();
   const { data: pointPackageBalance } = useGetPointPackageBalance();
+  const { data: stampMonthlyBalance } = useGetBusinessMonthlyStampBalance();
 
   // Notification hooks
   const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
@@ -129,21 +130,102 @@ export default function BusinessHeader({
       {/* Right-side elements */}
       <div className="flex items-center gap-4 md:gap-6">
         {!isFreeTier && (
-           <BalanceModal
-              summary={{
-                earned: monthlyBalance?.monthlyLimit ?? 0, // Using Monthly Limit as 'Earned' (Allocated) proxy for header context
-                spent: monthlyBalance?.used ?? 0,
-                matchingAvailable: 5000 // Keeping logic from dashboard
-              }}
-              isTrial={subscription?.isTrial}
-              trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
-              trigger={
+          <div className="flex items-center gap-2">
+            {/* Point Balance Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-                   <Wallet className="h-4 w-4" />
-                   <span>View Balance</span>
+                  <Wallet className="h-4 w-4" />
+                  <span>Point Balance</span>
                 </Button>
-              }
-           />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-green-600" />
+                  Points Details
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-medium">{monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Used</span>
+                    <span className="font-medium text-red-600">{monthlyBalance?.used?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Remaining</span>
+                    <span className="font-medium text-green-600">{monthlyBalance?.remaining?.toLocaleString() ?? 0}</span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-purple-600" />
+                  Add-ons
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Balance</span>
+                    <span className="font-medium">
+                      {pointPackageBalance?.totalBalance?.toLocaleString() ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Stamp Balance Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  <span>Stamp Balance</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-blue-600" />
+                  Stamp Details
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Monthly Limit</span>
+                    <span className="font-medium">{stampMonthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Used</span>
+                    <span className="font-medium text-orange-600">{stampMonthlyBalance?.used?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Remaining</span>
+                    <span className="font-medium text-blue-600">
+                      {((stampMonthlyBalance?.monthlyLimit ?? 0) - (stampMonthlyBalance?.used ?? 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-purple-600" />
+                  Add-ons
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Balance</span>
+                    <span className="font-medium">
+                      {stampMonthlyBalance?.extraStamps?.toLocaleString() ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {tierName && (
+              <Badge variant="secondary" className="gap-1">
+                <Crown className="h-3 w-3 text-orange-500" />
+                {tierName} Badge
+              </Badge>
+            )}
+          </div>
         )}
 
         {/* Notifications */}

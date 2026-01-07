@@ -123,7 +123,7 @@ const PointPackages: React.FC = () => {
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold text-foreground">
                           {pkg.currency === 'GBP' ? '£' : '$'}
-                          {parseFloat(pkg.price).toFixed(2)}
+                            {pkg.price.toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -142,7 +142,7 @@ const PointPackages: React.FC = () => {
                           : 'text-foreground/60'
                         }`} />
                       <span className="text-xs text-foreground/70">
-                        {(parseFloat(pkg.price) / pkg.points * 1000).toFixed(2)} {pkg.currency} per 1,000 points
+                        {(pkg.price / pkg.points * 1000).toFixed(2)} {pkg.currency} per 1,000 points
                       </span>
                     </div>
                   </div>

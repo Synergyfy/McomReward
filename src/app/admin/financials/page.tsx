@@ -639,7 +639,7 @@ export default function FinancialsPage() {
                       <TableRow key={pkg.id}>
                         <TableCell>{pkg.name}</TableCell>
                         <TableCell>{pkg.points}</TableCell>
-                        <TableCell>£{parseFloat(pkg.price).toFixed(2)}</TableCell>
+                        <TableCell>£{pkg.price.toFixed(2)}</TableCell>
                         <TableCell>{pkg.tiers.map((t: Tier) => t.name).join(', ') || 'All'}</TableCell>
                         <TableCell><Badge variant={pkg.isActive ? 'default' : 'secondary'}>{pkg.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
                         <TableCell className="text-right">

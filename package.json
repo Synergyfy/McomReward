@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
+    "@hookform/resolvers": "^3.3.4",
     "@paypal/paypal-server-sdk": "^2.0.0",
     "@paypal/react-paypal-js": "^8.9.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -80,7 +80,7 @@
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.1.13"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -73,7 +73,7 @@ const dealSchema = z.object({
   redemptionMethod: z.enum(['QR_SCAN', 'VOUCHER_CODE', 'E_CARD', 'APPOINTMENT', 'ONLINE_CHECKOUT']),
 
   imageUrl: z.any().refine((val) => val instanceof File || (typeof val === 'string' && val.length > 0), 'Main image is required'),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string()).optional().default([]),
   visibility: z.enum(['PUBLIC', 'PRIVATE']),
   isReward: z.boolean().default(false),
   pointsCost: z.string().optional(),
@@ -109,7 +109,7 @@ export default function DealForm() {
       maxQuantity: '',
       perCustomerLimit: '',
       redemptionMethod: 'QR_SCAN',
-      imageUrl: undefined,
+      imageUrl: null,
       images: [],
       visibility: 'PUBLIC',
       isReward: false,
@@ -610,7 +610,7 @@ export default function DealForm() {
                           />
                         )}
                       />
-                      {form.formState.errors.imageUrl && <p className="text-xs font-semibold text-rose-500 mt-1 pl-1 flex items-center gap-1"><Info size={12} />{form.formState.errors.imageUrl.message}</p>}
+                      {form.formState.errors.imageUrl && <p className="text-xs font-semibold text-rose-500 mt-1 pl-1 flex items-center gap-1"><Info size={12} />{form.formState.errors.imageUrl.message as string}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-[32px] border border-gray-100 shadow-inner">

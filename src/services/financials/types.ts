@@ -224,12 +224,12 @@ export interface PointPackage {
   name: string;
   description: string;
   points: number;
-  price: string; // Backend returns price as string
+  price: number;
   currency: string;
   tiers: Tier[];
-  isActive: boolean; // Changed from is_active to match backend
-  createdAt: string; // Changed from created_at to match backend
-  updatedAt: string; // Changed from updated_at to match backend
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
   deletedAt: string | null;
 }
 

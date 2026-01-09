@@ -8,12 +8,14 @@ import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
 import { useAdminParticipants } from '@/services/admin/hook';
 import { Loader2, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useImpersonation } from '@/context/ImpersonationContext';
 
 export default function AdminConsumerUsersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const { data: response, isLoading, isError } = useAdminParticipants(page, limit);
+  const { startParticipantImpersonation } = useImpersonation();
 
   // Map API data to ConsumerUser type
   const consumerUsers: ConsumerUser[] = response?.data.map((participant) => ({
@@ -144,8 +146,7 @@ export default function AdminConsumerUsersPage() {
   };
 
   const handleViewDetails = (userId: string) => {
-    // Implement view details logic, e.g., navigate to a user detail page
-    console.log('View details for user', userId);
+    startParticipantImpersonation(userId, 'admin');
   };
 
   return (

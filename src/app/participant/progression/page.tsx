@@ -4,7 +4,7 @@ import React from 'react';
 import { useGetParticipantProgression } from '@/services/progression/hook';
 import CustomerProgressionCard from '@/components/customer/progression/CustomerProgressionCard';
 import CustomerBadgeGrid from '@/components/customer/progression/CustomerBadgeGrid';
-import { Loader2, Zap, Award, Sparkles, ChevronRight, Gift, Rocket } from 'lucide-react';
+import { Loader2, Zap, Award, Sparkles, ChevronRight, Gift, Rocket, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
@@ -43,14 +43,25 @@ export default function CustomerProgressionPage() {
         );
     }
 
+    // Fallback for when no badge is assigned yet
+    const currentBadge = progression.currentBadge || {
+        id: 'newcomer',
+        name: 'New Member',
+        multiplier: 1,
+        benefits: [],
+        color: '#94a3b8', // slate-400
+        priority: 0
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-12 pb-24 px-4 sm:px-6 lg:px-8 pt-8">
             {/* High-Impact Hero Section */}
             <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-amber-500 rounded-[2.5rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
                     {/* Decorative Elements */}
                     <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-orange-50 rounded-full blur-3xl opacity-50" />
+                    <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-64 h-64 bg-amber-50 rounded-full blur-3xl opacity-50" />
 
                     <div className="relative z-10 flex flex-col lg:flex-row gap-12 items-center">
                         <div className="flex-1 space-y-8 text-center lg:text-left">
@@ -60,7 +71,7 @@ export default function CustomerProgressionPage() {
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 text-orange-600 border border-orange-100 text-[10px] font-black uppercase tracking-[0.2em]"
                             >
                                 <Award className="h-4 w-4" />
-                                Your Status: {progression.currentBadge.name}
+                                Your Status: {currentBadge.name}
                             </motion.div>
 
                             <div className="space-y-4">
@@ -78,13 +89,13 @@ export default function CustomerProgressionPage() {
                             </div>
 
                             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                                <div className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-900/10">
-                                    <Zap className="h-5 w-5 text-orange-400" />
-                                    <span className="text-sm font-bold">x{progression.currentBadge.multiplier} Earning Multiplier</span>
+                                <div className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-900/10 transition-transform hover:-translate-y-1">
+                                    <Zap className="h-5 w-5 text-yellow-400" />
+                                    <span className="text-sm font-bold">x{currentBadge.multiplier} Earning Multiplier</span>
                                 </div>
-                                <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl shadow-sm">
-                                    <Sparkles className="h-5 w-5 text-amber-500" />
-                                    <span className="text-sm font-bold">{progression.currentBadge.benefits.length} Active Privileges</span>
+                                <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl shadow-sm transition-transform hover:-translate-y-1">
+                                    <Shield className="h-5 w-5 text-amber-500" />
+                                    <span className="text-sm font-bold">{currentBadge.benefits?.length || 0} Active Privileges</span>
                                 </div>
                             </div>
                         </div>
@@ -96,7 +107,7 @@ export default function CustomerProgressionPage() {
                         >
                             <CustomerProgressionCard
                                 currentPoints={progression.currentPoints}
-                                currentBadge={progression.currentBadge}
+                                currentBadge={currentBadge}
                                 nextBadge={progression.nextBadge}
                                 remainingPoints={progression.remainingPoints}
                                 progressPercentage={progression.progressPercentage}
@@ -116,20 +127,20 @@ export default function CustomerProgressionPage() {
 
                 <CustomerBadgeGrid
                     badges={progression.allBadges}
-                    currentBadgeId={progression.currentBadge.id}
+                    currentBadgeId={currentBadge.id}
                 />
             </div>
 
             {/* Premium CTA Section */}
-            <div className="relative group overflow-hidden rounded-[2.5rem]">
-                <div className="absolute inset-0 bg-slate-900" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2" />
+            <div className="relative group overflow-hidden rounded-[2.5rem] shadow-2xl shadow-orange-900/10">
+                <div className="absolute inset-0 bg-slate-900 transition-colors duration-300 group-hover:bg-slate-950" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-60" />
+                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 opacity-60" />
 
                 <div className="relative z-10 p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12 text-center md:text-left">
                     <div className="space-y-4">
                         <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
-                            Accelerate Your <span className="text-orange-500">Growth</span>
+                            Accelerate Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">Growth</span>
                         </h2>
                         <p className="text-slate-400 text-lg max-w-xl font-medium">
                             Ready to jump to the next level? Complete more campaigns and refer friends to boost your points instantly.
@@ -138,14 +149,14 @@ export default function CustomerProgressionPage() {
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                         <Button
-                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-10 py-8 rounded-[1.5rem] text-lg shadow-2xl shadow-orange-600/20 group transition-all"
+                            className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-10 py-8 rounded-[1.5rem] text-lg shadow-xl shadow-orange-600/20 group transition-all"
                         >
                             Earn Points Now
                             <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                         <Button
                             variant="outline"
-                            className="bg-transparent border-white/20 text-white hover:bg-white/5 font-bold px-10 py-8 rounded-[1.5rem] text-lg transition-all"
+                            className="bg-transparent border-white/10 text-white hover:bg-white/5 font-bold px-10 py-8 rounded-[1.5rem] text-lg transition-all"
                         >
                             View Rewards
                         </Button>

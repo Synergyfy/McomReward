@@ -47,7 +47,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { cn } from '@/lib/utils';
-import { useCreateDeal } from '@/services/deals/hook';
+import { useCreateDeal, useUpdateDeal } from '@/services/deals/hook';
+import { Deal } from '@/services/deals/types';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useGetCategories } from '@/services/sectors/hook';
@@ -83,13 +84,21 @@ const dealSchema = z.object({
 
 type DealFormValues = z.infer<typeof dealSchema>;
 
-export default function DealForm() {
+interface DealFormProps {
+  deal?: Deal;
+  dealId?: string;
+}
+
+export default function DealForm({ deal, dealId }: DealFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const { mutate: createDeal, isPending: isCreating } = useCreateDeal();
+  const { mutate: updateDeal, isPending: isUpdating } = useUpdateDeal();
   const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
   const { data: categoriesData } = useGetCategories();
+
+  const isEditMode = !!deal && !!dealId;
 
   const categories = React.useMemo(() => {
     return categoriesData || [];
@@ -98,26 +107,27 @@ export default function DealForm() {
   const form = useForm<DealFormValues>({
     resolver: zodResolver(dealSchema) as any,
     defaultValues: {
-      title: '',
-      shortDescription: '',
-      description: '',
-      categoryId: '',
-      type: 'DISCOUNT',
-      dealPrice: '',
-      originalPrice: '',
-      value: '',
-      maxQuantity: '',
-      perCustomerLimit: '',
-      redemptionMethod: 'QR_SCAN',
-      imageUrl: null,
-      images: [],
-      visibility: 'PUBLIC',
-      isReward: false,
-      pointsCost: '',
-      pointsEarned: '',
-      termsAndConditions: '',
-      startDate: new Date(),
-      endDate: addMonths(new Date(), 1),
+      title: deal?.title || '',
+      shortDescription: deal?.shortDescription || '',
+      description: deal?.description || '',
+      categoryId: deal?.category?.id || '',
+      type: (deal?.type as DealFormValues['type']) || 'DISCOUNT',
+      dealPrice: deal?.dealPrice?.toString() || '',
+      originalPrice: deal?.originalPrice?.toString() || '',
+      value: deal?.value?.toString() || '',
+      maxQuantity: deal?.maxQuantity?.toString() || '',
+      perCustomerLimit: deal?.perCustomerLimit?.toString() || '',
+      redemptionMethod: (deal?.redemptionMethod as DealFormValues['redemptionMethod']) || 'QR_SCAN',
+      imageUrl: deal?.imageUrl || null,
+      images: deal?.images || [],
+      visibility: deal?.visibility || 'PUBLIC',
+      isReward: deal?.isReward || false,
+      pointsCost: deal?.pointsCost?.toString() || '',
+      pointsEarned: deal?.pointsEarned?.toString() || '',
+      termsAndConditions: deal?.termsAndConditions || '',
+      startDate: deal?.startDate ? new Date(deal.startDate) : new Date(),
+      endDate: deal?.endDate ? new Date(deal.endDate) : addMonths(new Date(), 1),
+      location: deal?.location || '',
     },
   });
 
@@ -149,21 +159,40 @@ export default function DealForm() {
         endDate: data.endDate.toISOString(),
       };
 
-      createDeal(payload, {
-        onSuccess: () => {
-          toast.success('Deal created successfully', {
-            description: 'Your deal has been submitted for review.'
-          });
-          router.push('/dashboard/deals');
-        },
-        onError: (error) => {
-          toast.error('Failed to create deal');
-          console.error(error);
-        },
-        onSettled: () => {
-          setIsUploading(false);
-        }
-      });
+      if (isEditMode && dealId) {
+        updateDeal({ id: dealId, ...payload }, {
+          onSuccess: () => {
+            toast.success('Deal updated successfully', {
+              description: 'Your changes have been saved.'
+            });
+            router.push('/dashboard/deals');
+          },
+          onError: (error) => {
+            toast.error('Failed to update deal');
+            console.error(error);
+          },
+          onSettled: () => {
+            setIsUploading(false);
+          }
+        });
+      } else {
+        createDeal(payload, {
+          onSuccess: () => {
+            toast.success('Deal created successfully', {
+              description: 'Your deal has been submitted for review.'
+            });
+            router.push('/dashboard/deals');
+          },
+          onError: (error) => {
+            toast.error('Failed to create deal');
+            console.error(error);
+          },
+          onSettled: () => {
+            setIsUploading(false);
+          }
+        });
+      }
+
     } catch (error) {
       setIsUploading(false);
       toast.error('Failed to upload image. Please try again.');
@@ -728,16 +757,16 @@ export default function DealForm() {
             ) : (
               <Button
                 type="submit"
-                disabled={isCreating || isUploading}
+                disabled={isCreating || isUpdating || isUploading}
                 className="h-14 px-12 rounded-2xl font-black text-lg gap-2 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all"
               >
-                {isCreating || isUploading ? (
+                {isCreating || isUpdating || isUploading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    <span>{isUploading ? 'Uploading...' : 'Launching...'}</span>
+                    <span>{isUploading ? 'Uploading...' : isEditMode ? 'Saving...' : 'Launching...'}</span>
                   </div>
                 ) : (
-                  <>Launch Deal <Zap size={20} className="fill-white" /></>
+                  <>{isEditMode ? 'Update Deal' : 'Launch Deal'} <Zap size={20} className="fill-white" /></>
                 )}
               </Button>
             )}

@@ -104,12 +104,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Matching Points Settings
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/tier-badge-control" className={linkClasses("/admin/tier-badge-control")}>
             <Award className="mr-3" />
             Tier & Badge Control
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/deals-management" className={linkClasses("/admin/deals-management")}>
             <Tag className="mr-3" />

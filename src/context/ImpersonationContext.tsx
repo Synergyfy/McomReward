@@ -2,27 +2,31 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { setBusinessRequest, clearBusinessRequest } from '@/services/api';
+import { setBusinessRequest, clearBusinessRequest, setParticipantRequest, clearParticipantRequest } from '@/services/api';
 
 interface ImpersonationState {
   isImpersonating: boolean;
   businessId: string | null;
+  participantId: string | null;
   adminId: string | null;
 }
 
 interface ImpersonationContextType extends ImpersonationState {
   startImpersonation: (businessId: string, adminId: string) => void;
+  startParticipantImpersonation: (participantId: string, adminId: string) => void;
   stopImpersonation: () => void;
 }
 
 const ImpersonationContext = createContext<ImpersonationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'impersonation_state';
+const BUSINESS_STORAGE_KEY = 'impersonation_state';
+const PARTICIPANT_STORAGE_KEY = 'impersonation_participant_state';
 
 export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ImpersonationState>({
     isImpersonating: false,
     businessId: null,
+    participantId: null,
     adminId: null,
   });
   const router = useRouter();
@@ -30,18 +34,33 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
   // Load state from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    const storedBusiness = localStorage.getItem(BUSINESS_STORAGE_KEY);
+    if (storedBusiness) {
       try {
-        const parsed = JSON.parse(stored);
+        const parsed = JSON.parse(storedBusiness);
         if (parsed.isImpersonating && parsed.businessId) {
-          setState(parsed);
-          // Ensure API header is set if we are reloading the page
+          setState({ ...parsed, participantId: null });
           setBusinessRequest(parsed.businessId);
+          return;
         }
       } catch (e) {
-        console.error('Failed to parse impersonation state', e);
-        localStorage.removeItem(STORAGE_KEY);
+        console.error('Failed to parse business impersonation state', e);
+        localStorage.removeItem(BUSINESS_STORAGE_KEY);
+      }
+    }
+
+    const storedParticipant = localStorage.getItem(PARTICIPANT_STORAGE_KEY);
+    if (storedParticipant) {
+      try {
+        const parsed = JSON.parse(storedParticipant);
+        if (parsed.isImpersonating && parsed.participantId) {
+          setState({ ...parsed, businessId: null });
+          setParticipantRequest(parsed.participantId);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to parse participant impersonation state', e);
+        localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
       }
     }
   }, []);
@@ -53,6 +72,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     const newState = {
       isImpersonating: true,
       businessId,
+      participantId: null,
       adminId,
     };
 
@@ -61,7 +81,10 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
 
     // Update State
     setState(newState);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    localStorage.setItem(BUSINESS_STORAGE_KEY, JSON.stringify(newState));
+    // Ensure we clear any participant state
+    localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+    clearParticipantRequest();
 
     // Update API
     setBusinessRequest(businessId);
@@ -70,29 +93,63 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     router.push('/dashboard');
   };
 
+  const startParticipantImpersonation = (participantId: string, adminId: string) => {
+    const newState = {
+      isImpersonating: true,
+      businessId: null,
+      participantId,
+      adminId,
+    };
+
+    // Mark as transitioning
+    isTransitioningRef.current = true;
+
+    // Update State
+    setState(newState);
+    localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(newState));
+    // Ensure we clear any business state
+    localStorage.removeItem(BUSINESS_STORAGE_KEY);
+    clearBusinessRequest();
+
+    // Update API
+    setParticipantRequest(participantId);
+
+    // Navigate
+    router.push('/participant/wallet');
+  };
+
   const stopImpersonation = () => {
     isTransitioningRef.current = false;
+    
+    // Determine where to redirect based on what we were impersonating
+    const wasParticipant = !!state.participantId;
+
     // Clear State
     setState({
       isImpersonating: false,
       businessId: null,
+      participantId: null,
       adminId: null,
     });
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(BUSINESS_STORAGE_KEY);
+    localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
 
     // Clear API
     clearBusinessRequest();
+    clearParticipantRequest();
 
-    // Navigate back to admin list
-    router.push('/admin/users/business');
+    // Navigate back to appropriate list
+    if (wasParticipant) {
+        router.push('/admin/users/consumer');
+    } else {
+        router.push('/admin/users/business');
+    }
   };
 
   // Safety Check: If we are on an admin route, we MUST NOT be impersonating.
-  // This handles manual navigation via URL bar.
   useEffect(() => {
     // If we are transitioning, skip this check
     if (isTransitioningRef.current) {
-        // We reset the flag if we are NO LONGER on an admin route (meaning transition succeeded)
         if (!pathname?.startsWith('/admin')) {
              isTransitioningRef.current = false;
         }
@@ -100,18 +157,18 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     }
 
     if (pathname?.startsWith('/admin') && state.isImpersonating) {
-      // We don't use stopImpersonation() here because we don't want to redirect
-      // (we are already in admin), we just want to clear the state/headers.
-
       console.warn('Detected Admin route while impersonating. Clearing impersonation state.');
 
       setState({
         isImpersonating: false,
         businessId: null,
+        participantId: null,
         adminId: null,
       });
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(BUSINESS_STORAGE_KEY);
+      localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
       clearBusinessRequest();
+      clearParticipantRequest();
     }
   }, [pathname, state.isImpersonating]);
 
@@ -120,6 +177,7 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
       value={{
         ...state,
         startImpersonation,
+        startParticipantImpersonation,
         stopImpersonation,
       }}
     >

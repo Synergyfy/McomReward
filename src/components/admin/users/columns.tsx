@@ -76,10 +76,10 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {itemType === 'consumer' ? (
-             <DropdownMenuItem asChild>
-                <Link href={`/admin/users/consumer/${item.id}`}>
-                  View Details
-                </Link>
+             <DropdownMenuItem
+                onClick={() => handlers.onViewDetails(item.id)}
+             >
+                View Details
              </DropdownMenuItem>
           ) : ( // Business user actions
             <>

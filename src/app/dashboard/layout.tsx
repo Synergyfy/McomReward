@@ -22,7 +22,7 @@ export default function DashboardLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { isImpersonating, businessId, stopImpersonation } = useImpersonation();
+  const { isImpersonating, businessId, participantId, stopImpersonation } = useImpersonation();
   const { data: businessSubscription, isLoading: isBusinessSubLoading } = useGetBusinessSubscription();
   const { data: mySubscription, isLoading: isMySubLoading } = useGetMySubscription();
 
@@ -69,7 +69,9 @@ export default function DashboardLayout({
             <div className="bg-amber-100 border-b border-amber-200 px-4 py-3 flex items-center justify-between text-amber-900 sticky top-0 z-40">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Eye className="h-4 w-4" />
-                <span>You are currently viewing as Business ID: <strong>{businessId}</strong></span>
+                <span>
+                  You are currently viewing as {businessId ? 'Business' : 'Participant'} ID: <strong>{businessId || participantId}</strong>
+                </span>
               </div>
               <Button
                 variant="destructive"

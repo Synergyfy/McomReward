@@ -86,7 +86,7 @@ export const useAuth = () => {
       } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
         router.push('/business/onboard');
       } else if (data.user.role === 'Participant') {
-        router.push('/wallet');
+        router.push('/participant/wallet');
       } else {
         router.push('/dashboard');
       }
@@ -124,7 +124,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
         } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
           router.push('/business/onboard');
         } else if (data.user.role === 'Participant') {
-          router.push('/wallet');
+          router.push('/participant/wallet');
         } else {
           router.push('/dashboard');
         }

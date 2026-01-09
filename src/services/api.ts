@@ -32,6 +32,7 @@ export const removeBearerToken = () => {
 
 // Variable to store the impersonation ID
 let impersonationBusinessId: string | null = null;
+let impersonationParticipantId: string | null = null;
 
 // Functions to handle business impersonation
 export const setBusinessRequest = (businessId: string) => {
@@ -45,23 +46,47 @@ export const clearBusinessRequest = () => {
   delete api.defaults.headers.common['x-business-id'];
 };
 
-// Request interceptor to ensure x-business-id is attached to every request
+// Functions to handle participant impersonation
+export const setParticipantRequest = (participantId: string) => {
+  impersonationParticipantId = participantId;
+  api.defaults.headers.common['x-participant-id'] = participantId;
+};
+
+export const clearParticipantRequest = () => {
+  impersonationParticipantId = null;
+  delete api.defaults.headers.common['x-participant-id'];
+};
+
+// Request interceptor to ensure x-business-id or x-participant-id is attached to every request
 api.interceptors.request.use((config) => {
   // If we have an active impersonation ID in memory, attach it.
   if (impersonationBusinessId) {
     config.headers['x-business-id'] = impersonationBusinessId;
   }
+  else if (impersonationParticipantId) {
+    config.headers['x-participant-id'] = impersonationParticipantId;
+  }
   // Fallback: Check localStorage if memory is empty (e.g. after hard refresh)
   // This is crucial because memory variables are lost on refresh, but localStorage survives.
   else if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('impersonation_state');
-        if (stored) {
-            const parsed = JSON.parse(stored);
+        const storedBusiness = localStorage.getItem('impersonation_state');
+        if (storedBusiness) {
+            const parsed = JSON.parse(storedBusiness);
             if (parsed.isImpersonating && parsed.businessId) {
                 config.headers['x-business-id'] = parsed.businessId;
                 // Sync back to memory
                 impersonationBusinessId = parsed.businessId;
+            }
+        }
+        
+        const storedParticipant = localStorage.getItem('impersonation_participant_state');
+        if (storedParticipant) {
+            const parsed = JSON.parse(storedParticipant);
+            if (parsed.isImpersonating && parsed.participantId) {
+                config.headers['x-participant-id'] = parsed.participantId;
+                // Sync back to memory
+                impersonationParticipantId = parsed.participantId;
             }
         }
       } catch (e) {

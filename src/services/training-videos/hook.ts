@@ -42,6 +42,7 @@ const getTrainingVideos = async (params: GetTrainingVideosParams): Promise<Train
     title: item.title,
     description: item.description,
     videoUrl: item.video_url || item.videoUrl, // Handle both just in case
+    coverImage: item.cover_image || item.coverImage,
     targetAudience: item.target_audience || item.targetAudience,
     targetTierIds: item.target_tier_ids || item.targetTierIds,
     createdAt: item.created_at || item.createdAt,
@@ -69,6 +70,7 @@ const getTrainingVideo = async (id: string): Promise<TrainingVideo> => {
     title: data.title,
     description: data.description,
     videoUrl: data.video_url || data.videoUrl,
+    coverImage: data.cover_image || data.coverImage,
     targetAudience: data.target_audience || data.targetAudience,
     targetTierIds: data.target_tier_ids || data.targetTierIds,
     createdAt: data.created_at || data.createdAt,

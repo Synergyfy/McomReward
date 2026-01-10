@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,10 @@ import { useGetTiers } from '@/services/tiers/hook';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrainingVideo, CreateTrainingVideoDto } from '@/services/training-videos/types';
 import { useCreateTrainingVideo } from '@/services/training-videos/hook';
+import { getYouTubeThumbnail } from '@/lib/video-utils';
+import { useUploadToCloudinary } from '@/services/upload/hook';
+import { ImagePlus, Loader2, X } from 'lucide-react';
+import Image from 'next/image';
 
 interface AddEditVideoModalProps {
   isOpen: boolean;
@@ -38,11 +42,15 @@ export function AddEditVideoModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [coverImage, setCoverImage] = useState('');
   const [targetAudience, setTargetAudience] = useState<'business' | 'participant' | ''>('');
   const [selectedTierIds, setSelectedTierIds] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: tiers = [] } = useGetTiers();
   const createVideoMutation = useCreateTrainingVideo();
+  const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for Feedback Dialog (local to modal for validation errors)
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -66,30 +74,64 @@ export function AddEditVideoModal({
       setTitle(initialData.title);
       setDescription(initialData.description);
       setVideoUrl(initialData.videoUrl);
+      setCoverImage(initialData.coverImage || '');
       setTargetAudience(initialData.targetAudience);
       setSelectedTierIds(initialData.targetTierIds || []);
     } else {
       setTitle('');
       setDescription('');
       setVideoUrl('');
+      setCoverImage('');
       setTargetAudience('');
       setSelectedTierIds([]);
     }
   }, [initialData, isOpen]);
+
+  // Auto-extract YouTube thumbnail
+  useEffect(() => {
+    if (videoUrl && !coverImage) {
+        const thumbnail = getYouTubeThumbnail(videoUrl);
+        if (thumbnail) {
+            setCoverImage(thumbnail);
+        }
+    }
+  }, [videoUrl]);
+
+  // Handle manual file upload
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+        const { secure_url } = await uploadToCloudinary({ file, folder: 'training-videos' });
+        setCoverImage(secure_url);
+    } catch (error) {
+        console.error('Upload failed:', error);
+        handleShowLocalFeedback('Upload Error', 'Failed to upload cover image. Please try again.');
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const handleRemoveCoverImage = () => {
+      setCoverImage('');
+      if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+      }
+      // If there is a video URL, it might auto-repopulate on next render if we are not careful.
+      // The useEffect checks `if (!coverImage)`, so clearing it might trigger it again if we don't handle it.
+      // However, the user explicitly removed it.
+      // For simplicity, if they remove it, we let it be empty.
+      // If they want the YouTube one back, they can re-paste the URL or we can add a "Reset to YouTube" button.
+      // But actually, the useEffect depends on `videoUrl` change. If `videoUrl` doesn't change, it won't re-run.
+  };
 
   const handleSave = () => {
     const errors: string[] = [];
     if (!title.trim()) errors.push('Title is required.');
     if (!videoUrl.trim()) errors.push('Video URL is required.');
     if (!targetAudience) errors.push('Target Audience is required.');
-
-    // If business audience, allow selecting tiers, but don't force it?
-    // The requirement says "when you select target audience business owners, you should also be asked to selct the particular business there are diffrent levels"
-    // It says "user should be allowed to select multiple".
-    // I will assume selecting at least one tier is good practice if audience is business, but maybe they want "All Tiers"?
-    // If no tiers selected for business, maybe it defaults to all? Or empty?
-    // Let's assume user MUST select at least one tier if "business" is selected to be safe, or I can leave it empty if the backend handles empty as "all".
-    // I'll make it optional but available.
 
     if (errors.length > 0) {
       handleShowLocalFeedback(
@@ -107,13 +149,14 @@ export function AddEditVideoModal({
         title,
         description,
         video_url: videoUrl,
+        cover_image: coverImage,
         target_audience: targetAudience as 'business' | 'participant',
         target_tier_ids: targetAudience === 'business' ? selectedTierIds : [],
     };
 
     createVideoMutation.mutate(payload, {
         onSuccess: (data) => {
-            onSave(data); // Pass back to parent if needed, but parent will likely refetch
+            onSave(data);
             onClose();
             onShowFeedback("Success", `Video "${title}" has been saved successfully.`);
         },
@@ -135,24 +178,101 @@ export function AddEditVideoModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* Title */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">Title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
           </div>
+
+          {/* Description */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
+
+          {/* Video URL */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="videoUrl" className="text-right">Video URL</Label>
-            <Input id="videoUrl" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="col-span-3" />
+            <div className="col-span-3">
+                <Input
+                    id="videoUrl"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                    Paste a YouTube link to automatically generate a thumbnail.
+                </p>
+            </div>
           </div>
 
+          {/* Cover Image Section */}
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">Cover Image</Label>
+            <div className="col-span-3 space-y-3">
+                {/* Preview */}
+                {coverImage ? (
+                    <div className="relative aspect-video w-full rounded-md overflow-hidden border bg-gray-100 group">
+                        <Image
+                            src={coverImage}
+                            alt="Cover Preview"
+                            fill
+                            className="object-cover"
+                        />
+                        <button
+                            onClick={handleRemoveCoverImage}
+                            className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                            title="Remove Image"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="aspect-video w-full rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 text-gray-400">
+                        <ImagePlus className="h-8 w-8 mb-2" />
+                        <span className="text-sm">No cover image</span>
+                    </div>
+                )}
+
+                {/* Upload Button */}
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                    >
+                        {isUploading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                            </>
+                        ) : (
+                            <>
+                                <ImagePlus className="mr-2 h-4 w-4" /> Upload Custom Cover
+                            </>
+                        )}
+                    </Button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Optional. Overrides YouTube thumbnail.
+                    </p>
+                </div>
+            </div>
+          </div>
+
+          {/* Target Audience */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="targetAudience" className="text-right">Target Audience</Label>
             <Select value={targetAudience} onValueChange={(val) => setTargetAudience(val as 'business' | 'participant')}>
@@ -166,6 +286,7 @@ export function AddEditVideoModal({
             </Select>
           </div>
 
+          {/* Target Tiers (Conditional) */}
           {targetAudience === 'business' && (
              <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right pt-2">Target Tiers</Label>
@@ -194,8 +315,8 @@ export function AddEditVideoModal({
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={createVideoMutation.isPending}>Cancel</Button>
-          <Button onClick={handleSave} disabled={createVideoMutation.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={createVideoMutation.isPending || isUploading}>Cancel</Button>
+          <Button onClick={handleSave} disabled={createVideoMutation.isPending || isUploading}>
             {createVideoMutation.isPending ? 'Saving...' : 'Save Video'}
           </Button>
         </DialogFooter>

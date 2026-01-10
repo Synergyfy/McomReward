@@ -32,11 +32,12 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
     setIsSelectRewardModalOpen(true);
   };
 
-  const handleClaimWithRewards = (selectedRewardIds: string[], _selectedRewardObjects: any[], startDate?: string, endDate?: string) => {
+  const handleClaimWithRewards = (selectedRewardIds: string[], _selectedRewardObjects: any[], startDate?: string, endDate?: string, totalSlots?: number) => {
     const payload = {
       business_reward_ids: selectedRewardIds,
       start_date: startDate || campaign.startDate || new Date().toISOString(),
       end_date: endDate || campaign.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      total_slots: totalSlots,
     };
 
     console.log('Claiming campaign with payload:', payload);

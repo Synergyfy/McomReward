@@ -6,6 +6,7 @@ export interface CampaignFormData {
   planType: 'standard' | 'seasonal' | '';
   campaignType: string;
   campaignName: string;
+  totalSlots: number | string;
   target_tier_id?: string;
   target_tier_ids?: string[];
   tierSpecificDates?: Record<string, { startDate: Date | undefined; endDate: Date | undefined }>;
@@ -64,6 +65,7 @@ const defaultFormData: CampaignFormData = {
   planType: '',
   campaignType: '',
   campaignName: '',
+  totalSlots: '',
   target_tier_id: undefined,
   target_tier_ids: [],
   tierSpecificDates: {},

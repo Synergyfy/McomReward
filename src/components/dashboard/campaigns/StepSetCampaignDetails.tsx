@@ -73,9 +73,10 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   const handleNextClick = () => {
     const newErrors: Record<string, boolean> = {};
-    const { campaignName, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds } = formData;
+    const { campaignName, totalSlots, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds } = formData;
 
     if (!campaignName.trim()) newErrors.campaignName = true;
+    if (totalSlots === '' || totalSlots === undefined || totalSlots === null) newErrors.totalSlots = true;
     if (rewardIds.length === 0) newErrors.rewardIds = true;
     if (!startDate) {
       newErrors.startDate = true;
@@ -143,6 +144,25 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <Label htmlFor="campaignName">Campaign Name</Label>
             <Input id="campaignName" placeholder="e.g., Summer Sale Campaign" value={formData.campaignName} onChange={(e) => updateFormData({ campaignName: e.target.value })} className={errors.campaignName ? 'border-red-500' : ''} />
             <p className="text-sm text-gray-500 mt-1">The name of your campaign, as it will be displayed to customers.</p>
+          </div>
+
+          {/* Total Slots */}
+          <div>
+            <Label htmlFor="totalSlots">Total Slots</Label>
+            <Input
+              id="totalSlots"
+              type="number"
+              placeholder="e.g., 100"
+              value={formData.totalSlots}
+              onChange={(e) => updateFormData({ totalSlots: e.target.value === '' ? '' : Number(e.target.value) })}
+              className={errors.totalSlots ? 'border-red-500' : ''}
+            />
+            {errors.totalSlots && (
+              <p className="text-sm text-red-500 mt-1">Total slots is required (and a campaign total)</p>
+            )}
+            {!errors.totalSlots && (
+              <p className="text-sm text-gray-500 mt-1">The total number of slots available for this campaign.</p>
+            )}
           </div>
 
           {/* Rewards to Attach */}

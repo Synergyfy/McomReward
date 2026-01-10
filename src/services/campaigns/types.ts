@@ -26,6 +26,7 @@ export interface CreateCampaignPayload {
   start_date: string;
   end_date: string;
   quantity: number;
+  total_slots: number;
   audience_type: string;
   signUpPoint: number;
   banner_url: string;
@@ -60,6 +61,7 @@ export interface CampaignResponse {
   startDate: string;
   endDate: string;
   quantity: number;
+  total_slots?: number;
   audienceType: string;
   bannerUrl: string;
   logoUrl: string;
@@ -179,6 +181,7 @@ export interface BusinessCampaign {
   start_date: string;
   end_date: string;
   quantity: number;
+  total_slots?: number;
   audience_type: AudienceType; // Map to AudienceType enum
   banner_url: string;
   logo_url: string;

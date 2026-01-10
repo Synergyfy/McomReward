@@ -13,11 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface SelectRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProceed: (selectedRewardIds: string[], selectedRewards: BusinessReward[], startDate?: string, endDate?: string) => void;
+  onProceed: (selectedRewardIds: string[], selectedRewards: BusinessReward[], startDate?: string, endDate?: string, totalSlots?: number) => void;
   initialSelectedIds?: string[];
   showDates?: boolean;
 }
@@ -39,6 +40,7 @@ export default function SelectRewardModal({
     to.setDate(to.getDate() + 30);
     return { from, to };
   });
+  const [totalSlots, setTotalSlots] = useState<number | undefined>(undefined);
 
   const { data: rewardsData, isLoading, error } = useGetBusinessRewards(1, 100);
 
@@ -76,9 +78,15 @@ export default function SelectRewardModal({
       return;
     }
 
-    if (showDates && (!dateRange?.from || !dateRange?.to)) {
-      toast.error('Please select a valid date range.');
-      return;
+    if (showDates) {
+      if (!dateRange?.from || !dateRange?.to) {
+        toast.error('Please select a valid date range.');
+        return;
+      }
+      if (totalSlots === undefined || totalSlots === null) {
+        toast.error('Total slots is required.');
+        return;
+      }
     }
 
     const allRewards = rewardsData?.data || [];
@@ -88,7 +96,8 @@ export default function SelectRewardModal({
       selectedRewards, 
       selectedRewardObjects, 
       dateRange?.from?.toISOString(), 
-      dateRange?.to?.toISOString()
+      dateRange?.to?.toISOString(),
+      totalSlots
     );
     onClose();
   };
@@ -220,6 +229,18 @@ export default function SelectRewardModal({
               />
               <p className="text-xs text-gray-500">
                 Choose the start and end dates for your claimed campaign.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Total Slots</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 100"
+                value={totalSlots !== undefined ? totalSlots : ''}
+                onChange={(e) => setTotalSlots(e.target.value === '' ? undefined : Number(e.target.value))}
+              />
+              <p className="text-xs text-gray-500">
+                Limit the total number of participants who can join this campaign.
               </p>
             </div>
           </div>

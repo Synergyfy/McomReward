@@ -112,6 +112,7 @@ interface ClaimCampaignPayload {
   business_reward_ids?: string[];
   start_date?: string;
   end_date?: string;
+  total_slots?: number;
 }
 
 const claimCampaign = async ({ campaignId, payload }: { campaignId: string; payload: ClaimCampaignPayload }): Promise<BusinessCampaign> => {

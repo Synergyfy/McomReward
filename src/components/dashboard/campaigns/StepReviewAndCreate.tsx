@@ -182,6 +182,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           const oldStartDate = isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate;
           const oldEndDate = isBusinessCampaign(currentCampaign) ? currentCampaign.end_date : currentCampaign.endDate;
           const oldQuantity = currentCampaign.quantity;
+          const oldTotalSlots = isBusinessCampaign(currentCampaign) ? currentCampaign.total_slots : currentCampaign.total_slots;
           const oldAudienceType = isBusinessCampaign(currentCampaign) ? currentCampaign.audience_type : currentCampaign.audienceType;
           const oldBannerUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.banner_url : currentCampaign.bannerUrl;
           const oldLogoUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.logo_url : currentCampaign.logoUrl;
@@ -216,6 +217,10 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
             updatePayload.end_date = formData.endDate.toISOString();
           }
 
+          if (Number(formData.totalSlots) !== oldTotalSlots) {
+             updatePayload.total_slots = Number(formData.totalSlots);
+          }
+
           if (audience_type !== oldAudienceType) updatePayload.audience_type = audience_type;
           if (bannerUrl !== oldBannerUrl) updatePayload.banner_url = bannerUrl || '';
           if (logoUrl !== oldLogoUrl) updatePayload.logo_url = logoUrl || '';
@@ -242,6 +247,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           updatePayload.campaign_message = formData.campaignMessage;
           updatePayload.start_date = formData.startDate?.toISOString() || new Date().toISOString();
           updatePayload.end_date = formData.endDate?.toISOString() || new Date().toISOString();
+          updatePayload.total_slots = Number(formData.totalSlots);
           updatePayload.audience_type = audience_type;
           updatePayload.banner_url = bannerUrl || '';
           updatePayload.logo_url = logoUrl || '';
@@ -278,6 +284,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           start_date: formData.startDate?.toISOString() || new Date().toISOString(),
           end_date: formData.endDate?.toISOString() || new Date().toISOString(),
           quantity: Number(formData.schedulingRules.stopAfterClaims) || 0,
+          total_slots: Number(formData.totalSlots),
           audience_type,
           signUpPoint: 0,
           banner_url: bannerUrl || '',

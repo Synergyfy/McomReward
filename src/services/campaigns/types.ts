@@ -142,6 +142,7 @@ export interface PublicCampaignResponse {
   start_date: string;
   end_date: string;
   quantity: number;
+  remainingSlots?: number;
   audience_type: string;
   banner_url: string;
   // Adding camelCase alternatives as potential fix for display issues if API returns camelCase

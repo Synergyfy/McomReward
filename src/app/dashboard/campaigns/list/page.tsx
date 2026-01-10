@@ -9,18 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye } from 'lucide-react';
+import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 // Imports moved up and consolidated
 import { useGetBusinessTierUsage } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import UsageCard from '@/components/dashboard/shared/UsageCard';
 
-import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCampaigns } from '@/services/campaigns/hook';
+import { useGetMyCreatedCampaigns, useGetMyClaimedCampaigns, useGetClaimableCampaigns, useDeleteCampaign } from '@/services/campaigns/hook';
 import ClaimCampaignModal from '@/components/dashboard/campaigns/ClaimCampaignModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import { PublicCampaignResponse } from '@/services/campaigns/types';
+import api from '@/services/api';
 
 import QRCodeModal from '@/components/dashboard/campaigns/QRCodeModal';
 
@@ -180,6 +182,48 @@ export default function CampaignsListPage() {
   const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
   const { data: tierUsageData, isLoading: isLoadingTierUsage } = useGetBusinessTierUsage();
   const { data: subscriptionData, isLoading: isLoadingSubscription } = useGetMySubscription();
+  const { mutate: deleteCampaign } = useDeleteCampaign();
+
+  const handleDeleteCampaign = async (campaign: PublicCampaignResponse) => {
+    // 1. Confirmation
+    if (!window.confirm("Are you sure you want to delete this campaign?")) {
+      return;
+    }
+
+    // 2. Participant Check
+    try {
+      const analytics = await api.get(`/business/campaigns/${campaign.id}/analytics/detailed`);
+      const totalParticipants = parseInt(analytics.data.totalParticipants || '0');
+
+      if (totalParticipants > 0) {
+        toast.error("A user joined, can't delete");
+        return;
+      }
+    } catch (error) {
+       console.error("Error checking participants", error);
+    }
+
+    // 3. Ongoing Check
+    const startDate = new Date(campaign.start_date);
+    const now = new Date();
+    const endDate = new Date(campaign.end_date);
+
+    // Logic: If started AND NOT expired, it is ongoing.
+    if (startDate < now && endDate > now) {
+      toast.error("Can't delete, campaign is ongoing");
+      return;
+    }
+
+    // 4. Delete
+    deleteCampaign(campaign.id, {
+      onSuccess: () => {
+        toast.success("Campaign deleted successfully");
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || "Failed to delete campaign");
+      }
+    });
+  };
 
   const handleOpenQRModal = (campaignId: string, campaignName: string) => {
     setSelectedCampaignForQR({ id: campaignId, name: campaignName });
@@ -233,7 +277,9 @@ export default function CampaignsListPage() {
     if (campaign.disabled) {
       return { label: 'Disabled', variant: 'destructive' };
     }
-    if (campaign.quantity <= 0) {
+    // Use remainingSlots if available, otherwise quantity
+    const available = campaign.remainingSlots ?? campaign.quantity;
+    if (available <= 0) {
       return { label: 'Sold Out', variant: 'destructive' };
     }
     if (startDate > now) {
@@ -351,13 +397,13 @@ export default function CampaignsListPage() {
                     Available:
                   </span>
                   <span className="font-semibold text-right">
-                    {campaign.quantity}
+                    {campaign.remainingSlots ?? campaign.quantity}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons Grid */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 <Button
                   asChild
                   variant="outline"
@@ -412,6 +458,19 @@ export default function CampaignsListPage() {
                   title="Generate QR Code"
                 >
                   <QrCode className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full border-red-600 text-red-600 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCampaign(campaign);
+                  }}
+                  title="Delete Campaign"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>

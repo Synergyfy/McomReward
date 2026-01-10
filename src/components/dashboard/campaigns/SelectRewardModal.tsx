@@ -14,6 +14,8 @@ import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useGetMySubscription } from '@/services/tiers/hook';
+import TierLimitModal from './TierLimitModal';
 
 interface SelectRewardModalProps {
   isOpen: boolean;
@@ -41,8 +43,11 @@ export default function SelectRewardModal({
     return { from, to };
   });
   const [totalSlots, setTotalSlots] = useState<number | undefined>(undefined);
+  const [isTierLimitModalOpen, setIsTierLimitModalOpen] = useState(false);
+  const [tierLimitMessage, setTierLimitMessage] = useState('');
 
   const { data: rewardsData, isLoading, error } = useGetBusinessRewards(1, 100);
+  const { data: subscriptionData } = useGetMySubscription();
 
   // Initialize selected rewards when modal opens or initialSelectedIds changes
   useEffect(() => {
@@ -53,6 +58,18 @@ export default function SelectRewardModal({
   }, [isOpen, initialSelectedIds]);
 
   const handleToggleReward = (rewardId: string) => {
+    const isSelecting = !selectedRewards.includes(rewardId);
+
+    if (isSelecting) {
+      const maxRewards = subscriptionData?.tier?.configuration?.quotas?.maxRewardsPerCampaign || 0;
+      // If maxRewards is -1, it means unlimited
+      if (maxRewards !== -1 && selectedRewards.length >= maxRewards) {
+        setTierLimitMessage('Upgrade to a higher tier to get more limits');
+        setIsTierLimitModalOpen(true);
+        return;
+      }
+    }
+
     setSelectedRewards(prev =>
       prev.includes(rewardId)
         ? prev.filter(id => id !== rewardId)
@@ -269,6 +286,11 @@ export default function SelectRewardModal({
           )}
         </DialogFooter>
       </DialogContent>
+      <TierLimitModal
+        isOpen={isTierLimitModalOpen}
+        onClose={() => setIsTierLimitModalOpen(false)}
+        message={tierLimitMessage}
+      />
     </Dialog>
   );
 }

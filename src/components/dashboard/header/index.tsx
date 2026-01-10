@@ -224,11 +224,23 @@ export default function BusinessHeader({
             </DropdownMenu>
 
             {tierName && (
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold text-sm ${tierStyle}`}>
-                <TierIcon className="h-5 w-5" />
-                <span>{tierName}</span>
-              </div>
-            )}
+  <div
+    className={`
+      flex items-center gap-2
+      px-4 py-1.5
+      min-w-[120px]
+      justify-center
+      rounded-full
+      font-semibold text-sm
+      whitespace-nowrap
+      ${tierStyle}
+    `}
+  >
+    <TierIcon className="h-5 w-5 flex-shrink-0" />
+    <span className="truncate">{tierName}</span>
+  </div>
+)}
+
           </div>
         )}
 

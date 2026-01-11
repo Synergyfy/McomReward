@@ -9,6 +9,7 @@ import {
   UpdateDealDto,
   UpdateDealStatusDto,
   DealAnalytics,
+  ReportTimeSpentDto,
 } from './types';
 
 const DEALS_QUERY_KEY = 'deals';
@@ -101,6 +102,10 @@ const updateDealStatus = async ({
 const getDealAnalytics = async (id: string): Promise<DealAnalytics> => {
   const { data } = await api.get<DealAnalytics>(`/deals/my-deals/${id}/analytics`);
   return data;
+};
+
+const reportTimeSpent = async (data: ReportTimeSpentDto): Promise<void> => {
+  await api.post('/deals/public/analytics/time', data);
 };
 
 export const useCreateDeal = () => {
@@ -216,5 +221,11 @@ export const useGetDealAnalytics = (id: string) => {
     queryKey: [DEALS_QUERY_KEY, 'analytics', id],
     queryFn: () => getDealAnalytics(id),
     enabled: !!id,
+  });
+};
+
+export const useReportTimeSpent = () => {
+  return useMutation({
+    mutationFn: reportTimeSpent,
   });
 };

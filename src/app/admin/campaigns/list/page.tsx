@@ -63,9 +63,10 @@ export default function AdminCampaignsPage() {
           toast.success('Campaign deleted successfully');
           setDeleteCampaignId(null);
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error('Failed to delete campaign:', error);
-          toast.error('Failed to delete campaign');
+          const errorMessage = error.response?.data?.message || 'Failed to delete campaign';
+          toast.error(errorMessage);
           setDeleteCampaignId(null);
         }
       });

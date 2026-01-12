@@ -1,14 +1,10 @@
-endpoint: GET /deals/my-deals/{id}/analytics
+endpoint: POST /admin/create-super-business
 
-Params: id 
-
-Response: 
+Request body: 
 {
-  "totalViews": 0,
-  "uniqueViews": 0,
-  "averageTimeSpentSeconds": 0,
-  "osBreakdown": {},
-  "deviceBreakdown": {},
-  "browserBreakdown": {},
-  "recentViews": []
+  "name": "The Gourmet Kitchen",
+  "email": "contact@gourmetkitchen.com",
+  "password": "aStrongPassword123!",
+  "confirmPassword": "aStrongPassword123!",
+  "referralCode": "a1b2c3d4e"
 }

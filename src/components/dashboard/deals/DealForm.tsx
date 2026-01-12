@@ -81,6 +81,8 @@ const dealSchema = z.object({
   isReward: z.boolean().default(false),
   pointsCost: z.string().optional(),
   pointsEarned: z.string().optional(),
+  stampsCost: z.string().optional(),
+  stampsEarned: z.string().optional(),
   termsAndConditions: z.string().min(10, 'Terms and conditions must be at least 10 characters'),
 });
 
@@ -126,6 +128,8 @@ export default function DealForm({ deal, dealId }: DealFormProps) {
       isReward: deal?.isReward || false,
       pointsCost: deal?.pointsCost?.toString() || '',
       pointsEarned: deal?.pointsEarned?.toString() || '',
+      stampsCost: '',
+      stampsEarned: '',
       termsAndConditions: deal?.termsAndConditions || '',
       startDate: deal?.startDate ? new Date(deal.startDate) : new Date(),
       endDate: deal?.endDate ? new Date(deal.endDate) : addMonths(new Date(), 1),
@@ -165,8 +169,10 @@ export default function DealForm({ deal, dealId }: DealFormProps) {
         }
       }
 
+      const { stampsCost, stampsEarned, ...cleanedData } = data;
+
       const payload = {
-        ...data,
+        ...cleanedData,
         imageUrl: finalImageUrl as string,
         galleryImages: finalGalleryImages,
         value: parseFloat(data.value),
@@ -726,12 +732,35 @@ export default function DealForm({ deal, dealId }: DealFormProps) {
                       >
                         <div className="grid grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Points Required</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Points Required</Label>
+                              <FormFieldHelp content="How many points does a customer need to redeem this deal?" />
+                            </div>
                             <Input type="number" {...form.register('pointsCost')} placeholder="0" className="h-12 rounded-xl border-gray-100 shadow-sm" />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Points Earned</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Points Earned</Label>
+                              <FormFieldHelp content="How many points will a customer earn when they claim this deal?" />
+                            </div>
                             <Input type="number" {...form.register('pointsEarned')} placeholder="0" className="h-12 rounded-xl border-gray-100 shadow-sm" />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Stamps Required</Label>
+                              <FormFieldHelp content="How many digital stamps does a customer need to redeem this deal?" />
+                            </div>
+                            <Input type="number" {...form.register('stampsCost')} placeholder="0" className="h-12 rounded-xl border-gray-100 shadow-sm" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Stamps Earned</Label>
+                              <FormFieldHelp content="How many digital stamps will a customer earn when they claim this deal?" />
+                            </div>
+                            <Input type="number" {...form.register('stampsEarned')} placeholder="0" className="h-12 rounded-xl border-gray-100 shadow-sm" />
                           </div>
                         </div>
                       </motion.div>

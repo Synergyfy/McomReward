@@ -110,10 +110,16 @@ export interface Deal {
   };
   createdAt: string;
   updatedAt: string;
+  analyticsId?: string;
 }
 
 export interface UpdateDealStatusDto {
   status: 'approved' | 'declined' | 'pending' | 'flagged';
+}
+
+export interface ReportTimeSpentDto {
+  analyticsId: string;
+  durationSeconds: number;
 }
 
 export interface PaginatedDealsResponse {

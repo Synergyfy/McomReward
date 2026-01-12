@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { useGetPublicDeal, useGetPublicDeals } from '@/services/deals/hook';
+import { useGetPublicDeal, useGetPublicDeals, useReportTimeSpent } from '@/services/deals/hook';
 import {
   Loader2,
   ArrowLeft,
@@ -180,6 +180,27 @@ export default function DealDetailPage() {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const { data: deal, isLoading, isError } = useGetPublicDeal(dealId);
+  const { mutate: reportTimeSpent } = useReportTimeSpent();
+
+  // Track time spent on page
+  useEffect(() => {
+    if (!deal?.analyticsId) return;
+
+    const startTime = Date.now();
+
+    return () => {
+      const endTime = Date.now();
+      const durationSeconds = Math.round((endTime - startTime) / 1000);
+
+      if (durationSeconds > 0) {
+        reportTimeSpent({
+          analyticsId: deal.analyticsId as string,
+          durationSeconds
+        });
+      }
+    };
+  }, [deal?.analyticsId, reportTimeSpent]);
+
   const { data: relatedDeals } = useGetPublicDeals({
     limit: 4,
     status: 'approved',

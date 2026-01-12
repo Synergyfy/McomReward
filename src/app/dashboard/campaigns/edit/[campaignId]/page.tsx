@@ -82,9 +82,7 @@ function EditCampaignContent() {
           return currentCampaign[fieldCamel];
       }
 
-      const remainingSlots = getField('remaining_slots', 'remainingSlots')
-                          ?? (currentCampaign as any).remainingSlots
-                          ?? (currentCampaign as any).remaining_slots;
+      const remainingSlots = (currentCampaign as any).remaining_slots ?? (currentCampaign as any).remainingSlots;
 
       updateFormData({
         campaignName: currentCampaign.name,

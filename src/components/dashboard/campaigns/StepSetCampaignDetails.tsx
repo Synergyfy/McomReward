@@ -83,11 +83,12 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   const handleNextClick = () => {
     const newErrors: Record<string, boolean> = {};
-    const { campaignName, totalSlots, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds } = formData;
+    const { campaignName, totalSlots, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds, campaignType } = formData;
 
     if (!campaignName.trim()) newErrors.campaignName = true;
     if (totalSlots === '' || totalSlots === undefined || totalSlots === null) newErrors.totalSlots = true;
-    if (rewardIds.length === 0) newErrors.rewardIds = true;
+    // Skip reward validation for Matching Point campaigns
+    if (campaignType !== 'matching_point' && rewardIds.length === 0) newErrors.rewardIds = true;
     if (!startDate) {
       newErrors.startDate = true;
     } else if (startDate < new Date()) {
@@ -175,32 +176,34 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             )}
           </div>
 
-          {/* Rewards to Attach */}
-          <div>
-            <Label>Rewards to Attach</Label>
-            <div className={`mt-2 border rounded-md p-4 space-y-3 ${errors.rewardIds ? 'border-red-500' : 'border-gray-200'}`}>
-                {displayedRewards.length > 0 ? (
-                    <div className="space-y-2">
-                        {displayedRewards.map(reward => (
-                            <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
-                                <span className="font-medium text-sm">{reward.title}</span>
-                                <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
-                )}
+          {/* Rewards to Attach - Hidden for Matching Point Campaigns */}
+          {formData.campaignType !== 'matching_point' && (
+            <div>
+              <Label>Rewards to Attach</Label>
+              <div className={`mt-2 border rounded-md p-4 space-y-3 ${errors.rewardIds ? 'border-red-500' : 'border-gray-200'}`}>
+                  {displayedRewards.length > 0 ? (
+                      <div className="space-y-2">
+                          {displayedRewards.map(reward => (
+                              <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                                  <span className="font-medium text-sm">{reward.title}</span>
+                                  <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
+                                      <X className="h-4 w-4" />
+                                  </Button>
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
+                  )}
 
-                <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
-                    <Plus className="mr-2 h-4 w-4" />
-                    {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
-                </Button>
+                  <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
+                      <Plus className="mr-2 h-4 w-4" />
+                      {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
+                  </Button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Choose the rewards (Points or Stamps) to be given out in this campaign.</p>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Choose the rewards (Points or Stamps) to be given out in this campaign.</p>
-          </div>
+          )}
 
           {/* Date Pickers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

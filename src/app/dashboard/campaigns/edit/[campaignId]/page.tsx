@@ -82,14 +82,18 @@ function EditCampaignContent() {
           return currentCampaign[fieldCamel];
       }
 
+      const remainingSlots = getField('remaining_slots', 'remainingSlots')
+                          ?? (currentCampaign as any).remainingSlots
+                          ?? (currentCampaign as any).remaining_slots;
+
       updateFormData({
         campaignName: currentCampaign.name,
         campaignType: reverseCampaignTypeMap[campaignType] || campaignType,
         campaignMessage: getField('campaign_message', 'campaignMessage'),
         startDate: (getField('start_date', 'startDate')) ? new Date(getField('start_date', 'startDate')) : undefined,
         endDate: (getField('end_date', 'endDate')) ? new Date(getField('end_date', 'endDate')) : undefined,
-        rewardsAvailable: currentCampaign.quantity,
-        totalSlots: getField('total_slots', 'total_slots') ?? currentCampaign.quantity ?? 0,
+        rewardsAvailable: remainingSlots ?? currentCampaign.quantity,
+        totalSlots: getField('total_slots', 'total_slots') ?? (currentCampaign as any).totalSlots ?? currentCampaign.quantity ?? 0,
         audienceType: audienceTypes,
         imageUrl: getField('banner_url', 'bannerUrl'),
         logoUrl: getField('logo_url', 'logoUrl'),

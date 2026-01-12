@@ -173,6 +173,11 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             {!errors.totalSlots && (
               <p className="text-sm text-gray-500 mt-1">The total number of slots available for this campaign.</p>
             )}
+            {(formData.rewardsAvailable !== undefined && formData.rewardsAvailable !== null) && (
+               <p className="text-sm text-orange-600 mt-1 font-medium">
+                 Remaining Slots: {formData.rewardsAvailable}
+               </p>
+            )}
           </div>
 
           {/* Rewards to Attach */}

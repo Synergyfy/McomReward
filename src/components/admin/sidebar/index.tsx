@@ -73,6 +73,11 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
                 </Link>
               </li>
               <li>
+                <Link href="/admin/super-business" className={linkClasses("/admin/super-business")}>
+                  Create Super Business
+                </Link>
+              </li>
+              <li>
                 <Link href="/admin/users/consumer" className={linkClasses("/admin/users/consumer")}>
                   Consumers
                 </Link>

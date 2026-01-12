@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import Link from 'next/link';
 import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaignsTicker';
-import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye, Trash2 } from 'lucide-react';
+import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye, Trash2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { differenceInDays, differenceInHours, parseISO, isValid } from 'date-fns';
 
 // Imports moved up and consolidated
 import { useGetBusinessTierUsage } from '@/services/business/hook';
@@ -271,8 +272,8 @@ export default function CampaignsListPage() {
   // New helper function for campaign status
   const getCampaignStatus = (campaign: PublicCampaignResponse): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
     const now = new Date();
-    const startDate = new Date(campaign.start_date);
-    const endDate = new Date(campaign.end_date);
+    const startDate = parseISO(campaign.start_date || (campaign as any).startDate);
+    const endDate = parseISO(campaign.end_date || (campaign as any).endDate);
 
     if (campaign.disabled) {
       return { label: 'Disabled', variant: 'destructive' };
@@ -282,13 +283,40 @@ export default function CampaignsListPage() {
     if (available <= 0) {
       return { label: 'Sold Out', variant: 'destructive' };
     }
-    if (startDate > now) {
+    if (isValid(startDate) && startDate > now) {
       return { label: 'Scheduled', variant: 'secondary' };
     }
-    if (endDate < now) {
+    if (isValid(endDate) && endDate < now) {
       return { label: 'Expired', variant: 'secondary' };
     }
     return { label: 'Active', variant: 'default' };
+  };
+
+  const getCampaignTimeRemaining = (campaign: PublicCampaignResponse): string | null => {
+    const now = new Date();
+    const dateStr = campaign.end_date || (campaign as any).endDate;
+
+    if (!dateStr) return null;
+
+    const endDate = parseISO(dateStr);
+
+    if (!isValid(endDate)) return null;
+
+    if (endDate <= now) return null;
+
+    const daysLeft = differenceInDays(endDate, now);
+    if (daysLeft > 7) return null;
+
+    if (daysLeft >= 1) {
+      return `${daysLeft} days left`;
+    }
+
+    const hoursLeft = differenceInHours(endDate, now);
+    if (hoursLeft > 0) {
+      return `${hoursLeft} hours left`;
+    }
+
+    return 'Less than 1 hour left';
   };
 
   const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
@@ -332,12 +360,26 @@ export default function CampaignsListPage() {
               {(() => {
                 const status = getCampaignStatus(campaign);
                 return (
-                  <Badge
-                    variant={status.variant}
-                    className="absolute top-3 right-3 text-sm px-3 py-1"
-                  >
-                    {status.label}
-                  </Badge>
+                  <>
+                    <Badge
+                      variant={status.variant}
+                      className="absolute top-3 right-3 text-sm px-3 py-1"
+                    >
+                      {status.label}
+                    </Badge>
+                    {(() => {
+                      const timeRemaining = getCampaignTimeRemaining(campaign);
+                      if (timeRemaining) {
+                        return (
+                          <div className="absolute top-3 left-3 flex items-center bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {timeRemaining}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
                 );
               })()}
             </div>

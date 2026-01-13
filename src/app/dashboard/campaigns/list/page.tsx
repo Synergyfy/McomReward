@@ -528,12 +528,17 @@ export default function CampaignsListPage() {
             <div className="mb-8 max-w-md">
               <UsageCard
                 title="Campaign Usage"
-                usage={tierUsageData?.features?.campaigns || {
+                usage={profile?.isSuperBusiness ? {
+                  limit: -1,
+                  used: tierUsageData?.features?.campaigns?.used || 0,
+                  remaining: -1,
+                  extraPoints: 0
+                } : (tierUsageData?.features?.campaigns || {
                   limit: subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0,
                   used: 0,
                   remaining: subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0,
                   extraPoints: 0
-                }}
+                })}
               />
             </div>
           ) : null}

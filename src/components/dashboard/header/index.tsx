@@ -94,7 +94,7 @@ export default function BusinessHeader({
   // Use Platinum style for Super Business or default
   const tierStyle = isSuperBusiness
     ? (tierStyles['Platinum'] || "bg-gray-100 text-gray-700")
-    : (displayTierName ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
+    : (displayTierName && displayTierName !== 'N/A' ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -173,19 +173,23 @@ export default function BusinessHeader({
                     </span>
                   </div>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-purple-600" />
-                  Add-ons
-                </DropdownMenuLabel>
-                <div className="px-2 py-1.5 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Balance</span>
-                    <span className="font-medium">
-                      {pointPackageBalance?.totalBalance?.toLocaleString() ?? 0}
-                    </span>
-                  </div>
-                </div>
+                {!isSuperBusiness && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-purple-600" />
+                      Add-ons
+                    </DropdownMenuLabel>
+                    <div className="px-2 py-1.5 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Balance</span>
+                        <span className="font-medium">
+                          {pointPackageBalance?.totalBalance?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -220,19 +224,23 @@ export default function BusinessHeader({
                     </span>
                   </div>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-purple-600" />
-                  Add-ons
-                </DropdownMenuLabel>
-                <div className="px-2 py-1.5 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Balance</span>
-                    <span className="font-medium">
-                      {stampMonthlyBalance?.extraStamps?.toLocaleString() ?? 0}
-                    </span>
-                  </div>
-                </div>
+                {!isSuperBusiness && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-purple-600" />
+                      Add-ons
+                    </DropdownMenuLabel>
+                    <div className="px-2 py-1.5 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Balance</span>
+                        <span className="font-medium">
+                          {stampMonthlyBalance?.extraStamps?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 

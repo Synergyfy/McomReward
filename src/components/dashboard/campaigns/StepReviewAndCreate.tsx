@@ -157,7 +157,9 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         'QR Code': 'qr_code',
         'Referral': 'referral',
         'Social / Email': 'social_or_email',
-        'Special Occasion': 'special_occasion'
+        'Special Occasion': 'special_occasion',
+        'matching_point': 'matching_point', // Ensure raw value is preserved if set directly
+        'Matching Point Campaign': 'matching_point'
       };
 
       const audienceTypeMap: Record<string, string> = {

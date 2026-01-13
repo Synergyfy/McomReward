@@ -15,6 +15,7 @@ import { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
 import TierLimitModal from './TierLimitModal';
 
 interface SelectRewardModalProps {
@@ -48,6 +49,7 @@ export default function SelectRewardModal({
 
   const { data: rewardsData, isLoading, error } = useGetBusinessRewards(1, 100);
   const { data: subscriptionData } = useGetMySubscription();
+  const { data: profile } = useGetBusinessProfile();
 
   // Initialize selected rewards when modal opens or initialSelectedIds changes
   useEffect(() => {
@@ -61,12 +63,15 @@ export default function SelectRewardModal({
     const isSelecting = !selectedRewards.includes(rewardId);
 
     if (isSelecting) {
-      const maxRewards = subscriptionData?.tier?.configuration?.quotas?.maxRewardsPerCampaign || 0;
-      // If maxRewards is -1, it means unlimited
-      if (maxRewards !== -1 && selectedRewards.length >= maxRewards) {
-        setTierLimitMessage('Upgrade to a higher tier to get more limits');
-        setIsTierLimitModalOpen(true);
-        return;
+      // Super Business has no limits
+      if (!profile?.isSuperBusiness) {
+        const maxRewards = subscriptionData?.tier?.configuration?.quotas?.maxRewardsPerCampaign || 0;
+        // If maxRewards is -1, it means unlimited
+        if (maxRewards !== -1 && selectedRewards.length >= maxRewards) {
+          setTierLimitMessage('Upgrade to a higher tier to get more limits');
+          setIsTierLimitModalOpen(true);
+          return;
+        }
       }
     }
 

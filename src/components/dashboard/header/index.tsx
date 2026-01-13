@@ -84,10 +84,17 @@ export default function BusinessHeader({
   const notifications = notificationsData?.data ?? [];
 
   // Check if user is on Free tier
-  const isFreeTier = businessSubscription?.tier === 'Free';
+  const isFreeTier = businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness;
+  const isSuperBusiness = profile?.isSuperBusiness;
 
-  const TierIcon = tierName ? (tierIcons[tierName as TierName] || Crown) : Crown;
-  const tierStyle = tierName ? (tierStyles[tierName as TierName] || "bg-gray-100 text-gray-700") : "";
+  // Override tier name for Super Business
+  const displayTierName = isSuperBusiness ? 'Super Business' : tierName;
+
+  const TierIcon = displayTierName ? (tierIcons[displayTierName as TierName] || Crown) : Crown;
+  // Use Platinum style for Super Business or default
+  const tierStyle = isSuperBusiness
+    ? (tierStyles['Platinum'] || "bg-gray-100 text-gray-700")
+    : (displayTierName ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -151,7 +158,9 @@ export default function BusinessHeader({
                 <div className="px-2 py-1.5 text-sm space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Total</span>
-                    <span className="font-medium">{monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}</span>
+                    <span className="font-medium">
+                      {isSuperBusiness ? 'Unlimited' : (monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Used</span>
@@ -159,7 +168,9 @@ export default function BusinessHeader({
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Remaining</span>
-                    <span className="font-medium text-green-600">{monthlyBalance?.remaining?.toLocaleString() ?? 0}</span>
+                    <span className="font-medium text-green-600">
+                      {isSuperBusiness ? 'Unlimited' : (monthlyBalance?.remaining?.toLocaleString() ?? 0)}
+                    </span>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
@@ -194,7 +205,9 @@ export default function BusinessHeader({
                 <div className="px-2 py-1.5 text-sm space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Monthly Limit</span>
-                    <span className="font-medium">{stampMonthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}</span>
+                    <span className="font-medium">
+                      {isSuperBusiness ? 'Unlimited' : (stampMonthlyBalance?.monthlyLimit?.toLocaleString() ?? 0)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Used</span>
@@ -203,7 +216,7 @@ export default function BusinessHeader({
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Remaining</span>
                     <span className="font-medium text-blue-600">
-                      {((stampMonthlyBalance?.monthlyLimit ?? 0) - (stampMonthlyBalance?.used ?? 0)).toLocaleString()}
+                       {isSuperBusiness ? 'Unlimited' : ((stampMonthlyBalance?.monthlyLimit ?? 0) - (stampMonthlyBalance?.used ?? 0)).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -223,7 +236,7 @@ export default function BusinessHeader({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {tierName && (
+            {displayTierName && (
   <div
     className={`
       flex items-center gap-2
@@ -237,7 +250,7 @@ export default function BusinessHeader({
     `}
   >
     <TierIcon className="h-5 w-5 flex-shrink-0" />
-    <span className="truncate">{tierName}</span>
+    <span className="truncate">{displayTierName}</span>
   </div>
 )}
 

@@ -278,14 +278,20 @@ export default function CampaignsListPage() {
     const badges: { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }[] = [];
     const now = new Date();
 
+    // Robustly retrieve dates (handle both snake_case and camelCase)
+    // @ts-ignore - checking potential camelCase props not in interface
+    const rawStartDate = campaign.start_date || campaign.startDate;
+    // @ts-ignore
+    const rawEndDate = campaign.end_date || campaign.endDate;
+
     // Check for missing dates
-    if (!campaign.start_date || !campaign.end_date) {
+    if (!rawStartDate || !rawEndDate) {
       badges.push({ label: 'No Date', variant: 'outline' });
       return badges;
     }
 
-    const startDate = parseISO(campaign.start_date);
-    const endDate = parseISO(campaign.end_date);
+    const startDate = parseISO(rawStartDate);
+    const endDate = parseISO(rawEndDate);
 
     if (!isValid(startDate) || !isValid(endDate)) {
        badges.push({ label: 'Invalid Date', variant: 'outline' });

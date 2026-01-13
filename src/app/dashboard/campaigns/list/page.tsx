@@ -12,7 +12,7 @@ import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaig
 import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, isValid } from 'date-fns';
 
 // Imports moved up and consolidated
 import { useGetBusinessTierUsage, useGetBusinessProfile } from '@/services/business/hook';
@@ -276,8 +276,12 @@ export default function CampaignsListPage() {
   // New helper function for campaign status
   const getCampaignStatus = (campaign: PublicCampaignResponse): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
     const now = new Date();
-    const startDate = new Date(campaign.start_date);
-    const endDate = new Date(campaign.end_date);
+    const startDate = parseISO(campaign.start_date);
+    const endDate = parseISO(campaign.end_date);
+
+    if (!isValid(startDate) || !isValid(endDate)) {
+       return { label: 'Invalid Date', variant: 'outline' };
+    }
 
     if (campaign.disabled) {
       return { label: 'Disabled', variant: 'destructive' };
@@ -295,8 +299,10 @@ export default function CampaignsListPage() {
     }
 
     // Days remaining check
+    // We use differenceInDays which returns integer days.
+    // If it's today (0) or future up to 7 days.
     const daysLeft = differenceInDays(endDate, now);
-    if (daysLeft <= 7) {
+    if (daysLeft >= 0 && daysLeft <= 7) {
        return { label: `${daysLeft} Day${daysLeft === 1 ? '' : 's'} Left`, variant: 'destructive' };
     }
 

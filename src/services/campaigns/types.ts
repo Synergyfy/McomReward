@@ -62,6 +62,7 @@ export interface CampaignResponse {
   endDate: string;
   quantity: number;
   total_slots?: number;
+  remainingSlots?: number;
   audienceType: string;
   bannerUrl: string;
   logoUrl: string;
@@ -184,6 +185,7 @@ export interface BusinessCampaign {
   end_date: string;
   quantity: number;
   total_slots?: number;
+  remainingSlots?: number;
   audience_type: AudienceType; // Map to AudienceType enum
   banner_url: string;
   logo_url: string;

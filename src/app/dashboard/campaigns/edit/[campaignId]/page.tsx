@@ -89,7 +89,8 @@ function EditCampaignContent() {
         startDate: (getField('start_date', 'startDate')) ? new Date(getField('start_date', 'startDate')) : undefined,
         endDate: (getField('end_date', 'endDate')) ? new Date(getField('end_date', 'endDate')) : undefined,
         rewardsAvailable: currentCampaign.quantity,
-        totalSlots: getField('total_slots', 'total_slots') ?? currentCampaign.quantity ?? 0,
+        // Populate with Available Slots (quantity/remaining) instead of Total Capacity
+        totalSlots: currentCampaign.remainingSlots ?? currentCampaign.quantity ?? 0,
         audienceType: audienceTypes,
         imageUrl: getField('banner_url', 'bannerUrl'),
         logoUrl: getField('logo_url', 'logoUrl'),

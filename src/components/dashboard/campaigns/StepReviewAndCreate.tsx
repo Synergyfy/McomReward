@@ -157,7 +157,9 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         'QR Code': 'qr_code',
         'Referral': 'referral',
         'Social / Email': 'social_or_email',
-        'Special Occasion': 'special_occasion'
+        'Special Occasion': 'special_occasion',
+        'matching_point': 'matching_point', // Ensure raw value is preserved if set directly
+        'Matching Point Campaign': 'matching_point'
       };
 
       const audienceTypeMap: Record<string, string> = {
@@ -217,8 +219,15 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
             updatePayload.end_date = formData.endDate.toISOString();
           }
 
-          if (Number(formData.totalSlots) !== oldTotalSlots) {
-             updatePayload.total_slots = Number(formData.totalSlots);
+          // Calculate new total_slots based on (Used + New Available)
+          const oldTotal = currentCampaign.total_slots ?? currentCampaign.quantity ?? 0;
+          const oldAvailable = currentCampaign.remainingSlots ?? currentCampaign.quantity ?? 0;
+          const used = Math.max(0, oldTotal - oldAvailable);
+          const newAvailable = Number(formData.totalSlots);
+          const newTotal = used + newAvailable;
+
+          if (newTotal !== oldTotal) {
+             updatePayload.total_slots = newTotal;
           }
 
           if (audience_type !== oldAudienceType) updatePayload.audience_type = audience_type;

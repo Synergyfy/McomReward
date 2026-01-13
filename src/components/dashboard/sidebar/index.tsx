@@ -79,6 +79,8 @@ export default function BusinessSidebar({
     return subscription?.tier === 'Free';
   }, [subscription, profile]);
 
+  const isSuperBusiness = profile?.isSuperBusiness;
+
   const enhancedLinkClasses = (path: string, exact: boolean = false) => {
     let classes = linkClasses(path, exact);
     if (isFreeTier && !path.includes('/dashboard/subscription')) {
@@ -286,7 +288,9 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
 
-          <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
+          {!isSuperBusiness && (
+            <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
+          )}
 
           <SidebarItem icon={Settings} label="Settings" href="/dashboard/account" />
 

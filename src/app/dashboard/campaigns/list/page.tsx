@@ -373,7 +373,7 @@ export default function CampaignsListPage() {
                 />
               )}
               {/* Badges Container */}
-              <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+              <div className="absolute top-3 right-3 flex flex-row gap-2 items-center">
                 {getCampaignBadges(campaign).map((badge, idx) => (
                   <Badge
                     key={idx}

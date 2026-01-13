@@ -276,6 +276,11 @@ export default function CampaignsListPage() {
   // New helper function for campaign status
   const getCampaignStatus = (campaign: PublicCampaignResponse): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
     const now = new Date();
+
+    if (!campaign.start_date || !campaign.end_date) {
+      return { label: 'No Date', variant: 'outline' };
+    }
+
     const startDate = parseISO(campaign.start_date);
     const endDate = parseISO(campaign.end_date);
 

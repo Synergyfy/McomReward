@@ -1,14 +1,14 @@
-
 'use client';
 
 import React, { use, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MATCHING_REWARDS, MatchingReward } from '@/lib/mock-data/matching-rewards';
+import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Share2, Heart, ShieldCheck, Clock, Box, Info, Lock } from "lucide-react";
+import LoadingSpinner from '@/components/ui/Loading';
 import { cn } from "@/lib/utils";
 
 // Mock Authentication Hook for demonstration
@@ -26,15 +26,18 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
     const { id } = use(params);
     const router = useRouter();
     const { isLoggedIn, login } = useMockAuth();
-    const [isClaiming, setIsClaiming] = useState(false);
 
-    const reward = MATCHING_REWARDS.find(r => r.id === id);
+    const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
+    const redeemMutation = useRedeemMatchingReward();
 
-    if (!reward) {
+    if (isLoading) return <LoadingSpinner />;
+
+    if (error || !reward) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Reward Not Found</h2>
+                    <p className="text-gray-500 mb-6">We couldn't load the reward details. It might have been removed.</p>
                     <Link href="/matching-rewards">
                         <Button>Back to Rewards</Button>
                     </Link>
@@ -45,26 +48,24 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
 
     const handleClaim = () => {
         if (!isLoggedIn) {
-            // Redirect to login or show modal
-            // Ideally navigate to `/login?redirect=/matching-rewards/${id}`
-            // For now, we'll demonstrate the "Login Required" logic
             const confirmLogin = window.confirm("You must be logged in to claim this reward. Go to login page?");
             if (confirmLogin) {
-                // router.push('/login'); 
-                // For demo purposes, let's just "log them in"
-                login();
-                alert("Simulating Login... Try claiming again!");
+                // login(); // Mock login
+                // Ideally redirect to actual login
+                router.push('/login');
             }
             return;
         }
 
-        setIsClaiming(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsClaiming(false);
-            alert(`Successfully claimed: ${reward.title}! Check your email for details.`);
-        }, 1500);
+        redeemMutation.mutate(id, {
+            onSuccess: () => {
+                // Success is handled by toast in hook, but we could add more here if needed
+                // router.push('/dashboard/matching-points'); 
+            }
+        });
     };
+
+    const isClaiming = redeemMutation.isPending;
 
     return (
         <div className="min-h-screen bg-white pb-24">
@@ -94,24 +95,24 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                     <div className="space-y-6">
                         <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden shadow-2xl">
                             <Image
-                                src={reward.image}
+                                src={reward.mainImage || 'https://placehold.co/600x400?text=No+Image'}
                                 alt={reward.title}
                                 layout="fill"
                                 objectFit="cover"
                                 priority
                                 className="hover:scale-105 transition-transform duration-700"
                             />
-                            {reward.remainingQuantity < 5 && (
+                            {reward.quantity < 5 && reward.quantity > 0 && (
                                 <div className="absolute top-6 left-6 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg animate-pulse">
-                                    Only {reward.remainingQuantity} Left
+                                    Only {reward.quantity} Left
                                 </div>
                             )}
                         </div>
 
                         {/* Thumbnails if available */}
-                        {reward.gallery && (
+                        {reward.galleryImages && reward.galleryImages.length > 0 && (
                             <div className="grid grid-cols-4 gap-4">
-                                {reward.gallery.map((img, idx) => (
+                                {reward.galleryImages.map((img, idx) => (
                                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-orange-500 transition-all">
                                         <Image src={img} alt="" layout="fill" objectFit="cover" />
                                     </div>
@@ -122,12 +123,22 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
 
                     {/* Right Column: Details & Action */}
                     <div className="flex flex-col">
-                        <div className="mb-2">
+                        <div className="mb-2 flex items-center gap-2 flex-wrap">
                             <Badge variant="secondary" className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-none text-sm px-3 py-1">
-                                {reward.category}
+                                Reward
                             </Badge>
+                            {reward.targetAudience === 'BUSINESS_ONLY' && (
+                                <Badge className="bg-purple-50 text-purple-700 border-none text-sm px-3 py-1 font-bold">
+                                    Business Exclusive
+                                </Badge>
+                            )}
+                            {reward.isSuspended && (
+                                <Badge variant="destructive" className="text-sm px-3 py-1 font-bold">
+                                    Suspended
+                                </Badge>
+                            )}
                             <span className="mx-2 text-gray-300">|</span>
-                            <span className="text-sm font-medium text-gray-500">Provided by {reward.merchantName}</span>
+                            <span className="text-sm font-medium text-gray-500">Provided by Partner Merchant</span>
                         </div>
 
                         <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
@@ -138,20 +149,20 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                         <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
                             <div className="flex items-end gap-3 mb-2">
                                 <span className="text-5xl font-extrabold text-gray-900 tracking-tight">
-                                    {reward.matchingPointsRequired.toLocaleString()}
+                                    {(reward.requiredPoints ?? 0).toLocaleString()}
                                 </span>
                                 <span className="text-lg font-bold text-gray-500 mb-2">Matching Points</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Box className="w-4 h-4" />
-                                <span>Original Value: ${reward.originalValue}</span>
+                                <span>Redeemable Rewards</span>
                             </div>
                         </div>
 
                         {/* Description */}
                         <div className="prose prose-lg text-gray-600 mb-10">
                             <h3 className="text-lg font-bold text-gray-900 mb-3">Description</h3>
-                            <p className="leading-relaxed">{reward.description}</p>
+                            <p className="leading-relaxed">{reward.longDescription || reward.shortDescription}</p>
                         </div>
 
                         {/* Additional Info Cards */}
@@ -167,7 +178,7 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                                 <Clock className="w-6 h-6 text-purple-600 mt-1" />
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-sm">Limited Time</h4>
-                                    <p className="text-xs text-gray-500 mt-1">Expires {new Date(reward.expiryDate).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Expires {new Date(reward.endDatetime).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         </div>
@@ -178,10 +189,10 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                                 {isLoggedIn ? (
                                     <Button
                                         onClick={handleClaim}
-                                        disabled={isClaiming || reward.remainingQuantity === 0}
+                                        disabled={isClaiming || reward.quantity === 0 || reward.isSuspended}
                                         className="w-full bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white text-xl py-8 rounded-2xl font-bold shadow-xl shadow-orange-500/20 transition-all hover:scale-[1.02]"
                                     >
-                                        {isClaiming ? "Processing..." : reward.remainingQuantity === 0 ? "Sold Out" : "Claim Reward Now"}
+                                        {isClaiming ? "Processing..." : reward.isSuspended ? "Temporarily Unavailable" : reward.quantity === 0 ? "Sold Out" : "Claim Reward Now"}
                                     </Button>
                                 ) : (
                                     <Button

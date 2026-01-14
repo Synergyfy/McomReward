@@ -114,6 +114,12 @@ export default function SuperBusinessView() {
      });
   };
 
+  // Helper to validate image URL
+  const isValidImageUrl = (url: string) => {
+    if (!url) return false;
+    return url.match(/\.(jpeg|jpg|gif|png|webp)$/) != null || url.includes('images.unsplash.com') || url.includes('cloudinary.com');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -208,8 +214,15 @@ export default function SuperBusinessView() {
                 {rewardsData?.data.map((reward) => (
                     <Card key={reward.id} className="overflow-hidden group">
                     <div className="h-48 bg-gray-100 relative">
-                        {reward.main_image || reward.image ? (
-                            <img src={reward.main_image || reward.image} alt={reward.title} className="w-full h-full object-cover" />
+                        {(reward.main_image || reward.image) ? (
+                            <img
+                                src={reward.main_image || reward.image}
+                                alt={reward.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=No+Image';
+                                }}
+                            />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                         )}

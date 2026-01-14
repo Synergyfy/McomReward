@@ -11,6 +11,8 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateMatchingReward } from '@/services/matching-points/hook';
 import { CreateMatchingRewardDto, TargetAudience } from '@/services/matching-points/types';
+import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
+import { useUploadToCloudinary } from '@/services/upload/hook';
 
 interface CreateMatchingRewardModalProps {
   isOpen: boolean;
@@ -19,7 +21,10 @@ interface CreateMatchingRewardModalProps {
 }
 
 export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }: CreateMatchingRewardModalProps) {
-  const { mutate: createReward, isPending: loading } = useCreateMatchingReward();
+  const { mutate: createReward, isPending: isCreating } = useCreateMatchingReward();
+  const { mutateAsync: uploadImage, isPending: isUploading } = useUploadToCloudinary();
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState<CreateMatchingRewardDto>({
     title: '',
@@ -33,6 +38,8 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
     start_datetime: new Date().toISOString(),
     end_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // Default 1 year
   });
+
+  const loading = isCreating || isUploading;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -49,7 +56,25 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    createReward(formData, {
+    let imageUrl = formData.main_image;
+
+    if (selectedFile) {
+        try {
+            const uploadResult = await uploadImage({ file: selectedFile, folder: 'matching-rewards' });
+            imageUrl = uploadResult.secure_url;
+        } catch (error) {
+            console.error("Upload failed", error);
+            toast.error("Failed to upload image");
+            return;
+        }
+    }
+
+    if (!imageUrl) {
+        toast.error("Please provide an image (URL or Upload)");
+        return;
+    }
+
+    createReward({ ...formData, main_image: imageUrl }, {
         onSuccess: () => {
             toast.success('Reward created successfully');
             setFormData({
@@ -64,6 +89,7 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                 start_datetime: new Date().toISOString(),
                 end_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
             });
+            setSelectedFile(null);
             onSuccess?.();
             onClose();
         },
@@ -162,23 +188,29 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
           </div>
 
           <div className="space-y-2">
-             <Label htmlFor="main_image">Main Image URL</Label>
-             <Input
-                id="main_image"
-                name="main_image"
-                value={formData.main_image}
-                onChange={handleChange}
-                placeholder="https://..."
-                required
-             />
-             <p className="text-xs text-gray-500">Enter a valid image URL.</p>
+             <Label>Reward Image</Label>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <p className="text-xs text-gray-500">Upload Image</p>
+                    <CloudinaryUpload
+                        value={selectedFile ? undefined : formData.main_image}
+                        onChange={(file) => setSelectedFile(file)}
+                        className="h-32"
+                    />
+                 </div>
+                 <div className="space-y-2">
+                    <p className="text-xs text-gray-500">Or Image URL</p>
+                    <Input
+                        id="main_image"
+                        name="main_image"
+                        value={formData.main_image}
+                        onChange={handleChange}
+                        placeholder="https://..."
+                        disabled={!!selectedFile}
+                    />
+                 </div>
+             </div>
           </div>
-
-           {/* Gallery Images Placeholder - Keeping it simple as comma separated for now or just single input to array */}
-           {/* <div className="space-y-2">
-             <Label>Gallery Images</Label>
-             <p className="text-xs text-gray-500">Multi-upload implementation pending.</p>
-          </div> */}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
@@ -186,7 +218,7 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Reward
+              {isUploading ? 'Uploading...' : 'Create Reward'}
             </Button>
           </DialogFooter>
         </form>

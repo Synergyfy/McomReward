@@ -78,7 +78,7 @@ const FrontPageNavbar = () => {
     }
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/features' || pathname === '/checkout' || pathname === '/faq' || pathname === '/privacy' || pathname === '/about' || pathname === '/contact' || pathname.startsWith('/campaigns') || pathname === '/terms';
+  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/features' || pathname === '/checkout' || pathname === '/faq' || pathname === '/matching-rewards' || pathname === '/privacy' || pathname === '/about' || pathname === '/contact' || pathname.startsWith('/campaigns') || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;
@@ -118,6 +118,7 @@ const FrontPageNavbar = () => {
           <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
           <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
           <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
+          <Link href="/matching-rewards" className={getLinkClass("/matching-rewards")}>Matching Rewards</Link>
         </div>
         <div className="hidden md:flex gap-3">
           {isAuthenticated ? (

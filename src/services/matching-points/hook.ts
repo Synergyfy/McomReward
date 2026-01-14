@@ -3,12 +3,13 @@ import api from '../api';
 import {
   AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse,
   GetMatchingPointBalanceResponse, GetMatchingPointsHistoryParams, GetMatchingPointsHistoryResponse,
-  EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto
+  EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto,
+  PublicGetRewardsResponse, PublicRewardResponse
 } from './types';
-// import { LoginResponse } from '@/services/auth/types'; // Not used in this file
+import toast from 'react-hot-toast';
 
-// const STAFF_QUERY_KEY = 'staff'; // Incorrect, removing or commenting out
-const MATCHING_POINTS_QUERY_KEY = 'matchingPoints'; // Corrected
+const MATCHING_POINTS_QUERY_KEY = 'matchingPoints';
+const MATCHING_REWARDS_QUERY_KEY = 'matchingRewards';
 
 // Create Staff
 const awardMatchingPoints = async (data: AwardMatchingPointsRequest): Promise<AwardMatchingPointsResponse> => {
@@ -154,6 +155,57 @@ export const useUpdateParticipantBadge = () => {
     mutationFn: updateParticipantBadge,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['participant-badges'] });
+    }
+  });
+};
+
+// --- Matching Rewards Public Endpoints ---
+
+const fetchPublicMatchingRewards = async (page: number, limit: number, options?: { search?: string }): Promise<PublicGetRewardsResponse> => {
+  const { data } = await api.get<PublicGetRewardsResponse>('/matching-points/rewards/public', {
+    params: { page, limit, ...options },
+  });
+  return data;
+};
+
+export const useGetPublicMatchingRewards = (page: number, limit: number, options?: { search?: string }) => {
+  return useQuery({
+    queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public', page, limit, options],
+    queryFn: () => fetchPublicMatchingRewards(page, limit, options),
+  });
+};
+
+const fetchPublicMatchingRewardById = async (rewardId: string): Promise<PublicRewardResponse> => {
+  const { data } = await api.get<PublicRewardResponse>(`/matching-points/rewards/${rewardId}`);
+  return data;
+};
+
+export const useGetPublicMatchingRewardById = (rewardId: string) => {
+  return useQuery<PublicRewardResponse, Error>({
+    queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public', rewardId],
+    queryFn: () => fetchPublicMatchingRewardById(rewardId),
+    enabled: !!rewardId,
+  });
+};
+
+const redeemMatchingReward = async (rewardId: string): Promise<any> => {
+  const { data } = await api.post(`/matching-points/rewards/${rewardId}/redeem`);
+  return data;
+};
+
+export const useRedeemMatchingReward = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: redeemMatchingReward,
+    onSuccess: (_, rewardId) => {
+      toast.success('Reward redeemed successfully!');
+      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY, 'balance'] });
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public', rewardId] });
+    },
+    onError: (error: any) => {
+      console.error('Redeem failed:', error);
+      toast.error(error?.response?.data?.message || 'Failed to redeem reward. Please check your balance.');
     }
   });
 };

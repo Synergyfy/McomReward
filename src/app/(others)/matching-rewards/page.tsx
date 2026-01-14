@@ -1,14 +1,35 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { MATCHING_REWARDS } from '@/lib/mock-data/matching-rewards';
+import { useGetPublicMatchingRewards } from '@/services/matching-points/hook';
 import MatchingRewardCard from '@/components/rewards/MatchingRewardCard';
-import { Sparkles, Info } from "lucide-react";
+import { Sparkles, Info, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import LoadingSpinner from '@/components/ui/Loading';
 
 export default function MatchingRewardsPage() {
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState('');
+    const limit = 12;
+
+    const { data, isLoading, error } = useGetPublicMatchingRewards(page, limit, { search });
+
+    const rewards = data?.data || [];
+    const totalPages = data?.totalPages || 1;
+
+    if (isLoading) return <LoadingSpinner />;
+
+    if (error) return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
+            <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h2>
+                <p className="text-gray-500 mb-6">We couldn't load the rewards. Please try again later.</p>
+                <Button onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+        </div>
+    );
     return (
         <div className="bg-gray-50 min-h-screen pb-20">
             {/* Hero Section */}
@@ -72,27 +93,60 @@ export default function MatchingRewardsPage() {
 
             {/* Rewards Grid */}
             <section id="rewards-grid" className="max-w-7xl mx-auto px-6 py-20">
-                <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-12">
+                <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-12">
                     <div>
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">Available Rewards</h2>
                         <p className="text-gray-500">Hand-picked selections for our premium members.</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-400">
-                        Showing {MATCHING_REWARDS.length} Rewards
-                    </span>
+
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                            placeholder="Search rewards..."
+                            className="pl-10 rounded-xl border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {MATCHING_REWARDS.map((reward, index) => (
-                        <Link href={`/matching-rewards/${reward.id}`} key={reward.id} className="block h-full">
-                            <MatchingRewardCard
-                                reward={reward}
-                                className={`h-full animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-backwards`}
-                                style={{ animationDelay: `${index * 100}ms` }}
-                            />
-                        </Link>
-                    ))}
-                </div>
+                {rewards.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {rewards.map((reward, index) => (
+                            <Link href={`/matching-rewards/${reward.id}`} key={reward.id} className="block h-full">
+                                <MatchingRewardCard
+                                    reward={reward}
+                                    className={`h-full animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-backwards`}
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                />
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Info className="text-gray-300 w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No rewards found</h3>
+                        <p className="text-gray-500">Try adjusting your search or check back later.</p>
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-12 flex justify-center gap-2">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <Button
+                                key={i}
+                                variant={page === i + 1 ? 'default' : 'outline'}
+                                onClick={() => setPage(i + 1)}
+                                className={page === i + 1 ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                            >
+                                {i + 1}
+                            </Button>
+                        ))}
+                    </div>
+                )}
             </section>
         </div>
     );

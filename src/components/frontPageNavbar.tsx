@@ -78,7 +78,7 @@ const FrontPageNavbar = () => {
     }
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/features' || pathname === '/checkout' || pathname === '/faq' || pathname === '/matching-rewards' || pathname === '/privacy' || pathname === '/about' || pathname === '/contact' || pathname.startsWith('/campaigns') || pathname === '/terms';
+  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/features' || pathname === '/checkout' || pathname === '/faq' || pathname.startsWith('/matching-rewards') || pathname === '/privacy' || pathname === '/about' || pathname === '/contact' || pathname.startsWith('/campaigns') || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;

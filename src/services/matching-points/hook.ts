@@ -3,12 +3,14 @@ import api from '../api';
 import {
   AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse,
   GetMatchingPointBalanceResponse, GetMatchingPointsHistoryParams, GetMatchingPointsHistoryResponse,
-  EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto
+  EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto,
+  CreateMatchingRewardDto, MatchingPointReward, GetRewardsParams, PaginatedRewardsResponse, UpdateMatchingRewardDto
 } from './types';
 // import { LoginResponse } from '@/services/auth/types'; // Not used in this file
 
 // const STAFF_QUERY_KEY = 'staff'; // Incorrect, removing or commenting out
 const MATCHING_POINTS_QUERY_KEY = 'matchingPoints'; // Corrected
+const MATCHING_REWARDS_QUERY_KEY = 'matchingPointRewards';
 
 // Create Staff
 const awardMatchingPoints = async (data: AwardMatchingPointsRequest): Promise<AwardMatchingPointsResponse> => {
@@ -155,5 +157,113 @@ export const useUpdateParticipantBadge = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['participant-badges'] });
     }
+  });
+};
+
+
+// ------------------- Matching Point Rewards Hooks -------------------
+
+// Create Reward
+const createMatchingReward = async (data: CreateMatchingRewardDto): Promise<MatchingPointReward> => {
+  const response = await api.post<MatchingPointReward>('/matching-points/rewards', data);
+  return response.data;
+};
+
+export const useCreateMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createMatchingReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY, 'created'] });
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public'] });
+    },
+  });
+};
+
+// Get Public Rewards (for Regular Business/Consumers)
+const fetchPublicMatchingRewards = async (params: GetRewardsParams): Promise<PaginatedRewardsResponse> => {
+  const { data } = await api.get<PaginatedRewardsResponse>('/matching-points/rewards/public', { params });
+  return data;
+};
+
+export const useGetPublicMatchingRewards = (params: GetRewardsParams = {}) => {
+  return useQuery({
+    queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public', params],
+    queryFn: () => fetchPublicMatchingRewards(params),
+  });
+};
+
+// Get Created Rewards (for Super Business/Admin)
+const fetchCreatedMatchingRewards = async (params: GetRewardsParams): Promise<PaginatedRewardsResponse> => {
+  const { data } = await api.get<PaginatedRewardsResponse>('/matching-points/rewards/created', { params });
+  return data;
+};
+
+export const useGetCreatedMatchingRewards = (params: GetRewardsParams = {}) => {
+  return useQuery({
+    queryKey: [MATCHING_REWARDS_QUERY_KEY, 'created', params],
+    queryFn: () => fetchCreatedMatchingRewards(params),
+  });
+};
+
+// Update Reward
+const updateMatchingReward = async ({ id, payload }: { id: string, payload: UpdateMatchingRewardDto }): Promise<MatchingPointReward> => {
+  const response = await api.patch<MatchingPointReward>(`/matching-points/rewards/${id}`, payload);
+  return response.data;
+};
+
+export const useUpdateMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateMatchingReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Delete Reward
+const deleteMatchingReward = async (id: string): Promise<void> => {
+  await api.delete(`/matching-points/rewards/${id}`);
+};
+
+export const useDeleteMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteMatchingReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Suspend/Unsuspend Reward
+const suspendMatchingReward = async (id: string): Promise<void> => {
+  await api.patch(`/matching-points/rewards/${id}/suspend`);
+};
+
+export const useSuspendMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: suspendMatchingReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY] });
+    },
+  });
+};
+
+// Redeem Reward
+const redeemMatchingReward = async (id: string): Promise<void> => {
+  await api.post(`/matching-points/rewards/${id}/redeem`);
+};
+
+export const useRedeemMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: redeemMatchingReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY] }); // To update balance/history
+      queryClient.invalidateQueries({ queryKey: [MATCHING_REWARDS_QUERY_KEY, 'public'] }); // If quantity changes
+    },
   });
 };

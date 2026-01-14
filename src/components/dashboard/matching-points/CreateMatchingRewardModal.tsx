@@ -6,52 +6,77 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCreateMatchingReward } from '@/services/matching-points/hook';
+import { CreateMatchingRewardDto, TargetAudience } from '@/services/matching-points/types';
 
 interface CreateMatchingRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }: CreateMatchingRewardModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const { mutate: createReward, isPending: loading } = useCreateMatchingReward();
+
+  const [formData, setFormData] = useState<CreateMatchingRewardDto>({
     title: '',
-    description: '',
-    pointsRequired: '',
-    quantity: '',
-    image: '',
+    short_description: '',
+    long_description: '',
+    required_points: 0,
+    quantity: 0,
+    main_image: '',
+    gallery_images: [],
+    target_audience: 'BUSINESS_ONLY',
+    start_datetime: new Date().toISOString(),
+    end_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // Default 1 year
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? Number(value) : value
+    }));
+  };
+
+  const handleAudienceChange = (value: TargetAudience) => {
+    setFormData(prev => ({ ...prev, target_audience: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      toast.success('Reward created successfully');
-      setFormData({
-        title: '',
-        description: '',
-        pointsRequired: '',
-        quantity: '',
-        image: '',
-      });
-      onSuccess();
-      onClose();
-    }, 1000);
+    createReward(formData, {
+        onSuccess: () => {
+            toast.success('Reward created successfully');
+            setFormData({
+                title: '',
+                short_description: '',
+                long_description: '',
+                required_points: 0,
+                quantity: 0,
+                main_image: '',
+                gallery_images: [],
+                target_audience: 'BUSINESS_ONLY',
+                start_datetime: new Date().toISOString(),
+                end_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+            });
+            onSuccess?.();
+            onClose();
+        },
+        onError: (error: any) => {
+            const msg = error?.response?.data?.message || 'Failed to create reward';
+            toast.error(msg);
+        }
+    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Matching Point Reward</DialogTitle>
         </DialogHeader>
@@ -69,26 +94,38 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
+            <Label htmlFor="short_description">Short Description</Label>
+            <Input
+              id="short_description"
+              name="short_description"
+              value={formData.short_description}
               onChange={handleChange}
-              placeholder="Describe the reward..."
+              placeholder="Brief summary..."
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="long_description">Long Description</Label>
+            <Textarea
+              id="long_description"
+              name="long_description"
+              value={formData.long_description}
+              onChange={handleChange}
+              placeholder="Detailed description of the reward..."
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="pointsRequired">Points Required</Label>
+              <Label htmlFor="required_points">Points Required</Label>
               <Input
-                id="pointsRequired"
-                name="pointsRequired"
+                id="required_points"
+                name="required_points"
                 type="number"
                 min="1"
-                value={formData.pointsRequired}
+                value={formData.required_points}
                 onChange={handleChange}
                 required
               />
@@ -108,16 +145,40 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
           </div>
 
           <div className="space-y-2">
-             <Label htmlFor="image">Image URL</Label>
+             <Label htmlFor="target_audience">Target Audience</Label>
+             <Select
+                value={formData.target_audience}
+                onValueChange={handleAudienceChange}
+             >
+                <SelectTrigger>
+                    <SelectValue placeholder="Select audience" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="BUSINESS_ONLY">Business Only</SelectItem>
+                    <SelectItem value="PARTICIPANT_ONLY">Participant Only</SelectItem>
+                    <SelectItem value="BOTH">Both</SelectItem>
+                </SelectContent>
+             </Select>
+          </div>
+
+          <div className="space-y-2">
+             <Label htmlFor="main_image">Main Image URL</Label>
              <Input
-                id="image"
-                name="image"
-                value={formData.image}
+                id="main_image"
+                name="main_image"
+                value={formData.main_image}
                 onChange={handleChange}
                 placeholder="https://..."
+                required
              />
              <p className="text-xs text-gray-500">Enter a valid image URL.</p>
           </div>
+
+           {/* Gallery Images Placeholder - Keeping it simple as comma separated for now or just single input to array */}
+           {/* <div className="space-y-2">
+             <Label>Gallery Images</Label>
+             <p className="text-xs text-gray-500">Multi-upload implementation pending.</p>
+          </div> */}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>

@@ -27,7 +27,7 @@ export interface GetMatchingPointBalanceResponse {
     matching_points: number;
 }
 
-export type MatchingPointActivityType = 'CAMPAIGN_CREATION' | 'REFERRAL' | 'MEMBERSHIP_PAYMENT' | 'MANUAL_ADJUSTMENT';
+export type MatchingPointActivityType = 'CAMPAIGN_CREATION' | 'REFERRAL' | 'MEMBERSHIP_PAYMENT' | 'MANUAL_ADJUSTMENT' | 'REWARD_REDEMPTION';
 
 export interface GetMatchingPointsHistoryParams {
     page?: number;
@@ -117,3 +117,66 @@ export interface CreateParticipantBadgeDto {
 }
 
 export type UpdateParticipantBadgeDto = Partial<CreateParticipantBadgeDto>;
+
+
+// --- Matching Points Rewards ---
+
+export type TargetAudience = 'BUSINESS_ONLY' | 'PARTICIPANT_ONLY' | 'BOTH';
+
+export interface CreateMatchingRewardDto {
+    title: string;
+    short_description: string;
+    long_description: string;
+    main_image: string;
+    gallery_images: string[];
+    required_points: number;
+    target_audience: TargetAudience;
+    quantity: number;
+    start_datetime: string;
+    end_datetime: string;
+}
+
+export interface UpdateMatchingRewardDto extends Partial<CreateMatchingRewardDto> {}
+
+export interface MatchingPointReward {
+    id: string;
+    title: string;
+    short_description: string;
+    long_description: string;
+    main_image: string;
+    gallery_images: string[];
+    required_points: number;
+    target_audience: TargetAudience;
+    quantity: number;
+    start_datetime: string;
+    end_datetime: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    // Computed/Additional fields for frontend mapping if needed
+    pointsRequired?: number; // alias for required_points
+    image?: string; // alias for main_image
+    disabled?: boolean; // mapped from !is_active
+}
+
+export interface GetRewardsParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    min_points?: number;
+    max_points?: number;
+    target_audience?: TargetAudience;
+    start_date?: string;
+    end_date?: string;
+    userType?: string; // For public endpoint filtering
+}
+
+export interface PaginatedRewardsResponse {
+    data: MatchingPointReward[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}

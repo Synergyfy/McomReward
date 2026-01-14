@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { MatchingPointReward } from '@/lib/mock-data/matchingPointsRewards';
+import { MatchingPointReward } from '@/services/matching-points/types';
 import { Lock, Unlock } from 'lucide-react';
 
 interface MatchingRewardCardProps {
@@ -14,8 +14,12 @@ interface MatchingRewardCardProps {
 }
 
 export default function MatchingRewardCard({ reward, currentBalance, onClick }: MatchingRewardCardProps) {
-  const progress = Math.min((currentBalance / reward.pointsRequired) * 100, 100);
-  const isRedeemable = currentBalance >= reward.pointsRequired;
+  // Map fields (backend snake_case vs possible frontend aliases)
+  const pointsRequired = reward.required_points || reward.pointsRequired || 0;
+  const image = reward.main_image || reward.image || '';
+
+  const progress = pointsRequired > 0 ? Math.min((currentBalance / pointsRequired) * 100, 100) : 100;
+  const isRedeemable = currentBalance >= pointsRequired;
 
   return (
     <Card
@@ -23,8 +27,8 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
       onClick={onClick}
     >
       <div className="h-40 bg-gray-100 relative">
-        {reward.image ? (
-          <img src={reward.image} alt={reward.title} className="w-full h-full object-cover" />
+        {image ? (
+          <img src={image} alt={reward.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
         )}
@@ -35,7 +39,7 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
                 </Badge>
             ) : (
                 <Badge variant="secondary" className="bg-gray-200/90 gap-1 text-gray-700">
-                    <Lock className="h-3 w-3" /> {reward.pointsRequired - currentBalance} pts needed
+                    <Lock className="h-3 w-3" /> {pointsRequired - currentBalance} pts needed
                 </Badge>
             )}
         </div>
@@ -43,7 +47,7 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
       <CardContent className="p-4 space-y-3">
         <div className="space-y-1">
             <h3 className="font-bold text-lg leading-tight">{reward.title}</h3>
-            <p className="text-sm text-gray-500 line-clamp-2">{reward.description}</p>
+            <p className="text-sm text-gray-500 line-clamp-2">{reward.short_description || reward.long_description || ''}</p>
         </div>
 
         <div className="space-y-1">
@@ -56,7 +60,7 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
             <Progress value={progress} className={`h-2 ${isRedeemable ? 'bg-green-100' : 'bg-gray-100'}`} indicatorClassName={isRedeemable ? 'bg-green-500' : 'bg-indigo-500'} />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
                 <span>{currentBalance} pts</span>
-                <span>{reward.pointsRequired} pts</span>
+                <span>{pointsRequired} pts</span>
             </div>
         </div>
       </CardContent>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, QrCode, Plus } from 'lucide-react';
+import { Loader2, QrCode, Plus, Edit, Trash2, EyeOff, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useGetMyCreatedCampaigns } from '@/services/campaigns/hook';
@@ -10,15 +10,35 @@ import { CampaignResponse, CampaignType, PublicCampaignResponse } from '@/servic
 import AwardPointsModal from '@/components/dashboard/matching-points/AwardPointsModal';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockMatchingPointRewards, mockGlobalRedemptions } from '@/lib/mock-data/matchingPointsRewards';
+import { useGetCreatedMatchingRewards, useDeleteMatchingReward, useSuspendMatchingReward } from '@/services/matching-points/hook';
+import { mockGlobalRedemptions } from '@/lib/mock-data/matchingPointsRewards';
 import CreateMatchingRewardModal from './CreateMatchingRewardModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SuperBusinessView() {
   const { data: campaignsData, isLoading: isCampaignsLoading } = useGetMyCreatedCampaigns();
+  // Fetch Real Created Rewards
+  const { data: rewardsData, isLoading: isRewardsLoading } = useGetCreatedMatchingRewards({ page: 1, limit: 100 });
+  const { mutate: deleteReward } = useDeleteMatchingReward();
+  const { mutate: suspendReward } = useSuspendMatchingReward();
+
   const [isAwardModalOpen, setIsAwardModalOpen] = useState(false);
   const [isCreateRewardModalOpen, setIsCreateRewardModalOpen] = useState(false);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
 
   if (isCampaignsLoading) {
     return (
@@ -68,6 +88,31 @@ export default function SuperBusinessView() {
       contactPhoneNumber: '',
       footerText: '',
     } as unknown as CampaignResponse)); // Casting as partial mapping is sufficient for UI
+
+  const handleDeleteClick = (id: string) => {
+    setRewardToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (rewardToDelete) {
+        deleteReward(rewardToDelete, {
+            onSuccess: () => {
+                toast.success("Reward deleted successfully");
+                setDeleteDialogOpen(false);
+                setRewardToDelete(null);
+            },
+            onError: () => toast.error("Failed to delete reward")
+        });
+    }
+  };
+
+  const handleToggleStatus = (id: string) => {
+     suspendReward(id, {
+         onSuccess: () => toast.success("Reward status updated"),
+         onError: () => toast.error("Failed to update status")
+     });
+  };
 
   return (
     <div className="space-y-6">
@@ -156,32 +201,51 @@ export default function SuperBusinessView() {
              </Button>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockMatchingPointRewards.map((reward) => (
-                <Card key={reward.id} className="overflow-hidden">
-                   <div className="h-48 bg-gray-100 relative">
-                     {reward.image ? (
-                        <img src={reward.image} alt={reward.title} className="w-full h-full object-cover" />
-                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                     )}
-                   </div>
-                   <CardContent className="p-4 space-y-2">
-                      <div className="flex justify-between items-start">
-                         <h3 className="font-bold text-lg">{reward.title}</h3>
-                         <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-bold">
-                            {reward.pointsRequired} Pts
-                         </span>
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">{reward.description}</p>
-                      <div className="pt-2 flex justify-between items-center text-sm text-gray-500">
-                         <span>Qty: {reward.quantity}</span>
-                         <span>{format(new Date(reward.createdAt), 'MMM d, yyyy')}</span>
-                      </div>
-                   </CardContent>
-                </Card>
-              ))}
-           </div>
+           {isRewardsLoading ? (
+               <div className="flex justify-center py-12"><Loader2 className="animate-spin text-gray-400" /></div>
+           ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rewardsData?.data.map((reward) => (
+                    <Card key={reward.id} className="overflow-hidden group">
+                    <div className="h-48 bg-gray-100 relative">
+                        {reward.main_image || reward.image ? (
+                            <img src={reward.main_image || reward.image} alt={reward.title} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                        )}
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(reward.id)}>
+                                {reward.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                             </Button>
+                             <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteClick(reward.id)}>
+                                <Trash2 className="h-4 w-4" />
+                             </Button>
+                        </div>
+                    </div>
+                    <CardContent className="p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-lg">{reward.title}</h3>
+                            <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-bold">
+                                {reward.required_points || reward.pointsRequired} Pts
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">{reward.short_description}</p>
+                        <div className="pt-2 flex justify-between items-center text-sm text-gray-500">
+                            <span>Qty: {reward.quantity}</span>
+                            <Badge variant={reward.is_active ? 'default' : 'secondary'}>
+                                {reward.is_active ? 'Active' : 'Suspended'}
+                            </Badge>
+                        </div>
+                    </CardContent>
+                    </Card>
+                ))}
+                {rewardsData?.data.length === 0 && (
+                    <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500">No rewards created yet.</p>
+                    </div>
+                )}
+            </div>
+           )}
         </TabsContent>
 
         {/* REDEMPTIONS TAB */}
@@ -233,8 +297,25 @@ export default function SuperBusinessView() {
       <CreateMatchingRewardModal
         isOpen={isCreateRewardModalOpen}
         onClose={() => setIsCreateRewardModalOpen(false)}
-        onSuccess={() => {}}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the reward.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleConfirmDelete}>
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

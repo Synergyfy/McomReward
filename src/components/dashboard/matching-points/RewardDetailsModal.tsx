@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MatchingPointReward } from '@/lib/mock-data/matchingPointsRewards';
+import { MatchingPointReward } from '@/services/matching-points/types';
 import { Loader2, Lock, Unlock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from "@/components/ui/progress";
+import { useRedeemMatchingReward } from '@/services/matching-points/hook';
 
 interface RewardDetailsModalProps {
   isOpen: boolean;
@@ -16,22 +17,29 @@ interface RewardDetailsModalProps {
 }
 
 export default function RewardDetailsModal({ isOpen, onClose, reward, currentBalance }: RewardDetailsModalProps) {
-  const [loading, setLoading] = useState(false);
+  const { mutate: redeemReward, isPending: loading } = useRedeemMatchingReward();
   const [redeemed, setRedeemed] = useState(false);
 
   if (!reward) return null;
 
-  const canRedeem = currentBalance >= reward.pointsRequired;
-  const progress = Math.min((currentBalance / reward.pointsRequired) * 100, 100);
+  // Handle both naming conventions (backend vs frontend alias)
+  const pointsRequired = reward.required_points || reward.pointsRequired || 0;
+  const image = reward.main_image || reward.image || '';
+
+  const canRedeem = currentBalance >= pointsRequired;
+  const progress = Math.min((currentBalance / pointsRequired) * 100, 100);
 
   const handleRedeem = () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      setRedeemed(true);
-      toast.success(`Successfully redeemed ${reward.title}!`);
-    }, 1500);
+    redeemReward(reward.id, {
+        onSuccess: () => {
+            setRedeemed(true);
+            toast.success(`Successfully redeemed ${reward.title}!`);
+        },
+        onError: (error: any) => {
+            const msg = error?.response?.data?.message || 'Redemption failed';
+            toast.error(msg);
+        }
+    });
   };
 
   const handleClose = () => {
@@ -64,8 +72,8 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
             <div className="space-y-6">
               {/* Image */}
               <div className="h-56 w-full rounded-lg overflow-hidden bg-gray-100">
-                {reward.image ? (
-                   <img src={reward.image} alt={reward.title} className="w-full h-full object-cover" />
+                {image ? (
+                   <img src={image} alt={reward.title} className="w-full h-full object-cover" />
                 ) : (
                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                 )}
@@ -74,7 +82,7 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
               {/* Title & Desc */}
               <div className="space-y-2">
                  <h2 className="text-2xl font-bold">{reward.title}</h2>
-                 <p className="text-gray-600">{reward.description}</p>
+                 <p className="text-gray-600">{reward.long_description || reward.short_description}</p>
               </div>
 
               {/* Progress/Requirements */}
@@ -82,7 +90,7 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
                  <div className="flex justify-between items-center text-sm font-medium">
                     <span className="text-gray-500">Requirements</span>
                     <span className={canRedeem ? "text-green-600" : "text-gray-600"}>
-                        {currentBalance} / {reward.pointsRequired} Points
+                        {currentBalance} / {pointsRequired} Points
                     </span>
                  </div>
                  <Progress
@@ -93,7 +101,7 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
                  {!canRedeem && (
                     <p className="text-xs text-red-500 flex items-center gap-1">
                         <Lock className="h-3 w-3" />
-                        You need {reward.pointsRequired - currentBalance} more points to redeem this reward.
+                        You need {pointsRequired - currentBalance} more points to redeem this reward.
                     </p>
                  )}
                  {canRedeem && (

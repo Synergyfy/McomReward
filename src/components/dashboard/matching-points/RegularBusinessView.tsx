@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useGetMatchingPointBalance, useGetMatchingPointsHistory } from '@/services/matching-points/hook';
+import { useGetMatchingPointBalance, useGetMatchingPointsHistory, useGetPublicMatchingRewards } from '@/services/matching-points/hook';
 import MatchingPointsOverview from '@/components/dashboard/matching-points/MatchingPointsOverview';
 import MatchingPointsHistoryTable from '@/components/dashboard/matching-points/MatchingPointsHistoryTable';
 import { matchingPointsOverview as mockOverview } from '@/lib/mock-data/matchingPoints';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Gift, History } from 'lucide-react';
-import { mockMatchingPointRewards, mockMyRedemptions, MatchingPointReward } from '@/lib/mock-data/matchingPointsRewards';
+import { Loader2, Gift } from 'lucide-react';
+import { MatchingPointReward } from '@/services/matching-points/types';
+import { mockMyRedemptions } from '@/lib/mock-data/matchingPointsRewards'; // Still using mock redemptions for "My Redemptions" history as specific endpoint wasn't provided, but main rewards come from API
 import MatchingRewardCard from './MatchingRewardCard';
 import RewardDetailsModal from './RewardDetailsModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,11 +19,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function RegularBusinessView() {
   const { data: balanceData, isLoading: isBalanceLoading } = useGetMatchingPointBalance();
   const { data: historyData, isLoading: isHistoryLoading } = useGetMatchingPointsHistory({ page: 1, limit: 10 });
+  const { data: rewardsData, isLoading: isRewardsLoading } = useGetPublicMatchingRewards({
+      page: 1,
+      limit: 10,
+      userType: 'BUSINESS' // Filter for business-eligible rewards
+  });
 
   const [selectedReward, setSelectedReward] = useState<MatchingPointReward | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
-  if (isBalanceLoading || isHistoryLoading) {
+  if (isBalanceLoading || isHistoryLoading || isRewardsLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -56,7 +62,7 @@ export default function RegularBusinessView() {
             <h2 className="text-xl font-bold text-gray-800">Redeem Your Points</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockMatchingPointRewards.map((reward) => (
+            {rewardsData?.data.map((reward) => (
                 <MatchingRewardCard
                     key={reward.id}
                     reward={reward}
@@ -64,6 +70,11 @@ export default function RegularBusinessView() {
                     onClick={() => handleRewardClick(reward)}
                 />
             ))}
+             {rewardsData?.data.length === 0 && (
+                <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">No rewards available at the moment.</p>
+                </div>
+            )}
         </div>
       </div>
 

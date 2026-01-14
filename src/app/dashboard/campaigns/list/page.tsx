@@ -12,9 +12,11 @@ import { ClaimableCampaignsTicker } from '@/components/customer/ClaimableCampaig
 import { PlusCircle, Pencil, ChevronLeft, ChevronRight, MoreHorizontal, Lock, QrCode, Copy, Eye, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { differenceInDays, parseISO, isValid } from 'date-fns';
 
 // Imports moved up and consolidated
 import { useGetBusinessTierUsage, useGetBusinessProfile } from '@/services/business/hook';
+import { useGetGeneralAnalytics } from '@/services/business-dashboard/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import UsageCard from '@/components/dashboard/shared/UsageCard';
 
@@ -182,6 +184,7 @@ export default function CampaignsListPage() {
   const { data: claimableCampaignsData } = useGetClaimableCampaigns(1, 20);
   const { data: tierUsageData, isLoading: isLoadingTierUsage } = useGetBusinessTierUsage();
   const { data: subscriptionData, isLoading: isLoadingSubscription } = useGetMySubscription();
+  const { data: analyticsData } = useGetGeneralAnalytics();
   const { data: profile } = useGetBusinessProfile();
   const { mutate: deleteCampaign } = useDeleteCampaign();
 
@@ -270,27 +273,65 @@ export default function CampaignsListPage() {
   // Bypass limit for Super Business
   const hasReachedCampaignLimit = !profile?.isSuperBusiness && (maxActiveCampaigns !== -1 && currentActiveCampaigns >= maxActiveCampaigns);
 
-  // New helper function for campaign status
-  const getCampaignStatus = (campaign: PublicCampaignResponse): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
+  // New helper function to get all applicable status badges
+  const getCampaignBadges = (campaign: PublicCampaignResponse): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }[] => {
+    const badges: { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }[] = [];
     const now = new Date();
-    const startDate = new Date(campaign.start_date);
-    const endDate = new Date(campaign.end_date);
+
+    // Robustly retrieve dates (handle both snake_case and camelCase)
+    // @ts-ignore - checking potential camelCase props not in interface
+    const rawStartDate = campaign.start_date || campaign.startDate;
+    // @ts-ignore
+    const rawEndDate = campaign.end_date || campaign.endDate;
+
+    // Check for missing dates
+    if (!rawStartDate || !rawEndDate) {
+      badges.push({ label: 'No Date', variant: 'outline' });
+      return badges;
+    }
+
+    const startDate = parseISO(rawStartDate);
+    const endDate = parseISO(rawEndDate);
+
+    if (!isValid(startDate) || !isValid(endDate)) {
+       badges.push({ label: 'Invalid Date', variant: 'outline' });
+       return badges;
+    }
 
     if (campaign.disabled) {
-      return { label: 'Disabled', variant: 'destructive' };
+      badges.push({ label: 'Disabled', variant: 'destructive' });
+      return badges; // Disabled overrides everything else? Or should we show other status? Usually disabled hides status.
     }
+
     // Use remainingSlots if available, otherwise quantity
     const available = campaign.remainingSlots ?? campaign.quantity;
     if (available <= 0) {
-      return { label: 'Sold Out', variant: 'destructive' };
+      badges.push({ label: 'Sold Out', variant: 'destructive' });
+      return badges;
     }
+
     if (startDate > now) {
-      return { label: 'Scheduled', variant: 'secondary' };
+      badges.push({ label: 'Scheduled', variant: 'secondary' });
+      return badges;
     }
+
     if (endDate < now) {
-      return { label: 'Expired', variant: 'secondary' };
+      badges.push({ label: 'Expired', variant: 'secondary' });
+      return badges;
     }
-    return { label: 'Active', variant: 'default' };
+
+    // If we are here, it is Active
+    badges.push({ label: 'Active', variant: 'default' });
+
+    // Days remaining check (Only for Active campaigns)
+    // We use differenceInDays which returns integer days.
+    // If it's today (0) or future up to 7 days.
+    const daysLeft = differenceInDays(endDate, now);
+    if (daysLeft >= 0 && daysLeft <= 7) {
+       badges.push({ label: `${daysLeft} Day${daysLeft === 1 ? '' : 's'} Left`, variant: 'destructive' });
+    }
+
+    return badges;
   };
 
   const renderCampaigns = (campaigns: PublicCampaignResponse[], isLoading: boolean) => {
@@ -331,17 +372,18 @@ export default function CampaignsListPage() {
                   objectFit="cover"
                 />
               )}
-              {(() => {
-                const status = getCampaignStatus(campaign);
-                return (
+              {/* Badges Container */}
+              <div className="absolute top-3 right-3 flex flex-row gap-2 items-center">
+                {getCampaignBadges(campaign).map((badge, idx) => (
                   <Badge
-                    variant={status.variant}
-                    className="absolute top-3 right-3 text-sm px-3 py-1"
+                    key={idx}
+                    variant={badge.variant}
+                    className="text-sm px-3 py-1 shadow-sm"
                   >
-                    {status.label}
+                    {badge.label}
                   </Badge>
-                );
-              })()}
+                ))}
+              </div>
             </div>
             <div className="relative px-5">
               <div className="absolute -top-12 left-1/2 -translate-x-1/2">
@@ -528,12 +570,17 @@ export default function CampaignsListPage() {
             <div className="mb-8 max-w-md">
               <UsageCard
                 title="Campaign Usage"
-                usage={tierUsageData?.features?.campaigns || {
+                usage={profile?.isSuperBusiness ? {
+                  limit: -1,
+                  used: analyticsData?.totalActiveCampaigns || 0,
+                  remaining: -1,
+                  extraPoints: 0
+                } : (tierUsageData?.features?.campaigns || {
                   limit: subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0,
                   used: 0,
                   remaining: subscriptionData?.tier?.configuration?.quotas?.maxActiveCampaigns ?? 0,
                   extraPoints: 0
-                }}
+                })}
               />
             </div>
           ) : null}

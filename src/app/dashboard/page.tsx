@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetBusinessProfile } from "@/services/business/hook";
 import Loader from "@/components/ui/loader";
 import { ChartQueryDto } from "@/services/business-dashboard/types";
 
@@ -27,13 +28,16 @@ export default function BusinessDashboard() {
   const { data: analyticsData, isLoading: isAnalyticsLoading, isError: isAnalyticsError } = useGetGeneralAnalytics();
   const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
   const { data: subscription, isLoading: isLoadingSubscription } = useGetMySubscription();
+  const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
-  const tierName = subscription?.tier?.name || 'N/A';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tierProgress = (subscription?.tier as any)?.progress || 0;
 
-  if (isAnalyticsLoading || isLoadingSubscription) {
+  const isSuperBusiness = profile?.isSuperBusiness;
+  const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'N/A');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tierProgress = isSuperBusiness ? 100 : ((subscription?.tier as any)?.progress || 0);
+
+  if (isAnalyticsLoading || isLoadingSubscription || isProfileLoading) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
   }
 
@@ -183,7 +187,9 @@ const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) =>
         <Star className="text-yellow-400 fill-yellow-400" />
       </div>
       <Progress value={tier.progress} className="w-full" />
-      <p className="text-sm text-gray-500 mt-2">{tier.progress}% to the next tier</p>
+      <p className="text-sm text-gray-500 mt-2">
+        {tier.name === 'Super Business' ? 'Unlimited Access' : `${tier.progress}% to the next tier`}
+      </p>
     </CardContent>
   </Card>
 );

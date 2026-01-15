@@ -122,7 +122,7 @@ export default function SuperBusinessView() {
                 {rewardsData?.data.map((reward) => {
                     const displayImage = reward.mainImage || reward.main_image || reward.image;
                     const points = reward.requiredPoints ?? reward.required_points ?? reward.pointsRequired ?? 0;
-                    const isActive = reward.is_active ?? !reward.isSuspended ?? true;
+                    const isActive = reward.is_active ?? !reward.isSuspended;
                     const audience = reward.targetAudience ?? reward.target_audience ?? 'Unknown';
                     const gallery = reward.galleryImages ?? reward.gallery_images ?? [];
 

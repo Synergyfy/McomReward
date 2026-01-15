@@ -238,13 +238,8 @@ export const useDeleteMatchingReward = () => {
 };
 
 // Suspend/Unsuspend Reward
-// Updated to try and return the updated object
-const suspendMatchingReward = async (id: string): Promise<MatchingPointReward | void> => {
-  const response = await api.patch<MatchingPointReward>(`/matching-points/rewards/${id}/suspend`);
-  // If the API returns the updated object, return it.
-  if (response.data && typeof response.data === 'object' && 'is_active' in response.data) {
-      return response.data;
-  }
+const suspendMatchingReward = async (id: string): Promise<void> => {
+  await api.patch(`/matching-points/rewards/${id}/suspend`);
 };
 
 export const useSuspendMatchingReward = () => {

@@ -192,9 +192,8 @@ export default function SuperBusinessView() {
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter className="bg-gray-50 px-5 py-3 text-xs text-gray-500 justify-between mt-auto">
+                        <CardFooter className="bg-gray-50 px-5 py-3 text-xs text-gray-500 mt-auto">
                              <span>Qty: {reward.quantity}</span>
-                             <span>ID: {reward.id.slice(0, 8)}...</span>
                         </CardFooter>
                         </Card>
                     );

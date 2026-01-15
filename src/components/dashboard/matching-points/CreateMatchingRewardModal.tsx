@@ -12,9 +12,8 @@ import { toast } from 'sonner';
 import { useCreateMatchingReward } from '@/services/matching-points/hook';
 import { CreateMatchingRewardDto, TargetAudience } from '@/services/matching-points/types';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
-import { useUploadToCloudinary } from '@/services/upload/hook';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { resizeImage } from '@/lib/image-utils';
 
 interface CreateMatchingRewardModalProps {
   isOpen: boolean;
@@ -22,15 +21,15 @@ interface CreateMatchingRewardModalProps {
   onSuccess?: () => void;
 }
 
-const MAX_FILE_SIZE_MB = 4.5; // Slightly under 5MB to be safe
+const MAX_FILE_SIZE_MB = 4.5;
 
 export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }: CreateMatchingRewardModalProps) {
   const { mutate: createReward, isPending: isCreating } = useCreateMatchingReward();
-  const { mutateAsync: uploadImage, isPending: isUploading } = useUploadToCloudinary();
 
   // State for files
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<{ file: File; preview: string }[]>([]);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
 
   const [formData, setFormData] = useState<CreateMatchingRewardDto>({
     title: '',
@@ -41,11 +40,11 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
     main_image: '',
     gallery_images: [],
     target_audience: 'BUSINESS_ONLY',
-    start_datetime: new Date().toISOString().split('T')[0], // Default today (YYYY-MM-DD for input)
+    start_datetime: new Date().toISOString().split('T')[0],
     end_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
   });
 
-  const loading = isCreating || isUploading;
+  const loading = isCreating || isProcessingImages;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -86,36 +85,38 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsProcessingImages(true);
 
     let mainImageUrl = formData.main_image;
-    const galleryImageUrls: string[] = [...formData.gallery_images]; // Start with existing URLs if any
+    const galleryImageUrls: string[] = [...formData.gallery_images];
 
     try {
-        // Upload Main Image if file selected
+        // Convert Main Image to Base64 if file selected
         if (mainImageFile) {
-            const uploadResult = await uploadImage({ file: mainImageFile, folder: 'matching-rewards' });
-            mainImageUrl = uploadResult.secure_url;
+            mainImageUrl = await resizeImage(mainImageFile);
         }
 
-        // Upload Gallery Images
+        // Convert Gallery Images
         if (galleryFiles.length > 0) {
-            const uploadPromises = galleryFiles.map(gf => uploadImage({ file: gf.file, folder: 'matching-rewards-gallery' }));
-            const results = await Promise.all(uploadPromises);
-            results.forEach(res => galleryImageUrls.push(res.secure_url));
+            const processPromises = galleryFiles.map(gf => resizeImage(gf.file));
+            const results = await Promise.all(processPromises);
+            results.forEach(res => galleryImageUrls.push(res));
         }
 
     } catch (error) {
-        console.error("Upload failed", error);
-        toast.error("Failed to upload images. Please check your internet connection or try smaller files.");
+        console.error("Image processing failed", error);
+        toast.error("Failed to process images. Please try different files.");
+        setIsProcessingImages(false);
         return;
     }
 
     if (!mainImageUrl) {
         toast.error("Please provide a main image (URL or Upload)");
+        setIsProcessingImages(false);
         return;
     }
 
-    // Prepare payload ensuring dates are ISO strings if they came from date inputs
+    // Prepare payload
     const payload: CreateMatchingRewardDto = {
         ...formData,
         main_image: mainImageUrl,
@@ -141,10 +142,12 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
             });
             setMainImageFile(null);
             setGalleryFiles([]);
+            setIsProcessingImages(false);
             onSuccess?.();
             onClose();
         },
         onError: (error: any) => {
+            setIsProcessingImages(false);
             const msg = error?.response?.data?.message || 'Failed to create reward';
             toast.error(msg);
         }
@@ -180,7 +183,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   placeholder="e.g. Free Marketing Consultation"
                   required
                 />
-                <p className="text-xs text-muted-foreground">Make it catchy and clear.</p>
               </div>
 
               <div className="space-y-2">
@@ -193,7 +195,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   placeholder="Brief summary appearing on the card..."
                   required
                 />
-                <p className="text-xs text-muted-foreground">Visible on the reward card preview.</p>
               </div>
 
               <div className="space-y-2">
@@ -203,11 +204,10 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   name="long_description"
                   value={formData.long_description}
                   onChange={handleChange}
-                  placeholder="Detailed description of terms, benefits, and how to claim..."
+                  placeholder="Detailed description..."
                   required
                   className="min-h-[100px]"
                 />
-                <p className="text-xs text-muted-foreground">Full details shown in the modal.</p>
               </div>
           </div>
 
@@ -223,7 +223,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                 onChange={handleChange}
                 required
               />
-              <p className="text-xs text-muted-foreground">Points needed to redeem.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>
@@ -236,7 +235,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                 onChange={handleChange}
                 required
               />
-              <p className="text-xs text-muted-foreground">Total inventory available.</p>
             </div>
           </div>
 
@@ -280,7 +278,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                     <SelectItem value="BOTH">Both</SelectItem>
                 </SelectContent>
              </Select>
-             <p className="text-xs text-muted-foreground">Who can see and redeem this reward?</p>
           </div>
 
           {/* Image Section */}
@@ -297,7 +294,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                             onChange={(file) => handleMainImageSelect(file)}
                             className="h-40 w-full"
                         />
-                        <p className="text-xs text-center text-muted-foreground">Primary display image (Max 4.5MB)</p>
                      </div>
                      <div className="space-y-2 flex flex-col justify-end">
                         <Label htmlFor="main_image_url" className="text-xs">Or URL</Label>
@@ -317,7 +313,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
              <div className="space-y-2">
                  <Label>Gallery Images</Label>
                  <div className="flex flex-wrap gap-4">
-                    {/* Render uploaded previews */}
                     {galleryFiles.map((file, index) => (
                         <div key={index} className="relative h-24 w-24 rounded-md overflow-hidden border">
                             <img src={file.preview} alt="gallery" className="h-full w-full object-cover" />
@@ -330,8 +325,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                             </button>
                         </div>
                     ))}
-
-                    {/* Upload Button */}
                     <div className="h-24 w-24 relative">
                         <CloudinaryUpload
                             onChange={(file) => handleGalleryUpload(file)}
@@ -339,7 +332,6 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                         />
                     </div>
                  </div>
-                 <p className="text-xs text-muted-foreground">Additional images for the reward details.</p>
              </div>
           </div>
 
@@ -349,7 +341,7 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? 'Uploading Media...' : 'Create Reward'}
+              {isProcessingImages ? 'Processing Images...' : 'Create Reward'}
             </Button>
           </DialogFooter>
         </form>

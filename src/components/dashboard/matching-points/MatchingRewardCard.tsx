@@ -14,9 +14,10 @@ interface MatchingRewardCardProps {
 }
 
 export default function MatchingRewardCard({ reward, currentBalance, onClick }: MatchingRewardCardProps) {
-  // Map fields (backend snake_case vs possible frontend aliases)
-  const pointsRequired = reward.required_points || reward.pointsRequired || 0;
-  const image = reward.main_image || reward.image || '';
+  // Map fields (Handle camelCase from API response and legacy snake_case)
+  const pointsRequired = reward.requiredPoints ?? reward.required_points ?? reward.pointsRequired ?? 0;
+  const image = reward.mainImage ?? reward.main_image ?? reward.image ?? '';
+  const description = reward.shortDescription ?? reward.short_description ?? reward.longDescription ?? reward.long_description ?? '';
 
   const progress = pointsRequired > 0 ? Math.min((currentBalance / pointsRequired) * 100, 100) : 100;
   const isRedeemable = currentBalance >= pointsRequired;
@@ -28,7 +29,14 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
     >
       <div className="h-40 bg-gray-100 relative">
         {image ? (
-          <img src={image} alt={reward.title} className="w-full h-full object-cover" />
+          <img
+            src={image}
+            alt={reward.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=No+Image';
+            }}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
         )}
@@ -47,7 +55,7 @@ export default function MatchingRewardCard({ reward, currentBalance, onClick }: 
       <CardContent className="p-4 space-y-3">
         <div className="space-y-1">
             <h3 className="font-bold text-lg leading-tight">{reward.title}</h3>
-            <p className="text-sm text-gray-500 line-clamp-2">{reward.short_description || reward.long_description || ''}</p>
+            <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
         </div>
 
         <div className="space-y-1">

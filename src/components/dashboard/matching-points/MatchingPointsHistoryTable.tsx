@@ -21,10 +21,10 @@ const activityTypeColors: Record<MatchingPointActivityType | string, string> = {
   REFERRAL: 'bg-green-100 text-green-800',
   MEMBERSHIP_PAYMENT: 'bg-indigo-100 text-indigo-800',
   MANUAL_ADJUSTMENT: 'bg-yellow-100 text-yellow-800',
-  REWARD_REDEMPTION: 'bg-purple-100 text-purple-800', // Added missing type
-  Earned: 'bg-green-100 text-green-800', // Fallback/Legacy
-  Redeemed: 'bg-red-100 text-red-800', // Fallback/Legacy
-  Adjusted: 'bg-yellow-100 text-yellow-800', // Fallback/Legacy
+  REWARD_REDEMPTION: 'bg-purple-100 text-purple-800',
+  Earned: 'bg-green-100 text-green-800',
+  Redeemed: 'bg-red-100 text-red-800',
+  Adjusted: 'bg-yellow-100 text-yellow-800',
 };
 
 const formatActivityType = (type: string) => {
@@ -51,21 +51,28 @@ export default function MatchingPointsHistoryTable({ history }: MatchingPointsHi
           </TableHeader>
           <TableBody>
             {history?.length > 0 ? (
-              history.map((activity) => (
-                <TableRow key={activity.id}>
-                  <TableCell>{activity.created_at ? format(new Date(activity.created_at), 'MMM dd, yyyy') : '-'}</TableCell>
-                  <TableCell>
-                    <Badge className={activityTypeColors[activity.activity_type] || 'bg-gray-100 text-gray-800'}>
-                      {formatActivityType(activity.activity_type)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{activity.description}</TableCell>
-                  <TableCell className={activity.points > 0 ? 'text-green-600' : 'text-red-600'}>
-                    {activity.points > 0 ? '+' : ''}{activity.points}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{activity.balance_after}</TableCell>
-                </TableRow>
-              ))
+              history.map((activity) => {
+                // Map properties (camelCase vs snake_case)
+                const createdAt = activity.createdAt || activity.created_at;
+                const activityType = activity.activityType || activity.activity_type || 'Unknown';
+                const balanceAfter = activity.balanceAfter ?? activity.balance_after ?? 0;
+
+                return (
+                  <TableRow key={activity.id}>
+                    <TableCell>{createdAt ? format(new Date(createdAt), 'MMM dd, yyyy') : '-'}</TableCell>
+                    <TableCell>
+                      <Badge className={activityTypeColors[activityType] || 'bg-gray-100 text-gray-800'}>
+                        {formatActivityType(activityType)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{activity.description}</TableCell>
+                    <TableCell className={activity.points > 0 ? 'text-green-600' : 'text-red-600'}>
+                      {activity.points > 0 ? '+' : ''}{activity.points}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{balanceAfter}</TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground h-24">

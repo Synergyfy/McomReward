@@ -23,11 +23,12 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
   if (!reward) return null;
 
   // Handle both naming conventions (backend vs frontend alias)
-  const pointsRequired = reward.required_points || reward.pointsRequired || 0;
-  const image = reward.main_image || reward.image || '';
+  const pointsRequired = reward.requiredPoints ?? reward.required_points ?? reward.pointsRequired ?? 0;
+  const image = reward.mainImage ?? reward.main_image ?? reward.image ?? '';
+  const description = reward.longDescription ?? reward.long_description ?? reward.shortDescription ?? reward.short_description ?? '';
 
   const canRedeem = currentBalance >= pointsRequired;
-  const progress = Math.min((currentBalance / pointsRequired) * 100, 100);
+  const progress = pointsRequired > 0 ? Math.min((currentBalance / pointsRequired) * 100, 100) : 100;
 
   const handleRedeem = () => {
     redeemReward(reward.id, {
@@ -73,7 +74,14 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
               {/* Image */}
               <div className="h-56 w-full rounded-lg overflow-hidden bg-gray-100">
                 {image ? (
-                   <img src={image} alt={reward.title} className="w-full h-full object-cover" />
+                   <img
+                     src={image}
+                     alt={reward.title}
+                     className="w-full h-full object-cover"
+                     onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=No+Image';
+                     }}
+                   />
                 ) : (
                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                 )}
@@ -82,7 +90,7 @@ export default function RewardDetailsModal({ isOpen, onClose, reward, currentBal
               {/* Title & Desc */}
               <div className="space-y-2">
                  <h2 className="text-2xl font-bold">{reward.title}</h2>
-                 <p className="text-gray-600">{reward.long_description || reward.short_description}</p>
+                 <p className="text-gray-600">{description}</p>
               </div>
 
               {/* Progress/Requirements */}

@@ -112,6 +112,7 @@ export default function SuperBusinessView() {
 
   const handleToggleStatus = (id: string) => {
      // Optimistic update for immediate feedback
+     // We toggle the state in the cache immediately.
      queryClient.setQueryData(['matchingPointRewards', 'created', { page: 1, limit: 100 }], (oldData: PaginatedRewardsResponse | undefined) => {
          if (!oldData) return oldData;
          return {
@@ -123,21 +124,15 @@ export default function SuperBusinessView() {
      suspendReward(id, {
          onSuccess: (data) => {
              toast.success("Reward status updated");
-             // If API returns data, use it to ensure correctness
-             if (data) {
-                 queryClient.setQueryData(['matchingPointRewards', 'created', { page: 1, limit: 100 }], (oldData: PaginatedRewardsResponse | undefined) => {
-                     if (!oldData) return oldData;
-                     return {
-                         ...oldData,
-                         data: oldData.data.map(r => r.id === id ? { ...r, is_active: data.is_active } : r)
-                     };
-                 });
-             }
+             // NOTE: We do NOT use the returned 'data' here to update the cache.
+             // Some APIs return the *previous* state or partial data which can revert the optimistic update incorrectly.
+             // We rely on the optimistic update we already did, and then invalidate to fetch the source of truth.
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
          },
          onError: () => {
              toast.error("Failed to update status");
-             // Revert on error
+             // Revert on error by invalidating (fetching mostly correct data)
+             // or manually untoggling if we wanted strict rollback.
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
          }
      });

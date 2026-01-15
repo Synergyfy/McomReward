@@ -26,8 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function SuperBusinessView() {
+  const queryClient = useQueryClient();
   const { data: campaignsData, isLoading: isCampaignsLoading } = useGetMyCreatedCampaigns();
   // Fetch Real Created Rewards
   const { data: rewardsData, isLoading: isRewardsLoading } = useGetCreatedMatchingRewards({ page: 1, limit: 100 });
@@ -109,7 +111,11 @@ export default function SuperBusinessView() {
 
   const handleToggleStatus = (id: string) => {
      suspendReward(id, {
-         onSuccess: () => toast.success("Reward status updated"),
+         onSuccess: () => {
+             toast.success("Reward status updated");
+             // Force refetch to ensure UI reflects change immediately if invalidation is slow
+             queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+         },
          onError: () => toast.error("Failed to update status")
      });
   };

@@ -8,7 +8,7 @@ import { matchingPointsOverview as mockOverview } from '@/lib/mock-data/matching
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Gift } from 'lucide-react';
 import { MatchingPointReward } from '@/services/matching-points/types';
-import { mockMyRedemptions } from '@/lib/mock-data/matchingPointsRewards'; // Still using mock redemptions for "My Redemptions" history as specific endpoint wasn't provided, but main rewards come from API
+import { mockMyRedemptions } from '@/lib/mock-data/matchingPointsRewards';
 import MatchingRewardCard from './MatchingRewardCard';
 import RewardDetailsModal from './RewardDetailsModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,10 +19,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function RegularBusinessView() {
   const { data: balanceData, isLoading: isBalanceLoading } = useGetMatchingPointBalance();
   const { data: historyData, isLoading: isHistoryLoading } = useGetMatchingPointsHistory({ page: 1, limit: 10 });
+
+  // Fetch ALL rewards and filter client-side to exclude PARTICIPANT_ONLY
+  // This ensures we see BUSINESS_ONLY and BOTH, assuming the backend doesn't support an OR query.
+  // Note: Pagination might look odd if many participant rewards exist, but this is the safest integration without backend changes.
   const { data: rewardsData, isLoading: isRewardsLoading } = useGetPublicMatchingRewards({
       page: 1,
-      limit: 10,
-      userType: 'BUSINESS' // Filter for business-eligible rewards
+      limit: 50, // Increase limit to fetch enough relevant rewards
   });
 
   const [selectedReward, setSelectedReward] = useState<MatchingPointReward | null>(null);
@@ -48,6 +51,9 @@ export default function RegularBusinessView() {
     setIsRewardModalOpen(true);
   };
 
+  // Filter rewards: Keep "BUSINESS_ONLY" and "BOTH"
+  const businessRewards = rewardsData?.data.filter(r => r.target_audience !== 'PARTICIPANT_ONLY') || [];
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-gray-800">Matching Points</h1>
@@ -62,7 +68,7 @@ export default function RegularBusinessView() {
             <h2 className="text-xl font-bold text-gray-800">Redeem Your Points</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rewardsData?.data.map((reward) => (
+            {businessRewards.map((reward) => (
                 <MatchingRewardCard
                     key={reward.id}
                     reward={reward}
@@ -70,7 +76,7 @@ export default function RegularBusinessView() {
                     onClick={() => handleRewardClick(reward)}
                 />
             ))}
-             {rewardsData?.data.length === 0 && (
+             {businessRewards.length === 0 && (
                 <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
                     <p className="text-gray-500">No rewards available at the moment.</p>
                 </div>

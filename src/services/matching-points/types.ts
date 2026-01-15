@@ -168,7 +168,7 @@ export interface GetRewardsParams {
     target_audience?: TargetAudience;
     start_date?: string;
     end_date?: string;
-    userType?: string; // For public endpoint filtering
+    userType?: string; // For public endpoint filtering - kept for backward compatibility if needed, though replaced by target_audience
 }
 
 export interface PaginatedRewardsResponse {

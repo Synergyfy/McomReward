@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { PaginatedRewardsResponse } from '@/services/matching-points/types';
 
 export default function SuperBusinessView() {
   const queryClient = useQueryClient();
@@ -110,13 +111,35 @@ export default function SuperBusinessView() {
   };
 
   const handleToggleStatus = (id: string) => {
+     // Optimistic update for immediate feedback
+     queryClient.setQueryData(['matchingPointRewards', 'created', { page: 1, limit: 100 }], (oldData: PaginatedRewardsResponse | undefined) => {
+         if (!oldData) return oldData;
+         return {
+             ...oldData,
+             data: oldData.data.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r)
+         };
+     });
+
      suspendReward(id, {
-         onSuccess: () => {
+         onSuccess: (data) => {
              toast.success("Reward status updated");
-             // Force refetch to ensure UI reflects change immediately if invalidation is slow
+             // If API returns data, use it to ensure correctness
+             if (data) {
+                 queryClient.setQueryData(['matchingPointRewards', 'created', { page: 1, limit: 100 }], (oldData: PaginatedRewardsResponse | undefined) => {
+                     if (!oldData) return oldData;
+                     return {
+                         ...oldData,
+                         data: oldData.data.map(r => r.id === id ? { ...r, is_active: data.is_active } : r)
+                     };
+                 });
+             }
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
          },
-         onError: () => toast.error("Failed to update status")
+         onError: () => {
+             toast.error("Failed to update status");
+             // Revert on error
+             queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+         }
      });
   };
 

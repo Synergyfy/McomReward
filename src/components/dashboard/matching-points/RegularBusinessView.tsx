@@ -20,18 +20,26 @@ export default function RegularBusinessView() {
   const { data: balanceData, isLoading: isBalanceLoading } = useGetMatchingPointBalance();
   const { data: historyData, isLoading: isHistoryLoading } = useGetMatchingPointsHistory({ page: 1, limit: 10 });
 
-  // Fetch ALL rewards and filter client-side to exclude PARTICIPANT_ONLY
-  // This ensures we see BUSINESS_ONLY and BOTH, assuming the backend doesn't support an OR query.
-  // Note: Pagination might look odd if many participant rewards exist, but this is the safest integration without backend changes.
-  const { data: rewardsData, isLoading: isRewardsLoading } = useGetPublicMatchingRewards({
+  // Strategy: Fetch specifically for BUSINESS_ONLY and BOTH separately, then merge.
+  // This avoids issues where the API might default to 'PARTICIPANT_ONLY' if no target_audience is provided,
+  // or if it doesn't support fetching all.
+
+  const { data: businessRewardsData, isLoading: isBusinessRewardsLoading } = useGetPublicMatchingRewards({
       page: 1,
-      limit: 50, // Increase limit to fetch enough relevant rewards
+      limit: 50,
+      target_audience: 'BUSINESS_ONLY'
+  });
+
+  const { data: bothRewardsData, isLoading: isBothRewardsLoading } = useGetPublicMatchingRewards({
+      page: 1,
+      limit: 50,
+      target_audience: 'BOTH'
   });
 
   const [selectedReward, setSelectedReward] = useState<MatchingPointReward | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
-  if (isBalanceLoading || isHistoryLoading || isRewardsLoading) {
+  if (isBalanceLoading || isHistoryLoading || isBusinessRewardsLoading || isBothRewardsLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -51,8 +59,16 @@ export default function RegularBusinessView() {
     setIsRewardModalOpen(true);
   };
 
-  // Filter rewards: Keep "BUSINESS_ONLY" and "BOTH"
-  const businessRewards = rewardsData?.data.filter(r => r.target_audience !== 'PARTICIPANT_ONLY') || [];
+  // Merge and Deduplicate Rewards
+  const allRewards = [
+      ...(businessRewardsData?.data || []),
+      ...(bothRewardsData?.data || [])
+  ];
+
+  // Deduplicate by ID just in case
+  const uniqueRewardsMap = new Map();
+  allRewards.forEach(r => uniqueRewardsMap.set(r.id, r));
+  const businessRewards = Array.from(uniqueRewardsMap.values());
 
   return (
     <div className="space-y-8">

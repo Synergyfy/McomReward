@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useGetMatchingPointBalance, useGetMatchingPointsHistory, useGetPublicMatchingRewards } from '@/services/matching-points/hook';
+import { useGetMatchingPointBalance, useGetMatchingPointsHistory, useGetPublicMatchingRewards, useGetRedeemedMatchingRewards } from '@/services/matching-points/hook';
 import MatchingPointsOverview from '@/components/dashboard/matching-points/MatchingPointsOverview';
 import MatchingPointsHistoryTable from '@/components/dashboard/matching-points/MatchingPointsHistoryTable';
 import { matchingPointsOverview as mockOverview } from '@/lib/mock-data/matchingPoints';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Gift } from 'lucide-react';
 import { MatchingPointReward } from '@/services/matching-points/types';
-import { mockMyRedemptions } from '@/lib/mock-data/matchingPointsRewards';
 import MatchingRewardCard from './MatchingRewardCard';
 import RewardDetailsModal from './RewardDetailsModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,10 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function RegularBusinessView() {
   const { data: balanceData, isLoading: isBalanceLoading } = useGetMatchingPointBalance();
   const { data: historyData, isLoading: isHistoryLoading } = useGetMatchingPointsHistory({ page: 1, limit: 10 });
-
-  // Strategy: Fetch specifically for BUSINESS_ONLY and BOTH separately, then merge.
-  // This avoids issues where the API might default to 'PARTICIPANT_ONLY' if no target_audience is provided,
-  // or if it doesn't support fetching all.
+  const { data: redemptionsData, isLoading: isRedemptionsLoading } = useGetRedeemedMatchingRewards({ page: 1, limit: 10 });
 
   const { data: businessRewardsData, isLoading: isBusinessRewardsLoading } = useGetPublicMatchingRewards({
       page: 1,
@@ -39,7 +35,7 @@ export default function RegularBusinessView() {
   const [selectedReward, setSelectedReward] = useState<MatchingPointReward | null>(null);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
-  if (isBalanceLoading || isHistoryLoading || isBusinessRewardsLoading || isBothRewardsLoading) {
+  if (isBalanceLoading || isHistoryLoading || isBusinessRewardsLoading || isBothRewardsLoading || isRedemptionsLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -138,7 +134,7 @@ export default function RegularBusinessView() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {mockMyRedemptions.map((redemption) => (
+                                {redemptionsData?.data.map((redemption) => (
                                     <TableRow key={redemption.id}>
                                         <TableCell>{format(new Date(redemption.redeemedAt), 'MMM d, yyyy')}</TableCell>
                                         <TableCell className="font-medium">{redemption.rewardTitle}</TableCell>
@@ -150,7 +146,7 @@ export default function RegularBusinessView() {
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {mockMyRedemptions.length === 0 && (
+                                {(!redemptionsData?.data || redemptionsData?.data.length === 0) && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8 text-gray-500">
                                             No redemptions yet.

@@ -117,7 +117,17 @@ export default function SuperBusinessView() {
          if (!oldData) return oldData;
          return {
              ...oldData,
-             data: oldData.data.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r)
+             data: oldData.data.map(r => {
+                 if (r.id === id) {
+                     // Check both field names
+                     const currentStatus = r.is_active ?? !r.isSuspended ?? true;
+                     // Logic: if is_active is present use it, else use inverse of isSuspended.
+                     // But we need to return consistent structure.
+                     // Let's assume we flip 'is_active' if it exists, or 'isSuspended' if it exists.
+                     return { ...r, is_active: !currentStatus, isSuspended: currentStatus };
+                 }
+                 return r;
+             })
          };
      });
 
@@ -125,14 +135,10 @@ export default function SuperBusinessView() {
          onSuccess: (data) => {
              toast.success("Reward status updated");
              // NOTE: We do NOT use the returned 'data' here to update the cache.
-             // Some APIs return the *previous* state or partial data which can revert the optimistic update incorrectly.
-             // We rely on the optimistic update we already did, and then invalidate to fetch the source of truth.
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
          },
          onError: () => {
              toast.error("Failed to update status");
-             // Revert on error by invalidating (fetching mostly correct data)
-             // or manually untoggling if we wanted strict rollback.
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
          }
      });
@@ -150,76 +156,11 @@ export default function SuperBusinessView() {
         <h1 className="text-3xl font-bold text-gray-800">Matching Points Dashboard</h1>
       </div>
 
-      <Tabs defaultValue="campaigns" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+      <Tabs defaultValue="rewards" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
           <TabsTrigger value="rewards">Rewards</TabsTrigger>
           <TabsTrigger value="redemptions">Redemptions</TabsTrigger>
         </TabsList>
-
-        {/* CAMPAIGNS TAB */}
-        <TabsContent value="campaigns" className="space-y-6 mt-6">
-          <div className="flex justify-between items-center">
-             <h2 className="text-xl font-semibold">Active Campaigns</h2>
-             <div className="flex gap-4">
-               <Button onClick={() => setIsAwardModalOpen(true)} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-                  <QrCode className="h-4 w-4" />
-                  Award Points
-               </Button>
-               <Link href="/dashboard/campaigns/create">
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Create Campaign
-                  </Button>
-               </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matchingCampaigns.map((campaign: CampaignResponse) => (
-               <Card key={campaign.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                 <div className="h-32 bg-gray-100 relative">
-                    {campaign.bannerUrl ? (
-                      <img src={campaign.bannerUrl} alt={campaign.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">No Banner</div>
-                    )}
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-bold ${campaign.disabled ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                      {campaign.disabled ? 'Disabled' : 'Active'}
-                    </div>
-                 </div>
-                 <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-1">{campaign.name}</h3>
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">{campaign.campaignMessage}</p>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                      <div>
-                        <p className="text-gray-500 text-xs">Total Earned</p>
-                        <p className="font-semibold">{campaign.totalMatchingPointsEarned || 0}</p>
-                      </div>
-                      <div>
-                         <p className="text-gray-500 text-xs">Participants</p>
-                         <p className="font-semibold">N/A</p>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-gray-400">
-                      Created: {campaign.createdAt ? format(new Date(campaign.createdAt), 'MMM d, yyyy') : 'N/A'}
-                    </div>
-                 </CardContent>
-               </Card>
-            ))}
-
-            {matchingCampaigns.length === 0 && (
-               <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <p className="text-gray-500 mb-2">No Matching Point Campaigns found.</p>
-                  <Link href="/dashboard/campaigns/create">
-                    <Button variant="outline">Create your first one</Button>
-                  </Link>
-               </div>
-            )}
-          </div>
-        </TabsContent>
 
         {/* REWARDS TAB */}
         <TabsContent value="rewards" className="space-y-6 mt-6">
@@ -235,47 +176,54 @@ export default function SuperBusinessView() {
                <div className="flex justify-center py-12"><Loader2 className="animate-spin text-gray-400" /></div>
            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rewardsData?.data.map((reward) => (
-                    <Card key={reward.id} className="overflow-hidden group">
-                    <div className="h-48 bg-gray-100 relative">
-                        {(reward.main_image || reward.image) ? (
-                            <img
-                                src={reward.main_image || reward.image}
-                                alt={reward.title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=No+Image';
-                                }}
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                        )}
-                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(reward.id)}>
-                                {reward.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                             </Button>
-                             <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteClick(reward.id)}>
-                                <Trash2 className="h-4 w-4" />
-                             </Button>
+                {rewardsData?.data.map((reward) => {
+                    // Robust mapping for display
+                    const displayImage = reward.mainImage || reward.main_image || reward.image;
+                    const points = reward.requiredPoints ?? reward.required_points ?? reward.pointsRequired ?? 0;
+                    const isActive = reward.is_active ?? !reward.isSuspended ?? true;
+
+                    return (
+                        <Card key={reward.id} className="overflow-hidden group">
+                        <div className="h-48 bg-gray-100 relative">
+                            {displayImage ? (
+                                <img
+                                    src={displayImage}
+                                    alt={reward.title}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=No+Image';
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                            )}
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(reward.id)}>
+                                    {isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                </Button>
+                                <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteClick(reward.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                    <CardContent className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                            <h3 className="font-bold text-lg">{reward.title}</h3>
-                            <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-bold">
-                                {reward.required_points || reward.pointsRequired} Pts
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">{reward.short_description}</p>
-                        <div className="pt-2 flex justify-between items-center text-sm text-gray-500">
-                            <span>Qty: {reward.quantity}</span>
-                            <Badge variant={reward.is_active ? 'default' : 'secondary'}>
-                                {reward.is_active ? 'Active' : 'Suspended'}
-                            </Badge>
-                        </div>
-                    </CardContent>
-                    </Card>
-                ))}
+                        <CardContent className="p-4 space-y-2">
+                            <div className="flex justify-between items-start">
+                                <h3 className="font-bold text-lg">{reward.title}</h3>
+                                <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-bold">
+                                    {points} Pts
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">{reward.shortDescription || reward.short_description}</p>
+                            <div className="pt-2 flex justify-between items-center text-sm text-gray-500">
+                                <span>Qty: {reward.quantity}</span>
+                                <Badge variant={isActive ? 'default' : 'secondary'}>
+                                    {isActive ? 'Active' : 'Suspended'}
+                                </Badge>
+                            </div>
+                        </CardContent>
+                        </Card>
+                    );
+                })}
                 {rewardsData?.data.length === 0 && (
                     <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
                         <p className="text-gray-500">No rewards created yet.</p>

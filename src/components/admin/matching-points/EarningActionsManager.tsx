@@ -102,7 +102,7 @@ export const EarningActionsManager = () => {
         } as CreateEarningActionDto;
 
         if (editingAction) {
-            updateAction({ id: editingAction.id, payload }, {
+            updateAction({ id: editingAction.id, ...payload }, {
                 onSuccess: () => {
                     toast.success("Rule updated successfully");
                     setIsModalOpen(false);

@@ -21,12 +21,14 @@ const activityTypeColors: Record<MatchingPointActivityType | string, string> = {
   REFERRAL: 'bg-green-100 text-green-800',
   MEMBERSHIP_PAYMENT: 'bg-indigo-100 text-indigo-800',
   MANUAL_ADJUSTMENT: 'bg-yellow-100 text-yellow-800',
+  REWARD_REDEMPTION: 'bg-purple-100 text-purple-800', // Added missing type
   Earned: 'bg-green-100 text-green-800', // Fallback/Legacy
   Redeemed: 'bg-red-100 text-red-800', // Fallback/Legacy
   Adjusted: 'bg-yellow-100 text-yellow-800', // Fallback/Legacy
 };
 
 const formatActivityType = (type: string) => {
+  if (!type) return 'Unknown';
   return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
@@ -77,4 +79,3 @@ export default function MatchingPointsHistoryTable({ history }: MatchingPointsHi
     </Card>
   );
 }
-

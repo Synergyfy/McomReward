@@ -41,6 +41,8 @@ export default function SuperBusinessView() {
   const [isCreateRewardModalOpen, setIsCreateRewardModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
+  const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
+  const [rewardToToggle, setRewardToToggle] = useState<{ id: string; isActive: boolean } | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleDeleteClick = (id: string) => {
@@ -61,7 +63,16 @@ export default function SuperBusinessView() {
     }
   };
 
-  const handleToggleStatus = (id: string) => {
+  const handleToggleClick = (id: string, isActive: boolean) => {
+      setRewardToToggle({ id, isActive });
+      setToggleDialogOpen(true);
+  };
+
+  const handleConfirmToggle = () => {
+     if (!rewardToToggle) return;
+     const { id } = rewardToToggle;
+
+     // Optimistic update
      queryClient.setQueryData(['matchingPointRewards', 'created', { page: 1, limit: 100 }], (oldData: PaginatedRewardsResponse | undefined) => {
          if (!oldData) return oldData;
          return {
@@ -84,6 +95,10 @@ export default function SuperBusinessView() {
          onError: () => {
              toast.error("Failed to update status");
              queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+         },
+         onSettled: () => {
+             setToggleDialogOpen(false);
+             setRewardToToggle(null);
          }
      });
   };
@@ -146,7 +161,7 @@ export default function SuperBusinessView() {
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                             )}
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 p-1 rounded-md backdrop-blur-sm z-10">
-                                <Button variant="secondary" size="icon" className="h-8 w-8 hover:bg-white" onClick={() => handleToggleStatus(reward.id)}>
+                                <Button variant="secondary" size="icon" className="h-8 w-8 hover:bg-white" onClick={() => handleToggleClick(reward.id, isActive)}>
                                     {isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                                 </Button>
                                 <Button variant="destructive" size="icon" className="h-8 w-8 hover:bg-red-100 hover:text-red-700" onClick={() => handleDeleteClick(reward.id)}>
@@ -296,6 +311,28 @@ export default function SuperBusinessView() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleConfirmDelete}>
                 Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+        </AlertDialog>
+
+      {/* Toggle Status Confirmation Dialog */}
+      <AlertDialog open={toggleDialogOpen} onOpenChange={setToggleDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>
+                {rewardToToggle?.isActive ? "Suspend Reward?" : "Activate Reward?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+                {rewardToToggle?.isActive
+                    ? "Are you sure you want to suspend this reward? It will be hidden from users."
+                    : "Are you sure you want to activate this reward? It will be visible to users."}
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmToggle}>
+                Confirm
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

@@ -13,8 +13,6 @@ import { useCreateMatchingReward } from '@/services/matching-points/hook';
 import { CreateMatchingRewardDto, TargetAudience } from '@/services/matching-points/types';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import { useUploadToCloudinary } from '@/services/upload/hook';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
 interface CreateMatchingRewardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -162,15 +160,7 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
           {/* Basic Info */}
           <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="flex items-center gap-1">
-                    Title
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild><span className="text-gray-400 cursor-help">(?)</span></TooltipTrigger>
-                            <TooltipContent>The main name of the reward displayed to users.</TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </Label>
+                <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
                   name="title"
@@ -179,6 +169,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   placeholder="e.g. Free Marketing Consultation"
                   required
                 />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  The name of the reward as it will appear to users (e.g., &apos;Free Consultation&apos;).
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -191,6 +184,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   placeholder="Brief summary..."
                   required
                 />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  A concise summary shown in the reward card.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -204,6 +200,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                   required
                   className="min-h-[100px]"
                 />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  A detailed explanation of what the reward entails and how to use it.
+                </p>
               </div>
           </div>
 
@@ -219,6 +218,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                 onChange={handleChange}
                 required
               />
+              <p className="text-[0.8rem] text-muted-foreground">
+                The number of matching points a user must spend to claim this reward.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>
@@ -231,6 +233,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                 onChange={handleChange}
                 required
               />
+              <p className="text-[0.8rem] text-muted-foreground">
+                The total number of inventory slots available for this reward.
+              </p>
             </div>
           </div>
 
@@ -245,6 +250,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                     onChange={handleChange}
                     required
                 />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  The date when this reward becomes available for redemption.
+                </p>
              </div>
              <div className="space-y-2">
                 <Label htmlFor="end_datetime">End Date</Label>
@@ -256,6 +264,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                     onChange={handleChange}
                     required
                 />
+                <p className="text-[0.8rem] text-muted-foreground">
+                  The date when this reward expires and can no longer be redeemed.
+                </p>
              </div>
           </div>
 
@@ -274,6 +285,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                     <SelectItem value="BOTH">Both</SelectItem>
                 </SelectContent>
              </Select>
+             <p className="text-[0.8rem] text-muted-foreground">
+                Who can see and redeem this reward (Businesses, Participants, or Both).
+             </p>
           </div>
 
           {/* Image Section */}
@@ -303,6 +317,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                         />
                      </div>
                  </div>
+                 <p className="text-[0.8rem] text-muted-foreground">
+                    The primary image displayed on the reward card.
+                 </p>
              </div>
 
              {/* Gallery Images */}
@@ -328,6 +345,9 @@ export default function CreateMatchingRewardModal({ isOpen, onClose, onSuccess }
                         />
                     </div>
                  </div>
+                 <p className="text-[0.8rem] text-muted-foreground">
+                    Additional images to showcase details about the reward.
+                 </p>
              </div>
           </div>
 

@@ -115,7 +115,7 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                         {/* Thumbnails if available */}
                         {reward.galleryImages && reward.galleryImages.length > 0 && (
                             <div className="grid grid-cols-4 gap-4">
-                                {reward.galleryImages.map((img, idx) => (
+                                {reward.galleryImages.map((img: string, idx: number) => (
                                     <div key={idx} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-orange-500 transition-all">
                                         <Image src={img} alt="" layout="fill" objectFit="cover" />
                                     </div>

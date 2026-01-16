@@ -1,12 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
-import { PublicRewardResponse } from '@/services/matching-points/types';
+import { MatchingPointReward } from '@/services/matching-points/types';
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, ArrowRight, Clock, Box } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MatchingRewardCardProps {
-    reward: PublicRewardResponse;
+    reward: MatchingPointReward;
     onClick?: () => void;
     className?: string;
     style?: React.CSSProperties;

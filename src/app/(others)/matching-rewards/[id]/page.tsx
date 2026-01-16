@@ -4,7 +4,7 @@ import React, { use, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
+import { useRedeemMatchingReward } from '@/services/matching-points/hook';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Share2, Heart, ShieldCheck, Clock, Box, Info, Lock } from "lucide-react";
@@ -27,7 +27,10 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
     const router = useRouter();
     const { isLoggedIn, login } = useMockAuth();
 
-    const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
+    // const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
+    const reward: any = null;
+    const isLoading = false;
+    const error = null;
     const redeemMutation = useRedeemMatchingReward();
 
     if (isLoading) return <LoadingSpinner />;

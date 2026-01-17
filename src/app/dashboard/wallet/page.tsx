@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { useGetWallet, useInitiateWalletTopup, useVerifyWalletTopup } from '@/services/wallet/hook';
+import { useGetCashbackBalance } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, CreditCard, Wallet, History } from 'lucide-react';
+import { Loader2, CreditCard, Wallet, History, Coins } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -71,6 +72,7 @@ function StripePaymentForm({ onSuccess, onClose }: { onSuccess: (id: string) => 
 
 export default function WalletPage() {
   const { data: wallet, isLoading: isWalletLoading, refetch: refetchWallet } = useGetWallet();
+  const { data: cashback, isLoading: isCashbackLoading } = useGetCashbackBalance();
   const { mutate: initiateTopup, isPending: isInitiating } = useInitiateWalletTopup();
   const { mutate: verifyTopup } = useVerifyWalletTopup();
 
@@ -158,19 +160,40 @@ export default function WalletPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Balance Card */}
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             <div className="text-2xl font-bold">£{Number(wallet?.topupBalance || 0).toFixed(2)}</div>
-             <p className="text-xs text-muted-foreground mt-1">
-               + £{Number(wallet?.tierBalance || 0).toFixed(2)} monthly allowance
-             </p>
-          </CardContent>
-        </Card>
+        {/* Left Column: Balances */}
+        <div className="space-y-6">
+          {/* Balance Card */}
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+               <div className="text-2xl font-bold">£{Number(wallet?.topupBalance || 0).toFixed(2)}</div>
+               <p className="text-xs text-muted-foreground mt-1">
+                 + £{Number(wallet?.tierBalance || 0).toFixed(2)} monthly allowance
+               </p>
+            </CardContent>
+          </Card>
+
+          {/* Cashback Card */}
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cashback Wallet</CardTitle>
+              <Coins className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+               {isCashbackLoading ? (
+                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+               ) : (
+                 <div className="text-2xl font-bold">£{Number(cashback?.balance || 0).toFixed(2)}</div>
+               )}
+               <p className="text-xs text-muted-foreground mt-1">
+                 Accumulated cashback
+               </p>
+            </CardContent>
+          </Card>
+        </div>
 
          {/* Top Up Card */}
         <Card>

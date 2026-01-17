@@ -28,39 +28,36 @@ function MatchingRewardsContent() {
     return (
         <div className="bg-white min-h-screen pb-20 overflow-hidden">
             {/* Hero Section */}
-            <section className="relative pt-32 pb-24 md:pt-48 md:pb-40 bg-gray-900 border-b border-gray-800 overflow-hidden">
+            <section className="relative pt-20 pb-24 md:pt-32 md:pb-40 bg-white border-b border-gray-100 overflow-hidden">
                 {/* Immersive Background */}
                 <div className="absolute top-0 left-0 w-full h-full z-0">
-                    <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-orange-500/20 rounded-full blur-[120px] animate-pulse" />
-                    <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
+                    <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-orange-100/30 rounded-full blur-[120px] animate-pulse" />
+                    <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-100/30 rounded-full blur-[120px] animate-pulse" />
                 </div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 text-orange-400 border border-white/10 text-sm font-bold mb-8 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100 text-sm font-bold mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <Sparkles className="w-4 h-4" />
                         <span>{isBusiness ? "For Businesses & Merchants" : "For Loyalty Members"}</span>
                     </div>
 
-                    <h1 className="text-5xl md:text-8xl font-black text-white tracking-tight mb-8 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 uppercase">
+                    <h1 className="text-5xl md:text-8xl font-black text-gray-900 tracking-tight mb-8 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 uppercase text-shadow-sm">
                         {isBusiness ? (
-                            <>Scale Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500">Loyalty Strategy</span></>
+                            <>Scale Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-600">Loyalty Strategy</span></>
                         ) : (
                             <>The Next Level of <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500">Reward Points</span></>
                         )}
                     </h1>
 
-                    <p className="max-w-3xl mx-auto text-xl md:text-2xl text-gray-400 leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 font-medium italic">
+                    <p className="max-w-3xl mx-auto text-xl md:text-2xl text-gray-600 leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 font-medium italic">
                         {isBusiness
                             ? "Power up your customer retention with high-impact matching points that drive repeat business and increase brand value."
                             : "Unlock unprecedented value. Every point you earn is amplified, giving you access to premium rewards that were once out of reach."}
                     </p>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
-                        <Button className="bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white text-lg px-10 py-8 rounded-2xl font-bold shadow-2xl shadow-orange-500/20 transition-all hover:scale-105 active:scale-95">
-                            {isBusiness ? "Partner With Us" : "Join Free & Start Earning"}
-                        </Button>
-                        <Button variant="outline" className="bg-white/5 border-white/20 text-white hover:bg-white/10 text-lg px-10 py-8 rounded-2xl font-bold transition-all backdrop-blur-sm">
-                            Learn More
+                        <Button className="bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white text-lg px-12 py-8 rounded-2xl font-bold shadow-2xl shadow-orange-500/20 transition-all hover:scale-105 active:scale-95 uppercase tracking-wider">
+                            Get Started
                         </Button>
                     </div>
                 </div>

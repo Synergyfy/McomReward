@@ -23,7 +23,7 @@ export default function CashbackRuleDialog({ open, onOpenChange, ruleToEdit, onS
   const isEditMode = !!ruleToEdit;
   const { mutate: createRule, isPending: isCreating } = useCreateCashbackRule();
   const { mutate: updateRule, isPending: isUpdating } = useUpdateCashbackRule();
-  const { data: cashbackEvents, isLoading: isEventsLoading } = useGetCashbackEvents();
+  const { data: cashbackEvents, isLoading: isEventsLoading, isError: isEventsError } = useGetCashbackEvents();
 
   const [platform, setPlatform] = useState<CashbackPlatform>('MCOM_LOYALTY');
   const [eventType, setEventType] = useState<string>('');
@@ -138,12 +138,28 @@ export default function CashbackRuleDialog({ open, onOpenChange, ruleToEdit, onS
                 <Select
                   value={eventType}
                   onValueChange={setEventType}
-                  disabled={isEditMode || isPending || isEventsLoading}
+                  disabled={isEditMode || isPending}
                 >
                   <SelectTrigger id="eventType">
                      <SelectValue placeholder={isEventsLoading ? "Loading events..." : "Select event"} />
                   </SelectTrigger>
                   <SelectContent>
+                    {isEventsLoading && (
+                      <div className="flex items-center justify-center p-2 text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading events...
+                      </div>
+                    )}
+                    {isEventsError && (
+                      <div className="p-2 text-sm text-destructive">
+                        Failed to load events.
+                      </div>
+                    )}
+                    {!isEventsLoading && !isEventsError && (!cashbackEvents || cashbackEvents.length === 0) && (
+                       <div className="p-2 text-sm text-muted-foreground">
+                        No events found.
+                      </div>
+                    )}
                     {cashbackEvents?.map((event) => (
                       <SelectItem key={event} value={event}>
                         {event}

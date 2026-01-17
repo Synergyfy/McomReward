@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { CashbackRule, CreateCashbackRulePayload, UpdateCashbackRulePayload, CashbackBalance, CashbackEvent } from './types';
+import { CashbackRule, CreateCashbackRulePayload, UpdateCashbackRulePayload, CashbackBalance, CashbackEvent, CashbackHistoryItem } from './types';
 
 export const CASHBACK_RULES_QUERY_KEY = 'cashbackRules';
 export const CASHBACK_BALANCE_QUERY_KEY = 'cashbackBalance';
 export const CASHBACK_EVENTS_QUERY_KEY = 'cashbackEvents';
+export const CASHBACK_HISTORY_QUERY_KEY = 'cashbackHistory';
 
 export const useGetCashbackRules = () => {
   return useQuery<CashbackRule[], Error>({
@@ -70,6 +71,16 @@ export const useGetCashbackEvents = () => {
     queryKey: [CASHBACK_EVENTS_QUERY_KEY],
     queryFn: async () => {
       const { data } = await api.get('/cashback/events');
+      return data;
+    },
+  });
+};
+
+export const useGetCashbackHistory = () => {
+  return useQuery<CashbackHistoryItem[], Error>({
+    queryKey: [CASHBACK_HISTORY_QUERY_KEY],
+    queryFn: async () => {
+      const { data } = await api.get('/cashback/history');
       return data;
     },
   });

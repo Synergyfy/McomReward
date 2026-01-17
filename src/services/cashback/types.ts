@@ -31,3 +31,12 @@ export interface UpdateCashbackRulePayload {
 export interface CashbackBalance {
   balance: number;
 }
+
+export interface CashbackHistoryItem {
+  id: string;
+  amount: number | string;
+  type: string; // e.g., 'EARNED', 'REDEEMED' or the specific event type
+  description?: string;
+  createdAt: string;
+  status?: string; // e.g., 'COMPLETED', 'PENDING'
+}

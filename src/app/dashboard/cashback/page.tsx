@@ -1,15 +1,18 @@
 'use client';
 
 import React from 'react';
-import { useGetCashbackBalance, useGetCashbackEvents } from '@/services/cashback/hook';
+import { useGetCashbackBalance, useGetCashbackEvents, useGetCashbackHistory } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coins, Info, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Coins, Info, Loader2, History } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function CashbackPage() {
   const { data: balanceData, isLoading: isBalanceLoading } = useGetCashbackBalance();
   const { data: eventsData, isLoading: isEventsLoading } = useGetCashbackEvents();
+  const { data: historyData, isLoading: isHistoryLoading } = useGetCashbackHistory();
 
-  const isLoading = isBalanceLoading || isEventsLoading;
+  const isLoading = isBalanceLoading || isEventsLoading || isHistoryLoading;
 
   if (isLoading) {
     return (
@@ -41,6 +44,59 @@ export default function CashbackPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* History Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="w-5 h-5 text-gray-600" />
+            Transaction History
+          </CardTitle>
+          <CardDescription>
+            Recent cashback activities on your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {historyData && historyData.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Activity</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyData.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {item.createdAt ? format(new Date(item.createdAt), 'MMM d, yyyy') : '-'}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {item.type ? item.type.replace(/_/g, ' ') : 'Unknown'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate" title={item.description}>
+                      {item.description || '-'}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${Number(item.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Number(item.amount) >= 0 ? '+' : ''}£{Number(item.amount).toFixed(2)}
+                    </TableCell>
+                     <TableCell className="text-right text-xs text-muted-foreground capitalize">
+                      {item.status ? item.status.toLowerCase() : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No transaction history found.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Earning Opportunities */}
       <Card>

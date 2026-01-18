@@ -25,7 +25,8 @@ import {
   ChevronRight,
   Store,
   Image,
-  Wallet
+  Wallet,
+  Banknote
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -287,6 +288,8 @@ export default function BusinessSidebar({
           <SidebarItem icon={Star} label="Progression" href="/dashboard/progression" />
 
           <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
+
+          <SidebarItem icon={Banknote} label="Cashback" href="/dashboard/cashback" />
 
           {!isSuperBusiness && (
             <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />

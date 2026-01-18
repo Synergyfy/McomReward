@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { CashbackRule, CashbackPlatform, CashbackRewardType } from '@/services/cashback/types';
-import { useCreateCashbackRule, useUpdateCashbackRule } from '@/services/cashback/hook';
+import { useCreateCashbackRule, useUpdateCashbackRule, useGetCashbackEvents } from '@/services/cashback/hook';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -23,6 +23,7 @@ export default function CashbackRuleDialog({ open, onOpenChange, ruleToEdit, onS
   const isEditMode = !!ruleToEdit;
   const { mutate: createRule, isPending: isCreating } = useCreateCashbackRule();
   const { mutate: updateRule, isPending: isUpdating } = useUpdateCashbackRule();
+  const { data: cashbackEvents, isLoading: isEventsLoading, isError: isEventsError } = useGetCashbackEvents();
 
   const [platform, setPlatform] = useState<CashbackPlatform>('MCOM_LOYALTY');
   const [eventType, setEventType] = useState<string>('');
@@ -134,13 +135,38 @@ export default function CashbackRuleDialog({ open, onOpenChange, ruleToEdit, onS
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="eventType" className="text-right pt-2">Event Type</Label>
               <div className="col-span-3">
-                <Input
-                  id="eventType"
+                <Select
                   value={eventType}
-                  onChange={(e) => setEventType(e.target.value)}
-                  placeholder="e.g. MEMBERSHIP_PURCHASE"
+                  onValueChange={setEventType}
                   disabled={isEditMode || isPending}
-                />
+                >
+                  <SelectTrigger id="eventType">
+                     <SelectValue placeholder={isEventsLoading ? "Loading events..." : "Select event"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isEventsLoading && (
+                      <div className="flex items-center justify-center p-2 text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading events...
+                      </div>
+                    )}
+                    {isEventsError && (
+                      <div className="p-2 text-sm text-destructive">
+                        Failed to load events.
+                      </div>
+                    )}
+                    {!isEventsLoading && !isEventsError && (!cashbackEvents || cashbackEvents.length === 0) && (
+                       <div className="p-2 text-sm text-muted-foreground">
+                        No events found.
+                      </div>
+                    )}
+                    {cashbackEvents?.map((event) => (
+                      <SelectItem key={event} value={event}>
+                        {event}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-[0.8rem] text-muted-foreground mt-1">
                   The system event identifier that triggers this reward.
                 </p>

@@ -128,7 +128,7 @@ export default function CashbackRulesPage() {
                   rules.map((rule) => (
                     <TableRow key={rule.id}>
                       <TableCell className="font-medium">{rule.platform === 'MCOM_LOYALTY' ? 'Loyalty' : 'Mall'}</TableCell>
-                      <TableCell>{rule.eventType}</TableCell>
+                      <TableCell>{(rule.eventType || '').replace(/_/g, ' ')}</TableCell>
                       <TableCell>
                         {rule.rewardType === 'PERCENTAGE' ? `${rule.rewardValue}%` : `£${Number(rule.rewardValue).toFixed(2)}`}
                       </TableCell>

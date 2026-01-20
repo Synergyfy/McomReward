@@ -162,7 +162,7 @@ export default function CashbackRuleDialog({ open, onOpenChange, ruleToEdit, onS
                     )}
                     {cashbackEvents?.map((event) => (
                       <SelectItem key={event} value={event}>
-                        {event}
+                         {(event || '').replace(/_/g, ' ')}
                       </SelectItem>
                     ))}
                   </SelectContent>

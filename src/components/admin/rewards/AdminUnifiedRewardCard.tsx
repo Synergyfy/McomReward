@@ -27,7 +27,10 @@ import {
     Coins,
     Sparkles,
     Gift,
-    Repeat
+    Repeat,
+    Users,
+    Trophy,
+    Award
 } from 'lucide-react';
 import { RewardResponse } from '@/services/rewards/types';
 
@@ -163,30 +166,30 @@ export default function AdminUnifiedRewardCard({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-8 w-8"
                             >
                                 <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 z-[9999]">
-                            <DropdownMenuItem onClick={() => onEdit(reward.id)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onDuplicate(reward.id)}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => onDelete(reward.id)}
-                                className="text-red-600 focus:text-red-600"
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                            <DropdownMenuContent align="end" className="w-48 z-[9999]">
+                                <DropdownMenuItem onClick={() => onEdit(reward.id)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onDuplicate(reward.id)}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() => onDelete(reward.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                 </div>
             </CardHeader>
 
@@ -238,6 +241,47 @@ export default function AdminUnifiedRewardCard({
                     )}
                 </div>
             </CardContent>
+
+            <div className="px-6 pb-4">
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Claimed
+                        </span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {reward.businessClaimedCount || 0}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium flex items-center gap-1">
+                            <Trophy className="h-3 w-3" />
+                            Redeemed
+                        </span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {reward.totalRedemptionsCount || 0}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium flex items-center gap-1">
+                            <Coins className="h-3 w-3" />
+                            Points
+                        </span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {(reward.totalPointsRedeemed || 0).toLocaleString()}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium flex items-center gap-1">
+                            <Stamp className="h-3 w-3" />
+                            Stamps
+                        </span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {reward.totalStampsRedeemed || 0}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </Card>
     );
 }

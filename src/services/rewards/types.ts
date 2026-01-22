@@ -80,6 +80,10 @@ export interface RewardResponse {
   is_stamps_enabled: boolean;
   stamp_emoji?: string;
   audience?: string;
+  businessClaimedCount?: number;
+  totalRedemptionsCount?: number;
+  totalPointsRedeemed?: number;
+  totalStampsRedeemed?: number;
 }
 
 export interface GetRewardsResponse {

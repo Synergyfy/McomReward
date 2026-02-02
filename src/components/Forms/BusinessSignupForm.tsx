@@ -12,7 +12,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
 import Link from "next/link";
 
-export default function BusinessSignupForm() {
+interface BusinessSignupFormProps {
+  provisionCode?: string;
+}
+
+export default function BusinessSignupForm({ provisionCode }: BusinessSignupFormProps) {
   const searchParams = useSearchParams();
   const refCode = searchParams.get('ref');
 
@@ -25,6 +29,7 @@ export default function BusinessSignupForm() {
   } = useForm<BusinessSignUpDto>({
     defaultValues: {
       referralCode: refCode || '',
+      provisionCode: provisionCode || '',
     }
   });
 
@@ -32,7 +37,10 @@ export default function BusinessSignupForm() {
     if (refCode) {
       setValue('referralCode', refCode);
     }
-  }, [refCode, setValue]);
+    if (provisionCode) {
+      setValue('provisionCode', provisionCode);
+    }
+  }, [refCode, provisionCode, setValue]);
 
   const router = useRouter();
   const { mutateAsync: signUp } = useBusinessSignUp();
@@ -91,6 +99,7 @@ export default function BusinessSignupForm() {
 
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <input type="hidden" {...register("provisionCode")} />
           <div>
             <Label htmlFor="name">
               Name <span className="text-red-500">*</span>

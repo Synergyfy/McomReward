@@ -25,6 +25,7 @@ export interface BusinessSignUpDto {
   password: string;
   confirmPassword?: string;
   referralCode?: string;
+  provisionCode?: string;
 }
 
 export interface CreateBusinessDto {

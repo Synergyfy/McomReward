@@ -89,7 +89,7 @@ export default function AssignPartnerModal({ isOpen, onClose, onAssign, plaqueId
               <SelectContent className="z-[10000]">
                 <SelectItem value="partner">Partner</SelectItem>
                 <SelectItem value="supplier">Supplier</SelectItem>
-                <SelectItem value="affiliate">Affiliate</SelectItem>
+                <SelectItem value="affiliate">Referral</SelectItem>
                 <SelectItem value="customer">Customer</SelectItem>
               </SelectContent>
             </Select>

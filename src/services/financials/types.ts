@@ -137,7 +137,7 @@ export interface Tier {
   fixedPrice?: string;
   monthlyPrice: string;
   annualPrice: string;
-  quaterlyPrice: string;
+  quarterlyPrice: string;
   features: string[];
   status: string;
   stripeMonthlyPriceId: string;
@@ -158,7 +158,7 @@ export interface TierCreateInput {
   season_id?: string;
   fixed_price?: number;
   monthly_price: number;
-  quaterly_price: number;
+  quarterly_price: number;
   annual_price: number;
   features: string[];
   configuration: TierConfiguration;
@@ -170,7 +170,7 @@ export interface TierUpdateInput {
   season_id?: string;
   fixed_price?: number;
   monthly_price?: number;
-  quaterly_price?: number;
+  quarterly_price?: number;
   annual_price?: number;
   features?: string[];
   configuration?: TierConfiguration;

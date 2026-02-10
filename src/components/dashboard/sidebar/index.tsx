@@ -275,9 +275,12 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Award} label="My Network" hasSubmenu submenuKey="myassets">
             <SubItem href="/dashboard/my-assets" label="Contacts" />
-            <SubItem href="/dashboard/my-assets/group-circles" label="Group Circles" />
+            <SidebarItem icon={Users} label="Group Circles" hasSubmenu submenuKey="groupcircles">
+              <SubItem href="/dashboard/my-assets/group-circles" label="Visualization" />
+              <SubItem href="/dashboard/my-assets/group-circles/partner-offers" label="Partner Offers" />
+            </SidebarItem>
             <SubItem href="/dashboard/my-assets/qr-plaques" label="QR Plaques" />
-            <SubItem href="/dashboard/affiliate" label="Affiliate" />
+            <SubItem href="/dashboard/affiliate" label="Referral" />
             <SubItem href="/dashboard/my-assets/nfc-cards" label="NFC Cards" />
             <SubItem href="/dashboard/my-assets/customer-contact" label="Customer Contact" />
             <SubItem href="/dashboard/customer-activities" label="Customer Activities" />

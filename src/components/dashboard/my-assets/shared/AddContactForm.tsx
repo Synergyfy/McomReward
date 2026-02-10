@@ -12,10 +12,12 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Info, AlertCircle } from 'lucide-react';
+import { Info, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useCreateContact } from '@/services/network-contacts/hook';
 import { CreateContactDto, LocationTag, RelationshipTag } from '@/services/network-contacts/types';
+import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { motion } from 'framer-motion';
 
 interface AddContactFormProps {
     onSuccess?: (contact: any) => void;
@@ -24,34 +26,89 @@ interface AddContactFormProps {
 }
 
 export const LOCATION_TAG_INFO = {
-    nearby: 'Very close, neighbourhood radius.',
-    hyperlocal: 'Wider local area but still nearby.',
-    national: 'Anywhere within the country.',
+    hyperlocal: 'Within 3 miles of your location.',
+    nearby: 'Within 8 miles of your location.',
+    national: 'Greater than 8 miles away.',
 };
 
 export const RELATIONSHIP_TAG_INFO = {
     partner: 'Someone you collaborate with.',
     supplier: 'Someone who provides you items or services.',
-    affiliate: 'Promotes your business.',
+    affiliate: 'Someone who refers customers to your business.',
 };
 
 export default function AddContactForm({ onSuccess, onCancel, initialData }: AddContactFormProps) {
     const createContact = useCreateContact();
+    const [isExistingUser, setIsExistingUser] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    const [contactPostalCode, setContactPostalCode] = useState<string | null>(null);
+    const [distance, setDistance] = useState<number | null>(null);
+    const [userPostalCode] = useState('SW1A 1AA'); // Mock current user's postal code
+
     const [formData, setFormData] = useState<CreateContactDto>({
-        fullName: initialData?.fullName || '',
+        firstName: initialData?.firstName || '',
+        lastName: initialData?.lastName || '',
         phone: initialData?.phone || '',
         email: initialData?.email || '',
         businessName: initialData?.businessName || '',
         relationshipTag: initialData?.relationshipTag || 'partner',
-        locationTag: initialData?.locationTag || 'nearby',
+        locationTag: initialData?.locationTag || 'hyperlocal',
         hasPermission: initialData?.hasPermission || false,
     });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    // Mock function to determine location tag based on distance
+    const determineLocationTag = (miles: number): LocationTag => {
+        if (miles < 3) return 'hyperlocal';
+        if (miles < 8) return 'nearby';
+        return 'national';
+    };
+
+    // Simulated fetch logic
+    const handleIdentifierBlur = async () => {
+        if (!isExistingUser || !formData.email || formData.email.length < 3) return;
+
+        setIsFetching(true);
+        setErrorMessage(null);
+
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Mock response data based on input
+        let mockPC = 'E1 6AN';
+        let mockMiles = 12.4;
+
+        if (formData.email.includes('hyper')) {
+            mockPC = 'SW1A 2BB';
+            mockMiles = 1.2;
+        } else if (formData.email.includes('near')) {
+            mockPC = 'SW1P 3BB';
+            mockMiles = 5.7;
+        }
+
+        const suggestedTag = determineLocationTag(mockMiles);
+
+        setContactPostalCode(mockPC);
+        setDistance(mockMiles);
+        setFormData(prev => ({ ...prev, locationTag: suggestedTag }));
+        setIsFetching(false);
+    };
+
     const handleAddContact = async () => {
         setErrorMessage(null);
         try {
-            const newContact = await createContact.mutateAsync(formData);
+            // In a real scenario, if isExistingUser is true, we might call a different endpoint 
+            // or send only identifying info. For this mock flow, we proceed with current DTO.
+            const dataToSubmit = { ...formData };
+
+            // Mock logic: if existing user, we might not have firstName/lastName/phone from input
+            if (isExistingUser) {
+                if (!dataToSubmit.firstName) dataToSubmit.firstName = 'Existing';
+                if (!dataToSubmit.lastName) dataToSubmit.lastName = 'User';
+                if (!dataToSubmit.phone) dataToSubmit.phone = '0000000000';
+            }
+
+            const newContact = await createContact.mutateAsync(dataToSubmit);
             if (onSuccess) {
                 onSuccess(newContact);
             }
@@ -64,7 +121,7 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
 
     return (
         <div className="space-y-4 py-4">
-             {errorMessage && (
+            {errorMessage && (
                 <Alert variant="destructive" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
@@ -72,104 +129,205 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                 </Alert>
             )}
 
+            {/* Existing User Question */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="existing-user" className="text-blue-900 font-medium cursor-pointer">
+                            Does this user already exist in MCOM Mall?
+                        </Label>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                                <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-blue-400 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="z-[10000]">
+                                    <p className="text-sm">If yes, you only need their email or username to connect.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="existing-user"
+                            checked={isExistingUser}
+                            onCheckedChange={(checked) => setIsExistingUser(checked as boolean)}
+                        />
+                        <span className={isExistingUser ? "text-sm font-bold text-blue-900" : "text-sm text-blue-400"}>Yes</span>
+                    </div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-                {/* Full Name */}
-                <div className="col-span-2">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="fullName">
-                            Full Name <span className="text-red-500">*</span>
-                        </Label>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                                    <p className="text-sm">Enter the full name of the contact person or business owner.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                    <Input
-                        id="fullName"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        placeholder="John Doe"
-                    />
-                </div>
+                {isExistingUser ? (
+                    /* Existing User Flow: Only Email/Username */
+                    <div className="col-span-2 space-y-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="identifier">
+                                    User Email or Username <span className="text-red-500">*</span>
+                                </Label>
+                                {isFetching && <span className="text-xs text-orange-600 animate-pulse flex items-center gap-1">
+                                    <div className="h-2 w-2 bg-orange-600 rounded-full animate-bounce" />
+                                    Fetching data from MCOM Mall...
+                                </span>}
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={200}>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
+                                            <p className="text-sm">Enter the MCOM Mall email or username. We will automatically detect their location.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <Input
+                                id="identifier"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                onBlur={handleIdentifierBlur}
+                                placeholder="username or email@example.com"
+                                className={contactPostalCode ? "border-green-200 bg-green-50/30" : ""}
+                            />
+                        </div>
 
-                {/* Business Name */}
-                <div className="col-span-2">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="businessName">Business Name</Label>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                                    <p className="text-sm">The official name of the business or company this contact represents.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        {contactPostalCode && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm flex items-center justify-between"
+                            >
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">MCOM Mall Profile Found</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-500">Postal Code</span>
+                                            <span className="font-mono font-bold text-gray-900">{contactPostalCode}</span>
+                                        </div>
+                                        <div className="h-8 w-[1px] bg-gray-100" />
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-500">Distance</span>
+                                            <span className="font-bold text-gray-900">{distance?.toFixed(1)} miles</span>
+                                        </div>
+                                        <div className="h-8 w-[1px] bg-gray-100" />
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-500">Detected Location</span>
+                                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 capitalize w-fit">
+                                                {formData.locationTag}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            </motion.div>
+                        )}
                     </div>
-                    <Input
-                        id="businessName"
-                        value={formData.businessName || ''}
-                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                        placeholder="ABC Company Ltd"
-                    />
-                </div>
+                ) : (
+                    /* Normal Flow */
+                    <>
+                        {/* Name Fields */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="firstName">
+                                    First Name <span className="text-red-500">*</span>
+                                </Label>
+                            </div>
+                            <Input
+                                id="firstName"
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                placeholder="John"
+                            />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="lastName">
+                                    Last Name <span className="text-red-500">*</span>
+                                </Label>
+                            </div>
+                            <Input
+                                id="lastName"
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                placeholder="Doe"
+                            />
+                        </div>
 
-                {/* Email */}
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="email">Email</Label>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                                    <p className="text-sm">Primary email address for business communications and campaign invitations.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                    <Input
-                        id="email"
-                        type="email"
-                        value={formData.email || ''}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="john@example.com"
-                    />
-                </div>
+                        {/* Business Name */}
+                        <div className="col-span-2">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="businessName">Business Name</Label>
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={200}>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
+                                            <p className="text-sm">The official name of the business or company this contact represents.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <Input
+                                id="businessName"
+                                value={formData.businessName || ''}
+                                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                                placeholder="ABC Company Ltd"
+                            />
+                        </div>
 
-                {/* Phone */}
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="phone">
-                            Phone <span className="text-red-500">*</span>
-                        </Label>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={200}>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                                    <p className="text-sm">Contact phone number for direct communication and follow-ups.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                    <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+44 20 1234 5678"
-                    />
-                </div>
+                        {/* Email */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="email">Email</Label>
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={200}>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
+                                            <p className="text-sm">Primary email address for business communications and campaign invitations.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={formData.email || ''}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="john@example.com"
+                            />
+                        </div>
+
+                        {/* Phone */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Label htmlFor="phone">
+                                    Phone <span className="text-red-500">*</span>
+                                </Label>
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={200}>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
+                                            <p className="text-sm">Contact phone number for direct communication and follow-ups.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <Input
+                                id="phone"
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                placeholder="+44 20 1234 5678"
+                            />
+                        </div>
+                    </>
+                )}
 
                 {/* Location Tag */}
                 <div>
@@ -177,6 +335,11 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                         <Label htmlFor="locationTag">
                             Location Tag <span className="text-red-500">*</span>
                         </Label>
+                        {isExistingUser && contactPostalCode && (
+                            <Badge variant="outline" className="h-4 text-[9px] px-1.5 border-green-200 text-green-700 bg-green-50 animate-in fade-in zoom-in duration-300">
+                                Auto-detected
+                            </Badge>
+                        )}
                         <TooltipProvider>
                             <Tooltip delayDuration={200}>
                                 <TooltipTrigger asChild>
@@ -202,19 +365,19 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">
-                            <SelectItem value="nearby" textValue="Nearby">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Nearby</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
-                                        {LOCATION_TAG_INFO.nearby}
-                                    </span>
-                                </div>
-                            </SelectItem>
                             <SelectItem value="hyperlocal" textValue="Hyperlocal">
                                 <div className="flex flex-col items-start text-left">
                                     <span className="font-medium">Hyperlocal</span>
                                     <span className="text-xs text-muted-foreground font-normal">
                                         {LOCATION_TAG_INFO.hyperlocal}
+                                    </span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="nearby" textValue="Nearby">
+                                <div className="flex flex-col items-start text-left">
+                                    <span className="font-medium">Nearby</span>
+                                    <span className="text-xs text-muted-foreground font-normal">
+                                        {LOCATION_TAG_INFO.nearby}
                                     </span>
                                 </div>
                             </SelectItem>
@@ -245,7 +408,7 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                     <div className="text-sm space-y-1">
                                         <p><strong>Partner:</strong> Someone you collaborate with</p>
                                         <p><strong>Supplier:</strong> Provides you items or services</p>
-                                        <p><strong>Affiliate:</strong> Promotes your business</p>
+                                        <p><strong>Referral:</strong> Promotes your business</p>
                                     </div>
                                 </TooltipContent>
                             </Tooltip>
@@ -277,9 +440,9 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                     </span>
                                 </div>
                             </SelectItem>
-                            <SelectItem value="affiliate" textValue="Affiliate">
+                            <SelectItem value="affiliate" textValue="Referral">
                                 <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Affiliate</span>
+                                    <span className="font-medium">Referral</span>
                                     <span className="text-xs text-muted-foreground font-normal">
                                         {RELATIONSHIP_TAG_INFO.affiliate}
                                     </span>
@@ -333,7 +496,12 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                 )}
                 <Button
                     onClick={handleAddContact}
-                    disabled={createContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
+                    disabled={
+                        createContact.isPending ||
+                        (!isExistingUser && (!formData.firstName || !formData.phone)) ||
+                        (isExistingUser && !formData.email) ||
+                        !formData.hasPermission
+                    }
                     className="bg-orange-600 hover:bg-orange-700"
                 >
                     {createContact.isPending ? 'Adding...' : 'Add Contact'}

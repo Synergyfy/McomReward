@@ -38,7 +38,7 @@ Retrieves the current subscription level and status for the authenticated busine
     "name": "Silver",
     "monthlyPrice": "100.00",
     "annualPrice": "1200.00",
-    "quaterlyPrice": "300.00",
+    "quarterlyPrice": "300.00",
     "features": [
       "Testing 1",
       "Testing 2",
@@ -119,7 +119,7 @@ Retrieves the billing history for the authenticated business, ordered by date (n
         "name": "Silver",
         "monthlyPrice": "100.00",
         "annualPrice": "1200.00",
-        "quaterlyPrice": "300.00",
+        "quarterlyPrice": "300.00",
         "features": [
           "Testing 1",
           "Testing 2",

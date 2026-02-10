@@ -15,6 +15,8 @@ const NETWORK_CONTACTS_QUERY_KEY = 'networkContacts';
 let mockContacts: NetworkContact[] = [
     {
         id: '1',
+        firstName: 'John',
+        lastName: 'Smith',
         fullName: 'John Smith',
         businessName: 'Smith & Co. Bakery',
         email: 'john@smithbakery.com',
@@ -29,6 +31,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '2',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
         fullName: 'Sarah Johnson',
         businessName: 'Fresh Produce Ltd',
         email: 'sarah@freshproduce.co.uk',
@@ -43,6 +47,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '3',
+        firstName: 'Michael',
+        lastName: 'Chen',
         fullName: 'Michael Chen',
         businessName: 'Tech Solutions Inc',
         email: 'michael@techsolutions.com',
@@ -57,6 +63,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '4',
+        firstName: 'Emma',
+        lastName: 'Williams',
         fullName: 'Emma Williams',
         businessName: 'Williams Marketing Agency',
         email: 'emma@williamsmarketing.com',
@@ -71,6 +79,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '5',
+        firstName: 'David',
+        lastName: 'Brown',
         fullName: 'David Brown',
         businessName: 'Brown Construction',
         email: 'david@brownconstruction.co.uk',
@@ -85,6 +95,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '6',
+        firstName: 'Lisa',
+        lastName: 'Anderson',
         fullName: 'Lisa Anderson',
         businessName: 'Anderson Consulting',
         email: 'lisa@andersonconsulting.com',
@@ -99,6 +111,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '7',
+        firstName: 'Robert',
+        lastName: 'Taylor',
         fullName: 'Robert Taylor',
         businessName: 'Taylor Logistics',
         email: 'robert@taylorlogistics.co.uk',
@@ -113,6 +127,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '8',
+        firstName: 'Jennifer',
+        lastName: 'Martinez',
         fullName: 'Jennifer Martinez',
         businessName: 'Martinez Design Studio',
         email: 'jennifer@martinezdesign.com',
@@ -127,6 +143,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '9',
+        firstName: 'James',
+        lastName: 'Wilson',
         fullName: 'James Wilson',
         businessName: 'Wilson Retail Group',
         email: 'james@wilsonretail.co.uk',
@@ -141,6 +159,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '10',
+        firstName: 'Patricia',
+        lastName: 'Garcia',
         fullName: 'Patricia Garcia',
         businessName: 'Garcia Food Services',
         email: 'patricia@garciafood.com',
@@ -155,6 +175,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '11',
+        firstName: 'Christopher',
+        lastName: 'Lee',
         fullName: 'Christopher Lee',
         businessName: 'Lee Financial Advisors',
         email: 'chris@leefinancial.co.uk',
@@ -169,6 +191,8 @@ let mockContacts: NetworkContact[] = [
     },
     {
         id: '12',
+        firstName: 'Mary',
+        lastName: 'Thompson',
         fullName: 'Mary Thompson',
         businessName: 'Thompson Events',
         email: 'mary@thompsonevents.com',
@@ -274,6 +298,7 @@ const bulkImportContacts = async (
     const newContacts: NetworkContact[] = importData.contacts.map((contact, index) => ({
         id: `${Date.now()}-${index}`,
         ...contact,
+        fullName: `${contact.firstName} ${contact.lastName}`,
         hasSharingPermission: contact.hasPermission ?? false,
         sourceTag: 'User-submitted',
         status: 'accepted',

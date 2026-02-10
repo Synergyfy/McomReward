@@ -25,7 +25,7 @@ interface AssignPlaqueWizardProps {
     plaqueId: string | null;
 }
 
-type WizardStep = 'menu' | 'affiliate_list' | 'contact_list' | 'add_contact' | 'confirm_contact';
+type WizardStep = 'menu' | 'referral_list' | 'contact_list' | 'add_contact' | 'confirm_contact';
 
 export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: AssignPlaqueWizardProps) {
     const [step, setStep] = useState<WizardStep>('menu');
@@ -35,7 +35,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
     const { mutate: updatePlaque } = useUpdateQrPlaque();
 
     // Data Hooks
-    const { data: affiliateStats, isLoading: isAffiliateLoading } = useAffiliateStats();
+    const { data: referralStats, isLoading: isReferralLoading } = useAffiliateStats();
     const { data: contactsData, isLoading: isContactsLoading } = useGetNetworkContacts({
         limit: 50,
         search: searchQuery || undefined
@@ -87,13 +87,13 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
             <div
                 className="flex flex-col items-center justify-center p-6 border rounded-lg hover:border-primary hover:bg-primary/5 cursor-pointer transition-all gap-4 text-center h-[200px]"
-                onClick={() => setStep('affiliate_list')}
+                onClick={() => setStep('referral_list')}
             >
                 <div className="p-4 bg-blue-100 rounded-full text-blue-600">
                     <Award className="w-8 h-8" />
                 </div>
                 <div>
-                    <h3 className="font-semibold text-lg">Affiliate Service</h3>
+                    <h3 className="font-semibold text-lg">Referral Network</h3>
                     <p className="text-sm text-gray-500 mt-1">Assign to businesses you've invited</p>
                 </div>
             </div>
@@ -126,32 +126,33 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
         </div>
     );
 
-    const renderAffiliateList = () => (
+    const renderReferralList = () => (
         <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
                 <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
                     <ArrowLeft className="w-4 h-4" /> Back
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                    Select an affiliate to assign
+                    Select a referral to assign
                 </div>
             </div>
 
-            {isAffiliateLoading ? (
+            {isReferralLoading ? (
                 <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-gray-400" /></div>
-            ) : !affiliateStats?.referredBusinesses?.length ? (
+            ) : !referralStats?.referredBusinesses?.length ? (
                 <div className="text-center p-8 text-gray-500">
-                    No affiliates found. Try inviting businesses first.
+                    No referrals found. Try inviting businesses first.
                 </div>
             ) : (
                 <div className="max-h-[400px] overflow-y-auto border rounded-md divide-y">
-                    {affiliateStats.referredBusinesses.map((affiliate: ReferredBusiness, index: number) => (
+                    {referralStats.referredBusinesses.map((affiliate: ReferredBusiness, index: number) => (
                         <div
                             key={index}
                             className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors"
                             onClick={() => {
                                 setPrefillContact({
-                                    fullName: affiliate.name,
+                                    firstName: affiliate.name.split(' ')[0] || '',
+                                    lastName: affiliate.name.split(' ').slice(1).join(' ') || '',
                                     businessName: affiliate.name,
                                     email: affiliate.email || '',
                                     phone: (affiliate as any).phone || '',
@@ -280,7 +281,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                     <DialogTitle>Assign Plaque {plaqueId}</DialogTitle>
                     <DialogDescription>
                         {step === 'menu' && "Choose how you would like to assign this plaque."}
-                        {step === 'affiliate_list' && "Select a business from your affiliate network."}
+                        {step === 'referral_list' && "Select a business from your referral network."}
                         {step === 'contact_list' && "Select a contact from your network."}
                         {step === 'add_contact' && "Create a new contact to assign this plaque to."}
                         {step === 'confirm_contact' && "Please confirm the assignment details."}
@@ -288,7 +289,7 @@ export default function AssignPlaqueWizard({ isOpen, onClose, plaqueId }: Assign
                 </DialogHeader>
 
                 {step === 'menu' && renderMenu()}
-                {step === 'affiliate_list' && renderAffiliateList()}
+                {step === 'referral_list' && renderReferralList()}
                 {step === 'contact_list' && renderContactList()}
                 {step === 'add_contact' && renderAddContact()}
                 {step === 'confirm_contact' && renderConfirmContact()}

@@ -117,7 +117,7 @@ const LOCATION_TAG_INFO = {
 const RELATIONSHIP_TAG_INFO = {
     partner: 'Someone you collaborate with.',
     supplier: 'Someone who provides you items or services.',
-    affiliate: 'Promotes your business.',
+    affiliate: 'Someone who refers customers to your business.',
 };
 
 export default function CustomerContactPage() {
@@ -727,7 +727,7 @@ export default function CustomerContactPage() {
                                                 <div className="text-sm space-y-1">
                                                     <p><strong>Partner:</strong> {RELATIONSHIP_TAG_INFO.partner}</p>
                                                     <p><strong>Supplier:</strong> {RELATIONSHIP_TAG_INFO.supplier}</p>
-                                                    <p><strong>Affiliate:</strong> {RELATIONSHIP_TAG_INFO.affiliate}</p>
+                                                    <p><strong>Referral:</strong> {RELATIONSHIP_TAG_INFO.affiliate}</p>
                                                 </div>
                                             </TooltipContent>
                                         </Tooltip>
@@ -745,7 +745,7 @@ export default function CustomerContactPage() {
                                     <SelectContent>
                                         <SelectItem value="partner">Partner</SelectItem>
                                         <SelectItem value="supplier">Supplier</SelectItem>
-                                        <SelectItem value="affiliate">Affiliate</SelectItem>
+                                        <SelectItem value="affiliate">Referral</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

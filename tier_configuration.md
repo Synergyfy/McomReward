@@ -164,8 +164,7 @@ This tier starts restricted but unlocks features as the business grows.
   "name": "Bronze",
   "monthly_price": 29.99,
   "annual_price": 300.00,
-  "quaterly_price": 85.00,
-  "features": ["Basic Analytics", "5 Active Campaigns"],
+      "quarterly_price": 85.00,  "features": ["Basic Analytics", "5 Active Campaigns"],
   "status": "published",
   "configuration": {
     "quotas": {
@@ -232,8 +231,7 @@ This tier offers high limits, seasonal pricing, and progression rewards.
   "name": "Gold",
   "monthly_price": 99.99,
   "annual_price": 1000.00,
-  "quaterly_price": 280.00,
-  "features": ["CRM Access", "Unlimited Campaigns", "Advanced Analytics"],
+      "quarterly_price": 280.00,  "features": ["CRM Access", "Unlimited Campaigns", "Advanced Analytics"],
   "status": "published",
   "configuration": {
     "quotas": {

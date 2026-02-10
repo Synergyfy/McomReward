@@ -77,14 +77,14 @@ const LOCATION_TAG_INFO = {
 const RELATIONSHIP_TAG_INFO = {
   partner: 'Someone you collaborate with.',
   supplier: 'Someone who provides you items or services.',
-  affiliate: 'Promotes your business.',
+  affiliate: 'Someone who refers customers to your business.',
 };
 
 const SOURCE_TAG_INFO = {
   'User-submitted': 'Manually added by the business owner.',
   Platform: 'Contact automatically provided by MCOM.',
   Plaque: 'Contact generated when someone scans their plaque.',
-  Affiliate: 'Contact created by affiliate sign-ups.',
+  Affiliate: 'Contact created by referral sign-ups.',
 };
 
 // Badge color mapping
@@ -135,7 +135,8 @@ export default function FormContactsPage() {
 
   // Form state
   const [formData, setFormData] = useState<CreateContactDto>({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     businessName: '',
     email: '',
     phone: '',
@@ -167,7 +168,8 @@ export default function FormContactsPage() {
     if (!selectedContact) return;
 
     const updateData: UpdateContactDto = {
-      fullName: formData.fullName,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       businessName: formData.businessName || undefined,
       email: formData.email || undefined,
       phone: formData.phone || undefined,
@@ -205,7 +207,8 @@ export default function FormContactsPage() {
   const openEditModal = (contact: NetworkContact) => {
     setSelectedContact(contact);
     setFormData({
-      fullName: contact.fullName,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
       businessName: contact.businessName || '',
       email: contact.email || '',
       phone: contact.phone || '',
@@ -223,7 +226,8 @@ export default function FormContactsPage() {
 
   const resetForm = () => {
     setFormData({
-      fullName: '',
+      firstName: '',
+      lastName: '',
       businessName: '',
       email: '',
       phone: '',
@@ -410,7 +414,7 @@ export default function FormContactsPage() {
                         <SelectItem value="all">All Relationships</SelectItem>
                         <SelectItem value="partner">Partner</SelectItem>
                         <SelectItem value="supplier">Supplier</SelectItem>
-                        <SelectItem value="affiliate">Affiliate</SelectItem>
+                        <SelectItem value="affiliate">Referral</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -428,7 +432,7 @@ export default function FormContactsPage() {
                         <SelectItem value="User-submitted">User-submitted</SelectItem>
                         <SelectItem value="Platform">Platform</SelectItem>
                         <SelectItem value="Plaque">Plaque</SelectItem>
-                        <SelectItem value="Affiliate">Affiliate</SelectItem>
+                        <SelectItem value="Affiliate">Referral</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -747,28 +751,31 @@ export default function FormContactsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
             <div className="grid grid-cols-2 gap-4">
-              {/* Full Name */}
-              <div className="col-span-2">
+              {/* Name Fields */}
+              <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="edit-fullName">
-                    Full Name <span className="text-red-500">*</span>
+                  <Label htmlFor="edit-firstName">
+                    First Name <span className="text-red-500">*</span>
                   </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                        <p className="text-sm">Enter the full name of the contact person or business owner.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
                 <Input
-                  id="edit-fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="John Doe"
+                  id="edit-firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="edit-lastName">
+                    Last Name <span className="text-red-500">*</span>
+                  </Label>
+                </div>
+                <Input
+                  id="edit-lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  placeholder="Doe"
                 />
               </div>
 
@@ -918,53 +925,52 @@ export default function FormContactsPage() {
                       <TooltipTrigger asChild>
                         <Info className="h-4 w-4 text-gray-400 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                        <div className="text-sm space-y-1">
-                          <p><strong>Partner:</strong> Someone you collaborate with</p>
-                          <p><strong>Supplier:</strong> Provides you items or services</p>
-                          <p><strong>Affiliate:</strong> Promotes your business</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Select
-                  value={formData.relationshipTag}
-                  onValueChange={(value: RelationshipTag) =>
-                    setFormData({ ...formData, relationshipTag: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    <SelectItem value="partner" textValue="Partner">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Partner</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.partner}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="supplier" textValue="Supplier">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Supplier</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.supplier}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="affiliate" textValue="Affiliate">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Affiliate</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.affiliate}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                                              <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
+                                              <div className="text-sm space-y-1">
+                                                <p><strong>Partner:</strong> Someone you collaborate with</p>
+                                                <p><strong>Supplier:</strong> Provides you items or services</p>
+                                                <p><strong>Referral:</strong> Promotes your business</p>
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                      <Select
+                                        value={formData.relationshipTag}
+                                        onValueChange={(value: RelationshipTag) =>
+                                          setFormData({ ...formData, relationshipTag: value })
+                                        }
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[9999]">
+                                          <SelectItem value="partner" textValue="Partner">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Partner</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.partner}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="supplier" textValue="Supplier">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Supplier</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.supplier}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="affiliate" textValue="Referral">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Referral</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.affiliate}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>              </div>
             </div>
 
             {/* Permission Confirmation */}
@@ -1015,7 +1021,7 @@ export default function FormContactsPage() {
             </Button>
             <Button
               onClick={handleEditContact}
-              disabled={updateContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
+              disabled={updateContact.isPending || !formData.firstName || !formData.lastName || !formData.phone || !formData.hasPermission}
               className="bg-orange-600 hover:bg-orange-700"
             >
               {updateContact.isPending ? 'Updating...' : 'Update Contact'}

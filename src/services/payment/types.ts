@@ -11,7 +11,7 @@ export interface Tier {
     colorCode?: string; // Added
     monthlyPrice: string;
     annualPrice: string;
-    quaterlyPrice: string;
+    quarterlyPrice: string;
     features: string[];
     status: string;
     stripeMonthlyPriceId: string;

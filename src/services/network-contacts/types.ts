@@ -5,6 +5,8 @@ export type ContactStatus = "pending" | "accepted" | "rejected";
 
 export interface NetworkContact {
     id: string;
+    firstName: string;
+    lastName: string;
     fullName: string;
     businessName?: string;
     email?: string;
@@ -21,7 +23,8 @@ export interface NetworkContact {
 }
 
 export interface CreateContactDto {
-    fullName: string;
+    firstName: string;
+    lastName: string;
     businessName?: string;
     email?: string;
     phone: string;
@@ -33,7 +36,8 @@ export interface CreateContactDto {
 export type CreateNetworkDto = CreateContactDto;
 
 export interface UpdateContactDto {
-    fullName?: string;
+    firstName?: string;
+    lastName?: string;
     businessName?: string;
     email?: string;
     phone?: string;

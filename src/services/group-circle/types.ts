@@ -1,8 +1,6 @@
 ﻿export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
 
-export type GroupCircleDuration = 90 | 180 | 270 | 360;
-
-export type GroupCircleInteractionLevel = 'READ' | 'MESSAGE' | 'COLLABORATE';
+export type GroupCircleDuration = 90 | 180 | 270 | 360 | string;
 
 export type GroupCircleStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -50,10 +48,8 @@ export interface Contribution {
 
 export interface CreateGroupCircleDto {
     name: string;
-    description: string;
     type: GroupCircleType;
     duration: GroupCircleDuration;
-    interactionLevel: GroupCircleInteractionLevel;
     contributionAmount: number;
     networkIds: string[];
     referredBusinessIds?: string[];
@@ -71,10 +67,8 @@ export interface GroupCircleMember {
 export interface GroupCircle {
     id: string;
     name: string;
-    description: string;
     type: GroupCircleType;
     duration: number;
-    interactionLevel: GroupCircleInteractionLevel;
     status: GroupCircleStatus;
     contributionAmount: number;
     payoutFrequency: PayoutFrequency;
@@ -99,10 +93,8 @@ export interface GroupCirclesResponse {
 }
 export interface UpdateGroupCircleDto {
     name?: string;
-    description?: string;
     type?: GroupCircleType;
     duration?: GroupCircleDuration;
-    interactionLevel?: GroupCircleInteractionLevel;
     networkIds?: string[];
     referredBusinessIds?: string[];
     contributionAmount?: number;
@@ -132,6 +124,23 @@ export interface MessageQueryParams {
 
 export interface MessagesResponse {
     data: GroupCircleMessage[];
+    meta: {
+        total: number;
+        page: number;
+        lastPage: number;
+        nextPage: number | null;
+        prevPage: number | null;
+    };
+}
+
+export interface DiscoverableCircle extends GroupCircle {
+    ownerName: string;
+    isPublic: boolean;
+    memberCount: number;
+}
+
+export interface DiscoverableCirclesResponse {
+    data: DiscoverableCircle[];
     meta: {
         total: number;
         page: number;

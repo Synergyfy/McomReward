@@ -12,7 +12,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
 import Link from "next/link";
 
-export default function BusinessSignupForm() {
+interface BusinessSignupFormProps {
+  provisionCode?: string;
+}
+
+export default function BusinessSignupForm({ provisionCode }: BusinessSignupFormProps) {
   const searchParams = useSearchParams();
   const refCode = searchParams.get('ref');
 
@@ -25,6 +29,7 @@ export default function BusinessSignupForm() {
   } = useForm<BusinessSignUpDto>({
     defaultValues: {
       referralCode: refCode || '',
+      provisionCode: provisionCode || '',
     }
   });
 
@@ -32,7 +37,10 @@ export default function BusinessSignupForm() {
     if (refCode) {
       setValue('referralCode', refCode);
     }
-  }, [refCode, setValue]);
+    if (provisionCode) {
+      setValue('provisionCode', provisionCode);
+    }
+  }, [refCode, provisionCode, setValue]);
 
   const router = useRouter();
   const { mutateAsync: signUp } = useBusinessSignUp();
@@ -91,19 +99,35 @@ export default function BusinessSignupForm() {
 
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="name">
-              Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Your Name"
-              {...register("name", { required: "Name is required" })}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">
+                First Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="John"
+                {...register("firstName", { required: "First name is required" })}
+              />
+              {errors.firstName && (
+                <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="lastName">
+                Last Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                {...register("lastName", { required: "Last name is required" })}
+              />
+              {errors.lastName && (
+                <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+              )}
+            </div>
           </div>
           <div>
             <Label htmlFor="email">

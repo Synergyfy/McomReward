@@ -69,9 +69,8 @@ export default function ComparisonTable({ activeTab = "standard" }: ComparisonTa
     });
   } else {
     tiers.sort((a, b) => {
-      const priceA = a.quaterlyPrice ? parseFloat(String(a.quaterlyPrice)) : 0;
-      const priceB = b.quaterlyPrice ? parseFloat(String(b.quaterlyPrice)) : 0;
-      return priceA - priceB;
+          const priceA = a.quarterlyPrice ? parseFloat(String(a.quarterlyPrice)) : 0;
+          const priceB = b.quarterlyPrice ? parseFloat(String(b.quarterlyPrice)) : 0;      return priceA - priceB;
     });
   }
 

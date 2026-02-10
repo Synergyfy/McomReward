@@ -6,7 +6,7 @@ export interface TierResponse {
     updatedAt: string;
     monthlyPrice?: string;
     annualPrice?: string;
-    quaterlyPrice?: string;
+    quarterlyPrice?: string;
     features?: string[];
     stripeMonthlyPriceId?: string | null;
     stripeQuarterlyPriceId?: string | null;

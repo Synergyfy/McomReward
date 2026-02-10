@@ -45,8 +45,7 @@ export default function PricingCards({ billingCycle, activeTab }: PricingCardsPr
   }).map((t) => ({
     name: t.name,
     description: t.description || "Unlock your potential",
-    quarterlyPrice: parseFloat(t.quaterlyPrice),
-    annualPrice: parseFloat(t.annualPrice),
+          quarterlyPrice: parseFloat(t.quarterlyPrice),    annualPrice: parseFloat(t.annualPrice),
     includesNfc: t.includesNfc ?? false,
     icon: iconByTier[t.name] ?? Target,
     features: t.features,

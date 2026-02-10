@@ -138,9 +138,9 @@ export default function UpdateTagsModal({ business, isOpen, onClose }: UpdateTag
                                             </span>
                                         </div>
                                     </SelectItem>
-                                    <SelectItem value={NetworkRelationshipTag.AFFILIATE} textValue="Affiliate">
+                                    <SelectItem value={NetworkRelationshipTag.AFFILIATE} textValue="Referral">
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="font-medium">Affiliate</span>
+                                            <span className="font-medium">Referral</span>
                                             <span className="text-xs text-muted-foreground font-normal">
                                                 {RELATIONSHIP_TAG_INFO.affiliate}
                                             </span>

@@ -33,6 +33,7 @@ interface CircleSelectorProps {
     setSelectedCircleId: (id: string) => void;
     groupCircleTypes: any[];
     onCreateNew?: () => void;
+    disabled?: boolean;
 }
 
 export const CircleSelector = React.memo(({
@@ -44,7 +45,8 @@ export const CircleSelector = React.memo(({
     selectedCircleId,
     setSelectedCircleId,
     groupCircleTypes,
-    onCreateNew
+    onCreateNew,
+    disabled
 }: CircleSelectorProps) => {
     // Filter and sort circles
     const filteredCircles = useMemo(() => {
@@ -176,6 +178,7 @@ export const CircleSelector = React.memo(({
                         size="sm"
                         className="w-full text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 h-9 rounded-xl"
                         onClick={onCreateNew}
+                        disabled={disabled}
                     >
                         <Plus className="w-3.5 h-3.5 mr-2" /> Create New Circle
                     </Button>

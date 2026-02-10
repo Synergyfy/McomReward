@@ -58,7 +58,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [monthlyPrice, setMonthlyPrice] = useState('');
   const [annualPrice, setAnnualPrice] = useState('');
-  const [quaterlyPrice, setQuaterlyPrice] = useState('');
+  const [quarterlyPrice, setQuarterlyPrice] = useState('');
   const [seasonId, setSeasonId] = useState('');
   const [features, setFeatures] = useState<string[]>(['']);
 
@@ -79,7 +79,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       setQrCodeCount(initialData.qrCodeCount?.toString() || '0');
       setStatus((initialData.status as 'draft' | 'published') || 'draft');
       setMonthlyPrice(initialData.monthlyPrice);
-      setQuaterlyPrice(initialData.quaterlyPrice ?? '');
+      setQuarterlyPrice(initialData.quarterlyPrice ?? '');
       setAnnualPrice(initialData.annualPrice);
       setFeatures(initialData.features.length > 0 ? initialData.features : ['']);
 
@@ -127,7 +127,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       setQrCodeCount('0');
       setStatus('draft');
       setMonthlyPrice('');
-      setQuaterlyPrice('');
+      setQuarterlyPrice('');
       setAnnualPrice('');
       setFeatures(['']);
       setConfiguration(defaultConfiguration);
@@ -159,7 +159,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       qrCodeCount: parseInt(qrCodeCount) || 0,
       status,
       monthly_price: parseFloat(monthlyPrice) || 0,
-      quaterly_price: parseFloat(quaterlyPrice) || 0,
+      quarterly_price: parseFloat(quarterlyPrice) || 0,
       annual_price: parseFloat(annualPrice) || 0,
       features: features.filter(f => f.trim() !== ''),
       configuration,
@@ -285,7 +285,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
               </div>
               <div>
                 <LabelWithTooltip label="Quarterly Price" tooltip="The cost of the plan billed every 3 months." />
-                <Input id="quaterlyPrice" type="number" value={quaterlyPrice} onChange={(e) => setQuaterlyPrice(e.target.value)} placeholder="0.00" />
+                <Input id="quarterlyPrice" type="number" value={quarterlyPrice} onChange={(e) => setQuarterlyPrice(e.target.value)} placeholder="0.00" />
               </div>
               <div>
                 <LabelWithTooltip label="Annual Price" tooltip="The cost of the plan billed yearly." />

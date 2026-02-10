@@ -40,7 +40,7 @@ export interface TierBreakdown {
   businessCount: number;
   monthlyPrice: string;
   annualPrice: string;
-  quaterlyPrice: string;
+  quarterlyPrice: string;
   features: string[];
   status: string;
 }

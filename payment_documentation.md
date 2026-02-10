@@ -24,7 +24,7 @@ Returns an array of `Tier` objects.
     "name": "Gold",
     "monthly_price": 29.99,
     "annual_price": 299.99,
-    "quaterly_price": 85.00,
+    "quarterly_price": 85.00,
     "features": [
       "Feature 1",
       "Feature 2"

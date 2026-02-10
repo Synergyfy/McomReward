@@ -76,7 +76,7 @@ function CheckoutContent() {
       const price = tier.fixedPrice ?? (tier as any).fixed_price;
       return price ? parseFloat(price) : 0;
     }
-    return billing === "annual" ? parseFloat(tier.annualPrice) : parseFloat(tier.quaterlyPrice);
+    return billing === "annual" ? parseFloat(tier.annualPrice) : parseFloat(tier.quarterlyPrice);
   }, [tier, billing]);
 
   const { final, discount } = useMemo(() => applyCoupon(basePrice, appliedCoupon), [basePrice, appliedCoupon])

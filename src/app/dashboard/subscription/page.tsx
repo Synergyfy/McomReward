@@ -41,7 +41,7 @@ export default function SubscriptionPage() {
       let price;
       switch (planFrequency) {
         case 'quarterly':
-          price = tier.quaterlyPrice ? `£${tier.quaterlyPrice}/qu` : 'N/A';
+          price = tier.quarterlyPrice ? `£${tier.quarterlyPrice}/qu` : 'N/A';
           break;
         case 'annually':
           price = tier.annualPrice ? `£${tier.annualPrice}/yr` : 'N/A';
@@ -113,7 +113,7 @@ export default function SubscriptionPage() {
           <CardContent>
             <p className="text-lg font-semibold">
               {subscription.planType === 'monthly' && currentSubscriptionTier.monthlyPrice && `£${currentSubscriptionTier.monthlyPrice}/mo`}
-              {subscription.planType === 'quarterly' && currentSubscriptionTier.quaterlyPrice && `£${currentSubscriptionTier.quaterlyPrice}/qu`}
+              {subscription.planType === 'quarterly' && currentSubscriptionTier.quarterlyPrice && `£${currentSubscriptionTier.quarterlyPrice}/qu`}
               {subscription.planType === 'annually' && currentSubscriptionTier.annualPrice && `£${currentSubscriptionTier.annualPrice}/yr`}
             </p>
             <p className="text-sm text-gray-600">Next renewal date: {new Date(subscription.expiresAt).toLocaleDateString()}</p>

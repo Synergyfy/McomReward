@@ -40,7 +40,11 @@ const BUSINESS_QUERY_KEY = 'business';
 
 // ------------------- BUSINESS SIGN-UP -------------------
 const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<string> => {
-  const { data } = await api.post<string>('/business/signup', signUpData);
+  const payload = {
+    ...signUpData,
+    name: `${signUpData.firstName} ${signUpData.lastName}`.trim(),
+  };
+  const { data } = await api.post<string>('/business/signup', payload);
   return data;
 };
 

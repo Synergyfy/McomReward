@@ -114,7 +114,7 @@ export default function BusinessSidebar({
     submenuKey = '',
     children
   }: {
-    icon: any,
+    icon?: any,
     label: string,
     href?: string,
     activePath?: string,
@@ -125,7 +125,7 @@ export default function BusinessSidebar({
 
     const Content = () => (
       <div className={`flex items-center w-full px-3 py-2 rounded-lg transition-all ${!hasSubmenu && href ? enhancedLinkClasses(href!, activePath === href) : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600 cursor-pointer'} ${isCollapsed ? 'justify-center' : ''}`}>
-        <Icon className={`${isCollapsed ? 'mr-0' : 'mr-3'} shrink-0`} size={20} />
+        {Icon && <Icon className={`${isCollapsed ? 'mr-0' : 'mr-3'} shrink-0`} size={20} />}
         {!isCollapsed && (
           <div className="flex-1 flex justify-between items-center overflow-hidden">
             <span className="truncate">{label}</span>
@@ -275,9 +275,8 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Award} label="My Network" hasSubmenu submenuKey="myassets">
             <SubItem href="/dashboard/my-assets" label="Contacts" />
-            <SidebarItem icon={Users} label="Group Circles" hasSubmenu submenuKey="groupcircles">
+            <SidebarItem label="Group Circles" hasSubmenu submenuKey="groupcircles">
               <SubItem href="/dashboard/my-assets/group-circles" label="Visualization" />
-              <SubItem href="/dashboard/my-assets/group-circles/partner-offers" label="Partner Offers" />
             </SidebarItem>
             <SubItem href="/dashboard/my-assets/qr-plaques" label="QR Plaques" />
             <SubItem href="/dashboard/affiliate" label="Referral" />

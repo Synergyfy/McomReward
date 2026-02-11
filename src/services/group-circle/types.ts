@@ -74,6 +74,10 @@ export interface GroupCircle {
     payoutFrequency: PayoutFrequency;
     currentRound: number;
     startDate: string;
+    description?: string;
+    season?: string;
+    tags?: string[];
+    terms?: string[];
     members: GroupCircleMember[];
 }
 export interface GroupCirclesQueryParams {

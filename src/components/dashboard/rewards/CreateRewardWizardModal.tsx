@@ -27,7 +27,9 @@ import {
   AlertDialogTitle,
   AlertDialogCancel,
   AlertDialogAction,
+
 } from '@/components/ui/alert-dialog';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
@@ -115,6 +117,11 @@ export default function CreateRewardWizardModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Gallery Cropping State
+  const [pendingGalleryFiles, setPendingGalleryFiles] = useState<File[]>([]);
+  const [currentGalleryCropIndex, setCurrentGalleryCropIndex] = useState(-1);
+  const [galleryCropImage, setGalleryCropImage] = useState<string | null>(null);
+
   const isEditMode = useMemo(() => !!reward, [reward]);
 
   // Logic from Dev: Identify types that require monetary value
@@ -194,9 +201,31 @@ export default function CreateRewardWizardModal({
         return true;
       });
 
-      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
-      setGalleryFiles(prev => [...prev, ...validFiles]);
-      setGalleryPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+      setPendingGalleryFiles(validFiles);
+      if (validFiles.length > 0) {
+        setCurrentGalleryCropIndex(0);
+        setGalleryCropImage(URL.createObjectURL(validFiles[0]));
+      }
+      e.target.value = '';
+    }
+  };
+
+  const handleGalleryCropComplete = async (croppedBlob: Blob) => {
+    const currentFile = pendingGalleryFiles[currentGalleryCropIndex];
+    const croppedFile = new File([croppedBlob], currentFile.name, { type: 'image/jpeg' });
+    const url = URL.createObjectURL(croppedBlob);
+
+    setGalleryFiles(prev => [...prev, croppedFile]);
+    setGalleryPreviewUrls(prev => [...prev, url]);
+
+    if (currentGalleryCropIndex < pendingGalleryFiles.length - 1) {
+      const nextIndex = currentGalleryCropIndex + 1;
+      setCurrentGalleryCropIndex(nextIndex);
+      setGalleryCropImage(URL.createObjectURL(pendingGalleryFiles[nextIndex]));
+    } else {
+      setPendingGalleryFiles([]);
+      setCurrentGalleryCropIndex(-1);
+      setGalleryCropImage(null);
     }
   };
 
@@ -1117,6 +1146,28 @@ export default function CreateRewardWizardModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+
+      {galleryCropImage && (
+        <ImageCropper
+          image={galleryCropImage}
+          onCropComplete={handleGalleryCropComplete}
+          onCancel={() => {
+            // Skip current image
+            if (currentGalleryCropIndex < pendingGalleryFiles.length - 1) {
+              const nextIndex = currentGalleryCropIndex + 1;
+              setCurrentGalleryCropIndex(nextIndex);
+              setGalleryCropImage(URL.createObjectURL(pendingGalleryFiles[nextIndex]));
+            } else {
+              setPendingGalleryFiles([]);
+              setCurrentGalleryCropIndex(-1);
+              setGalleryCropImage(null);
+            }
+          }}
+          aspect={1}
+        />
+      )
+      }
     </>
   );
 }

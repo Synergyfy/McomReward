@@ -13,7 +13,6 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
   const pathname = usePathname();
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isPlaqueManagementOpen, setIsPlaqueManagementOpen] = useState(false);
-  const [isSalesManagementOpen, setIsSalesManagementOpen] = useState(false);
 
 
   const linkClasses = (path: string) => {
@@ -121,12 +120,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Deals Management
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/partner-management" className={linkClasses("/admin/partner-management")}>
             <Handshake className="mr-3" />
             Partner Management
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/notifications-control" className={linkClasses("/admin/notifications-control")}>
             <Bell className="mr-3" />
@@ -174,23 +173,6 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
                   Plaque Analytics
                 </Link>
               </li>
-            </ul>
-          )}
-        </li>
-        {/* Sales Management Parent Link with Dropdown */}
-        <li>
-          <div
-            className={parentLinkClasses("/admin/sales")}
-            onClick={() => setIsSalesManagementOpen(!isSalesManagementOpen)}
-          >
-            <div className="flex items-center">
-              <ShoppingCart className="mr-3" />
-              Sales Management
-            </div>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isSalesManagementOpen ? 'rotate-180' : ''}`} />
-          </div>
-          {isSalesManagementOpen && (
-            <ul className="ml-4 mt-1 space-y-1">
               <li>
                 <Link href="/admin/sales/sell-plaque" className={linkClasses("/admin/sales/sell-plaque")}>
                   Sell Plaque
@@ -228,12 +210,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Resources
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/security" className={linkClasses("/admin/security")}>
             <ShieldHalf className="mr-3" />
             Security
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/summary" className={linkClasses("/admin/summary")}>
             <PieChart className="mr-3" />

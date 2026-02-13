@@ -92,11 +92,11 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     if (!startDate) {
       newErrors.startDate = true;
     } else if (startDate < new Date()) {
-       // Allow past dates if editing an existing active campaign or just warn?
-       // For now, retaining strict check but alert is annoying if re-editing.
-       // Ideally check if it's a new campaign.
-       // Removing alert for better UX, just highlight error if strictly invalid logic is needed.
-       // newErrors.startDate = true;
+      // Allow past dates if editing an existing active campaign or just warn?
+      // For now, retaining strict check but alert is annoying if re-editing.
+      // Ideally check if it's a new campaign.
+      // Removing alert for better UX, just highlight error if strictly invalid logic is needed.
+      // newErrors.startDate = true;
     }
     if (!endDate) newErrors.endDate = true;
     if (!campaignMessage.trim()) newErrors.campaignMessage = true;
@@ -117,30 +117,30 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   // If we have IDs but no objects (e.g. page reload), try to hydration from rewardsData
   useEffect(() => {
-     if (rewardsData && formData.rewardIds.length > 0) {
-        const currentDisplayIds = displayedRewards.map(r => r.id);
-        const missingIds = formData.rewardIds.filter(id => !currentDisplayIds.includes(id));
+    if (rewardsData && formData.rewardIds.length > 0) {
+      const currentDisplayIds = displayedRewards.map(r => r.id);
+      const missingIds = formData.rewardIds.filter(id => !currentDisplayIds.includes(id));
 
-        if (missingIds.length > 0) {
-           const newRewards = rewardsData.data.filter(r => missingIds.includes(r.id)).map(r => ({
-             id: r.id,
-             title: r.title || r.reward?.title || 'Unknown Reward'
-           }));
+      if (missingIds.length > 0) {
+        const newRewards = rewardsData.data.filter(r => missingIds.includes(r.id)).map(r => ({
+          id: r.id,
+          title: r.title || r.reward?.title || 'Unknown Reward'
+        }));
 
-           if (newRewards.length > 0) {
-             updateFormData({
-                selectedRewards: [...displayedRewards, ...newRewards]
-             });
-           }
+        if (newRewards.length > 0) {
+          updateFormData({
+            selectedRewards: [...displayedRewards, ...newRewards]
+          });
         }
-     }
+      }
+    }
   }, [rewardsData, formData.rewardIds, displayedRewards, updateFormData]);
 
 
   const removeReward = (id: string) => {
-      const newIds = formData.rewardIds.filter(rid => rid !== id);
-      const newSelected = (formData.selectedRewards || []).filter(r => r.id !== id);
-      updateFormData({ rewardIds: newIds, selectedRewards: newSelected });
+    const newIds = formData.rewardIds.filter(rid => rid !== id);
+    const newSelected = (formData.selectedRewards || []).filter(r => r.id !== id);
+    updateFormData({ rewardIds: newIds, selectedRewards: newSelected });
   };
 
   return (
@@ -180,25 +180,25 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
           <div>
             <Label>Rewards to Attach</Label>
             <div className={`mt-2 border rounded-md p-4 space-y-3 ${errors.rewardIds ? 'border-red-500' : 'border-gray-200'}`}>
-                {displayedRewards.length > 0 ? (
-                    <div className="space-y-2">
-                        {displayedRewards.map(reward => (
-                            <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
-                                <span className="font-medium text-sm">{reward.title}</span>
-                                <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+              {displayedRewards.length > 0 ? (
+                <div className="space-y-2">
+                  {displayedRewards.map(reward => (
+                    <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                      <span className="font-medium text-sm">{reward.title}</span>
+                      <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                ) : (
-                    <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
-                )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
+              )}
 
-                <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
-                    <Plus className="mr-2 h-4 w-4" />
-                    {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
-                </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
+                <Plus className="mr-2 h-4 w-4" />
+                {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
+              </Button>
             </div>
             <p className="text-sm text-gray-500 mt-1">Choose the rewards (Points or Stamps) to be given out in this campaign.</p>
           </div>
@@ -247,7 +247,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
           {/* Image & Logo Uploads */}
           <div>
-            <div className="flex items-center gap-4"><Label>Image or Banner (optional)</Label><CloudinaryUpload onFileSelect={handleFileSelect} /></div>
+            <div className="flex items-center gap-4"><Label>Image or Banner (optional)</Label><CloudinaryUpload onFileSelect={handleFileSelect} aspectRatio={3} /></div>
             <p className="text-sm text-gray-500 mt-1">Upload a banner image for your campaign. Recommended size: 1200x400 pixels (3:1 aspect ratio).</p>
             {imagePreviewUrl && <div className="mt-4"><p className="text-sm font-medium">Image Preview:</p><div className="relative h-32 w-full rounded-lg overflow-hidden bg-gray-200"><Image src={imagePreviewUrl} alt="Campaign Banner Preview" layout="fill" objectFit="cover" /></div></div>}
           </div>
@@ -267,10 +267,10 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         isOpen={isRewardModalOpen}
         onClose={() => setIsRewardModalOpen(false)}
         onProceed={(ids, rewards) => {
-            updateFormData({
-                rewardIds: ids,
-                selectedRewards: rewards.map(r => ({ id: r.id, title: r.title || r.reward?.title || 'Unknown Reward' }))
-            });
+          updateFormData({
+            rewardIds: ids,
+            selectedRewards: rewards.map(r => ({ id: r.id, title: r.title || r.reward?.title || 'Unknown Reward' }))
+          });
         }}
         initialSelectedIds={formData.rewardIds}
       />

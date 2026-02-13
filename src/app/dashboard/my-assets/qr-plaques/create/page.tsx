@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MediaLibrary from '@/components/dashboard/media-library/MediaLibrary';
 import { LibraryAsset } from '@/services/media-library/types';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 // Create QR Plaque Page - Allows creating custom plaques with QR codes from library or device
 export default function CreatePlaquePage() {
@@ -28,6 +29,8 @@ export default function CreatePlaquePage() {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [isCropping, setIsCropping] = useState(false);
     const contentUrl = qrCodeUrl; // URL for the QR code image
     const previewQrCodeUrl = qrCodeUrl || '/placeholder-qr-code.png';
     const handleSelectAsset = (asset: LibraryAsset) => {
@@ -41,11 +44,20 @@ export default function CreatePlaquePage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setQrCodeUrl(reader.result as string);
-                toast.success("Image uploaded from device");
+                setCropImage(reader.result as string);
+                setIsCropping(true);
             };
             reader.readAsDataURL(file);
+            e.target.value = '';
         }
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        const url = URL.createObjectURL(croppedBlob);
+        setQrCodeUrl(url);
+        setIsCropping(false);
+        setCropImage(null);
+        toast.success("Image uploaded and cropped");
     };
 
     const handleSave = () => {
@@ -241,6 +253,20 @@ export default function CreatePlaquePage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+
+            {
+                isCropping && cropImage && (
+                    <ImageCropper
+                        image={cropImage}
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => {
+                            setIsCropping(false);
+                            setCropImage(null);
+                        }}
+                        aspect={1}
+                    />
+                )
+            }
+        </div >
     );
 }

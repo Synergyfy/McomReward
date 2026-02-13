@@ -10,6 +10,7 @@ import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessProfile, UpdateBusinessProfileDto } from '@/services/business/types';
 import { useUploadToCloudinary } from '@/services/upload/hook';
 import { toast } from 'sonner';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 export default function BusinessProfilePage() {
   const [editing, setEditing] = useState(false);
@@ -26,6 +27,9 @@ export default function BusinessProfilePage() {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [activeCropField, setActiveCropField] = useState<'profileImage' | 'banner' | null>(null);
 
   const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile } = useGetBusinessProfile();
   const { data: subscription, isLoading: isLoadingSubscription, isError: isErrorSubscription } = useGetMySubscription();
@@ -86,12 +90,34 @@ export default function BusinessProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (field === 'profileImage') setProfileImageFile(file);
-    if (field === 'banner') setBannerFile(file);
-
     const reader = new FileReader();
-    reader.onloadend = () => setForm(prev => ({ ...prev, [field]: reader.result as string }));
+    reader.onloadend = () => {
+      setCropImage(reader.result as string);
+      setActiveCropField(field);
+      setIsCropping(true);
+    };
     reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!activeCropField) return;
+
+    const fileName = activeCropField === 'profileImage' ? 'profile.jpg' : 'banner.jpg';
+    const croppedFile = new File([croppedBlob], fileName, { type: 'image/jpeg' });
+    const url = URL.createObjectURL(croppedBlob);
+
+    if (activeCropField === 'profileImage') {
+      setProfileImageFile(croppedFile);
+      setForm(prev => ({ ...prev, profileImage: url }));
+    } else {
+      setBannerFile(croppedFile);
+      setForm(prev => ({ ...prev, banner: url }));
+    }
+
+    setIsCropping(false);
+    setCropImage(null);
+    setActiveCropField(null);
   };
 
   const handleSave = async () => {
@@ -153,8 +179,8 @@ export default function BusinessProfilePage() {
             // Enhanced error message handling for better debugging
             const errorMessage = error.response?.data?.message
               ? (Array.isArray(error.response.data.message)
-                  ? error.response.data.message.join(', ')
-                  : error.response.data.message)
+                ? error.response.data.message.join(', ')
+                : error.response.data.message)
               : 'Failed to update profile';
             toast.error(errorMessage);
           },
@@ -406,6 +432,20 @@ export default function BusinessProfilePage() {
         <p>Joined: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'N/A'}</p>
         <p>Account Type: <span className="text-orange-500 font-medium">{subscription?.tier?.name || 'N/A'}</span></p>
       </div>
+
+      {isCropping && cropImage && (
+        <ImageCropper
+          image={cropImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropping(false);
+            setCropImage(null);
+            setActiveCropField(null);
+          }}
+          aspect={activeCropField === 'profileImage' ? 1 : 3}
+          circularCrop={activeCropField === 'profileImage'}
+        />
+      )}
     </div>
   );
 }

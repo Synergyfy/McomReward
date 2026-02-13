@@ -130,12 +130,13 @@ export default function SubCategoryDialog({ isOpen, onClose, onSubmit, subCatego
           <div className="grid grid-cols-4 items-center gap-4">
             <label htmlFor="imageUrl" className="text-right">Image</label>
             <div className="col-span-3">
-              <CloudinaryUpload 
+              <CloudinaryUpload
                 onFileSelect={(file, previewUrl) => {
                   setImageFile(file);
                   setImageUrl(previewUrl || '');
                 }}
                 disabled={isUploading}
+                aspectRatio={1}
               />
               {imageUrl && (
                 <div className="mt-4">

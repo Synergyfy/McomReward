@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-    Dialog, DialogContent, DialogDescription, 
-    DialogHeader, DialogTitle, DialogFooter 
+import {
+    Dialog, DialogContent, DialogDescription,
+    DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ interface JoinCircleDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     groupCircleTypes: any[];
-    onJoined?: (circleId: string) => void;
+    onJoined?: (circle: any) => void;
 }
 
 const MOCK_DISCOVERABLE_CIRCLES = [
@@ -31,6 +31,7 @@ const MOCK_DISCOVERABLE_CIRCLES = [
         memberCount: 42,
         contributionAmount: 0,
         description: "A circle focused on scaling tech businesses in the London area through collaborative marketing.",
+        season: "Annual",
         tags: ["Tech", "Scaling", "London"],
         terms: [
             "Active participation in monthly campaigns is expected.",
@@ -46,6 +47,7 @@ const MOCK_DISCOVERABLE_CIRCLES = [
         memberCount: 18,
         contributionAmount: 0,
         description: "Connecting sustainable retailers for cross-promotional advertising and shared customer bases.",
+        season: "Summer",
         tags: ["Eco-friendly", "Retail", "Sustainability"],
         terms: [
             "Proof of sustainable practices required.",
@@ -61,6 +63,7 @@ const MOCK_DISCOVERABLE_CIRCLES = [
         memberCount: 12,
         contributionAmount: 250,
         description: "A Smart Money circle for small businesses to provide interest-free capital support to each other.",
+        season: "Winter",
         tags: ["Finance", "SME", "Collaborative Capital"],
         terms: [
             "Mandatory £250 monthly contribution.",
@@ -76,6 +79,7 @@ const MOCK_DISCOVERABLE_CIRCLES = [
         memberCount: 29,
         contributionAmount: 0,
         description: "Hyperlocal collaboration for restaurants and bars in the West End to drive footfall.",
+        season: "Spring",
         tags: ["Hospitality", "Nearby", "Footfall"],
         terms: [
             "Exclusive to businesses within 2 miles of Soho.",
@@ -90,7 +94,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
     const [step, setStep] = useState<"search" | "details" | "success">("search");
     const [selectedCircle, setSelectedCircle] = useState<any>(null);
     const [isJoining, setIsJoining] = useState(false);
-    
+
     const { data: discoverableData, isLoading } = useGetDiscoverableCircles();
     const joinMutation = useJoinGroupCircle();
 
@@ -101,11 +105,11 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
 
     const handleJoin = async () => {
         if (!selectedCircle) return;
-        
+
         setIsJoining(true);
         // Simulate API delay for "perfect" feel
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         try {
             // In a real app we'd use: await joinMutation.mutateAsync(selectedCircle.id);
             setStep("success");
@@ -117,12 +121,12 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
     };
 
     const handleClose = () => {
-        const id = selectedCircle?.id;
+        const circle = selectedCircle;
         onOpenChange(false);
         // Reset after animation
         setTimeout(() => {
-            if (step === "success" && id && onJoined) {
-                onJoined(id);
+            if (step === "success" && circle && onJoined) {
+                onJoined(circle);
             }
             setStep("search");
             setSelectedCircle(null);
@@ -130,20 +134,20 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
         }, 300);
     };
 
-    const filteredCircles = (discoverableData?.data.length ? discoverableData.data : MOCK_DISCOVERABLE_CIRCLES).filter(c => 
+    const filteredCircles = (discoverableData?.data.length ? discoverableData.data : MOCK_DISCOVERABLE_CIRCLES).filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.ownerName.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
-        <Dialog open={open} onOpenChange={(val) => { if(!val) handleClose(); else onOpenChange(true); }}>
+        <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else onOpenChange(true); }}>
             <DialogContent className={cn(
                 "p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl transition-all duration-500",
                 step === "search" ? "sm:max-w-[550px]" : "sm:max-w-[500px]"
             )}>
                 <AnimatePresence mode="wait">
                     {step === "search" && (
-                        <motion.div 
+                        <motion.div
                             key="search"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -155,10 +159,10 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                 <DialogDescription className="mt-2 text-zinc-500 font-medium">
                                     Join collaborative networks created by other businesses and expand your reach.
                                 </DialogDescription>
-                                
+
                                 <div className="relative mt-8">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                                    <Input 
+                                    <Input
                                         placeholder="Search by circle name or industry..."
                                         className="pl-12 h-14 bg-white border-zinc-200 rounded-2xl focus:ring-orange-500/20 shadow-sm text-base"
                                         value={search}
@@ -181,8 +185,8 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                         filteredCircles.map((circle) => {
                                             const typeDef = groupCircleTypes.find(t => t.id === circle.type);
                                             return (
-                                                <div 
-                                                    key={circle.id} 
+                                                <div
+                                                    key={circle.id}
                                                     onClick={() => handleSelectCircle(circle)}
                                                     className="flex items-center justify-between p-5 rounded-[1.5rem] border border-zinc-100 bg-white hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition-all group cursor-pointer"
                                                 >
@@ -201,6 +205,9 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                                             <div className="flex items-center gap-3 mt-3">
                                                                 <Badge className="bg-zinc-100 text-zinc-600 border-none px-2 py-0 h-5 text-[9px] font-black tracking-widest uppercase">
                                                                     {circle.type.replace('_', ' ')}
+                                                                </Badge>
+                                                                <Badge className="bg-orange-100 text-orange-600 border-none px-2 py-0 h-5 text-[9px] font-black tracking-widest uppercase">
+                                                                    {circle.season || "Active"}
                                                                 </Badge>
                                                                 <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                                                                     <Users className="w-3 h-3 text-orange-500" /> {circle.memberCount} Members
@@ -231,7 +238,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                     )}
 
                     {step === "details" && selectedCircle && (
-                        <motion.div 
+                        <motion.div
                             key="details"
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -247,7 +254,10 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                     <Globe className="w-24 h-24 text-white/10 rotate-12" />
                                 </div>
                                 <div className="relative z-10">
-                                    <Badge className="bg-white/20 backdrop-blur-md text-white border-white/20 mb-3 font-black text-[9px] tracking-[0.2em]">CIRCLE PREVIEW</Badge>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Badge className="bg-white/20 backdrop-blur-md text-white border-white/20 font-black text-[9px] tracking-[0.2em]">CIRCLE PREVIEW</Badge>
+                                        <Badge className="bg-white text-zinc-900 border-none font-black text-[9px] tracking-[0.2em]">{selectedCircle.season || "Active"}</Badge>
+                                    </div>
                                     <h3 className="text-3xl font-black text-white tracking-tight leading-none">{selectedCircle.name}</h3>
                                 </div>
                             </div>
@@ -276,6 +286,10 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                                 {term}
                                             </li>
                                         ))}
+                                        <li className="flex items-start gap-3 text-[10px] text-orange-600 font-bold leading-normal pt-1 border-t border-zinc-100 italic">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-orange-600 mt-1 shrink-0" />
+                                            2.5% platform success fee applied to matching points and reward redemptions.
+                                        </li>
                                     </ul>
                                 </div>
 
@@ -287,7 +301,8 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Collaborative Capital</p>
-                                                <p className="text-lg font-black text-emerald-900">£{selectedCircle.contributionAmount} <span className="text-xs font-medium">/ season</span></p>
+                                                <p className="text-lg font-black text-emerald-900 leading-tight">£{selectedCircle.contributionAmount} <span className="text-xs font-medium">/ season</span></p>
+                                                <p className="text-[9px] font-bold text-emerald-600/70 italic">+ £5 Platform Management Fee</p>
                                             </div>
                                         </div>
                                         <Info className="w-5 h-5 text-emerald-300" />
@@ -295,14 +310,14 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                 )}
 
                                 <div className="flex gap-3 pt-2">
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         className="flex-1 h-14 rounded-2xl border-zinc-200 font-bold"
                                         onClick={() => setStep("search")}
                                     >
                                         Cancel
                                     </Button>
-                                    <Button 
+                                    <Button
                                         className="flex-1 h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xl shadow-orange-500/20"
                                         onClick={handleJoin}
                                         disabled={isJoining}
@@ -322,21 +337,21 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                     )}
 
                     {step === "success" && selectedCircle && (
-                        <motion.div 
+                        <motion.div
                             key="success"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="flex flex-col items-center justify-center p-12 text-center space-y-6"
                         >
                             <div className="w-24 h-24 rounded-full bg-emerald-50 flex items-center justify-center relative">
-                                <motion.div 
+                                <motion.div
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.2, type: "spring" }}
                                 >
                                     <CheckCircle2 className="w-16 h-16 text-emerald-500" />
                                 </motion.div>
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: [0, 1, 0] }}
                                     transition={{ duration: 1.5, repeat: Infinity }}
@@ -362,7 +377,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                 </div>
                             </div>
 
-                            <Button 
+                            <Button
                                 className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold"
                                 onClick={handleClose}
                             >

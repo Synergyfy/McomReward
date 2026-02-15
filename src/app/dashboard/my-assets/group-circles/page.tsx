@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -88,6 +88,7 @@ export default function GroupCirclesPage() {
     const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
     const [createStep, setCreateStep] = useState(1);
     const [showGraphFilters, setShowGraphFilters] = useState(false);
+    const [joinedCircles, setJoinedCircles] = useState<any[]>([]);
     const [memberSelectionOpen, setMemberSelectionOpen] = useState(false);
     const [selectionType, setSelectionType] = useState<"network" | "referred">("network");
     const [selectionSearch, setSelectionSearch] = useState("");
@@ -116,38 +117,82 @@ export default function GroupCirclesPage() {
     );
 
     const circles = useMemo(() => {
-        if (!circlesData?.data) return [];
-        return circlesData.data.map(circle => ({
-            ...circle,
-            type: (circle.type === 'SMART_MONEY' ? 'finance' : circle.type.toLowerCase()) as any,
-            durationDays: circle.duration,
-            members: circle.members.map(m => {
-                let orbit: OrbitLevel = 6;
-                const network = m.network || {};
-                const loc = network.locationTag?.toLowerCase();
-                if (loc === 'nearby') orbit = 1;
-                else if (loc === 'hyperlocal') orbit = 3;
-                else if (loc === 'national') orbit = 5;
-                else if (m.role === 'OWNER') orbit = 1;
+        let items: any[] = [];
 
-                return {
-                    id: network.id || m.id,
-                    memberId: m.id,
-                    name: network.fullName || "Unknown Member",
-                    email: network.email || "",
-                    role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
-                    orbit,
-                    status: (network.status === 'accepted' ? 'active' : 'offline') as any,
-                    category: network.businessName || network.relationshipTag || "Partner",
-                    avatar: undefined,
-                    contributions: Number(circle.contributionAmount),
-                    drawDate: m.drawDate,
-                    locationTag: network.locationTag ? (network.locationTag.charAt(0).toUpperCase() + network.locationTag.slice(1)) : "Unknown",
-                    relationshipTag: network.relationshipTag ? (network.relationshipTag.charAt(0).toUpperCase() + network.relationshipTag.slice(1)) : "Network"
-                } as Member;
-            })
-        }));
-    }, [circlesData]);
+        if (circlesData?.data) {
+            items = circlesData.data.map(circle => ({
+                ...circle,
+                type: (circle.type === 'SMART_MONEY' ? 'SMART_MONEY' : circle.type) as any,
+                durationDays: circle.duration,
+                members: circle.members.map(m => {
+                    let orbit: OrbitLevel = 6;
+                    const network = m.network || {};
+                    const loc = network.locationTag?.toLowerCase();
+                    if (loc === 'nearby') orbit = 1;
+                    else if (loc === 'hyperlocal') orbit = 3;
+                    else if (loc === 'national') orbit = 5;
+                    else if (m.role === 'OWNER') orbit = 1;
+
+                    return {
+                        id: network.id || m.id,
+                        memberId: m.id,
+                        name: network.fullName || "Unknown Member",
+                        email: network.email || "",
+                        role: (m.role.charAt(0).toUpperCase() + m.role.toLowerCase().slice(1)) as any,
+                        orbit,
+                        status: (network.status === 'accepted' ? 'active' : 'offline') as any,
+                        category: network.businessName || network.relationshipTag || "Partner",
+                        avatar: undefined,
+                        contributions: Number(circle.contributionAmount),
+                        drawDate: m.drawDate,
+                        locationTag: network.locationTag ? (network.locationTag.charAt(0).toUpperCase() + network.locationTag.slice(1)) : "Unknown",
+                        relationshipTag: network.relationshipTag ? (network.relationshipTag.charAt(0).toUpperCase() + network.relationshipTag.slice(1)) : "Network"
+                    } as Member;
+                })
+            }));
+        }
+
+        // Add locally joined circles
+        joinedCircles.forEach(c => {
+            items.push({
+                id: c.id,
+                name: c.name,
+                type: (c.type === 'SMART_MONEY' ? 'SMART_MONEY' : c.type) as any,
+                durationDays: 'Summer',
+                contributionAmount: c.contributionAmount,
+                members: [
+                    {
+                        id: 'owner-' + c.id,
+                        name: c.ownerName,
+                        role: 'Owner',
+                        orbit: 1,
+                        status: 'active',
+                        category: 'Founder',
+                        locationTag: 'Nearby',
+                        earnedPoints: 1250,
+                        distributions: 45
+                    },
+                    {
+                        id: 'me-' + c.id,
+                        name: profile?.name || 'My Business',
+                        email: profile?.email || '',
+                        role: 'Member',
+                        orbit: 2,
+                        status: 'active',
+                        category: 'Member',
+                        locationTag: 'Nearby',
+                        earnedPoints: 850,
+                        distributions: 28
+                    },
+                    { id: 'm1-' + c.id, name: 'Growth Partner', role: 'Member', orbit: 3, status: 'active', category: 'Marketing', locationTag: 'Hyperlocal', earnedPoints: 620, distributions: 15 },
+                    { id: 'm2-' + c.id, name: 'Scale Specialist', role: 'Member', orbit: 4, status: 'offline', category: 'Operations', locationTag: 'National', earnedPoints: 120, distributions: 5 },
+                    { id: 'm3-' + c.id, name: 'London Tech', role: 'Member', orbit: 2, status: 'active', category: 'Tech', locationTag: 'Nearby', earnedPoints: 940, distributions: 32 }
+                ]
+            });
+        });
+
+        return items;
+    }, [circlesData, joinedCircles, profile]);
 
     const selectedCircle = useMemo(() =>
         circles.find(c => c.id === selectedCircleId),
@@ -156,7 +201,7 @@ export default function GroupCirclesPage() {
     const filteredMembers = useMemo(() => {
         if (!selectedCircle) return [];
         if (!memberSearch.trim()) return selectedCircle.members;
-        return selectedCircle.members.filter(m =>
+        return selectedCircle.members.filter((m: Member) =>
             m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
             m.email?.toLowerCase().includes(memberSearch.toLowerCase()) ||
             m.category?.toLowerCase().includes(memberSearch.toLowerCase())
@@ -166,7 +211,7 @@ export default function GroupCirclesPage() {
     const myMemberId = useMemo(() => {
         if (!selectedCircle || !profile || !profile.email) return null;
         const myEmail = profile.email.toLowerCase().trim();
-        const matchedMember = selectedCircle.members.find(m => {
+        const matchedMember = selectedCircle.members.find((m: Member) => {
             const memberEmail = m.email?.toLowerCase().trim();
             const memberName = m.name?.toLowerCase().trim();
             const businessName = m.category?.toLowerCase().trim();
@@ -298,8 +343,12 @@ export default function GroupCirclesPage() {
         }
     }, [chatInput, selectedCircleId, chatType, chatMemberId, sendMessageMutation]);
 
-    const handleJoined = useCallback((id: string) => {
-        setSelectedCircleId(id);
+    const handleJoined = useCallback((circle: any) => {
+        setJoinedCircles(prev => {
+            if (prev.find(c => c.id === circle.id)) return prev;
+            return [...prev, circle];
+        });
+        setSelectedCircleId(circle.id);
         setActiveTab("visual");
     }, []);
 
@@ -356,70 +405,90 @@ export default function GroupCirclesPage() {
                 </div>
             </div>
 
-            {/* Layer 2: Circle Selector (Only show if user has groups) */}
-            {circles.length > 0 && (
-                <div className="flex items-center gap-3">
-                    <CircleSelector
-                        selectedCircle={selectedCircle}
-                        circleSearch={circleSearch}
-                        setCircleSearch={setCircleSearch}
-                        isLoadingCircles={isLoadingCircles}
-                        circles={circles}
-                        selectedCircleId={selectedCircleId}
-                        setSelectedCircleId={setSelectedCircleId}
-                        groupCircleTypes={GROUP_CIRCLE_TYPES}
-                        onCreateNew={() => { setCreateStep(1); setCreateOpen(true); }}
-                        disabled={missingMandatory.length > 0}
-                    />
-                </div>
-            )}
-
-            {/* Layer 3: View Toggles & Filters (Only show if a circle is selected) */}
-            {selectedCircle && (
+            {/* Layer 2: Combined Circle Selector, Toggles & Filters */}
+            {(circles.length > 0 || selectedCircle) && (
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-zinc-900/50 p-2 rounded-[2rem] border border-zinc-200/50 backdrop-blur-sm">
-                    <div className="flex bg-zinc-100/80 dark:bg-zinc-800/80 p-1 rounded-2xl w-full md:w-auto">
-                        <button
-                            onClick={() => setActiveTab("visual")}
-                            className={cn(
-                                "flex-1 md:flex-none px-6 py-2 text-xs font-bold rounded-xl transition-all",
-                                activeTab === "visual"
-                                    ? "bg-white dark:bg-zinc-700 text-orange-600 shadow-sm"
-                                    : "text-zinc-500 hover:text-zinc-700"
-                            )}
-                        >
-                            Visual Map
-                        </button>
-                        <button
-                            onClick={() => setActiveTab("collaboration")}
-                            className={cn(
-                                "flex-1 md:flex-none px-6 py-2 text-xs font-bold rounded-xl transition-all",
-                                activeTab === "collaboration"
-                                    ? "bg-white dark:bg-zinc-700 text-orange-600 shadow-sm"
-                                    : "text-zinc-500 hover:text-zinc-700"
-                            )}
-                        >
-                            Collaboration
-                        </button>
+                    <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                        {circles.length > 0 && (
+                            <CircleSelector
+                                selectedCircle={selectedCircle}
+                                circleSearch={circleSearch}
+                                setCircleSearch={setCircleSearch}
+                                isLoadingCircles={isLoadingCircles}
+                                circles={circles}
+                                selectedCircleId={selectedCircleId}
+                                setSelectedCircleId={setSelectedCircleId}
+                                groupCircleTypes={GROUP_CIRCLE_TYPES}
+                                onCreateNew={() => { setCreateStep(1); setCreateOpen(true); }}
+                                disabled={missingMandatory.length > 0}
+                            />
+                        )}
+
+                        {selectedCircle && (
+                            <div className="flex bg-zinc-100/80 dark:bg-zinc-800/80 p-1 rounded-2xl w-full md:w-auto">
+                                <TooltipProvider delayDuration={400}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => setActiveTab("visual")}
+                                                className={cn(
+                                                    "flex-1 md:flex-none px-6 py-2 text-xs font-bold rounded-xl transition-all",
+                                                    activeTab === "visual"
+                                                        ? "bg-white dark:bg-zinc-700 text-orange-600 shadow-sm"
+                                                        : "text-zinc-500 hover:text-zinc-700"
+                                                )}
+                                            >
+                                                Visual Map
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="text-[10px] font-medium bg-zinc-900 text-white border-zinc-800">
+                                            Interactive relationship visualization
+                                        </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => setActiveTab("collaboration")}
+                                                className={cn(
+                                                    "flex-1 md:flex-none px-6 py-2 text-xs font-bold rounded-xl transition-all",
+                                                    activeTab === "collaboration"
+                                                        ? "bg-white dark:bg-zinc-700 text-orange-600 shadow-sm"
+                                                        : "text-zinc-500 hover:text-zinc-700"
+                                                )}
+                                            >
+                                                Collaboration
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="text-[10px] font-medium bg-zinc-900 text-white border-zinc-800">
+                                            Circle management and shared workspace
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto px-2">
-                        <Button
-                            variant="ghost"
-                            className={cn(
-                                "flex-1 md:flex-none items-center gap-2 rounded-xl border border-transparent transition-all",
-                                showGraphFilters ? "bg-orange-50 text-orange-600 border-orange-100" : "text-zinc-600 hover:bg-zinc-100"
-                            )}
-                            onClick={() => setShowGraphFilters(!showGraphFilters)}
-                        >
-                            <Filter className="h-4 w-4" />
-                            Filters
-                            {(focusedOrbits || relationshipFilter) && (
-                                <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">
-                                    {(focusedOrbits ? 1 : 0) + (relationshipFilter ? 1 : 0)}
-                                </Badge>
-                            )}
-                        </Button>
-                    </div>
+                    {selectedCircle && (
+                        <div className="flex items-center gap-2 w-full md:w-auto px-2">
+                            <Button
+                                variant="ghost"
+                                className={cn(
+                                    "flex-1 md:flex-none items-center gap-2 rounded-xl border border-transparent transition-all px-6 py-2 h-auto text-xs font-bold",
+                                    showGraphFilters ? "bg-orange-50 text-orange-600 border-orange-100" : "text-zinc-600 hover:bg-zinc-100"
+                                )}
+                                onClick={() => setShowGraphFilters(!showGraphFilters)}
+                            >
+                                <Filter className="h-4 w-4" />
+                                Filters
+                                {(focusedOrbits || relationshipFilter) && (
+                                    <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">
+                                        {(focusedOrbits ? 1 : 0) + (relationshipFilter ? 1 : 0)}
+                                    </Badge>
+                                )}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -589,6 +658,7 @@ export default function GroupCirclesPage() {
                                             >
                                                 <CircleCollaboration
                                                     circleId={selectedCircle.id}
+                                                    circleName={selectedCircle.name}
                                                     members={selectedCircle.members}
                                                     myMemberId={myMemberId ?? null}
                                                 />
@@ -675,7 +745,7 @@ export default function GroupCirclesPage() {
                             <ScrollArea className="flex-1">
                                 <div className="p-3 space-y-1">
                                     {filteredMembers.length > 0 ? (
-                                        filteredMembers.map(member => (
+                                        filteredMembers.map((member: Member) => (
                                             <div
                                                 key={member.id}
                                                 className="flex items-center gap-3 p-3 rounded-2xl hover:bg-orange-50 dark:hover:bg-zinc-900 cursor-pointer transition-all group"
@@ -831,7 +901,8 @@ export default function GroupCirclesPage() {
                                             "Interest-free collaborative capital",
                                             "Strengthened B2B partnerships",
                                             "Seasonal duration alignment",
-                                            "Automated contribution tracking"
+                                            "Automated contribution tracking",
+                                            "2.5% Platform management fee"
                                         ] : [
                                             "Synchronized seasonal marketing",
                                             "Group-based campaign sharing",

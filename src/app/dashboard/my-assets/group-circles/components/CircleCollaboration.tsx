@@ -2,26 +2,28 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-    Megaphone, Plus, Share2, ArrowUpRight, 
-    Calendar, Users, Gift, Loader2, Search
+import {
+    Megaphone, Plus, Share2, Calendar, Users, Gift, Loader2, Search, Tag, Trophy, ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { 
-    Dialog, DialogContent, DialogDescription, 
-    DialogFooter, DialogHeader, DialogTitle 
+import {
+    Dialog, DialogContent, DialogDescription,
+    DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import { useGetMyCreatedCampaigns } from "@/services/campaigns/hook";
+import { useGetMyDeals } from "@/services/deals/hook";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface CircleCollaborationProps {
     circleId: string;
+    circleName: string;
     members: any[];
     myMemberId: string | null;
 }
@@ -54,12 +56,14 @@ const MOCK_SHARED_CAMPAIGNS = [
     }
 ];
 
-export function CircleCollaboration({ circleId, members, myMemberId }: CircleCollaborationProps) {
+export function CircleCollaboration({ circleId, circleName, members, myMemberId }: CircleCollaborationProps) {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isAdoptModalOpen, setIsAdoptModalOpen] = useState(false);
     const [selectedCampaignToAdopt, setSelectedCampaignToAdopt] = useState<any>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [shareTab, setShareTab] = useState<"campaigns" | "deals">("campaigns");
     const { data: myCampaigns, isLoading: isLoadingMyCampaigns } = useGetMyCreatedCampaigns(1, 20);
+    const { data: myDeals, isLoading: isLoadingMyDeals } = useGetMyDeals({ page: 1, limit: 20 });
 
     const handleAdoptClick = (campaign: any) => {
         setSelectedCampaignToAdopt(campaign);
@@ -71,7 +75,7 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
             // In a real app, this would call an API
             const adoptedList = JSON.parse(localStorage.getItem('adopted_campaigns') || '[]');
             localStorage.setItem('adopted_campaigns', JSON.stringify([...adoptedList, selectedCampaignToAdopt]));
-            
+
             toast.success(`Collaboration Confirmed!`, {
                 description: `You have successfully adopted "${selectedCampaignToAdopt.campaignName}". It is now available in your Partner Offers.`
             });
@@ -88,26 +92,89 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                     <p className="text-sm text-muted-foreground">Collaborate with circle members by sharing and promoting campaigns.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button 
+                    <Button
                         variant="outline"
-                        onClick={() => window.location.href = '/dashboard/my-assets/group-circles/partner-offers'}
+                        onClick={() => window.location.href = `/dashboard/my-assets/group-circles/partner-offers?circleId=${circleId}&circleName=${encodeURIComponent(circleName)}`}
                         className="rounded-xl border-zinc-200"
                     >
                         <Gift className="w-4 h-4 mr-2 text-orange-500" /> View Partner Offers
                     </Button>
-                    <Button 
+                    <Button
                         onClick={() => setIsShareModalOpen(true)}
                         className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg shadow-orange-500/20"
                     >
-                        <Plus className="w-4 h-4 mr-2" /> Share My Campaign
+                        <Plus className="w-4 h-4 mr-2" /> Share My Offer
                     </Button>
                 </div>
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 relative overflow-hidden group shadow-xl shadow-orange-500/5">
+                    <div className="absolute right-0 top-0 w-64 h-64 bg-orange-100/50 dark:bg-orange-950/10 blur-[100px] rounded-full -mr-20 -mt-20" />
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-orange-100 rounded-xl">
+                                    <Trophy className="w-4 h-4 text-orange-600" />
+                                </div>
+                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">Circle Leaderboard</h4>
+                            </div>
+                            <p className="text-xl font-medium text-zinc-400 leading-tight pr-4">Distribute offers to earn matching points & rewards.</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="text-center px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700">
+                                <p className="text-[10px] font-black uppercase text-zinc-400 mb-1">Your Rank</p>
+                                <p className="text-2xl font-black text-zinc-900 dark:text-zinc-50">#2</p>
+                            </div>
+                            <div className="text-center px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700">
+                                <p className="text-[10px] font-black uppercase text-zinc-400 mb-1">Your Points</p>
+                                <p className="text-2xl font-black text-zinc-900 dark:text-zinc-50 text-orange-600">850</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+                            Platform Governance: 2.5% revenue share from redemptions fuels circle growth.
+                        </p>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-full">
+                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] font-black text-emerald-600 uppercase">System Sustained</span>
+                        </div>
+                    </div>
+                </div>
 
+                <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[2rem] flex flex-col justify-center">
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400">Circle Activity</h4>
+                        <span className="text-[10px] font-bold text-orange-600">Live Updates</span>
+                    </div>
+                    <div className="space-y-3">
+                        {members.sort((a, b) => (b.earnedPoints || 0) - (a.earnedPoints || 0)).slice(0, 3).map((member, i) => (
+                            <div key={member.id} className="flex items-center justify-between group/item">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black",
+                                        i === 0 ? "bg-orange-500 text-white" : "bg-zinc-100 text-zinc-600"
+                                    )}>
+                                        {i + 1}
+                                    </div>
+                                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-200 truncate max-w-[100px]">{member.name}</span>
+                                </div>
+                                <span className="text-[10px] font-black text-zinc-500">{member.earnedPoints || 0} PTS</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-zinc-50 dark:bg-black/20 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                        <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter">
+                            <span className="text-zinc-400">Circle Revenue Pool</span>
+                            <span className="text-orange-600">£1,420.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <Input 
-                    placeholder="Search shared campaigns..." 
+                <Input
+                    placeholder="Search shared campaigns..."
                     className="pl-10 h-12 rounded-2xl border-zinc-200 bg-white/50 backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -115,11 +182,15 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                {MOCK_SHARED_CAMPAIGNS.map((campaign) => (
+                {MOCK_SHARED_CAMPAIGNS.filter(campaign =>
+                    campaign.campaignName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    campaign.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    campaign.description.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((campaign) => (
                     <Card key={campaign.id} className="overflow-hidden border-zinc-200/60 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-[2rem] hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 group flex flex-col">
                         <div className="relative h-44 w-full overflow-hidden">
-                            <Image 
-                                src={campaign.bannerUrl} 
+                            <Image
+                                src={campaign.bannerUrl}
                                 alt={campaign.campaignName}
                                 fill
                                 className="object-cover group-hover:scale-110 transition-transform duration-700"
@@ -140,7 +211,7 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                                 </div>
                                 <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">{campaign.businessName}</span>
                             </div>
-                            
+
                             <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed italic">
                                 "{campaign.description}"
                             </p>
@@ -162,8 +233,8 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                                         <Calendar className="w-3 h-3 text-orange-500/70" /> {new Date(campaign.endsAt).toLocaleDateString()}
                                     </div>
                                 </div>
-                                <Button 
-                                    size="sm" 
+                                <Button
+                                    size="sm"
                                     variant="ghost"
                                     onClick={() => handleAdoptClick(campaign)}
                                     className="rounded-xl h-9 px-4 bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition-all duration-300 font-bold text-xs"
@@ -176,54 +247,104 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                 ))}
             </div>
 
-            {/* Share Campaign Dialog */}
             <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Share Campaign to Circle</DialogTitle>
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem]">
+                    <DialogHeader className="p-6 pb-0">
+                        <DialogTitle className="text-2xl font-black">Share to Circle</DialogTitle>
                         <DialogDescription>
-                            Select one of your active campaigns to share with your circle partners.
+                            Select one of your active offers to share with your circle partners.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="py-4">
-                        <ScrollArea className="h-[300px] pr-4">
-                            {isLoadingMyCampaigns ? (
-                                <div className="flex items-center justify-center py-10">
-                                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-                                </div>
-                            ) : myCampaigns?.data && myCampaigns.data.length > 0 ? (
-                                <div className="space-y-3">
-                                    {myCampaigns.data.map((campaign) => (
-                                        <div 
-                                            key={campaign.id}
-                                            onClick={() => {
-                                                toast.success(`${campaign.name} shared with the circle!`);
-                                                setIsShareModalOpen(false);
-                                            }}
-                                            className="p-4 border rounded-2xl hover:border-orange-500 hover:bg-orange-50/50 cursor-pointer transition-all group"
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h5 className="font-bold text-zinc-900 group-hover:text-orange-700">{campaign.name}</h5>
-                                                    <p className="text-xs text-muted-foreground mt-1 truncate max-w-[300px]">{campaign.campaign_message}</p>
-                                                </div>
-                                                <Megaphone className="w-4 h-4 text-zinc-300 group-hover:text-orange-500" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-10">
-                                    <p className="text-sm text-muted-foreground">No active campaigns found. Create one first!</p>
-                                    <Button variant="link" className="text-orange-600 mt-2">Go to Campaigns</Button>
-                                </div>
-                            )}
-                        </ScrollArea>
-                    </div>
+                    <Tabs value={shareTab} onValueChange={(v: any) => setShareTab(v)} className="w-full">
+                        <div className="px-6 pt-4">
+                            <TabsList className="grid w-full grid-cols-2 bg-zinc-100/50 p-1 rounded-xl">
+                                <TabsTrigger value="campaigns" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <Megaphone className="w-4 h-4 mr-2" /> Campaigns
+                                </TabsTrigger>
+                                <TabsTrigger value="deals" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <Tag className="w-4 h-4 mr-2" /> Deals
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
 
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsShareModalOpen(false)}>Cancel</Button>
+                        <div className="p-6">
+                            <TabsContent value="campaigns" className="mt-0 outline-none">
+                                <ScrollArea className="h-[300px] pr-4">
+                                    {isLoadingMyCampaigns ? (
+                                        <div className="flex items-center justify-center py-10">
+                                            <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                                        </div>
+                                    ) : myCampaigns?.data && myCampaigns.data.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {myCampaigns.data.map((campaign) => (
+                                                <div
+                                                    key={campaign.id}
+                                                    onClick={() => {
+                                                        toast.success(`${campaign.name} shared with the circle!`);
+                                                        setIsShareModalOpen(false);
+                                                    }}
+                                                    className="p-4 border border-zinc-100 rounded-2xl hover:border-orange-500 hover:bg-orange-50/50 cursor-pointer transition-all group"
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 className="font-bold text-zinc-900 group-hover:text-orange-700">{campaign.name}</h5>
+                                                            <p className="text-xs text-muted-foreground mt-1 truncate max-w-[300px]">{campaign.campaign_message}</p>
+                                                        </div>
+                                                        <Megaphone className="w-4 h-4 text-zinc-300 group-hover:text-orange-500" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-10">
+                                            <p className="text-sm text-muted-foreground">No active campaigns found. Create one first!</p>
+                                            <Button variant="link" className="text-orange-600 mt-2">Go to Campaigns</Button>
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </TabsContent>
+
+                            <TabsContent value="deals" className="mt-0 outline-none">
+                                <ScrollArea className="h-[300px] pr-4">
+                                    {isLoadingMyDeals ? (
+                                        <div className="flex items-center justify-center py-10">
+                                            <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                                        </div>
+                                    ) : myDeals?.data && myDeals.data.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {myDeals.data.map((deal) => (
+                                                <div
+                                                    key={deal.id}
+                                                    onClick={() => {
+                                                        toast.success(`${deal.title} shared with the circle!`);
+                                                        setIsShareModalOpen(false);
+                                                    }}
+                                                    className="p-4 border border-zinc-100 rounded-2xl hover:border-orange-500 hover:bg-orange-50/50 cursor-pointer transition-all group"
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 className="font-bold text-zinc-900 group-hover:text-orange-700">{deal.title}</h5>
+                                                            <p className="text-xs text-muted-foreground mt-1 truncate max-w-[300px]">{deal.description}</p>
+                                                        </div>
+                                                        <Tag className="w-4 h-4 text-zinc-300 group-hover:text-orange-500" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-10">
+                                            <p className="text-sm text-muted-foreground">No active deals found. Create one first!</p>
+                                            <Button variant="link" className="text-orange-600 mt-2">Go to Deals</Button>
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </TabsContent>
+                        </div>
+                    </Tabs>
+
+                    <DialogFooter className="p-6 bg-zinc-50/50 border-t border-zinc-100/50">
+                        <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setIsShareModalOpen(false)}>Cancel</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -238,7 +359,7 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                             <Gift className="w-10 h-10 text-white" />
                         </div>
                     </div>
-                    
+
                     <div className="p-8 space-y-4">
                         <div className="text-center space-y-2">
                             <DialogTitle className="text-2xl font-bold text-zinc-900">Adopt Campaign Offer</DialogTitle>
@@ -265,14 +386,14 @@ export function CircleCollaboration({ circleId, members, myMemberId }: CircleCol
                         </div>
 
                         <div className="pt-4 flex gap-3">
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 className="flex-1 h-12 rounded-xl border-zinc-200 font-bold"
                                 onClick={() => setIsAdoptModalOpen(false)}
                             >
                                 Decline
                             </Button>
-                            <Button 
+                            <Button
                                 className="flex-1 h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-lg shadow-orange-500/20"
                                 onClick={confirmAdoption}
                             >

@@ -291,7 +291,7 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
 
-          <SidebarItem icon={Banknote} label="Cashback" href="/dashboard/cashback" />
+          <SidebarItem icon={Banknote} label="Credit Rewards" href="/dashboard/cashback" />
 
           {!isSuperBusiness && (
             <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />

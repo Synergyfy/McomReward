@@ -201,7 +201,7 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
         <li>
           <Link href="/admin/cashback-rules" className={linkClasses("/admin/cashback-rules")}>
             <DollarSign className="mr-3" />
-            Cashback Configuration
+            Credits Management
           </Link>
         </li>
         <li>

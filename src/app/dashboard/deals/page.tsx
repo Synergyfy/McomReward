@@ -192,7 +192,7 @@ export default function DealsPage() {
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="DISCOUNT">Discount</SelectItem>
                 <SelectItem value="BOGO">BOGO</SelectItem>
-                <SelectItem value="CASHBACK">Cashback</SelectItem>
+                <SelectItem value="CREDITS">Credits Reward</SelectItem>
               </SelectContent>
             </Select>
 

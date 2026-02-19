@@ -13,6 +13,7 @@ import TrialBanner from '@/components/dashboard/trial-banner';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Button } from '@/components/ui/button';
 import { Eye, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function DashboardLayout({
   children,
@@ -33,6 +34,16 @@ export default function DashboardLayout({
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
 
   useEffect(() => {
+    // Role-based access control
+    const role = localStorage.getItem('userRole');
+    if (role === 'Participant') {
+      toast.error('Unauthorized Access', {
+        description: 'Business dashboard is restricted to business accounts only.'
+      });
+      router.push('/participant/wallet');
+      return;
+    }
+
     // Check if subscription data is loaded and tier is Free, but SKIP for Super Business
     // Also wait for profile to load to avoid premature redirect
     if (!isBusinessSubLoading && !isProfileLoading && businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness) {

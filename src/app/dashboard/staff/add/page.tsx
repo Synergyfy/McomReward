@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import TierLimitModal from '@/components/dashboard/campaigns/TierLimitModal';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 const AddStaffPage = () => {
   const router = useRouter();
@@ -31,6 +32,8 @@ const AddStaffPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isTierLimitModalOpen, setIsTierLimitModalOpen] = useState(false);
   const [tierLimitMessage, setTierLimitMessage] = useState('');
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: Partial<CreateStaffDto> = {};
@@ -62,13 +65,25 @@ const AddStaffPage = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        setCropImage(reader.result as string);
+        setIsCropping(true);
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'avatar.jpg', {
+      type: 'image/jpeg',
+    });
+    setAvatarFile(croppedFile);
+    const url = URL.createObjectURL(croppedBlob);
+    setAvatarPreview(url);
+    setIsCropping(false);
+    setCropImage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,6 +299,18 @@ const AddStaffPage = () => {
           </form>
         </CardContent>
       </Card>
+
+      {isCropping && cropImage && (
+        <ImageCropper
+          image={cropImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropping(false);
+            setCropImage(null);
+          }}
+          aspect={1}
+        />
+      )}
     </div>
   );
 };

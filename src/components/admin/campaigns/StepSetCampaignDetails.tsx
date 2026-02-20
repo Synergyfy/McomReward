@@ -44,7 +44,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     const { formData, updateFormData } = useCampaignForm();
     const searchParams = useSearchParams();
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(formData.imageUrl || null);
-    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);    const newRewardId = searchParams.get('rewardId');
+    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null); const newRewardId = searchParams.get('rewardId');
 
     // Fetch rewards from API
     const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 1000);
@@ -62,7 +62,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
         if (!allTiers) return [];
         // Both now use target_tier_ids
         if (formData.target_tier_ids && formData.target_tier_ids.length > 0) {
-             return allTiers.filter(t => formData.target_tier_ids?.includes(t.id));
+            return allTiers.filter(t => formData.target_tier_ids?.includes(t.id));
         }
         return allTiers.filter(t => t.id === formData.target_tier_id);
     }, [allTiers, formData.target_tier_ids, formData.target_tier_id]);
@@ -206,7 +206,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                             placeholder={isRewardLocked ? "Locked (Business Owners Only)" : (isLoadingRewards ? "Loading rewards..." : "Select...")}
                             isDisabled={isRewardLocked}
                         />
-                         {isRewardLocked ? (
+                        {isRewardLocked ? (
                             <p className="text-sm text-red-500 mt-1">
                                 Only business owners are allowed to add rewards.
                             </p>
@@ -273,13 +273,13 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                             onChange={(e) => updateFormData({ rewardsAvailable: e.target.value === '' ? '' : Number(e.target.value) })}
                             disabled={isRewardLocked}
                         />
-                         {isRewardLocked ? (
-                             <p className="text-sm text-red-500 mt-1">
-                                 Only business owners are allowed to set availability.
-                             </p>
-                         ) : (
+                        {isRewardLocked ? (
+                            <p className="text-sm text-red-500 mt-1">
+                                Only business owners are allowed to set availability.
+                            </p>
+                        ) : (
                             <p className="text-sm text-gray-500 mt-1">The total number of rewards that can be claimed.</p>
-                         )}
+                        )}
                     </div>
 
                     <div>
@@ -344,7 +344,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                     <div>
                         <div className="flex items-center gap-4">
                             <Label>Image or Banner (optional)</Label>
-                            <CloudinaryUpload onFileSelect={handleFileSelect} />
+                            <CloudinaryUpload onFileSelect={handleFileSelect} aspectRatio={3} />
                         </div>
                         <p className="text-sm text-gray-500 mt-1">Upload a banner image for your campaign. Recommended size: 1200x400 pixels (3:1 aspect ratio).</p>
                         {imagePreviewUrl && ( // Display image preview if available
@@ -490,7 +490,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
                                                 if (type === 'badge_level') {
                                                     return `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}`;
                                                 }
-                                            
+
                                                 return type.charAt(0).toUpperCase() + type.slice(1);
                                             }).join(', ')}
                                         </span>

@@ -26,7 +26,7 @@ export default function Step3Images({ thumbnailUrl, subImageUrls, setThumbnailUr
         <div>
           <label className="block text-sm font-medium mb-2">Thumbnail Image</label>
           <p className="text-xs text-muted-foreground mb-2">This is the main image for your campaign.</p>
-          <CloudinaryUpload onFileSelect={(file, previewUrl) => setThumbnailUrl(previewUrl || '')} />
+          <CloudinaryUpload onFileSelect={(file, previewUrl) => setThumbnailUrl(previewUrl || '')} aspectRatio={16 / 9} />
           {thumbnailUrl && (
             <div className="mt-4 p-2 border rounded-lg">
               <p className="text-sm font-medium mb-2">Thumbnail Preview:</p>

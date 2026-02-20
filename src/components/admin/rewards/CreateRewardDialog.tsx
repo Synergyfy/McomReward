@@ -180,7 +180,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
 
           <div>
             <label className="block text-sm font-medium mb-2">Reward Image</label>
-            <CloudinaryUpload onFileSelect={handleFileSelect} />
+            <CloudinaryUpload onFileSelect={handleFileSelect} aspectRatio={1} />
             {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
             {imagePreviewUrl && (
               <div className="mt-4">

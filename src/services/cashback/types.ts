@@ -1,59 +1,78 @@
-export type CashbackPlatform = 'MCOM_LOYALTY' | 'MCOM_MALL';
-export type CashbackRewardType = 'PERCENTAGE' | 'FIXED';
-export type CashbackEvent = string;
+export type CreditsPlatform = 'MCOM_LOYALTY' | 'MCOM_MALL';
+export type CreditsRewardType = 'PERCENTAGE' | 'FIXED';
+export type CreditsEvent = string;
 
-export interface CashbackRule {
+export interface CreditsRule {
   id: string;
-  platform: CashbackPlatform;
+  platform: CreditsPlatform;
   eventType: string;
-  rewardType: CashbackRewardType;
+  rewardType: CreditsRewardType;
   rewardValue: number | string;
   isActive: boolean;
   createdAt: string;
 }
 
-export interface CreateCashbackRulePayload {
-  platform: CashbackPlatform;
+export interface CreateCreditsRulePayload {
+  platform: CreditsPlatform;
   eventType: string;
-  rewardType: CashbackRewardType;
+  rewardType: CreditsRewardType;
   rewardValue: number;
   isActive?: boolean;
 }
 
-export interface UpdateCashbackRulePayload {
+export interface UpdateCreditsRulePayload {
   isActive?: boolean;
   rewardValue?: number;
 }
 
-export interface CashbackBalance {
-  balance: number;
+export interface CreditsLevel {
+  level: number;
+  creditsNeeded: number;
+  matchingContribution: number;
+  totalCashback: number;
 }
 
-export interface CashbackPaginationMeta {
+export interface CreditProgression {
+  currentCredits: number;
+  currentLevel: number;
+  nextLevel?: CreditsLevel;
+  allLevels: CreditsLevel[];
+}
+
+export interface CreditsBalance {
+  credits: number;
+  availableCashback: number; // The actual wallet balance (claimed from credits)
+  progression: CreditProgression;
+  pendingAmount: number;
+  expiringSoon: number;
+}
+
+export interface CreditsPaginationMeta {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface CashbackHistoryItem {
+export interface CreditsHistoryItem {
   id: string;
-  amount: number | string;
-  type: string; // 'CREDIT' | 'DEBIT' etc
-  sourcePlatform?: CashbackPlatform;
+  amount: number | string; // Could be credits or money depending on context
+  type: string; // 'CREDIT' | 'DEBIT' 
+  unit: 'CREDITS' | 'GBP';
+  sourcePlatform?: CreditsPlatform;
   eventType?: string;
   description?: string;
   createdAt: string;
   status?: string;
 }
 
-export interface CashbackHistoryResponse {
-  data: CashbackHistoryItem[];
-  meta: CashbackPaginationMeta;
+export interface CreditsHistoryResponse {
+  data: CreditsHistoryItem[];
+  meta: CreditsPaginationMeta;
 }
 
 // Admin specific types
-export interface AdminCashbackHistoryItem extends CashbackHistoryItem {
+export interface AdminCreditsHistoryItem extends CreditsHistoryItem {
   referenceId?: string;
   wallet?: {
     id: string;
@@ -64,7 +83,7 @@ export interface AdminCashbackHistoryItem extends CashbackHistoryItem {
   }
 }
 
-export interface AdminCashbackHistoryResponse {
-  data: AdminCashbackHistoryItem[];
-  meta: CashbackPaginationMeta;
+export interface AdminCreditsHistoryResponse {
+  data: AdminCreditsHistoryItem[];
+  meta: CreditsPaginationMeta;
 }

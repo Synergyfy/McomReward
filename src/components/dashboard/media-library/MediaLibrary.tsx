@@ -19,6 +19,7 @@ import {
     Copy,
     ExternalLink
 } from 'lucide-react';
+import { ImageCropper } from '@/components/ui/image-cropper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,6 +79,8 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
     const [pendingPreview, setPendingPreview] = useState<string | null>(null);
     const [assetTitle, setAssetTitle] = useState('');
     const [assetDescription, setAssetDescription] = useState('');
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [isCropping, setIsCropping] = useState(false);
 
     const [page, setPage] = useState(1);
     const limit = 20;
@@ -105,15 +108,30 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
         const file = event.target.files?.[0];
         if (!file) return;
 
-        setPendingFile(file);
         setAssetTitle(file.name.split('.')[0] || file.name);
+
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onloadend = () => setPendingPreview(reader.result as string);
+            reader.onloadend = () => {
+                setCropImage(reader.result as string);
+                setIsCropping(true);
+            };
             reader.readAsDataURL(file);
         } else {
+            setPendingFile(file);
             setPendingPreview(null);
         }
+        event.target.value = '';
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        const croppedFile = new File([croppedBlob], assetTitle + '.jpg', { type: 'image/jpeg' });
+        const url = URL.createObjectURL(croppedBlob);
+
+        setPendingFile(croppedFile);
+        setPendingPreview(url);
+        setIsCropping(false);
+        setCropImage(null);
     };
 
     const handleStartUpload = async () => {
@@ -605,6 +623,19 @@ export default function MediaLibrary({ onSelect, isModal = false, initialSelecti
                     )}
                 </AnimatePresence>
             </div>
-        </div>
+            {
+                isCropping && cropImage && (
+                    <ImageCropper
+                        image={cropImage}
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => {
+                            setIsCropping(false);
+                            setCropImage(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 }

@@ -70,7 +70,7 @@ const FrontPageNavbar = () => {
         router.push('/admin/dashboard');
         break;
       case 'Participant':
-        router.push('/wallet');
+        router.push('/participant/wallet');
         break;
       case 'Staff':
         router.push('/staff/dashboard');
@@ -209,9 +209,13 @@ const FrontPageNavbar = () => {
 
                 {userRole === 'Participant' && (
                   <>
-                    <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => router.push('/participant/wallet')} className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>My Wallet</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/participant/settings')} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                      <span>Profile Settings</span>
                     </DropdownMenuItem>
                   </>
                 )}

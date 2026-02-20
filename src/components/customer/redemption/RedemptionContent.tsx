@@ -2,13 +2,14 @@
 import { useState } from "react";
 import QRCode from "react-qr-code";
 import { motion } from "framer-motion";
-import { Bot, QrCode, Hash } from "lucide-react";
+import { Bot, QrCode, Hash, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import CashbackRedemption from "../cashback/CashbackRedemption";
 
 interface RedemptionContentProps {
-    participantId: string; // Used to generate QR
-    isAdmin?: boolean;
+  participantId: string; // Used to generate QR
+  isAdmin?: boolean;
 }
 
 export default function RedemptionContent({ participantId, isAdmin = false }: RedemptionContentProps) {
@@ -26,28 +27,28 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
       {/* Diagonal Background */}
       <div className="absolute inset-0 bg-linear-to-br from-orange-500 to-orange-600 transform -skew-y-6 origin-top-left"></div>
 
-          {/* Foreground Content */}
+      {/* Foreground Content */}
 
-          <div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-4 text-white overflow-hidden">
-              { !!method ? (
-                      <motion.h1
-          initial={{ opacity: 0, y: -60 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-4 text-white overflow-hidden">
+        {!!method ? (
+          <motion.h1
+            initial={{ opacity: 0, y: -60 }}
+            animate={{ opacity: 1, y: 0 }}
 
-          className="text-4xl font-bold mb-8 text-center"
-        >
-          {isAdmin ? 'Participant Redemption Methods' : 'Redeem Your Reward'}
-        </motion.h1>
+            className="text-4xl font-bold mb-8 text-center"
+          >
+            {isAdmin ? 'Participant Redemption Methods' : 'Redeem Your Reward'}
+          </motion.h1>
 
-    ) :(
-        <motion.h1
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold mb-8 text-center"
-        >
-          {isAdmin ? 'View Redemption Methods' : 'Choose How You’d Like to Redeem Your Reward'}
-        </motion.h1>
-      )}
+        ) : (
+          <motion.h1
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl font-bold mb-8 text-center"
+          >
+            {isAdmin ? 'View Redemption Methods' : 'Choose How You’d Like to Redeem Your Reward'}
+          </motion.h1>
+        )}
         {!method ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
             {/* QR Code Option */}
@@ -59,7 +60,7 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
                 <QrCode className="w-12 h-12 text-orange-500 mb-3" />
                 <h3 className="text-lg font-semibold">{isAdmin ? 'View QR Code' : 'Redeem via QR Code'}</h3>
                 <p className="text-sm text-gray-500 mt-2">
-                   {isAdmin ? 'View the participant\'s QR code.' : 'Scan your unique customer QR code to redeem instantly.'}
+                  {isAdmin ? 'View the participant\'s QR code.' : 'Scan your unique customer QR code to redeem instantly.'}
                 </p>
               </CardContent>
             </Card>
@@ -73,7 +74,7 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
                 <Hash className="w-12 h-12 text-orange-500 mb-3" />
                 <h3 className="text-lg font-semibold">{isAdmin ? 'Generate Number (Disabled)' : 'Redeem via Customer Number'}</h3>
                 <p className="text-sm text-gray-500 mt-2">
-                   {isAdmin ? 'Admins cannot generate temporary numbers.' : 'Generate a temporary customer number for redemption.'}
+                  {isAdmin ? 'Admins cannot generate temporary numbers.' : 'Generate a temporary customer number for redemption.'}
                 </p>
               </CardContent>
             </Card>
@@ -87,7 +88,24 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
                 <Bot className="w-12 h-12 text-orange-500 mb-3" />
                 <h3 className="text-lg font-semibold">{isAdmin ? 'Chat Bot (Disabled)' : 'Redeem via Bot'}</h3>
                 <p className="text-sm text-gray-500 mt-2">
-                   {isAdmin ? 'Admins cannot chat as user.' : 'Chat with our loyalty bot to claim your rewards easily.'}
+                  {isAdmin ? 'Admins cannot chat as user.' : 'Chat with our loyalty bot to claim your rewards easily.'}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Credits Option */}
+            <Card
+              onClick={() => setMethod("credits")}
+              className="bg-white/90 text-gray-800 rounded-2xl shadow-xl hover:scale-105 transition-transform cursor-pointer border-2 border-blue-500/20"
+            >
+              <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                <div className="relative">
+                  <Coins className="w-12 h-12 text-blue-600 mb-3" />
+                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">New</div>
+                </div>
+                <h3 className="text-lg font-semibold">Use Wallet Credits</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Use your claimed rewards to reduce booking costs instantly.
                 </p>
               </CardContent>
             </Card>
@@ -131,6 +149,20 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
                   Use this number to redeem rewards within 5 minutes.
                 </p>
               </>
+            )}
+
+            {method === "credits" && (
+              <div className="text-left py-4">
+                <h2 className="text-2xl font-bold mb-6 text-blue-700 text-center">Use Wallet Credits</h2>
+                <CashbackRedemption
+                  totalAmount={100}
+                  maxRedemptionPercent={25}
+                  onApply={(amt: number) => console.log('Applied:', amt)}
+                />
+                <p className="text-[10px] text-gray-400 mt-6 text-center font-medium italic italic">
+                  Note: This demonstration applies to a mock £100.00 service.
+                </p>
+              </div>
             )}
 
             {method === "bot" && !isAdmin && (

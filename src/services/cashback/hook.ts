@@ -1,110 +1,140 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../api';
 import {
-  CashbackRule,
-  CreateCashbackRulePayload,
-  UpdateCashbackRulePayload,
-  CashbackBalance,
-  CashbackEvent,
-  CashbackHistoryResponse,
-  AdminCashbackHistoryResponse
+  CreditsRule,
+  CreateCreditsRulePayload,
+  UpdateCreditsRulePayload,
+  CreditsBalance,
+  CreditsHistoryResponse,
+  AdminCreditsHistoryResponse
 } from './types';
+import {
+  mockCreditsRules,
+  mockCreditsBalance,
+  mockCreditsEvents,
+  mockCreditsHistory
+} from '@/lib/mock-data/cashback';
 
-export const CASHBACK_RULES_QUERY_KEY = 'cashbackRules';
-export const CASHBACK_BALANCE_QUERY_KEY = 'cashbackBalance';
-export const CASHBACK_EVENTS_QUERY_KEY = 'cashbackEvents';
-export const CASHBACK_HISTORY_QUERY_KEY = 'cashbackHistory';
-export const ADMIN_CASHBACK_HISTORY_QUERY_KEY = 'adminCashbackHistory';
+export const CREDITS_RULES_QUERY_KEY = 'creditsRules';
+export const CREDITS_BALANCE_QUERY_KEY = 'creditsBalance';
+export const CREDITS_EVENTS_QUERY_KEY = 'creditsEvents';
+export const CREDITS_HISTORY_QUERY_KEY = 'creditsHistory';
+export const ADMIN_CREDITS_HISTORY_QUERY_KEY = 'adminCreditsHistory';
 
-export const useGetCashbackRules = () => {
-  return useQuery<CashbackRule[], Error>({
-    queryKey: [CASHBACK_RULES_QUERY_KEY],
+export const useGetCreditsRules = () => {
+  return useQuery<CreditsRule[], Error>({
+    queryKey: [CREDITS_RULES_QUERY_KEY],
     queryFn: async () => {
-      const { data } = await api.get('/cashback/rules');
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return mockCreditsRules;
     },
   });
 };
 
-export const useCreateCashbackRule = () => {
+export const useCreateCreditsRule = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ success: boolean }, Error, CreateCashbackRulePayload>({
+  return useMutation<{ success: boolean }, Error, CreateCreditsRulePayload>({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/cashback/rules', payload);
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CASHBACK_RULES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CREDITS_RULES_QUERY_KEY] });
     },
   });
 };
 
-export const useUpdateCashbackRule = () => {
+export const useUpdateCreditsRule = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ success: boolean }, Error, { id: string } & UpdateCashbackRulePayload>({
+  return useMutation<{ success: boolean }, Error, { id: string } & UpdateCreditsRulePayload>({
     mutationFn: async ({ id, ...payload }) => {
-      const { data } = await api.patch(`/cashback/rules/${id}`, payload);
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CASHBACK_RULES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CREDITS_RULES_QUERY_KEY] });
     },
   });
 };
 
-export const useDeleteCashbackRule = () => {
+export const useDeleteCreditsRule = () => {
   const queryClient = useQueryClient();
   return useMutation<{ success: boolean }, Error, string>({
     mutationFn: async (id) => {
-      const { data } = await api.delete(`/cashback/rules/${id}`);
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CASHBACK_RULES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CREDITS_RULES_QUERY_KEY] });
     },
   });
 };
 
-export const useGetCashbackBalance = () => {
-  return useQuery<CashbackBalance, Error>({
-    queryKey: [CASHBACK_BALANCE_QUERY_KEY],
+export const useGetCreditsBalance = () => {
+  return useQuery<CreditsBalance, Error>({
+    queryKey: [CREDITS_BALANCE_QUERY_KEY],
     queryFn: async () => {
-      const { data } = await api.get('/cashback/balance');
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return mockCreditsBalance;
     },
   });
 };
 
-export const useGetCashbackEvents = () => {
-  return useQuery<CashbackEvent[], Error>({
-    queryKey: [CASHBACK_EVENTS_QUERY_KEY],
+export const useGetCreditsEvents = () => {
+  return useQuery<string[], Error>({
+    queryKey: [CREDITS_EVENTS_QUERY_KEY],
     queryFn: async () => {
-      const { data } = await api.get('/cashback/events');
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return mockCreditsEvents;
     },
   });
 };
 
-export const useGetCashbackHistory = (page = 1, limit = 10) => {
-  return useQuery<CashbackHistoryResponse, Error>({
-    queryKey: [CASHBACK_HISTORY_QUERY_KEY, page, limit],
+export const useGetCreditsHistory = (page = 1, limit = 10) => {
+  return useQuery<CreditsHistoryResponse, Error>({
+    queryKey: [CREDITS_HISTORY_QUERY_KEY, page, limit],
     queryFn: async () => {
-      const { data } = await api.get('/cashback/history', {
-        params: { page, limit }
-      });
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 600));
+      return {
+        data: (mockCreditsHistory as any[]).slice((page - 1) * limit, page * limit),
+        meta: {
+          total: mockCreditsHistory.length,
+          page,
+          limit,
+          totalPages: Math.ceil(mockCreditsHistory.length / limit)
+        }
+      };
     },
   });
 };
 
-export const useGetAdminCashbackHistory = (page = 1, limit = 10, email?: string) => {
-  return useQuery<AdminCashbackHistoryResponse, Error>({
-    queryKey: [ADMIN_CASHBACK_HISTORY_QUERY_KEY, page, limit, email],
+export const useGetAdminCreditsHistory = (page = 1, limit = 10, email?: string) => {
+  return useQuery<AdminCreditsHistoryResponse, Error>({
+    queryKey: [ADMIN_CREDITS_HISTORY_QUERY_KEY, page, limit, email],
     queryFn: async () => {
-      const { data } = await api.get('/cashback/admin/history', {
-        params: { page, limit, email }
-      });
-      return data;
+      await new Promise(resolve => setTimeout(resolve, 700));
+      const filtered = email
+        ? mockCreditsHistory.filter(h => (h as any).wallet?.user?.email?.includes(email))
+        : mockCreditsHistory;
+
+      return {
+        data: filtered.slice((page - 1) * limit, page * limit) as any,
+        meta: {
+          total: filtered.length,
+          page,
+          limit,
+          totalPages: Math.ceil(filtered.length / limit)
+        }
+      };
     },
   });
 };
+
+// Backwards compatibility aliases
+export const useGetCashbackBalance = useGetCreditsBalance;
+export const useGetCashbackRules = useGetCreditsRules;
+export const useGetCashbackHistory = useGetCreditsHistory;
+export const useGetAdminCashbackHistory = useGetAdminCreditsHistory;
+export const useCreateCashbackRule = useCreateCreditsRule;
+export const useUpdateCashbackRule = useUpdateCreditsRule;
+export const useDeleteCashbackRule = useDeleteCreditsRule;
+export const useGetCashbackEvents = useGetCreditsEvents;

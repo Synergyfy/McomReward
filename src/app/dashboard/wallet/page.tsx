@@ -49,9 +49,9 @@ function StripePaymentForm({ onSuccess, onClose }: { onSuccess: (id: string) => 
     } else if (paymentIntent && paymentIntent.status === "succeeded") {
       onSuccess(paymentIntent.id);
     } else {
-       // Unexpected state
-       setErrorMessage("Payment status could not be determined.");
-       setIsProcessing(false);
+      // Unexpected state
+      setErrorMessage("Payment status could not be determined.");
+      setIsProcessing(false);
     }
   };
 
@@ -60,11 +60,11 @@ function StripePaymentForm({ onSuccess, onClose }: { onSuccess: (id: string) => 
       <PaymentElement />
       {errorMessage && <div className="text-red-500 text-sm">{errorMessage}</div>}
       <div className="flex justify-end gap-2 mt-4">
-         <Button variant="outline" type="button" onClick={onClose} disabled={isProcessing}>Cancel</Button>
-         <Button type="submit" disabled={!stripe || isProcessing}>
-            {isProcessing ? <Loader2 className="animate-spin mr-2" /> : null}
-            Pay Now
-         </Button>
+        <Button variant="outline" type="button" onClick={onClose} disabled={isProcessing}>Cancel</Button>
+        <Button type="submit" disabled={!stripe || isProcessing}>
+          {isProcessing ? <Loader2 className="animate-spin mr-2" /> : null}
+          Pay Now
+        </Button>
       </div>
     </form>
   );
@@ -118,31 +118,31 @@ export default function WalletPage() {
 
   // PayPal specific handlers
   const createPayPalOrder = async () => {
-     const numAmount = parseFloat(amount);
-     if (isNaN(numAmount) || numAmount <= 0) {
-       toast.error("Invalid amount");
-       throw new Error("Invalid amount");
-     }
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      toast.error("Invalid amount");
+      throw new Error("Invalid amount");
+    }
 
-     return new Promise<string>((resolve, reject) => {
-       initiateTopup({ amount: numAmount, provider: 'paypal' }, {
-         onSuccess: (data) => {
-           if (data.orderId) resolve(data.orderId);
-           else reject("No Order ID returned");
-         },
-         onError: (err) => reject(err)
-       });
-     });
+    return new Promise<string>((resolve, reject) => {
+      initiateTopup({ amount: numAmount, provider: 'paypal' }, {
+        onSuccess: (data) => {
+          if (data.orderId) resolve(data.orderId);
+          else reject("No Order ID returned");
+        },
+        onError: (err) => reject(err)
+      });
+    });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onPayPalApprove = async (data: any) => {
     verifyTopup({ transaction_id: data.orderID, provider: 'paypal' }, {
       onSuccess: (res) => {
-         toast.success(`Successfully topped up £${res.amount}!`);
-         refetchWallet();
+        toast.success(`Successfully topped up £${res.amount}!`);
+        refetchWallet();
       },
-       onError: (err) => {
+      onError: (err) => {
         toast.error(`Verification failed: ${err.message}`);
       }
     });
@@ -169,86 +169,86 @@ export default function WalletPage() {
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-               <div className="text-2xl font-bold">£{Number(wallet?.topupBalance || 0).toFixed(2)}</div>
-               <p className="text-xs text-muted-foreground mt-1">
-                 + £{Number(wallet?.tierBalance || 0).toFixed(2)} monthly allowance
-               </p>
+              <div className="text-2xl font-bold">£{Number(wallet?.topupBalance || 0).toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                + £{Number(wallet?.tierBalance || 0).toFixed(2)} monthly allowance
+              </p>
             </CardContent>
           </Card>
 
-          {/* Cashback Card */}
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          {/* Credits Card */}
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 shadow-lg shadow-green-100/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cashback Wallet</CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-black uppercase text-green-800">Credits Pool</CardTitle>
+              <Coins className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-               {isCashbackLoading ? (
-                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-               ) : (
-                 <div className="text-2xl font-bold">£{Number(cashback?.balance || 0).toFixed(2)}</div>
-               )}
-               <p className="text-xs text-muted-foreground mt-1">
-                 Accumulated cashback
-               </p>
+              {isCashbackLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <div className="text-3xl font-black text-slate-900">£{Number(cashback?.availableCashback ?? 0).toFixed(2)}</div>
+              )}
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">
+                Total circulating value
+              </p>
             </CardContent>
           </Card>
         </div>
 
-         {/* Top Up Card */}
+        {/* Top Up Card */}
         <Card>
           <CardHeader>
             <CardTitle>Top Up Wallet</CardTitle>
             <CardDescription>Add funds to your wallet instantly.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="space-y-2">
-               <Label htmlFor="amount">Amount (£)</Label>
-               <Input
-                 id="amount"
-                 type="number"
-                 placeholder="Enter amount"
-                 value={amount}
-                 onChange={(e) => setAmount(e.target.value)}
-                 min="1"
-               />
-             </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount (£)</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="Enter amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                min="1"
+              />
+            </div>
 
-             <div className="space-y-2">
-               <Label>Payment Method</Label>
-               <RadioGroup value={provider} onValueChange={(v) => setProvider(v as 'stripe' | 'paypal')} className="flex gap-4">
-                  <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
-                    <RadioGroupItem value="stripe" id="r1" />
-                    <Label htmlFor="r1" className="cursor-pointer flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" /> Card (Stripe)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
-                    <RadioGroupItem value="paypal" id="r2" />
-                    <Label htmlFor="r2" className="cursor-pointer flex items-center gap-2">
-                       <span className="font-bold text-blue-700 italic">Pay</span><span className="font-bold text-blue-500 italic">Pal</span>
-                    </Label>
-                  </div>
-               </RadioGroup>
-             </div>
-
-             {provider === 'stripe' ? (
-               <Button className="w-full" onClick={handleInitiate} disabled={isInitiating}>
-                 {isInitiating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                 Proceed to Pay £{amount}
-               </Button>
-             ) : (
-                <div className="mt-4 z-0 relative">
-                   <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb", currency: "GBP" }}>
-                      <PayPalButtons
-                        style={{ layout: "vertical" }}
-                        createOrder={createPayPalOrder}
-                        onApprove={onPayPalApprove}
-                        forceReRender={[amount]}
-                      />
-                   </PayPalScriptProvider>
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <RadioGroup value={provider} onValueChange={(v) => setProvider(v as 'stripe' | 'paypal')} className="flex gap-4">
+                <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
+                  <RadioGroupItem value="stripe" id="r1" />
+                  <Label htmlFor="r1" className="cursor-pointer flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" /> Card (Stripe)
+                  </Label>
                 </div>
-             )}
+                <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
+                  <RadioGroupItem value="paypal" id="r2" />
+                  <Label htmlFor="r2" className="cursor-pointer flex items-center gap-2">
+                    <span className="font-bold text-blue-700 italic">Pay</span><span className="font-bold text-blue-500 italic">Pal</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {provider === 'stripe' ? (
+              <Button className="w-full" onClick={handleInitiate} disabled={isInitiating}>
+                {isInitiating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Proceed to Pay £{amount}
+              </Button>
+            ) : (
+              <div className="mt-4 z-0 relative">
+                <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb", currency: "GBP" }}>
+                  <PayPalButtons
+                    style={{ layout: "vertical" }}
+                    createOrder={createPayPalOrder}
+                    onApprove={onPayPalApprove}
+                    forceReRender={[amount]}
+                  />
+                </PayPalScriptProvider>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -259,51 +259,51 @@ export default function WalletPage() {
           <CardTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Transaction History</CardTitle>
         </CardHeader>
         <CardContent>
-           {wallet?.transactions && wallet.transactions.length > 0 ? (
-             <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>Date</TableHead>
-                   <TableHead>Type</TableHead>
-                   <TableHead>Reference</TableHead>
-                   <TableHead className="text-right">Amount</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {wallet.transactions
-                   .slice()
-                   .sort((a, b) => {
-                     const dateA = new Date(a.createdAt).getTime();
-                     const dateB = new Date(b.createdAt).getTime();
-                     return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
-                   })
-                   .map((tx) => {
-                     let dateDisplay = 'Invalid Date';
-                     try {
-                        const date = new Date(tx.createdAt);
-                        if (!isNaN(date.getTime())) {
-                            dateDisplay = format(date, 'PPP p');
-                        }
-                     } catch (e) { console.error(e); }
+          {wallet?.transactions && wallet.transactions.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {wallet.transactions
+                  .slice()
+                  .sort((a, b) => {
+                    const dateA = new Date(a.createdAt).getTime();
+                    const dateB = new Date(b.createdAt).getTime();
+                    return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+                  })
+                  .map((tx) => {
+                    let dateDisplay = 'Invalid Date';
+                    try {
+                      const date = new Date(tx.createdAt);
+                      if (!isNaN(date.getTime())) {
+                        dateDisplay = format(date, 'PPP p');
+                      }
+                    } catch (e) { console.error(e); }
 
-                     return (
-                       <TableRow key={tx.id}>
-                         <TableCell>{dateDisplay}</TableCell>
-                         <TableCell className="capitalize">{tx.type.replace(/_/g, ' ').toLowerCase()}</TableCell>
-                         <TableCell className="max-w-[200px] truncate" title={tx.reference}>{tx.reference}</TableCell>
-                         <TableCell className={`text-right font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                           {Number(tx.amount) > 0 ? '+' : ''}£{Number(tx.amount).toFixed(2)}
-                         </TableCell>
-                       </TableRow>
-                     );
-                   })}
-               </TableBody>
-             </Table>
-           ) : (
-             <div className="text-center py-10 text-muted-foreground">
-               No transactions found.
-             </div>
-           )}
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell>{dateDisplay}</TableCell>
+                        <TableCell className="capitalize">{tx.type.replace(/_/g, ' ').toLowerCase()}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={tx.reference}>{tx.reference}</TableCell>
+                        <TableCell className={`text-right font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {Number(tx.amount) > 0 ? '+' : ''}£{Number(tx.amount).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-10 text-muted-foreground">
+              No transactions found.
+            </div>
+          )}
         </CardContent>
       </Card>
 

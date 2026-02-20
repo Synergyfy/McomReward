@@ -15,7 +15,7 @@ import {
     FileText,
     Image as ImageIcon,
     Video,
-    File,
+    File as FileIcon,
     Check,
     Plus,
     Loader2,
@@ -51,7 +51,9 @@ import { useUploadToCloudinary } from '@/services/upload/hook';
 import { useCreateLibraryAsset, useGetLibraryAssets, useDeleteLibraryAsset, useUpdateLibraryAsset } from '@/services/media-library/hooks';
 import { AssetType, AssetSource, UpdateLibraryAssetDto } from '@/services/media-library/types';
 import { useGetSectors, useGetCategoriesBySector } from '@/services/sectors/hook';
+
 import Image from 'next/image';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 // --- Components ---
 
@@ -72,6 +74,10 @@ export default function AdminMediaLibraryPage() {
     const [assetDescription, setAssetDescription] = useState('');
     const [selectedSectorId, setSelectedSectorId] = useState<string>('');
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+
+    // Cropping State
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [isCropping, setIsCropping] = useState(false);
 
     const [page, setPage] = useState(1);
     const limit = 20;
@@ -100,15 +106,30 @@ export default function AdminMediaLibraryPage() {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        setPendingFile(file);
-        setAssetTitle(file.name.split('.')[0] || file.name); // Default title to filename
+        // If it's an image, start cropping flow
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onloadend = () => setPendingPreview(reader.result as string);
+            reader.onloadend = () => {
+                setCropImage(reader.result as string);
+                setIsCropping(true);
+                // Keep original filename if possible, or just use a default
+                setAssetTitle(file.name.split('.')[0] || file.name);
+            };
             reader.readAsDataURL(file);
         } else {
+            // Non-image files, proceed directly
+            setPendingFile(file);
+            setAssetTitle(file.name.split('.')[0] || file.name);
             setPendingPreview(null);
         }
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        const file = new File([croppedBlob], assetTitle + '.jpg', { type: 'image/jpeg' });
+        setPendingFile(file);
+        setPendingPreview(URL.createObjectURL(croppedBlob));
+        setIsCropping(false);
+        setCropImage(null);
     };
 
     const handleStartUpload = async () => {
@@ -153,6 +174,8 @@ export default function AdminMediaLibraryPage() {
         setAssetDescription('');
         setSelectedSectorId('');
         setSelectedCategoryId('');
+        setCropImage(null);
+        setIsCropping(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -402,6 +425,21 @@ export default function AdminMediaLibraryPage() {
                     </Dialog>
                 </div>
             </div>
+
+
+            {/* Image Cropper Overlay */}
+            {isCropping && cropImage && (
+                <ImageCropper
+                    image={cropImage as string}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setIsCropping(false);
+                        setCropImage(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                // aspect={1} // Optional: enforce aspect ratio if needed
+                />
+            )}
 
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden relative">
@@ -700,6 +738,6 @@ export default function AdminMediaLibraryPage() {
                     )}
                 </AnimatePresence>
             </div>
-        </div>
+        </div >
     );
 }

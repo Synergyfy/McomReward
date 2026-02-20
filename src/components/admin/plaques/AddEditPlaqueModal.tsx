@@ -15,9 +15,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, Save } from 'lucide-react';
-import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { QrPlaque } from '@/services/qr-plaques/types';
+import { useAdminBusinesses } from '@/services/admin/hook';
 
 interface AddEditPlaqueModalProps {
   isOpen: boolean;
@@ -36,6 +36,9 @@ export function AddEditPlaqueModal({
   onShowFeedback,
   isSaving = false,
 }: AddEditPlaqueModalProps) {
+  // Fetch real business owners from API
+  const { data: businessesData, isLoading: isLoadingBusinesses } = useAdminBusinesses(1, 1000, ''); // Large limit to get all businesses
+
   // State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -97,15 +100,15 @@ export function AddEditPlaqueModal({
 
     // Prepare data object
     const plaqueData = {
-        id: initialData?.id,
-        name,
-        description,
-        assignedBusinessId: ownerId || undefined, // Send undefined if empty to avoid invalid UUID error
-        status,
-        qrCodeUrl: qrCodeData,
-        contentUrl,
-        actionText: 'Scan Here', // Default action text needed for Create
-        footerText: '', // Default footer
+      id: initialData?.id,
+      name,
+      description,
+      assignedBusinessId: ownerId || undefined, // Send undefined if empty to avoid invalid UUID error
+      status,
+      qrCodeUrl: qrCodeData,
+      contentUrl,
+      actionText: 'Scan Here', // Default action text needed for Create
+      footerText: '', // Default footer
     };
 
     onSave(plaqueData);
@@ -142,13 +145,18 @@ export function AddEditPlaqueModal({
             <Label htmlFor="owner" className="text-right">Owner (Business)</Label>
             <Select value={ownerId} onValueChange={setOwnerId}>
               <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select an owner (Optional)" />
+                <SelectValue placeholder={isLoadingBusinesses ? "Loading businesses..." : "Select an owner (Optional)"} />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
-                 {/* This would ideally come from an API too */}
-                {mockBusinessUsers.map(user => (
-                  <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                ))}
+                {isLoadingBusinesses ? (
+                  <SelectItem value="loading" disabled>Loading businesses...</SelectItem>
+                ) : businessesData && businessesData.data.length > 0 ? (
+                  businessesData.data.map(business => (
+                    <SelectItem key={business.id} value={business.id}>{business.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-businesses" disabled>No businesses available</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -169,11 +177,11 @@ export function AddEditPlaqueModal({
             </Select>
           </div>
 
-           {/* QR Code URL Input for Admin */}
-           <div className="grid grid-cols-4 items-center gap-4">
-             <Label htmlFor="qrCodeUrl" className="text-right">QR Code URL</Label>
-             <Input id="qrCodeUrl" value={qrCodeData} onChange={(e) => setQrCodeData(e.target.value)} placeholder="https://..." className="col-span-3" />
-           </div>
+          {/* QR Code URL Input for Admin */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="qrCodeUrl" className="text-right">QR Code URL</Label>
+            <Input id="qrCodeUrl" value={qrCodeData} onChange={(e) => setQrCodeData(e.target.value)} placeholder="https://..." className="col-span-3" />
+          </div>
 
         </div>
         <DialogFooter>

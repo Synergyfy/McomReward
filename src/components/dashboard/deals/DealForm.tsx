@@ -662,6 +662,7 @@ export default function DealForm({ deal, dealId }: DealFormProps) {
                             value={field.value}
                             onChange={field.onChange}
                             folder="deals"
+                            aspectRatio={16 / 9}
                             className="h-64 rounded-3xl border-2 border-dashed border-gray-100 hover:border-primary/30 transition-all bg-gray-50/50"
                           />
                         )}

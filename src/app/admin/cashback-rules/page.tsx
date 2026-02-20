@@ -129,6 +129,7 @@ export default function CreditsRulesPage() {
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 py-4 px-6">Platform</TableHead>
+                  <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400">Level</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400">Event Type</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400">Reward Rate</TableHead>
                   <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400">Status</TableHead>
@@ -141,6 +142,9 @@ export default function CreditsRulesPage() {
                   rules.map((rule) => (
                     <TableRow key={rule.id} className="group hover:bg-slate-50 transition-colors border-slate-50">
                       <TableCell className="font-black text-sm text-slate-900 px-6">{rule.platform === 'MCOM_LOYALTY' ? 'Loyalty Engine' : 'Mall Platform'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-bold border-slate-200">Level {rule.level || 1}</Badge>
+                      </TableCell>
                       <TableCell className="font-bold text-slate-600">{(rule.eventType || '').replace(/_/g, ' ')}</TableCell>
                       <TableCell className="font-black text-indigo-600">
                         {rule.rewardType === 'PERCENTAGE' ? `${rule.rewardValue}%` : `${Number(rule.rewardValue)} CR`}

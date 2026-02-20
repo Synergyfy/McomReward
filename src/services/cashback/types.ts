@@ -9,15 +9,17 @@ export interface CreditsRule {
   rewardType: CreditsRewardType;
   rewardValue: number | string;
   isActive: boolean;
+  level?: number;
   createdAt: string;
 }
 
 export interface CreateCreditsRulePayload {
   platform: CreditsPlatform;
-  eventType: string;
+  eventType: string | string[]; // Support multi-select
   rewardType: CreditsRewardType;
   rewardValue: number;
   isActive?: boolean;
+  level?: number;
 }
 
 export interface UpdateCreditsRulePayload {

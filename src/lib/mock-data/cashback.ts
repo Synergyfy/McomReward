@@ -42,12 +42,12 @@ export const mockCreditsRules: CreditsRule[] = [
 ];
 
 export const mockCreditsBalance: CreditsBalance = {
-    credits: 45, // Almost at Level 1
-    availableCashback: 15.75, // Existing balance from previous claims or other sources
-    pendingAmount: 12.50,
+    credits: 60, // Almost at Level 1
+    availableCashback: 50, // Existing balance from previous claims or other sources
+    pendingAmount: 50,
     expiringSoon: 5.00,
     progression: {
-        currentCredits: 45,
+        currentCredits: 60,
         currentLevel: 0,
         nextLevel: mockCreditsLevels[0],
         allLevels: mockCreditsLevels

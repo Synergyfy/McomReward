@@ -42,15 +42,23 @@ function BusinessSignupContent() {
 
 const onSubmit = async (data: BusinessSignUpDto) => {
   try {
-    const response = await signUp(data);
+    const { name, ...cleanData } = data as any;
+    const response = await signUp(cleanData);
+    console.log("Signup response:", response);
+
     await login({
       email: data.email,
       password: data.password,
     });
     toast.success('Business account created successfully!');
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('Signup or login error:', error);
-    toast.error('Failed to create account. Please try again.');
+    const rawMessage = error?.response?.data?.message;
+    const errorMessage = Array.isArray(rawMessage)
+      ? rawMessage.join(", ")
+      : rawMessage || "Failed to create account. Please try again.";
+    toast.error(errorMessage);
   }
 };
 
@@ -92,7 +100,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="firstName"
                 type="text"
                 placeholder="John"
-                {...register("firstName", { required: "First name is required" })}
+{...register("firstName", { required: "First Name is required" })}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -106,7 +114,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-                {...register("lastName", { required: "Last name is required" })}
+{...register("lastName", { required: "Last Name is required" })}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">

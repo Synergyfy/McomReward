@@ -56,9 +56,10 @@ export default function StaffLoginPage() {
     try {
       await staffLogin({ ...data,});
       router.push("/staff/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed. Please check your credentials.");
+      const errorMessage = error?.response?.data?.message || "Login failed. Please check your credentials.";
+      toast.error(errorMessage);
     }
   };
 
@@ -104,7 +105,13 @@ export default function StaffLoginPage() {
             <Input
               type="email"
               placeholder="staff@example.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                  message: "Invalid email address"
+                }
+              })}
             />
             {errors.email && (
               <p className="text-sm text-red-500 mt-1">
@@ -119,7 +126,13 @@ export default function StaffLoginPage() {
             <Input
               type="password"
               placeholder="••••••••"
-              {...register("password", { required: "Password is required" })}
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters"
+                }
+              })}
             />
             {errors.password && (
               <p className="text-sm text-red-500 mt-1">

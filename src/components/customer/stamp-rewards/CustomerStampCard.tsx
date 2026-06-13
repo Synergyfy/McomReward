@@ -32,6 +32,7 @@ interface CustomerStampCardProps {
     stampCard: ConsumerStampCard;
     onViewDetails: (card: ConsumerStampCard) => void;
     onRedeem?: (card: ConsumerStampCard) => void;
+    isRedeemDisabled?: boolean; // Added optional prop
 }
 
 const getTriggerIcon = (method: string) => {
@@ -69,6 +70,7 @@ export default function CustomerStampCardComponent({
     stampCard,
     onViewDetails,
     onRedeem,
+    isRedeemDisabled = false,
 }: CustomerStampCardProps) {
     const { template, business } = stampCard;
     const progressPercent = (stampCard.stampsCollected / stampCard.stampsRequired) * 100;
@@ -266,7 +268,8 @@ export default function CustomerStampCardComponent({
                             <Button
                                 size="sm"
                                 onClick={() => onRedeem?.(stampCard)}
-                                className="flex-1 gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                                disabled={isRedeemDisabled}
+                                className="flex-1 gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white disabled:opacity-50"
                             >
                                 <QrCode className="h-4 w-4" />
                                 Redeem Now

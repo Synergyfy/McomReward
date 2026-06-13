@@ -2,7 +2,11 @@ import { Check, Minus, Loader2 } from "lucide-react"
 import { useGetTiers } from "@/services/tiers/hook"
 import { TierResponse } from "@/services/tiers/types"
 
-export default function ComparisonTable() {
+interface ComparisonTableProps {
+  activeTab?: string;
+}
+
+export default function ComparisonTable({ activeTab = "standard" }: ComparisonTableProps) {
   const { data: tiersData, isLoading, isError } = useGetTiers()
 
   // Define features to compare
@@ -39,8 +43,36 @@ export default function ComparisonTable() {
     )
   }
 
-  // Filter out Trial and sort tiers (assuming we want a specific order if possible, or just as they come)
-  const tiers = tiersData.filter(t => t.name !== "Trial")
+  const normalize = (str?: string) => str?.toLowerCase().trim() || '';
+
+  // Filter tiers based on activeTab
+  const tiers = tiersData.filter(t => {
+    const type = normalize(t.type);
+    const status = normalize(t.status);
+    const isVisible = status === 'published' || status === 'draft' || status === '';
+
+    if (activeTab === 'seasonal') {
+      return type === 'seasonal' && isVisible;
+    } else {
+      // Standard view
+      const isStandard = type === 'standard' || type === '';
+      return isStandard && isVisible && t.name !== "Trial";
+    }
+  });
+
+  // Sort tiers
+  if (activeTab === 'seasonal') {
+    tiers.sort((a, b) => {
+      const priceA = a.fixedPrice ? parseFloat(String(a.fixedPrice)) : 0;
+      const priceB = b.fixedPrice ? parseFloat(String(b.fixedPrice)) : 0;
+      return priceA - priceB;
+    });
+  } else {
+    tiers.sort((a, b) => {
+          const priceA = a.quarterlyPrice ? parseFloat(String(a.quarterlyPrice)) : 0;
+          const priceB = b.quarterlyPrice ? parseFloat(String(b.quarterlyPrice)) : 0;      return priceA - priceB;
+    });
+  }
 
   const getFeatureValue = (tier: TierResponse, feature: string): string | boolean | number => {
     const config = tier.configuration

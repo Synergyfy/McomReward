@@ -14,6 +14,7 @@ import BusinessSidebar from '@/components/dashboard/sidebar/index';
 import BusinessHeader from '@/components/dashboard/header';
 
 import { StatCard } from '@/components/ui/StatCard';
+import { Subscription } from '@/services/tiers/types';
 
 interface BusinessProfileType {
   id: string;
@@ -22,9 +23,7 @@ interface BusinessProfileType {
   role?: string;
   // tier is not directly in AdminBusinessDetails, so we'll handle it separately
 }
-interface SubscriptionType {
-  tier?: { name: string };
-}
+
 interface MonthlyBalanceType {
   remaining?: number;
   monthlyLimit?: number;
@@ -125,8 +124,8 @@ export default function AdminBusinessImpersonationPage() {
       role: businessDetails.role || 'business',
   };
 
-  const impersonatedSubscription: SubscriptionType = {
-      tier: { name: 'N/A' } // AdminBusinessDetails does not directly contain a 'tier' property
+  const impersonatedSubscription: Partial<Subscription> = {
+      tier: { name: 'N/A' } as any // AdminBusinessDetails does not directly contain a 'tier' property
   };
 
   const impersonatedMonthlyBalance: MonthlyBalanceType = {

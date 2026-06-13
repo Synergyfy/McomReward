@@ -51,7 +51,6 @@ import { toast } from 'sonner';
 import { useGetReferralStats } from '@/services/business/hook';
 import {
   useGetNetworkContacts,
-  useCreateContact,
   useUpdateContact,
   useDeleteContact,
 } from '@/services/network-contacts/hook';
@@ -64,7 +63,9 @@ import {
   CreateContactDto,
   UpdateContactDto,
 } from '@/services/network-contacts/types';
-  type SortBy = 'name' | 'newest' | 'oldest' | 'active';
+import AddContactForm from '@/components/dashboard/my-assets/shared/AddContactForm';
+
+type SortBy = 'name' | 'newest' | 'oldest' | 'active';
 
 // Tooltip content for tags
 const LOCATION_TAG_INFO = {
@@ -76,15 +77,14 @@ const LOCATION_TAG_INFO = {
 const RELATIONSHIP_TAG_INFO = {
   partner: 'Someone you collaborate with.',
   supplier: 'Someone who provides you items or services.',
-  affiliate: 'Promotes your business.',
-  customer: 'Buys from you.',
+  affiliate: 'Someone who refers customers to your business.',
 };
 
 const SOURCE_TAG_INFO = {
   'User-submitted': 'Manually added by the business owner.',
   Platform: 'Contact automatically provided by MCOM.',
   Plaque: 'Contact generated when someone scans their plaque.',
-  Affiliate: 'Contact created by affiliate sign-ups.',
+  Affiliate: 'Contact created by referral sign-ups.',
 };
 
 // Badge color mapping
@@ -131,16 +131,17 @@ export default function FormContactsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
-  
+
 
   // Form state
   const [formData, setFormData] = useState<CreateContactDto>({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     businessName: '',
     email: '',
     phone: '',
     locationTag: 'nearby',
-    relationshipTag: 'customer',
+    relationshipTag: 'partner',
     hasPermission: false,
   });
 
@@ -159,33 +160,16 @@ export default function FormContactsPage() {
   // Hooks
   const { data: referralStats } = useGetReferralStats();
   const { data: contactsData, isLoading } = useGetNetworkContacts(queryParams);
-  const createContact = useCreateContact();
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
 
   // Handlers
-  const handleAddContact = async () => {
-    if (!formData.fullName || !formData.phone || !formData.hasPermission) {
-      toast.error('Please fill in required fields and confirm permission');
-      return;
-    }
-
-    try {
-      await createContact.mutateAsync(formData);
-      toast.success('Contact added successfully!');
-      setIsAddModalOpen(false);
-      resetForm();
-    } catch (error) {
-      toast.error('Failed to add contact');
-      console.error(error);
-    }
-  };
-
   const handleEditContact = async () => {
     if (!selectedContact) return;
 
     const updateData: UpdateContactDto = {
-      fullName: formData.fullName,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       businessName: formData.businessName || undefined,
       email: formData.email || undefined,
       phone: formData.phone || undefined,
@@ -223,7 +207,8 @@ export default function FormContactsPage() {
   const openEditModal = (contact: NetworkContact) => {
     setSelectedContact(contact);
     setFormData({
-      fullName: contact.fullName,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
       businessName: contact.businessName || '',
       email: contact.email || '',
       phone: contact.phone || '',
@@ -241,12 +226,13 @@ export default function FormContactsPage() {
 
   const resetForm = () => {
     setFormData({
-      fullName: '',
+      firstName: '',
+      lastName: '',
       businessName: '',
       email: '',
       phone: '',
       locationTag: 'nearby',
-      relationshipTag: 'customer',
+      relationshipTag: 'partner',
       hasPermission: false,
     });
   };
@@ -428,8 +414,7 @@ export default function FormContactsPage() {
                         <SelectItem value="all">All Relationships</SelectItem>
                         <SelectItem value="partner">Partner</SelectItem>
                         <SelectItem value="supplier">Supplier</SelectItem>
-                        <SelectItem value="affiliate">Affiliate</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="affiliate">Referral</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -447,7 +432,7 @@ export default function FormContactsPage() {
                         <SelectItem value="User-submitted">User-submitted</SelectItem>
                         <SelectItem value="Platform">Platform</SelectItem>
                         <SelectItem value="Plaque">Plaque</SelectItem>
-                        <SelectItem value="Affiliate">Affiliate</SelectItem>
+                        <SelectItem value="Affiliate">Referral</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -741,294 +726,17 @@ export default function FormContactsPage() {
               Add a new contact to your network. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Full Name */}
-              <div className="col-span-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="fullName">
-                    Full Name <span className="text-red-500">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                        <p className="text-sm">Enter the full name of the contact person or business owner.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="John Doe"
-                />
-              </div>
-
-              {/* Business Name */}
-              <div className="col-span-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                        <p className="text-sm">The official name of the business or company this contact represents.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="businessName"
-                  value={formData.businessName}
-                  onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                  placeholder="ABC Company Ltd"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="email">Email</Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                        <p className="text-sm">Primary email address for business communications and campaign invitations.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="phone">
-                    Phone <span className="text-red-500">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                        <p className="text-sm">Contact phone number for direct communication and follow-ups.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+44 20 1234 5678"
-                />
-              </div>
-
-              {/* Location Tag */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="locationTag">
-                    Location Tag <span className="text-red-500">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                        <div className="text-sm space-y-1">
-                          <p><strong>Nearby:</strong> Very close, neighbourhood radius</p>
-                          <p><strong>Hyperlocal:</strong> Wider local area but still nearby</p>
-                          <p><strong>National:</strong> Anywhere within the country</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Select
-                  value={formData.locationTag}
-                  onValueChange={(value: LocationTag) =>
-                    setFormData({ ...formData, locationTag: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    {/* <SelectItem value="nearby">Nearby</SelectItem>
-                    <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                    <SelectItem value="national">National</SelectItem> */}
-                     <SelectItem value="nearby" textValue="Nearby">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Nearby</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {LOCATION_TAG_INFO.nearby}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="hyperlocal" textValue="Hyperlocal">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Hyperlocal</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {LOCATION_TAG_INFO.hyperlocal}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="national" textValue="National">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">National</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {LOCATION_TAG_INFO.national}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Relationship Tag */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="relationshipTag">
-                    Relationship Tag <span className="text-red-500">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                        <div className="text-sm space-y-1">
-                          <p><strong>Partner:</strong> Someone you collaborate with</p>
-                          <p><strong>Supplier:</strong> Provides you items or services</p>
-                          <p><strong>Affiliate:</strong> Promotes your business</p>
-                          <p><strong>Customer:</strong> Buys from you</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Select
-                  value={formData.relationshipTag}
-                  onValueChange={(value: RelationshipTag) =>
-                    setFormData({ ...formData, relationshipTag: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    {/* <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem> */}
-                    <SelectItem value="partner" textValue="Partner">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Partner</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.partner}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="supplier" textValue="Supplier">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Supplier</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.supplier}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="affiliate" textValue="Affiliate">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Affiliate</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.affiliate}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="customer" textValue="Customer">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Customer</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.customer}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Permission Confirmation */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="permission"
-                  checked={formData.hasPermission}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, hasPermission: checked as boolean })
-                  }
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="permission" className="font-semibold text-orange-900 cursor-pointer">
-                      Permission Confirmation <span className="text-red-500">*</span>
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip delayDuration={200}>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-orange-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                          <p className="text-sm">You must confirm that you have explicit permission from this contact to store their information and contact them for business purposes. This is required for GDPR compliance.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-sm text-orange-800 mt-1">
-                    I confirm that this business has given permission to add their details to my
-                    contact list and that I may contact them for business purposes.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddModalOpen(false);
-                resetForm();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddContact}
-              disabled={createContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              {createContact.isPending ? 'Adding...' : 'Add Contact'}
-            </Button>
-          </DialogFooter>
+          <AddContactForm
+            onSuccess={() => {
+              toast.success('Contact added successfully!');
+              setIsAddModalOpen(false);
+              resetForm();
+            }}
+            onCancel={() => {
+              setIsAddModalOpen(false);
+              resetForm();
+            }}
+          />
         </DialogContent>
       </Dialog>
 
@@ -1043,28 +751,31 @@ export default function FormContactsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
             <div className="grid grid-cols-2 gap-4">
-              {/* Full Name */}
-              <div className="col-span-2">
+              {/* Name Fields */}
+              <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="edit-fullName">
-                    Full Name <span className="text-red-500">*</span>
+                  <Label htmlFor="edit-firstName">
+                    First Name <span className="text-red-500">*</span>
                   </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={200}>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                        <p className="text-sm">Enter the full name of the contact person or business owner.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
                 <Input
-                  id="edit-fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="John Doe"
+                  id="edit-firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="edit-lastName">
+                    Last Name <span className="text-red-500">*</span>
+                  </Label>
+                </div>
+                <Input
+                  id="edit-lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  placeholder="Doe"
                 />
               </div>
 
@@ -1175,7 +886,7 @@ export default function FormContactsPage() {
                     {/* <SelectItem value="nearby">Nearby</SelectItem>
                     <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
                     <SelectItem value="national">National</SelectItem> */}
-                     <SelectItem value="nearby" textValue="Nearby">
+                    <SelectItem value="nearby" textValue="Nearby">
                       <div className="flex flex-col items-start text-left">
                         <span className="font-medium">Nearby</span>
                         <span className="text-xs text-muted-foreground font-normal">
@@ -1214,66 +925,52 @@ export default function FormContactsPage() {
                       <TooltipTrigger asChild>
                         <Info className="h-4 w-4 text-gray-400 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                        <div className="text-sm space-y-1">
-                          <p><strong>Partner:</strong> Someone you collaborate with</p>
-                          <p><strong>Supplier:</strong> Provides you items or services</p>
-                          <p><strong>Affiliate:</strong> Promotes your business</p>
-                          <p><strong>Customer:</strong> Buys from you</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Select
-                  value={formData.relationshipTag}
-                  onValueChange={(value: RelationshipTag) =>
-                    setFormData({ ...formData, relationshipTag: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    {/* <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="supplier">Supplier</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem> */}
-                     <SelectItem value="partner" textValue="Partner">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Partner</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.partner}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="supplier" textValue="Supplier">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Supplier</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.supplier}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="affiliate" textValue="Affiliate">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Affiliate</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.affiliate}
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="customer" textValue="Customer">
-                      <div className="flex flex-col items-start text-left">
-                        <span className="font-medium">Customer</span>
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {RELATIONSHIP_TAG_INFO.customer}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                                              <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
+                                              <div className="text-sm space-y-1">
+                                                <p><strong>Partner:</strong> Someone you collaborate with</p>
+                                                <p><strong>Supplier:</strong> Provides you items or services</p>
+                                                <p><strong>Referral:</strong> Promotes your business</p>
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                      <Select
+                                        value={formData.relationshipTag}
+                                        onValueChange={(value: RelationshipTag) =>
+                                          setFormData({ ...formData, relationshipTag: value })
+                                        }
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[9999]">
+                                          <SelectItem value="partner" textValue="Partner">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Partner</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.partner}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="supplier" textValue="Supplier">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Supplier</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.supplier}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="affiliate" textValue="Referral">
+                                            <div className="flex flex-col items-start text-left">
+                                              <span className="font-medium">Referral</span>
+                                              <span className="text-xs text-muted-foreground font-normal">
+                                                {RELATIONSHIP_TAG_INFO.affiliate}
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>              </div>
             </div>
 
             {/* Permission Confirmation */}
@@ -1324,7 +1021,7 @@ export default function FormContactsPage() {
             </Button>
             <Button
               onClick={handleEditContact}
-              disabled={updateContact.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
+              disabled={updateContact.isPending || !formData.firstName || !formData.lastName || !formData.phone || !formData.hasPermission}
               className="bg-orange-600 hover:bg-orange-700"
             >
               {updateContact.isPending ? 'Updating...' : 'Update Contact'}

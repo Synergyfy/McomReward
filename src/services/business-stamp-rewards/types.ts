@@ -42,6 +42,11 @@ export interface ScanParticipantQrDto {
     businessStampRewardId: string;
 }
 
+export interface AwardStampsDto {
+    participantUniqueCode?: string;
+    stampCardId?: string;
+}
+
 export interface RedeemStampCardDto {
     participantUniqueCode?: string;
     stampCardId?: string;
@@ -155,6 +160,7 @@ export interface AwardStampRequest {
     businessStampRewardId: string;
     customerId?: string;
     participantUniqueCode?: string;
+    stampCardId?: string;
     triggerMethod: StampTriggerMethod;
 }
 

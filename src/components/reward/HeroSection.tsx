@@ -9,7 +9,7 @@ const HeroSection: React.FC = () => {
           Unlock Rewards Everywhere You Go
         </h1>
         <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-          Earn points, stamps, cashback, and exclusive deals across all your favourite local businesses.
+          Earn points, stamps, credits, and exclusive deals across all your favourite local businesses.
         </p>
         <div className="flex justify-center">
           <a

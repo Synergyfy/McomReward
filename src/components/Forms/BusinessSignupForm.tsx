@@ -8,19 +8,41 @@ import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp, useAuth } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
 import Link from "next/link";
 
-export default function BusinessSignupForm() {
+interface BusinessSignupFormProps {
+  provisionCode?: string;
+}
+
+export default function BusinessSignupForm({ provisionCode }: BusinessSignupFormProps) {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get('ref');
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-  } = useForm<BusinessSignUpDto>();
-  const router = useRouter();
+    setValue,
+  } = useForm<BusinessSignUpDto>({
+    defaultValues: {
+      referralCode: refCode || '',
+      provisionCode: provisionCode || '',
+    }
+  });
 
+  React.useEffect(() => {
+    if (refCode) {
+      setValue('referralCode', refCode);
+    }
+    if (provisionCode) {
+      setValue('provisionCode', provisionCode);
+    }
+  }, [refCode, provisionCode, setValue]);
+
+  const router = useRouter();
   const { mutateAsync: signUp } = useBusinessSignUp();
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -92,7 +114,7 @@ export default function BusinessSignupForm() {
                 id="firstName"
                 type="text"
                 placeholder="John"
-                {...register("firstName", { required: "First Name is required" })}
+{...register("firstName", { required: "First Name is required" })}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
@@ -106,7 +128,7 @@ export default function BusinessSignupForm() {
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-                {...register("lastName", { required: "Last Name is required" })}
+{...register("lastName", { required: "Last Name is required" })}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
@@ -161,7 +183,6 @@ export default function BusinessSignupForm() {
               </p>
             )}
           </div>
-
           <div>
             <Label htmlFor="confirmPassword">
               Confirm Password <span className="text-red-500">*</span>

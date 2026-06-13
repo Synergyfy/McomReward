@@ -10,7 +10,17 @@ export function PointsBalanceCard() {
 
   const totalPoints = balanceData?.globalTotalPoints || 0;
   const matchingPoints = balanceData?.matchingPoints || 0;
-  const utilization = profileData?.point_utilization || 0;
+  
+  // Calculate total stamps from campaign balances
+  const totalStamps = (profileData?.campaignBalances || profileData?.campaign_balances || []).reduce(
+    (acc, cb) => {
+      const stampBalance = 'stampBalance' in cb ? cb.stampBalance : (cb as any).stamp_balance;
+      return acc + (stampBalance || 0);
+    },
+    0
+  );
+
+  const utilization = profileData?.point_utilization || profileData?.pointUtilization || 0;
   // Use profile data badge if available, otherwise mock or default
   // Note: customerBadge is not in the ParticipantProfileResponse type yet, so we default to mock
   const badgeLevel = mockCustomerData.customerBadge;
@@ -19,6 +29,7 @@ export function PointsBalanceCard() {
     <PointsBalanceDisplay
       totalPoints={totalPoints}
       matchingPoints={matchingPoints}
+      totalStamps={totalStamps}
       utilization={utilization}
       badgeLevel={badgeLevel}
       isLoading={isBalanceLoading || isProfileLoading}

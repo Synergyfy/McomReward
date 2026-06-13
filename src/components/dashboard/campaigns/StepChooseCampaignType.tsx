@@ -4,21 +4,31 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCampaignForm } from '@/context/CampaignFormContext';
+import { useGetBusinessProfile } from '@/services/business/hook';
 
 interface StepProps {
   onNext: () => void;
   onBack: () => void;
 }
 
-const campaignTypes = [
-  { value: 'qr_code', label: 'QR Code Campaign', description: 'For in-store rewards. A customer scans a code to claim or earn points.' },
-  { value: 'referral', label: 'Referral Campaign', description: 'To reward users who invite friends (works with PerkZilla integration).' },
-  { value: 'social_email', label: 'Social or Email Campaign', description: 'For sharing reward offers through social media or newsletters.' },
-  { value: 'special_occasion', label: 'Special Occasion / Event Campaign', description: 'For birthdays, holidays, or promotions.' },
-];
-
 export default function StepChooseCampaignType({ onNext }: StepProps) {
   const { formData, updateFormData } = useCampaignForm();
+  const { data: profile } = useGetBusinessProfile();
+
+  const campaignTypes = [
+    { value: 'qr_code', label: 'QR Code Campaign', description: 'For in-store rewards. A customer scans a code to claim or earn points.' },
+    { value: 'referral', label: 'Referral Campaign', description: 'To reward users who invite friends (works with PerkZilla integration).' },
+    { value: 'social_email', label: 'Social or Email Campaign', description: 'For sharing reward offers through social media or newsletters.' },
+    { value: 'special_occasion', label: 'Special Occasion / Event Campaign', description: 'For birthdays, holidays, or promotions.' },
+  ];
+
+  if (profile?.isSuperBusiness) {
+    campaignTypes.push({
+      value: 'matching_point',
+      label: 'Matching Point Campaign',
+      description: 'Create a campaign where other businesses can join and earn matching points.'
+    });
+  }
 
   const handleSelectType = (type: string) => {
     updateFormData({ campaignType: type });

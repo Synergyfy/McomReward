@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,32 @@ interface AwardPointsModalProps {
   campaignId: string;
   campaignName: string;
   staffCode?: string;
+  rewardMode?: 'points' | 'stamps' | 'both';
+  canAwardPoints?: boolean;
+  canAwardStamps?: boolean;
 }
 
-export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardPointsModalProps) {
+export function AwardPointsModal({ 
+  campaignId, 
+  campaignName, 
+  staffCode, 
+  rewardMode = 'points',
+  canAwardPoints: initialCanAwardPoints,
+  canAwardStamps: initialCanAwardStamps
+}: AwardPointsModalProps) {
+  // Use initial props if provided, otherwise fallback to rewardMode logic
+  const canPoints = initialCanAwardPoints ?? (rewardMode === 'points' || rewardMode === 'both');
+  const canStamps = initialCanAwardStamps ?? (rewardMode === 'stamps' || rewardMode === 'both');
+  const bothEnabled = canPoints && canStamps;
+
   const [isOpen, setIsOpen] = useState(false);
-  const [points, setPoints] = useState<number>(50);
+  // Default to stamps if only stamps enabled, otherwise points
+  const [awardType, setAwardType] = useState<'points' | 'stamps'>(canPoints ? 'points' : 'stamps');
+  
+  const isStampMode = awardType === 'stamps';
+  const unit = isStampMode ? 'Stamps' : 'Points';
+
+  const [points, setPoints] = useState<number>(isStampMode ? 1 : 50);
 
   // Method A State
   const [participantCodeA, setParticipantCodeA] = useState("");
@@ -38,8 +59,22 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
   const { mutateAsync: dualScan, isPending: isDualScanning } = useDualScan();
   const { data: balanceData } = useGetBusinessMonthlyBalance();
 
-  const checkAndToastAllowanceWarning = (addedPoints: number) => {
+  // Update awardType if points or stamps are disabled/enabled
+  useEffect(() => {
+    if (!canPoints && awardType === 'points') {
+        setAwardType('stamps');
+        setPoints(1);
+    } else if (!canStamps && awardType === 'stamps') {
+        setAwardType('points');
+        setPoints(50);
+    }
+  }, [canPoints, canStamps, awardType]);
+
+  const checkAndToastAllowanceWarning = (addedAmount: number) => {
     if (!balanceData) return;
+
+    // Only points allowance warning for now, as stamps might have different tracking
+    if (isStampMode) return;
 
     const limit = balanceData.monthlyLimit;
     const used = balanceData.used;
@@ -47,7 +82,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
     if (limit <= 0) return; // Unlimited or invalid
 
     const prePercent = (used / limit) * 100;
-    const postUsed = used + addedPoints;
+    const postUsed = used + addedAmount;
     const postPercent = (postUsed / limit) * 100;
 
     if (prePercent < 80 && postPercent >= 80) {
@@ -61,12 +96,13 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
       const response = await scanParticipant({
         campaignId,
         participantCode: participantCodeA,
-        points,
-        type: 'EARN'
+        points: isStampMode ? undefined : points,
+        stamps: isStampMode ? points : undefined,
+        type: isStampMode ? 'STAMP_EARN' : 'EARN'
       });
 
-      // Trigger 3: Points Awarded
-      toast.success(`You awarded ${points} points to ${participantCodeA}.`);
+      // Trigger 3: Amount Awarded
+      toast.success(`You awarded ${points} ${unit.toLowerCase()} to ${participantCodeA}.`);
 
       // Trigger 2: Campaign Joined
       // Check if message implies joining (This is a heuristic as API doesn't return explicit flag)
@@ -80,7 +116,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
       setIsOpen(false);
       setParticipantCodeA("");
     } catch (error) {
-      toast.error("Failed to award points via scan.");
+      toast.error(`Failed to award ${unit.toLowerCase()} via scan.`);
       console.error(error);
     }
   };
@@ -93,8 +129,9 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
 
       const result = await generateCode({
         campaignId,
-        points,
-        type: 'EARN',
+        points: isStampMode ? 0 : points,
+        stamps: isStampMode ? points : undefined,
+        type: isStampMode ? 'STAMP_EARN' : 'EARN',
         expiresAt
       });
       setGeneratedCode(result.code);
@@ -117,12 +154,13 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
         campaignId,
         participantCode: participantCodeC,
         staffOrBusinessCode: staffCodeInput,
-        points,
-        type: 'EARN'
+        points: isStampMode ? undefined : points,
+        stamps: isStampMode ? points : undefined,
+        type: isStampMode ? 'STAMP_EARN' : 'EARN'
       });
 
-      // Trigger 3: Points Awarded
-      toast.success(`You awarded ${points} points to ${participantCodeC}.`);
+      // Trigger 3: Amount Awarded
+      toast.success(`You awarded ${points} ${unit.toLowerCase()} to ${participantCodeC}.`);
 
       // Trigger 2: Campaign Joined
       if (response.message && response.message.toLowerCase().includes("joined")) {
@@ -135,7 +173,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
       setIsOpen(false);
       setParticipantCodeC("");
     } catch (error) {
-      toast.error("Failed to award points via dual verification.");
+      toast.error(`Failed to award ${unit.toLowerCase()} via dual verification.`);
       console.error(error);
     }
   };
@@ -144,8 +182,9 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
     setGeneratedCode(null);
     setParticipantCodeA("");
     setParticipantCodeC("");
-    setPoints(50);
+    setPoints(isStampMode ? 1 : 50);
     setIsScanningQR(false);
+    setAwardType(canPoints ? 'points' : 'stamps');
   };
 
   const handleQRScan = (result: { rawValue: string }[]) => {
@@ -156,21 +195,38 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
     }
   };
 
+  const toggleAwardType = (type: string) => {
+     const newType = type as 'points' | 'stamps';
+     setAwardType(newType);
+     setPoints(newType === 'stamps' ? 1 : 50);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) resetState(); }}>
       <DialogTrigger asChild>
-        <Button className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full md:w-auto">
+        <Button className={`${isStampMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} text-white gap-2 w-full md:w-auto`}>
           <QrCode className="h-4 w-4" />
-          Award Points
+          Award {bothEnabled ? 'Rewards' : unit}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Award Points</DialogTitle>
+          <DialogTitle>Award {unit}</DialogTitle>
           <DialogDescription>
-            Choose a method to award points for <strong>{campaignName}</strong>.
+            Choose a method to award {unit.toLowerCase()} for <strong>{campaignName}</strong>.
           </DialogDescription>
         </DialogHeader>
+
+        {bothEnabled && (
+            <div className="flex items-center justify-center p-2 mb-2 bg-gray-50 rounded-lg">
+                <Tabs value={awardType} onValueChange={toggleAwardType} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="points">Points Mode</TabsTrigger>
+                        <TabsTrigger value="stamps">Stamps Mode</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
+        )}
 
         <Tabs defaultValue="scan" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -222,7 +278,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
 
               <form onSubmit={handleScanSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="points-a">Points to Award</Label>
+                  <Label htmlFor="points-a">{unit} to Award</Label>
                   <Input
                     id="points-a"
                     type="number"
@@ -242,8 +298,8 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isScanning}>
-                  {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : "Award Points"}
+                <Button type="submit" className={`w-full ${isStampMode ? 'bg-blue-600 hover:bg-blue-700' : ''}`} disabled={isScanning}>
+                  {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : `Award ${unit}`}
                 </Button>
               </form>
             </div>
@@ -258,7 +314,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
               {!generatedCode ? (
                 <form onSubmit={handleGenerateSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="points-b">Points to Award</Label>
+                    <Label htmlFor="points-b">{unit} to Award</Label>
                     <Input
                       id="points-b"
                       type="number"
@@ -268,7 +324,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isGenerating}>
+                  <Button type="submit" className={`w-full ${isStampMode ? 'bg-blue-600 hover:bg-blue-700' : ''}`} disabled={isGenerating}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Code"}
                   </Button>
                 </form>
@@ -296,7 +352,7 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
               </p>
               <form onSubmit={handleDualScanSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="points-c">Points to Award</Label>
+                  <Label htmlFor="points-c">{unit} to Award</Label>
                   <Input
                     id="points-c"
                     type="number"
@@ -326,8 +382,8 @@ export function AwardPointsModal({ campaignId, campaignName, staffCode }: AwardP
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isDualScanning}>
-                   {isDualScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Award"}
+                <Button type="submit" className={`w-full ${isStampMode ? 'bg-blue-600 hover:bg-blue-700' : ''}`} disabled={isDualScanning}>
+                   {isDualScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : `Verify & Award ${unit}`}
                 </Button>
               </form>
             </div>

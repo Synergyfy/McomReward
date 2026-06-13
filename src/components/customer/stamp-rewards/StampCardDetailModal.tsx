@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +12,6 @@ import {
     Stamp,
     Gift,
     Clock,
-    CheckCircle2,
     QrCode,
     ShoppingCart,
     MapPin,
@@ -20,9 +19,7 @@ import {
     Star,
     History,
     Info,
-    Sparkles,
     Calendar,
-    Award
 } from 'lucide-react';
 import { ConsumerStampCard } from '@/services/consumer-stamp-rewards/types';
 import { BENEFIT_TYPE_LABELS, TRIGGER_METHOD_LABELS } from '@/services/stamp-rewards/types';
@@ -32,6 +29,7 @@ interface StampCardDetailModalProps {
     onClose: () => void;
     stampCard: ConsumerStampCard | null;
     onRedeem?: (card: ConsumerStampCard) => void;
+    isRedeemDisabled?: boolean; // Added optional prop
 }
 
 const getTriggerIcon = (method: string) => {
@@ -48,13 +46,13 @@ export default function StampCardDetailModal({
     onClose,
     stampCard,
     onRedeem,
+    isRedeemDisabled = false,
 }: StampCardDetailModalProps) {
     if (!stampCard) return null;
 
     const { template, business } = stampCard;
     const progressPercent = (stampCard.stampsCollected / stampCard.stampsRequired) * 100;
     const isCompleted = stampCard.status === 'completed';
-    const isRedeemed = stampCard.status === 'redeemed';
 
     const daysUntilExpiry = stampCard.expiresAt
         ? Math.ceil((new Date(stampCard.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -206,7 +204,7 @@ export default function StampCardDetailModal({
                                     <p className="text-sm">Visit {business.name} to earn your first stamp!</p>
                                 </div>
                             ) : (
-                                stampCard.stampHistory.map((stamp, index) => (
+                                stampCard.stampHistory.map((stamp) => (
                                     <div key={stamp.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                                         <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
                                             <span className="text-lg">{template.stampIcon || '⭐'}</span>
@@ -298,7 +296,8 @@ export default function StampCardDetailModal({
                     {isCompleted ? (
                         <Button
                             onClick={() => onRedeem?.(stampCard)}
-                            className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                            disabled={isRedeemDisabled}
+                            className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:opacity-50"
                         >
                             <QrCode className="h-5 w-5" />
                             Redeem Your Reward

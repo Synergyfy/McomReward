@@ -11,9 +11,39 @@ import {
     OverrideCustomerBadgePayload,
     BusinessProgression,
     CustomerProgression,
+    MyProgressionResponse,
+    ParticipantProgressionResponse,
 } from './types';
 
 const PROGRESSION_QUERY_KEY = 'progression';
+
+// --- My Progression ---
+
+const getMyProgression = async (): Promise<MyProgressionResponse> => {
+    const { data } = await api.get<MyProgressionResponse>('/tier-progression/my-progression');
+    return data;
+};
+
+export const useGetMyProgression = () => {
+    return useQuery({
+        queryKey: [PROGRESSION_QUERY_KEY, 'my-progression'],
+        queryFn: getMyProgression,
+    });
+};
+
+// --- Participant Progression ---
+
+const getParticipantProgression = async (): Promise<ParticipantProgressionResponse> => {
+    const { data } = await api.get<ParticipantProgressionResponse>('/participant-progression/my-progression');
+    return data;
+};
+
+export const useGetParticipantProgression = () => {
+    return useQuery({
+        queryKey: [PROGRESSION_QUERY_KEY, 'participant-progression'],
+        queryFn: getParticipantProgression,
+    });
+};
 
 // --- Business Levels ---
 

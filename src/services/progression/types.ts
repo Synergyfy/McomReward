@@ -1,3 +1,4 @@
+// --- Existing types ---
 export interface BusinessLevel {
     id: string;
     name: string;
@@ -50,6 +51,58 @@ export interface ProgressionHistory {
     reason: string;
     changedBy: string;
     created_at: string;
+}
+
+// --- New Backend Response Types ---
+
+export interface ProgressionRequirement {
+    name: string;
+    key: string;
+    current: number | string | any;
+    target: number | string | any;
+    remaining: number | string | any;
+    isCompleted: boolean;
+}
+
+export interface ProgressionLevel {
+    level: string;
+    isCurrent: boolean;
+    requirements: ProgressionRequirement[];
+    benefits: Record<string, any>;
+}
+
+export interface MyProgressionResponse {
+    tierName: string;
+    currentLevel: string;
+    metrics: Record<string, any>;
+    nextLevels: ProgressionLevel[];
+}
+
+// --- Customer/Participant Progression ---
+
+export interface ParticipantBadge {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+    name: string;
+    priority: number;
+    multiplier: number;
+    benefits: string[];
+    minPoints: number;
+    maxPoints: number | null;
+    privileges: string[] | null;
+    color: string;
+}
+
+export interface ParticipantProgressionResponse {
+    currentPoints: number;
+    currentBadge: ParticipantBadge;
+    nextBadge: ParticipantBadge | null;
+    pointsNeeded: number;
+    remainingPoints: number;
+    progressPercentage: number;
+    allBadges: ParticipantBadge[];
 }
 
 // Payloads

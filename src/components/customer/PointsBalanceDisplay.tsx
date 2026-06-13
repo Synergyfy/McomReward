@@ -8,6 +8,7 @@ import { Progress } from '../ui/progress';
 interface PointsBalanceDisplayProps {
   totalPoints: number;
   matchingPoints: number;
+  totalStamps: number;
   utilization: number;
   badgeLevel: string;
   isLoading: boolean;
@@ -17,6 +18,7 @@ interface PointsBalanceDisplayProps {
 export function PointsBalanceDisplay({
   totalPoints,
   matchingPoints,
+  totalStamps,
   utilization,
   badgeLevel,
   isLoading,
@@ -37,34 +39,50 @@ export function PointsBalanceDisplay({
   return (
     <Card className="flex items-center justify-center shadow-xl rounded-2xl overflow-hidden text-white ">
       <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {/* Total Points */}
           <Card className="border-none shadow-md bg-gradient-to-br from-orange-100 to-orange-50">
-            <CardContent className="p-6 flex flex-col items-center text-center space-y-3">
-              <h3 className="text-lg font-semibold text-gray-700">Total Points</h3>
+            <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">Total Points</h3>
               <motion.span
                 key={totalPoints}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="text-4xl font-bold text-orange-600"
+                className="text-3xl font-bold text-orange-600"
               >
                 {totalPoints.toLocaleString()}
               </motion.span>
-              <p className="text-xs text-gray-500">Active and available for redemption</p>
+              <p className="text-[10px] text-gray-500">Active and available</p>
+            </CardContent>
+          </Card>
+
+          {/* Total Stamps */}
+          <Card className="border-none shadow-md bg-gradient-to-br from-blue-100 to-blue-50">
+            <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">Total Stamps</h3>
+              <motion.span
+                key={totalStamps}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-3xl font-bold text-blue-600"
+              >
+                {totalStamps.toLocaleString()}
+              </motion.span>
+              <p className="text-[10px] text-gray-500">Earned from campaigns</p>
             </CardContent>
           </Card>
 
           {/* Matching Points */}
           <Card className="border-none shadow-md bg-gradient-to-br from-indigo-100 to-indigo-50">
-            <CardContent className="p-6 flex flex-col items-center text-center space-y-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-700">Matching Points</h3>
+            <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+              <div className="flex items-center gap-1">
+                <h3 className="text-sm font-semibold text-gray-700">Matching Points</h3>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <Info className="w-4 h-4 text-gray-500 cursor-pointer" />
+                      <Info className="w-3 h-3 text-gray-500 cursor-pointer" />
                     </TooltipTrigger>
-                    <TooltipContent className="bg-gray-800 text-white text-xs p-2 rounded-md">
+                    <TooltipContent className="bg-gray-800 text-white text-[10px] p-2 rounded-md">
                       Matching points are bonus points from the MCOM system and may have usage limits.
                     </TooltipContent>
                   </Tooltip>
@@ -74,20 +92,20 @@ export function PointsBalanceDisplay({
                 key={matchingPoints}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="text-4xl font-bold text-indigo-600"
+                className="text-3xl font-bold text-indigo-600"
               >
                 {matchingPoints.toLocaleString()}
               </motion.span>
-              <p className="text-xs text-gray-500">Valid until {expiryDate}</p>
+              <p className="text-[10px] text-gray-500">Until {expiryDate}</p>
             </CardContent>
           </Card>
 
           {/* Utilization */}
           <Card className="border-none shadow-md bg-gradient-to-br from-green-100 to-green-50">
-            <CardContent className="p-6 flex flex-col items-center text-center space-y-3">
-              <h3 className="text-lg font-semibold text-gray-700">Utilization</h3>
-              <Progress value={utilization} className="w-24 h-2 bg-gray-200" />
-              <p className="text-sm text-gray-600">{utilization.toFixed(1)}% of points used</p>
+            <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">Utilization</h3>
+              <Progress value={utilization} className="w-20 h-2 bg-gray-200" />
+              <p className="text-xs text-gray-600">{utilization.toFixed(1)}% used</p>
             </CardContent>
           </Card>
         </div>

@@ -30,7 +30,7 @@ export const useGetReferralStats = () => useQuery({ queryKey: ['referralStats'],
 
 import { SectorResponse } from '@/services/sectors/types';
 import Cookies from 'js-cookie';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 // ... rest of your code
@@ -40,7 +40,11 @@ const BUSINESS_QUERY_KEY = 'business';
 
 // ------------------- BUSINESS SIGN-UP -------------------
 const businessSignUp = async (signUpData: BusinessSignUpDto): Promise<string> => {
-  const { data } = await api.post<string>('/business/signup', signUpData);
+  const payload = {
+    ...signUpData,
+    name: `${signUpData.firstName} ${signUpData.lastName}`.trim(),
+  };
+  const { data } = await api.post<string>('/business/signup', payload);
   return data;
 };
 
@@ -86,7 +90,7 @@ export const useAuth = () => {
       } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
         router.push('/business/onboard');
       } else if (data.user.role === 'Participant') {
-        router.push('/wallet');
+        router.push('/participant/wallet');
       } else {
         router.push('/dashboard');
       }
@@ -124,7 +128,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
         } else if (data.user.role === 'Business' && !data.user.isOnboarded) {
           router.push('/business/onboard');
         } else if (data.user.role === 'Participant') {
-          router.push('/wallet');
+          router.push('/participant/wallet');
         } else {
           router.push('/dashboard');
         }
@@ -185,8 +189,20 @@ const getBusinessProfile = async (businessId?: string): Promise<BusinessProfile>
   return data;
 };
 
-export const useGetBusinessProfile = (businessId?: string) =>
-  useQuery({ queryKey: ['businessProfile', businessId], queryFn: () => getBusinessProfile(businessId) });
+export const useGetBusinessProfile = (
+  businessIdOrOptions?: string | Omit<UseQueryOptions<BusinessProfile, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<BusinessProfile, Error>, 'queryKey' | 'queryFn'>
+) => {
+  const isId = typeof businessIdOrOptions === 'string';
+  const businessId = isId ? businessIdOrOptions : undefined;
+  const queryOptions = isId ? options : businessIdOrOptions;
+
+  return useQuery<BusinessProfile, Error>({
+    queryKey: ['businessProfile', businessId],
+    queryFn: () => getBusinessProfile(businessId),
+    ...(queryOptions as any)
+  });
+};
 
 const updateBusinessProfile = async (updateData: UpdateBusinessProfileDto, businessId?: string): Promise<BusinessProfile> => {
   const { data } = await api.patch('/business/profile', updateData, { params: { businessId } });
@@ -208,6 +224,13 @@ const getBusinessMonthlyBalance = async (): Promise<BusinessMonthlyBalance> => {
 };
 
 export const useGetBusinessMonthlyBalance = () => useQuery({ queryKey: ['businessMonthlyBalance'], queryFn: getBusinessMonthlyBalance });
+
+const getBusinessMonthlyStampBalance = async (): Promise<any> => {
+  const { data } = await api.get('/business/stamps/balance/monthly');
+  return data;
+};
+
+export const useGetBusinessMonthlyStampBalance = () => useQuery({ queryKey: ['businessMonthlyStampBalance'], queryFn: getBusinessMonthlyStampBalance });
 
 const getBusinessTierUsage = async (): Promise<TierUsageResponse> => {
   const { data } = await api.get('/business/tier-usage');

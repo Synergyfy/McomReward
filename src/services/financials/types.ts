@@ -14,6 +14,8 @@ export interface TierQuotas {
   maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
+  monthlyStampsAllowance: number;
+  monthlyRewardBudget: number;
   maxTeamMembers: number;
 }
 
@@ -88,6 +90,39 @@ export interface TierConfiguration {
   trial?: TrialConfiguration;
 }
 
+export interface Season {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  textColor: string;
+  bgColor: string;
+  borderColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeasonCreateInput {
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+}
+
+export interface SeasonUpdateInput {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+}
+
 export interface Tier {
   id: string;
   createdAt: string;
@@ -95,12 +130,14 @@ export interface Tier {
   deletedAt: string | null;
   name: string;
   type: 'standard' | 'seasonal';
+  season_id?: string;
+  season?: Season;
   startDate?: string;
   endDate?: string;
   fixedPrice?: string;
   monthlyPrice: string;
   annualPrice: string;
-  quaterlyPrice: string;
+  quarterlyPrice: string;
   features: string[];
   status: string;
   stripeMonthlyPriceId: string;
@@ -118,11 +155,10 @@ export interface Tier {
 export interface TierCreateInput {
   name: string;
   type?: 'standard' | 'seasonal';
-  start_date?: string;
-  end_date?: string;
+  season_id?: string;
   fixed_price?: number;
   monthly_price: number;
-  quaterly_price: number;
+  quarterly_price: number;
   annual_price: number;
   features: string[];
   configuration: TierConfiguration;
@@ -131,11 +167,10 @@ export interface TierCreateInput {
 export interface TierUpdateInput {
   name?: string;
   type?: 'standard' | 'seasonal';
-  start_date?: string;
-  end_date?: string;
+  season_id?: string;
   fixed_price?: number;
   monthly_price?: number;
-  quaterly_price?: number;
+  quarterly_price?: number;
   annual_price?: number;
   features?: string[];
   configuration?: TierConfiguration;
@@ -189,12 +224,12 @@ export interface PointPackage {
   name: string;
   description: string;
   points: number;
-  price: string; // Backend returns price as string
+  price: number;
   currency: string;
   tiers: Tier[];
-  isActive: boolean; // Changed from is_active to match backend
-  createdAt: string; // Changed from created_at to match backend
-  updatedAt: string; // Changed from updated_at to match backend
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
   deletedAt: string | null;
 }
 

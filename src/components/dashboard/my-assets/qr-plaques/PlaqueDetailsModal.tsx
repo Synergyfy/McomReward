@@ -29,9 +29,9 @@ export default function PlaqueDetailsModal({ isOpen, onClose, plaque, onPrint }:
               <PlaquePreview
                   title={plaque.partner || plaque.name}
                   actionText={plaque.actionText || "SCAN HERE"}
-                  description={plaque.description || "FOR PAYMENT"}
-                  extraInfo={plaque.extraInfo || ""}
-                  qrCodeUrl={plaque.qrCodeUrl || ""}
+                  description={plaque.description || "FOR PAYMENT"}              
+                  extraInfo={plaque.footerText || plaque.extraInfo || ""}
+                  qrCodeUrl={plaque.contentUrl || plaque.qrCodeUrl || ""}
                   className="shadow-2xl"
               />
            </div>

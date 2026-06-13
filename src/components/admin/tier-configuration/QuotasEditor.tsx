@@ -2,6 +2,8 @@ import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TierQuotas } from '@/services/payment/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface QuotasEditorProps {
     quotas: TierQuotas;
@@ -53,6 +55,27 @@ export const QuotasEditor: React.FC<QuotasEditorProps> = ({ quotas, onChange }) 
                     type="number"
                     value={quotas.monthlyPointsAllowance ?? 0}
                     onChange={(e) => handleChange('monthlyPointsAllowance', e.target.value)}
+                />
+            </div>
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="monthlyRewardBudget">Monthly Reward Budget</Label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="max-w-xs">The monetary budget allocated for Gift Cards, Vouchers, and Coupons rewards each month. Once exhausted, businesses can top up their balance to continue rewarding customers.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                <Input
+                    id="monthlyRewardBudget"
+                    type="number"
+                    value={quotas.monthlyRewardBudget ?? 0}
+                    onChange={(e) => handleChange('monthlyRewardBudget', e.target.value)}
                 />
             </div>
             <div className="space-y-2">

@@ -11,7 +11,7 @@ export interface Tier {
     colorCode?: string; // Added
     monthlyPrice: string;
     annualPrice: string;
-    quaterlyPrice: string;
+    quarterlyPrice: string;
     features: string[];
     status: string;
     stripeMonthlyPriceId: string;
@@ -24,6 +24,18 @@ export interface Tier {
     description?: string;
     includesNfc?: boolean;
     configuration?: TierConfiguration;
+    season?: Season;
+}
+
+export interface Season {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+    textColor?: string;
+    bgColor?: string;
+    borderColor?: string;
 }
 
 export interface TierConfiguration {
@@ -95,6 +107,7 @@ export interface TierQuotas {
     maxActiveRewards?: number;
     maxRewardsPerCampaign?: number;
     monthlyPointsAllowance?: number;
+    monthlyRewardBudget?: number;
     maxTeamMembers?: number;
 }
 

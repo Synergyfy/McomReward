@@ -59,7 +59,7 @@ export default function CreateSectorDialog({ isOpen, onClose }: CreateSectorDial
             <label htmlFor="image" className="text-right col-span-1">
               Image
             </label>
-            <CloudinaryUpload onFileSelect={(file, previewUrl) => setImageUrl(previewUrl || '')} />
+            <CloudinaryUpload onFileSelect={(file, previewUrl) => setImageUrl(previewUrl || '')} aspectRatio={1} />
             {imageUrl && (
               <div className="col-span-4 mt-4">
                 <p className="text-sm font-medium">Uploaded Image:</p>

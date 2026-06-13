@@ -44,9 +44,9 @@ const RewardTypesSection: React.FC = () => {
       bulletPoints: ['Earn points for purchases, scans, sharing deals', 'Points unlock discounts, free items, priority access'],
     },
     {
-      icon: Wallet, // Use Lucide Wallet icon
-      title: 'Cashback-Style Rewards',
-      bulletPoints: ['Customers earn back a small amount when they buy', '"Earn 3% back on all purchases this week."'],
+      icon: Wallet,
+      title: 'Credit Rewards',
+      bulletPoints: ['Customers earn credits when they book or buy', '"Earn 3% credit on all services this week."'],
     },
     {
       icon: Share2, // Use Lucide Share2 icon

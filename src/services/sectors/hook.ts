@@ -3,6 +3,7 @@ import api from '../api';
 import {
   CreateSectorRequest,
   SectorResponse,
+  CategoryInSector,
   CreateCategoryRequest,
   CategoryResponse,
   CreateSubCategoryRequest,
@@ -35,7 +36,9 @@ export const useCreateSector = () => {
 
 // Get Sectors (includes nested categories)
 const getSectors = async (): Promise<SectorResponse[]> => {
-  const { data } = await api.get<SectorResponse[]>('/sectors');
+  const { data } = await api.get<SectorResponse[]>('/sectors', {
+    _skipAuthRedirect: true,
+  } as any);
   return data;
 };
 
@@ -46,13 +49,29 @@ export const useGetSectors = () => {
   });
 };
 
+// Get Global Categories
+const getCategories = async (): Promise<CategoryInSector[]> => {
+  const { data } = await api.get<CategoryInSector[]>('/categories', {
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+export const useGetCategories = () => {
+  return useQuery({
+    queryKey: [CATEGORIES_QUERY_KEY],
+    queryFn: getCategories,
+  });
+};
+
 
 
 // Get Categories by Sector
 const getCategoriesBySector = async (sectorId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<CategoryResponse>> => {
   const { data } = await api.get<PaginatedResponse<CategoryResponse>>(`/sectors/${sectorId}/categories`, {
     params: { page, limit },
-  });
+    _skipAuthRedirect: true,
+  } as any);
   return data;
 };
 
@@ -68,7 +87,8 @@ export const useGetCategoriesBySector = (sectorId: string | undefined, page: num
 const getSubCategoriesByCategory = async (categoryId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<SubCategoryResponse>> => {
   const { data } = await api.get<PaginatedResponse<SubCategoryResponse>>(`/categories/${categoryId}/subcategories`, {
     params: { page, limit },
-  });
+    _skipAuthRedirect: true,
+  } as any);
   return data;
 };
 

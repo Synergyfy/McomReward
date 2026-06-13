@@ -30,11 +30,11 @@ export default function PlaqueAnalyticsPage() {
   }, []);
 
   // Top Performing Plaques (by scan count)
-  const topPerformingPlaques = useMemo(() => {
-    return [...mockPlaques]
-      .sort((a, b) => b.scanCounts - a.scanCounts)
-      .slice(0, 5); // Top 5
-  }, [mockPlaques]);
+  // const topPerformingPlaques = useMemo(() => {
+  //   return [...mockPlaques]
+  //     .sort((a, b) => b.scanCounts - a.scanCounts)
+  //     .slice(0, 5); // Top 5
+  // }, [mockPlaques]);
 
   return (
     <div className="space-y-8">
@@ -93,7 +93,7 @@ export default function PlaqueAnalyticsPage() {
       </Card>
 
       {/* Top Performing Plaques Table */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Top 5 Performing Plaques</CardTitle>
         </CardHeader>
@@ -127,7 +127,7 @@ export default function PlaqueAnalyticsPage() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

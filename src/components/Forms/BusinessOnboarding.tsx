@@ -42,7 +42,7 @@ export default function BusinessOnboardingWizard() {
     setValue,
   } = useForm<OnboardingFormInputs>({
     mode: "onTouched",
-    resolver: zodResolver(createBusinessSchema),
+    resolver: zodResolver(createBusinessSchema) as any,
     defaultValues: {
       socialMedia: [],
     },
@@ -63,7 +63,7 @@ export default function BusinessOnboardingWizard() {
 
   const stepFields: Record<number, (keyof OnboardingFormInputs)[]> = {
     1: ["sectorId", "categoryId", "subCategoryId"],
-    2: ["phone", "address", "postalCode", "website", "socialMedia"],
+    2: ["phone", "postalCode", "address", "website", "socialMedia"],
     3: ["referralCapacity"],
   };
 
@@ -236,20 +236,6 @@ export default function BusinessOnboardingWizard() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="address">Business Address <span className="text-red-500">*</span></Label>
-                      <Input
-                        id="address"
-                        placeholder="123 Main Street, Anytown, USA"
-                        {...register("address")}
-                        className="mt-1"
-                      />
-                      {errors.address && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.address.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
                       <Label htmlFor="postalCode">Postal Code <span className="text-red-500">*</span></Label>
                       <Input
                         id="postalCode"
@@ -260,6 +246,20 @@ export default function BusinessOnboardingWizard() {
                       {errors.postalCode && (
                         <p className="text-red-500 text-sm mt-1">
                           {errors.postalCode.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Business Address <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="address"
+                        placeholder="123 Main Street, Anytown, USA"
+                        {...register("address")}
+                        className="mt-1"
+                      />
+                      {errors.address && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.address.message}
                         </p>
                       )}
                     </div>

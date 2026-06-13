@@ -23,9 +23,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
-import { SignUpDialog } from '@/components/customer/SignUpDialog';
 import { useRouter } from 'next/navigation';
 import { useGetParticipantBalance, useCheckCampaignJoinStatus, useGetParticipantHistory } from '@/services/customer-campaigns/hook';
+import LoadingSpinner from '@/components/ui/Loading';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import Cookies from 'js-cookie';
 
 
 
@@ -36,42 +45,86 @@ interface PageProps {
 export default function MyPointsPage({ params }: PageProps) {
   const { campaignId } = use(params);
   const { isCampaignJoined } = useCampaignMembership();
-  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
+  const { data: joinStatus, isLoading: isStatusLoading } = useCheckCampaignJoinStatus(campaignId);
   const { data: balance } = useGetParticipantBalance(campaignId);
   const { data: historyData } = useGetParticipantHistory(campaignId);
-  const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const router = useRouter();
 
-  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
+  const isMember = !!joinStatus?.isJoined;
+  const isAuthenticated = !!Cookies.get('access');
 
   const pointBalance = balance?.balance || 0;
 
   useEffect(() => {
     if (!isMember) {
-      setIsSignUpDialogOpen(true);
+      setIsAuthDialogOpen(true);
     }
   }, [isMember]);
 
-  const handleDialogClose = () => {
-    setIsSignUpDialogOpen(false);
-    if (!isMember) {
-      router.push('/campaigns');
+  const handleLogin = () => {
+    router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/my-points`);
+  };
+
+  const handleSignUp = () => {
+    router.push(`/signup?campaignId=${campaignId}&type=customer`);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsAuthDialogOpen(open);
+    if (!open && !isMember) {
+      router.push(`/campaigns/${campaignId}`);
     }
   };
+
+  if (isStatusLoading) {
+    return <LoadingSpinner />;
+  }
 
   if (!isMember) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
-          <p className="text-lg text-gray-600">You need to join a campaign to view your points.</p>
+        <div className="text-center max-w-md">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">View Your Points</h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Please log in or create an account to view your points balance and transaction history for this campaign.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={handleLogin} className="px-8 py-6 text-lg bg-orange-600 hover:bg-orange-700">
+              Log In
+            </Button>
+            <Button onClick={handleSignUp} variant="outline" className="px-8 py-6 text-lg border-gray-300">
+              Sign Up
+            </Button>
+          </div>
         </div>
-        <SignUpDialog
-          isOpen={isSignUpDialogOpen}
-          onClose={handleDialogClose}
-          campaignTitle="the Campaign"
-          campaignId={campaignId}
-        />
+
+        <Dialog open={isAuthDialogOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">Points & History</DialogTitle>
+              <DialogDescription className="text-base">
+                Login or sign up to see your points and activity.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-6">
+              <Button onClick={handleLogin} className="w-full py-6 text-lg bg-orange-600 hover:bg-orange-700">
+                Log In
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">Or</span>
+                </div>
+              </div>
+              <Button onClick={handleSignUp} variant="outline" className="w-full py-6 text-lg border-gray-300">
+                Create Account
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

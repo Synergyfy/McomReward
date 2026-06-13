@@ -12,6 +12,8 @@ interface TransactionHistoryTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  historyType: 'both' | 'points' | 'stamps';
+  onHistoryTypeChange: (type: 'both' | 'points' | 'stamps') => void;
 }
 
 const filterCategories = [
@@ -20,43 +22,73 @@ const filterCategories = [
   'Spent',
 ];
 
+const historyTypeFilters: { label: string; value: 'both' | 'points' | 'stamps' }[] = [
+  { label: 'Both', value: 'both' },
+  { label: 'Points Only', value: 'points' },
+  { label: 'Stamps Only', value: 'stamps' },
+];
+
 export function TransactionHistoryTable({
   transactions,
   isLoading,
   page,
   totalPages,
-  onPageChange
+  onPageChange,
+  historyType,
+  onHistoryTypeChange
 }: TransactionHistoryTableProps) {
 
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filteredTransactions = transactions.filter(record => {
-    if (activeFilter === 'Earned') return record.type === 'EARN';
-    if (activeFilter === 'Spent') return record.type === 'REDEEM';
+    const isEarn = record.type === 'EARN' || record.type === 'STAMP_EARN' || record.type === 'MATCHING';
+    const isSpend = record.type === 'REDEEM' || record.type === 'STAMP_REDEEM';
+    
+    if (activeFilter === 'Earned') return isEarn;
+    if (activeFilter === 'Spent') return isSpend;
     return true;
   });
 
   const getIconForTransaction = (transaction: ParticipantHistoryItem) => {
-    if (transaction.type === 'EARN') {
+    const isEarn = transaction.type === 'EARN' || transaction.type === 'STAMP_EARN' || transaction.type === 'MATCHING';
+    if (isEarn) {
       return <ArrowUp className="w-5 h-5 text-green-500" />;
     }
     return <ArrowDown className="w-5 h-5 text-red-500" />;
   };
 
+  const isStampType = (type: string) => type.includes('STAMP');
+
   return (
     <Card className="shadow-lg rounded-2xl">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <CardTitle className="text-2xl font-bold mb-4 sm:mb-0">Point History</CardTitle>
-          <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-            {filterCategories.map(filter => (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <CardTitle className="text-2xl font-bold mb-4 sm:mb-0">History</CardTitle>
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+              {filterCategories.map(filter => (
+                <Button
+                  key={filter}
+                  variant={activeFilter === filter ? 'default' : 'outline'}
+                  className="rounded-full text-xs px-3 py-1"
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium self-center text-gray-500 mr-2">Show:</span>
+            {historyTypeFilters.map(filter => (
               <Button
-                key={filter}
-                variant={activeFilter === filter ? 'default' : 'outline'}
-                className="rounded-full text-xs px-3 py-1"
-                onClick={() => setActiveFilter(filter)}
+                key={filter.value}
+                variant={historyType === filter.value ? 'secondary' : 'ghost'}
+                className="rounded-md text-xs px-3 py-1 h-8"
+                onClick={() => onHistoryTypeChange(filter.value)}
               >
-                {filter}
+                {filter.label}
               </Button>
             ))}
           </div>
@@ -76,28 +108,35 @@ export function TransactionHistoryTable({
                   <TableHead className="w-4/12">Description</TableHead>
                   <TableHead className="w-2/12">Type</TableHead>
                   <TableHead className="w-3/12">Date</TableHead>
-                  <TableHead className="w-2/12 text-right">Points</TableHead>
+                  <TableHead className="w-2/12 text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{getIconForTransaction(record)}</TableCell>
-                    <TableCell>
-                      <p className="font-semibold">{record.description}</p>
-                      <p className="text-xs text-gray-500">{record.campaign?.name}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={record.type === 'EARN' ? 'default' : 'secondary'}>
-                        {record.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className={`text-right font-bold ${record.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
-                      {record.type === 'EARN' ? '+' : '-'}{record.points}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredTransactions.map((record) => {
+                  const isEarn = record.type === 'EARN' || record.type === 'STAMP_EARN' || record.type === 'MATCHING';
+                  const isStamp = isStampType(record.type);
+                  const amount = isStamp ? record.stamps : record.points;
+                  const unit = isStamp ? 'Stamps' : 'Points';
+                  
+                  return (
+                    <TableRow key={record.id}>
+                      <TableCell>{getIconForTransaction(record)}</TableCell>
+                      <TableCell>
+                        <p className="font-semibold">{record.description}</p>
+                        <p className="text-xs text-gray-500">{record.campaign?.name}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={isEarn ? 'default' : 'secondary'} className={isStamp ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : ''}>
+                          {record.type.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className={`text-right font-bold ${isEarn ? 'text-green-600' : 'text-red-600'}`}>
+                        {isEarn ? '+' : '-'}{amount} <span className="text-[10px] font-normal text-gray-400">{unit}</span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             <div className="flex justify-center items-center mt-6 space-x-4 p-4 border-t">

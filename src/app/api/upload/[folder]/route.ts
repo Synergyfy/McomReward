@@ -20,7 +20,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fol
 
   try {
     const { folder } = await params;
-    if (!folder || typeof folder !== 'string') {
+
+    if (!folder) {
       return NextResponse.json({ error: 'Folder name is required' }, { status: 400 });
     }
 

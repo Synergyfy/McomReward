@@ -6,7 +6,7 @@ export interface TierResponse {
     updatedAt: string;
     monthlyPrice?: string;
     annualPrice?: string;
-    quaterlyPrice?: string;
+    quarterlyPrice?: string;
     features?: string[];
     stripeMonthlyPriceId?: string | null;
     stripeQuarterlyPriceId?: string | null;
@@ -41,6 +41,18 @@ export interface TierResponse {
     fixedPrice?: number;
     colorCode?: string;
     description?: string;
+    season?: Season;
+}
+
+export interface Season {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+    textColor?: string;
+    bgColor?: string;
+    borderColor?: string;
 }
 
 export interface GetTiersResponse {

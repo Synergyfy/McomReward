@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Deal, CreateDealDto } from '@/services/deals/types';
 import { initialSectors } from '@/lib/mock-data/sectors';
@@ -36,6 +37,13 @@ export function AddEditDealModal({
 }: AddEditDealModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [dealPrice, setDealPrice] = useState<number>(0);
+  const [type, setType] = useState<CreateDealDto['type']>('DISCOUNT');
+  const [redemptionMethod, setRedemptionMethod] = useState<CreateDealDto['redemptionMethod']>('QR_SCAN');
+  const [visibility, setVisibility] = useState<CreateDealDto['visibility']>('PUBLIC');
+  const [isReward, setIsReward] = useState(false);
   const [value, setValue] = useState<number>(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -51,6 +59,13 @@ export function AddEditDealModal({
     if (initialData) {
       setTitle(initialData.title);
       setDescription(initialData.description);
+      setShortDescription(initialData.shortDescription || '');
+      setImageUrl(initialData.imageUrl || '');
+      setDealPrice(initialData.dealPrice);
+      setType(initialData.type as CreateDealDto['type']);
+      setRedemptionMethod(initialData.redemptionMethod as CreateDealDto['redemptionMethod']);
+      setVisibility(initialData.visibility);
+      setIsReward(initialData.isReward);
       setValue(initialData.value);
       setStartDate(initialData.startDate ? new Date(initialData.startDate) : null);
       setEndDate(initialData.endDate ? new Date(initialData.endDate) : null);
@@ -60,6 +75,13 @@ export function AddEditDealModal({
       // Reset form for new entry
       setTitle('');
       setDescription('');
+      setShortDescription('');
+      setImageUrl('');
+      setDealPrice(0);
+      setType('DISCOUNT');
+      setRedemptionMethod('QR_SCAN');
+      setVisibility('PUBLIC');
+      setIsReward(false);
       setValue(0);
       setStartDate(null);
       setEndDate(null);
@@ -111,12 +133,19 @@ export function AddEditDealModal({
     const dealToSave: CreateDealDto = {
       title,
       description,
-      value,
+      shortDescription,
+      imageUrl,
+      images: [],
       categoryId,
+      value,
+      dealPrice,
       startDate: startDate!.toISOString(),
       endDate: endDate!.toISOString(),
       termsAndConditions,
-      // imageUrl: '' // Optional, handle if needed
+      type,
+      redemptionMethod,
+      visibility,
+      isReward,
     };
 
     onSave(dealToSave);
@@ -142,8 +171,20 @@ export function AddEditDealModal({
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="shortDescription" className="text-right">Short Description</Label>
+            <Input id="shortDescription" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="value" className="text-right">Value</Label>
             <Input id="value" type="number" value={value} onChange={(e) => setValue(parseFloat(e.target.value) || 0)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
+            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dealPrice" className="text-right">Deal Price</Label>
+            <Input id="dealPrice" type="number" value={dealPrice} onChange={(e) => setDealPrice(parseFloat(e.target.value) || 0)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">Category</Label>
@@ -153,43 +194,94 @@ export function AddEditDealModal({
               </SelectTrigger>
               <SelectContent className="z-[10000]">
                 {allCategories.length > 0 ? (
-                    allCategories.map(cat => (
+                  allCategories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))
+                  ))
                 ) : (
-                    // Fallback if no categories are found in mock data
-                    <SelectItem value="default">Default Category</SelectItem>
+                  // Fallback if no categories are found in mock data
+                  <SelectItem value="default">Default Category</SelectItem>
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="type" className="text-right">Type</Label>
+            <Select value={type} onValueChange={(value) => setType(value as CreateDealDto['type'])}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DISCOUNT">Discount</SelectItem>
+                <SelectItem value="BUNDLE">Bundle</SelectItem>
+                <SelectItem value="BOGO">BOGO</SelectItem>
+                <SelectItem value="FLASH_SALE">Flash Sale</SelectItem>
+                <SelectItem value="GIFT_CARD">Gift Card</SelectItem>
+                <SelectItem value="SERVICE_PACKAGE">Service Package</SelectItem>
+                <SelectItem value="INTRO_OFFER">Intro Offer</SelectItem>
+                <SelectItem value="SEASONAL">Seasonal</SelectItem>
+                <SelectItem value="EARLY_BIRD">Early Bird</SelectItem>
+                <SelectItem value="REFERRAL_DEAL">Referral Deal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="redemptionMethod" className="text-right">Redemption Method</Label>
+            <Select value={redemptionMethod} onValueChange={(value) => setRedemptionMethod(value as CreateDealDto['redemptionMethod'])}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select redemption method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="QR_SCAN">QR Scan</SelectItem>
+                <SelectItem value="VOUCHER_CODE">Voucher Code</SelectItem>
+                <SelectItem value="E_CARD">E-Card</SelectItem>
+                <SelectItem value="APPOINTMENT">Appointment</SelectItem>
+                <SelectItem value="ONLINE_CHECKOUT">Online Checkout</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="startDate" className="text-right">Start Date</Label>
             <div className="col-span-3">
-                <DatePicker
+              <DatePicker
                 selected={startDate}
                 onChange={(date: Date | null) => setStartDate(date)}
                 dateFormat="Pp"
                 showTimeSelect
                 className="w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
-                />
+              />
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="endDate" className="text-right">End Date</Label>
             <div className="col-span-3">
-                <DatePicker
+              <DatePicker
                 selected={endDate}
                 onChange={(date: Date | null) => setEndDate(date)}
                 dateFormat="Pp"
                 showTimeSelect
                 className="w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-md"
-                />
+              />
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="terms" className="text-right">Terms & Conditions</Label>
             <Textarea id="terms" value={termsAndConditions} onChange={(e) => setTermsAndConditions(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="visibility" className="text-right">Visibility</Label>
+            <Select value={visibility} onValueChange={(value) => setVisibility(value as CreateDealDto['visibility'])}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PUBLIC">Public</SelectItem>
+                <SelectItem value="PRIVATE">Private</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="isReward" className="text-right">Is Reward</Label>
+            <Switch id="isReward" checked={isReward} onCheckedChange={setIsReward} />
           </div>
         </div>
         <DialogFooter>

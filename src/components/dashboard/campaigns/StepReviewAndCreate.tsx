@@ -14,10 +14,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCampaignForm, CampaignFormData } from '@/context/CampaignFormContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Monitor, Smartphone, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import CampaignDetailPagePreview from './previews/CampaignDetailPagePreview';
+import FullCampaignPreview from './previews/FullCampaignPreview';
 import EarnPointsPagePreview from './previews/EarnPointsPagePreview';
 import RedeemPointsPagePreview from './previews/RedeemPointsPagePreview';
 import ContactUsPagePreview from './previews/ContactUsPagePreview';
@@ -25,7 +25,7 @@ import ContactUsPagePreview from './previews/ContactUsPagePreview';
 import FooterPreview from './previews/FooterPreview';
 import { useCreateCampaign, useUpdateCampaign } from '@/services/campaigns/hook';
 import { useCreateCampaignFromWishlist } from '@/services/campaigns/hook_wishlist';
-import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload } from '@/services/campaigns/types';
+import { CreateCampaignPayload, CampaignResponse, UpdateCampaignPayload, BusinessCampaign } from '@/services/campaigns/types';
 import { CreateCampaignFromWishlistDto } from '@/services/campaigns/types_wishlist';
 import { toast } from 'sonner';
 
@@ -33,18 +33,45 @@ interface StepProps {
   onBack: () => void;
   campaignId?: string;
   isClaimed?: boolean;
+  originalCampaign?: CampaignResponse | BusinessCampaign;
 }
 
-export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = false }: StepProps) {
+export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = false, originalCampaign }: StepProps) {
   const router = useRouter();
   const { formData, resetFormData } = useCampaignForm();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Preview Modal State
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+
   const createCampaignMutation = useCreateCampaign();
   const updateCampaignMutation = useUpdateCampaign();
   const createCampaignFromWishlistMutation = useCreateCampaignFromWishlist();
+
+  // Handle Esc key to close preview
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPreviewOpen(false);
+      }
+    };
+
+    if (isPreviewOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPreviewOpen]);
+
+  // Type guard to determine if the campaign is a BusinessCampaign
+  const isBusinessCampaign = (campaign: CampaignResponse | BusinessCampaign): campaign is BusinessCampaign => {
+    return (campaign as BusinessCampaign).campaign_type !== undefined;
+  };
 
   const transformedCampaign: CampaignResponse = useMemo(() => {
     // Helper function to convert optional Date to ISO string
@@ -57,15 +84,15 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
       campaignMessage: formData.campaignMessage,
       startDate: toISOString(formData.startDate),
       endDate: toISOString(formData.endDate),
-      quantity: Number(formData.rewardsAvailable) || 0,
+      quantity: Number(formData.schedulingRules.stopAfterClaims) || 0,
       audienceType: formData.audienceType.join(','), // Assuming AudienceType is a comma-separated string
       bannerUrl: formData.imageUrl || '',
       logoUrl: formData.logoUrl || '',
-      ctaText: formData.ctaButtonText,
-      ctaBackgroundColor: formData.ctaBgColor,
-      ctaTextColor: formData.ctaTextColor,
-      textColor: formData.bgColorTextColor,
-      backgroundColor: formData.bgColor,
+      ctaText: formData.ctaButtonText || 'Join Now',
+      ctaBackgroundColor: formData.ctaBgColor || '',
+      ctaTextColor: formData.ctaTextColor || '',
+      textColor: formData.bgColorTextColor || '',
+      backgroundColor: formData.bgColor || '',
       signUpPoint: 0, // Not available in CampaignFormData, default to 0
       rewardType: '', // Not available in CampaignFormData, default to empty string
       regularPointsThreshold: 0, // Not available in CampaignFormData, default to 0
@@ -130,7 +157,9 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         'QR Code': 'qr_code',
         'Referral': 'referral',
         'Social / Email': 'social_or_email',
-        'Special Occasion': 'special_occasion'
+        'Special Occasion': 'special_occasion',
+        'matching_point': 'matching_point', // Ensure raw value is preserved if set directly
+        'Matching Point Campaign': 'matching_point'
       };
 
       const audienceTypeMap: Record<string, string> = {
@@ -139,49 +168,115 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         'wishlist_target': 'target_wishlist'
       };
 
-      const commonPayload = {
-        name: formData.campaignName,
-        campaign_type: campaignTypeMap[formData.campaignType] || 'qr_code',
-        campaign_message: formData.campaignMessage,
-        start_date: formData.startDate?.toISOString() || new Date().toISOString(),
-        end_date: formData.endDate?.toISOString() || new Date().toISOString(),
-        quantity: Number(formData.rewardsAvailable) || 0,
-        audience_type: formData.audienceType.map(t => audienceTypeMap[t] || t).join(','),
-        signUpPoint: 0,
-        banner_url: bannerUrl || '',
-        logo_url: logoUrl || '',
-        cta_text: formData.ctaButtonText,
-        cta_background_color: formData.ctaBgColor,
-        cta_text_color: formData.ctaTextColor,
-        text_color: formData.bgColorTextColor,
-        background_color: formData.bgColor,
-        reward_type: 'regular',
-        regular_points_threshold: 0,
-        matching_points_threshold: 0,
-        earn_point_page_title: formData.earnTitle || '',
-        earn_point_page_description: formData.earnText || '',
-        redeem_reward_page_title: formData.redeemTitle || '',
-        redeem_reward_page_description: formData.redeemText || '',
-        contact_us_page_title: formData.contactTitle || '',
-        contact_us_page_description: formData.contactText || '',
-        contact_email: formData.contactEmail || '',
-        contact_phone_number: formData.contactPhone || '',
-        footer_text: formData.footerText || '',
-        // We handle reward linkage specifically below for updates
-      };
+      const campaign_type = campaignTypeMap[formData.campaignType] || 'qr_code';
+      const audience_type = formData.audienceType.map(t => audienceTypeMap[t] || t).join(',');
 
       if (campaignId) {
         // Update existing campaign
-        const updatePayload: UpdateCampaignPayload = { ...commonPayload };
+        const updatePayload: UpdateCampaignPayload = {};
 
-        if (isClaimed) {
-          // Claimed campaigns (Admin Templates) must use reward_ids
-          updatePayload.reward_ids = formData.rewardIds;
-          delete updatePayload.business_reward_ids;
+        if (originalCampaign) {
+          const currentCampaign = originalCampaign;
+          
+          const oldName = currentCampaign.name;
+          const oldCampaignType = isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_type : currentCampaign.campaignType;
+          const oldCampaignMessage = isBusinessCampaign(currentCampaign) ? currentCampaign.campaign_message : currentCampaign.campaignMessage;
+          const oldStartDate = isBusinessCampaign(currentCampaign) ? currentCampaign.start_date : currentCampaign.startDate;
+          const oldEndDate = isBusinessCampaign(currentCampaign) ? currentCampaign.end_date : currentCampaign.endDate;
+          const oldQuantity = currentCampaign.quantity;
+          const oldTotalSlots = isBusinessCampaign(currentCampaign) ? currentCampaign.total_slots : currentCampaign.total_slots;
+          const oldAudienceType = isBusinessCampaign(currentCampaign) ? currentCampaign.audience_type : currentCampaign.audienceType;
+          const oldBannerUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.banner_url : currentCampaign.bannerUrl;
+          const oldLogoUrl = isBusinessCampaign(currentCampaign) ? currentCampaign.logo_url : currentCampaign.logoUrl;
+          const oldCtaText = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text : currentCampaign.ctaText;
+          const oldCtaBgColor = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_background_color : currentCampaign.ctaBackgroundColor;
+          const oldCtaTextColor = isBusinessCampaign(currentCampaign) ? currentCampaign.cta_text_color : currentCampaign.ctaTextColor;
+          const oldTextColor = isBusinessCampaign(currentCampaign) ? currentCampaign.text_color : currentCampaign.textColor;
+          const oldBgColor = isBusinessCampaign(currentCampaign) ? currentCampaign.background_color : currentCampaign.backgroundColor;
+          const oldEarnTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_title : currentCampaign.earnPointPageTitle;
+          const oldEarnText = isBusinessCampaign(currentCampaign) ? currentCampaign.earn_point_page_description : currentCampaign.earnPointPageDescription;
+          const oldRedeemTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_title : currentCampaign.redeemRewardPageTitle;
+          const oldRedeemText = isBusinessCampaign(currentCampaign) ? currentCampaign.redeem_reward_page_description : currentCampaign.redeemRewardPageDescription;
+          const oldContactTitle = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_title : currentCampaign.contactUsPageTitle;
+          const oldContactText = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_us_page_description : currentCampaign.contactUsPageDescription;
+          const oldContactEmail = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_email : currentCampaign.contactEmail;
+          const oldContactPhone = isBusinessCampaign(currentCampaign) ? currentCampaign.contact_phone_number : currentCampaign.contactPhoneNumber;
+          const oldFooterText = isBusinessCampaign(currentCampaign) ? currentCampaign.footer_text : currentCampaign.footerText;
+          
+          const oldRewards = isBusinessCampaign(currentCampaign) ? currentCampaign.businessRewards : currentCampaign.rewards || [];
+          const oldRewardIds = oldRewards.map((r: { id: string }) => r.id).sort();
+          const newRewardIds = [...formData.rewardIds].sort();
+
+          if (formData.campaignName !== oldName) updatePayload.name = formData.campaignName;
+          if (campaign_type !== oldCampaignType) updatePayload.campaign_type = campaign_type;
+          if (formData.campaignMessage !== oldCampaignMessage) updatePayload.campaign_message = formData.campaignMessage;
+          
+          // Date comparisons
+          if (formData.startDate && (!oldStartDate || new Date(formData.startDate).getTime() !== new Date(oldStartDate).getTime())) {
+            updatePayload.start_date = formData.startDate.toISOString();
+          }
+          if (formData.endDate && (!oldEndDate || new Date(formData.endDate).getTime() !== new Date(oldEndDate).getTime())) {
+            updatePayload.end_date = formData.endDate.toISOString();
+          }
+
+          // Calculate new total_slots based on (Used + New Available)
+          const oldTotal = currentCampaign.total_slots ?? currentCampaign.quantity ?? 0;
+          const oldAvailable = currentCampaign.remainingSlots ?? currentCampaign.quantity ?? 0;
+          const used = Math.max(0, oldTotal - oldAvailable);
+          const newAvailable = Number(formData.totalSlots);
+          const newTotal = used + newAvailable;
+
+          if (newTotal !== oldTotal) {
+             updatePayload.total_slots = newTotal;
+          }
+
+          if (audience_type !== oldAudienceType) updatePayload.audience_type = audience_type;
+          if (bannerUrl !== oldBannerUrl) updatePayload.banner_url = bannerUrl || '';
+          if (logoUrl !== oldLogoUrl) updatePayload.logo_url = logoUrl || '';
+          
+          if (formData.earnTitle !== oldEarnTitle) updatePayload.earn_point_page_title = formData.earnTitle;
+          if (formData.earnText !== oldEarnText) updatePayload.earn_point_page_description = formData.earnText;
+          if (formData.redeemTitle !== oldRedeemTitle) updatePayload.redeem_reward_page_title = formData.redeemTitle;
+          if (formData.redeemText !== oldRedeemText) updatePayload.redeem_reward_page_description = formData.redeemText;
+          if (formData.contactTitle !== oldContactTitle) updatePayload.contact_us_page_title = formData.contactTitle;
+          if (formData.contactText !== oldContactText) updatePayload.contact_us_page_description = formData.contactText;
+          if (formData.contactEmail !== oldContactEmail) updatePayload.contact_email = formData.contactEmail;
+          if (formData.contactPhone !== oldContactPhone) updatePayload.contact_phone_number = formData.contactPhone;
+          if (formData.footerText !== oldFooterText) updatePayload.footer_text = formData.footerText;
+
+          // Reward IDs comparison
+          const rewardIdsChanged = JSON.stringify(oldRewardIds) !== JSON.stringify(newRewardIds);
+          if (rewardIdsChanged) {
+            updatePayload.business_reward_ids = formData.rewardIds;
+          }
         } else {
-          // Custom campaigns must use business_reward_ids
+          // Fallback if originalCampaign is missing
+          updatePayload.name = formData.campaignName;
+          updatePayload.campaign_type = campaign_type;
+          updatePayload.campaign_message = formData.campaignMessage;
+          updatePayload.start_date = formData.startDate?.toISOString() || new Date().toISOString();
+          updatePayload.end_date = formData.endDate?.toISOString() || new Date().toISOString();
+          updatePayload.total_slots = Number(formData.totalSlots);
+          updatePayload.audience_type = audience_type;
+          updatePayload.banner_url = bannerUrl || '';
+          updatePayload.logo_url = logoUrl || '';
+          updatePayload.earn_point_page_title = formData.earnTitle;
+          updatePayload.earn_point_page_description = formData.earnText;
+          updatePayload.redeem_reward_page_title = formData.redeemTitle;
+          updatePayload.redeem_reward_page_description = formData.redeemText;
+          updatePayload.contact_us_page_title = formData.contactTitle;
+          updatePayload.contact_us_page_description = formData.contactText;
+          updatePayload.contact_email = formData.contactEmail;
+          updatePayload.contact_phone_number = formData.contactPhone;
+          updatePayload.footer_text = formData.footerText;
+
           updatePayload.business_reward_ids = formData.rewardIds;
-          delete updatePayload.reward_ids;
+        }
+
+        if (Object.keys(updatePayload).length === 0) {
+          toast.info("No changes detected.");
+          setShowSuccessDialog(true);
+          return;
         }
 
         await updateCampaignMutation.mutateAsync({
@@ -191,14 +286,61 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
         toast.success("Campaign updated successfully");
       } else {
         // Create new campaign
-        const createPayload = { ...commonPayload, business_reward_ids: formData.rewardIds };
+        const createPayload: CreateCampaignPayload = {
+          name: formData.campaignName,
+          campaign_type,
+          campaign_message: formData.campaignMessage,
+          start_date: formData.startDate?.toISOString() || new Date().toISOString(),
+          end_date: formData.endDate?.toISOString() || new Date().toISOString(),
+          quantity: Number(formData.schedulingRules.stopAfterClaims) || 0,
+          total_slots: Number(formData.totalSlots),
+          audience_type,
+          signUpPoint: 0,
+          banner_url: bannerUrl || '',
+          logo_url: logoUrl || '',
+          cta_text: formData.ctaButtonText || 'Join Now',
+          cta_background_color: formData.ctaBgColor || '',
+          cta_text_color: formData.ctaTextColor || '',
+          text_color: formData.bgColorTextColor || '',
+          background_color: formData.bgColor || '',
+          reward_type: 'regular',
+          regular_points_threshold: 0,
+          matching_points_threshold: 0,
+          earn_point_page_title: formData.earnTitle || '',
+          earn_point_page_description: formData.earnText || '',
+          redeem_reward_page_title: formData.redeemTitle || '',
+          redeem_reward_page_description: formData.redeemText || '',
+          contact_us_page_title: formData.contactTitle || '',
+          contact_us_page_description: formData.contactText || '',
+          contact_email: formData.contactEmail || '',
+          contact_phone_number: formData.contactPhone || '',
+          footer_text: formData.footerText || '',
+          business_reward_ids: formData.rewardIds
+        };
 
         if (formData.wishlistAggregateId && formData.audienceType.includes('wishlist_target')) {
           // Create campaign from wishlist
           const wishlistPayload: CreateCampaignFromWishlistDto = {
-            ...createPayload,
             wishlistAggregateId: formData.wishlistAggregateId,
+            name: createPayload.name,
+            campaign_type: createPayload.campaign_type,
+            campaign_message: createPayload.campaign_message,
+            start_date: createPayload.start_date,
+            end_date: createPayload.end_date,
+            quantity: createPayload.quantity,
             audience_type: 'target_wishlist',
+            banner_url: createPayload.banner_url,
+            logo_url: createPayload.logo_url,
+            cta_text: createPayload.cta_text,
+            cta_background_color: createPayload.cta_background_color,
+            cta_text_color: createPayload.cta_text_color,
+            text_color: createPayload.text_color,
+            background_color: createPayload.background_color,
+            signUpPoint: createPayload.signUpPoint,
+            reward_type: createPayload.reward_type,
+            regular_points_threshold: createPayload.regular_points_threshold,
+            matching_points_threshold: createPayload.matching_points_threshold,
+            business_reward_ids: formData.rewardIds,
             reward_ids: [],
           };
           await createCampaignFromWishlistMutation.mutateAsync(wishlistPayload);
@@ -227,55 +369,20 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Step 9: Review and {campaignId ? 'Update' : 'Create'} Campaign</CardTitle>
+          <CardTitle>Step 7: Review and {campaignId ? 'Update' : 'Create'} Campaign</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* New Comprehensive Preview Section */}
-          <div className="mt-6 p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-xl border border-gray-300">
-            <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Interactive Campaign Preview</h4>
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-              <Tabs value={activePreviewTab} onValueChange={setActivePreviewTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 h-auto p-0">
-                  <TabsTrigger value="campaignDetail">Main Page</TabsTrigger>
-                  <TabsTrigger value="earnPoints">Earn Points</TabsTrigger>
-                  <TabsTrigger value="redeemPoints">Redeem Points</TabsTrigger>
-                  <TabsTrigger value="contactUs">Contact Us</TabsTrigger>
-                  <TabsTrigger value="footer">Footer</TabsTrigger>
-                </TabsList>
-                <div className="h-[600px] overflow-y-auto relative p-4">
-                  <TabsContent value="campaignDetail">
-                    <CampaignDetailPagePreview campaignData={formData} />
-                  </TabsContent>
-                  <TabsContent value="earnPoints">
-                    <EarnPointsPagePreview campaign={transformedCampaign} />
-                  </TabsContent>
-                  <TabsContent value="redeemPoints">
-                    <RedeemPointsPagePreview campaign={transformedCampaign} />
-                  </TabsContent>
-                  <TabsContent value="contactUs">
-                    <ContactUsPagePreview campaign={transformedCampaign} />
-                  </TabsContent>
-                  <TabsContent value="footer">
-                    <FooterPreview campaignData={{ footerText: formData.footerText }} />
-                  </TabsContent>
-                </div>
-              </Tabs>
-            </div>
-          </div>
-
-          <h4 className="text-lg font-semibold mb-3 mt-6">Distribution Channels</h4>
-          <div className="grid gap-2 mb-6 text-sm">
-            <p><strong>QR Code:</strong> {formData.distributionChannels.qrCode ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Share Link:</strong> {formData.distributionChannels.shareLink ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Embed Button:</strong> {formData.distributionChannels.embedButton ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Email Send:</strong> {formData.distributionChannels.emailSend ? 'Enabled' : 'Disabled'}</p>
-          </div>
-
-          <h4 className="text-lg font-semibold mb-3">Scheduling & Auto Rules</h4>
-          <div className="grid gap-2 mb-6 text-sm">
-            <p><strong>Stop after claims:</strong> {Number(formData.schedulingRules.stopAfterClaims) > 0 ? formData.schedulingRules.stopAfterClaims : 'Unlimited'}</p>
-            <p><strong>Pause on reward empty:</strong> {formData.schedulingRules.pauseOnRewardEmpty ? 'Yes' : 'No'}</p>
-            <p><strong>Auto-switch to points:</strong> {formData.schedulingRules.autoSwitchToPoints ? 'Yes' : 'No'}</p>
+          {/* Preview Launch Section */}
+          <div className="mt-6 mb-8 p-8 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-100 flex flex-col items-center justify-center text-center">
+            <h4 className="text-2xl font-bold text-indigo-900 mb-2">Ready to see your campaign?</h4>
+            <p className="text-gray-600 mb-6 max-w-lg">Preview your campaign exactly as your customers will see it. Switch between desktop and mobile views to ensure it looks perfect.</p>
+            <Button 
+              onClick={() => setIsPreviewOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-lg px-8 py-6 h-auto rounded-full shadow-lg hover:shadow-xl transition-all"
+            >
+              <Monitor className="mr-2 w-5 h-5" />
+              Preview Campaign Page
+            </Button>
           </div>
 
           <div className="flex justify-between mt-6">
@@ -286,6 +393,63 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
           </div>
         </CardContent>
       </Card>
+
+      {/* Full Screen Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-[100] bg-gray-900/90 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
+          {/* Preview Toolbar */}
+          <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm shrink-0">
+             <div className="flex items-center gap-4">
+               <h2 className="font-bold text-gray-800 text-lg">Campaign Preview</h2>
+               <div className="bg-gray-100 rounded-lg p-1 flex items-center gap-1">
+                 <Button 
+                   variant={previewMode === 'desktop' ? 'outline' : 'ghost'} 
+                   size="sm"
+                   className={`h-8 px-3 ${previewMode === 'desktop' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900'}`}
+                   onClick={() => setPreviewMode('desktop')}
+                 >
+                   <Monitor className="w-4 h-4 mr-2" />
+                   Desktop
+                 </Button>
+                 <Button 
+                   variant={previewMode === 'mobile' ? 'outline' : 'ghost'} 
+                   size="sm"
+                   className={`h-8 px-3 ${previewMode === 'mobile' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900'}`}
+                   onClick={() => setPreviewMode('mobile')}
+                 >
+                   <Smartphone className="w-4 h-4 mr-2" />
+                   Mobile
+                 </Button>
+               </div>
+             </div>
+             <Button 
+               variant="ghost" 
+               size="icon" 
+               onClick={() => setIsPreviewOpen(false)}
+               className="hover:bg-red-50 hover:text-red-600 rounded-full"
+             >
+               <X className="w-6 h-6" />
+             </Button>
+          </div>
+
+          {/* Preview Content Area */}
+          <div className="flex-1 overflow-auto bg-gray-100 p-4 md:p-8 flex justify-center">
+            <div 
+              className={`bg-white shadow-2xl transition-all duration-300 overflow-hidden relative ${
+                previewMode === 'mobile' 
+                  ? 'w-[375px] h-[812px] rounded-[40px] border-8 border-gray-900 overflow-y-auto hide-scrollbar' 
+                  : 'w-full h-full rounded-md overflow-y-auto'
+              }`}
+            >
+              {/* If mobile, maybe wrap content in a scaling container or just let it flow naturally */}
+              <div className={previewMode === 'mobile' ? 'min-h-full pb-20' : ''}>
+                <FullCampaignPreview formData={formData} isMobile={previewMode === 'mobile'} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

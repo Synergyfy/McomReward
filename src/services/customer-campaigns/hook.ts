@@ -108,7 +108,10 @@ export const useJoinCampaign = () => {
 
 // Check Join Status
 const checkCampaignJoinStatus = async (campaignId: string): Promise<IsJoinedResponse> => {
-  const { data } = await api.get<IsJoinedResponse>(`/participant-campaign-balance/is-joined/${campaignId}`);
+  const { data } = await api.get<IsJoinedResponse>('/participant-campaign-balance/is-joined', {
+    params: { campaignId },
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -117,7 +120,7 @@ export const useCheckCampaignJoinStatus = (campaignId: string) => {
     queryKey: ['isJoined', campaignId],
     queryFn: () => checkCampaignJoinStatus(campaignId),
     enabled: !!campaignId,
-    retry: false, // Don't retry if it fails (e.g. 401 if not logged in, though we might want to handle that gracefully)
+    retry: false,
   });
 };
 
@@ -135,7 +138,9 @@ export const useSignUp = () => {
 
 // Get Unique Code
 const getUniqueCode = async (): Promise<UniqueCodeResponse> => {
-  const { data } = await api.get<UniqueCodeResponse>('/auth/unique-code');
+  const { data } = await api.get<UniqueCodeResponse>('/auth/unique-code', {
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -148,7 +153,9 @@ export const useGetUniqueCode = () => {
 
 // Get Participant Balance
 const getParticipantBalance = async (campaignId: string): Promise<ParticipantBalance> => {
-  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`);
+  const { data } = await api.get<ParticipantBalance>(`/participant-campaign-balance/my-balance/${campaignId}`, {
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -235,7 +242,8 @@ export const useDualScan = () => {
 const getParticipantHistory = async (campaignId: string, page: number, limit: number): Promise<ParticipantHistoryResponse> => {
   const { data } = await api.get<ParticipantHistoryResponse>(`/participant-campaign-balance/history/${campaignId}`, {
     params: { page, limit },
-  });
+    _skipAuthRedirect: true
+  } as InternalAxiosRequestConfig);
   return data;
 };
 
@@ -261,17 +269,17 @@ export const useGetParticipantGlobalBalance = () => {
 };
 
 // Get Participant Global History
-const getParticipantGlobalHistory = async (page: number, limit: number): Promise<ParticipantHistoryResponse> => {
+const getParticipantGlobalHistory = async (page: number, limit: number, historyType?: string): Promise<ParticipantHistoryResponse> => {
   const { data } = await api.get<ParticipantHistoryResponse>('/participant-campaign-balance/history', {
-    params: { page, limit },
+    params: { page, limit, historyType },
   });
   return data;
 };
 
-export const useGetParticipantGlobalHistory = (page: number = 1, limit: number = 10) => {
+export const useGetParticipantGlobalHistory = (page: number = 1, limit: number = 10, historyType?: string) => {
   return useQuery({
-    queryKey: ['participantGlobalHistory', page, limit],
-    queryFn: () => getParticipantGlobalHistory(page, limit),
+    queryKey: ['participantGlobalHistory', page, limit, historyType],
+    queryFn: () => getParticipantGlobalHistory(page, limit, historyType),
   });
 };
 
@@ -301,5 +309,20 @@ export const useGetMyCampaigns = (page: number = 1, limit: number = 10) => {
   return useQuery({
     queryKey: ['myCampaigns', page, limit],
     queryFn: () => getMyCampaigns(page, limit),
+  });
+};
+
+// Get Participant Mall Reward History
+const getParticipantMallRewardHistory = async (page: number, limit: number): Promise<ParticipantHistoryResponse> => {
+  const { data } = await api.get<ParticipantHistoryResponse>('/participant/mall-reward-history', {
+    params: { page, limit },
+  });
+  return data;
+};
+
+export const useGetParticipantMallRewardHistory = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['participantMallRewardHistory', page, limit],
+    queryFn: () => getParticipantMallRewardHistory(page, limit),
   });
 };

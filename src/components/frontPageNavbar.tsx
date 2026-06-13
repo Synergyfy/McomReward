@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
-import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard } from 'lucide-react';
+import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard, ChevronDown } from 'lucide-react';
+import Image from "next/image";
+import { useGetBusinessProfile } from '@/services/business/hook';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
@@ -16,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { cn } from "@/lib/utils";
+
 const FrontPageNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -23,6 +27,7 @@ const FrontPageNavbar = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const [matchingDropdownOpen, setMatchingDropdownOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -34,6 +39,10 @@ const FrontPageNavbar = () => {
     setIsAuthenticated(!!Cookies.get('access'));
     setUserRole(localStorage.getItem('userRole'));
   }, []);
+
+  const { data: businessProfile } = useGetBusinessProfile({
+    enabled: isAuthenticated && userRole === 'Business'
+  });
 
   const { mutate: logoutMutation } = useLogout();
 
@@ -61,7 +70,7 @@ const FrontPageNavbar = () => {
         router.push('/admin/dashboard');
         break;
       case 'Participant':
-        router.push('/wallet');
+        router.push('/participant/wallet');
         break;
       case 'Staff':
         router.push('/staff/dashboard');
@@ -72,7 +81,7 @@ const FrontPageNavbar = () => {
     }
   };
 
-  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/checkout' || pathname === '/faq' || pathname === '/privacy' || pathname === '/about' || pathname.startsWith('/campaigns') || pathname === '/terms';
+  const isSpecialPage = pathname === '/pricing' || pathname.startsWith('/deals') || pathname === '/reward' || pathname === '/features' || pathname === '/checkout' || pathname === '/faq' || pathname.startsWith('/matching-rewards') || pathname === '/privacy' || pathname === '/about' || pathname === '/contact' || pathname.startsWith('/campaigns') || pathname === '/terms';
 
   const getLinkClass = (href: string) => {
     const isActive = pathname === href;
@@ -112,13 +121,57 @@ const FrontPageNavbar = () => {
           <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
           <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
           <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
+
+          <div
+            className="relative group h-full flex items-center"
+            onMouseEnter={() => setMatchingDropdownOpen(true)}
+            onMouseLeave={() => setMatchingDropdownOpen(false)}
+          >
+            <button className={cn(
+              "flex items-center gap-1 transition-colors h-full",
+              getLinkClass("/matching-rewards")
+            )}>
+              Matching Point <ChevronDown size={14} className={cn("transition-transform duration-200", matchingDropdownOpen ? "rotate-180" : "")} />
+            </button>
+
+            {matchingDropdownOpen && (
+              <div className="absolute top-full left-0 w-48 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden">
+                  <Link
+                    href="/matching-rewards?view=customer"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    onClick={() => setMatchingDropdownOpen(false)}
+                  >
+                    For Customers
+                  </Link>
+                  <Link
+                    href="/matching-rewards?view=business"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    onClick={() => setMatchingDropdownOpen(false)}
+                  >
+                    For Businesses
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="hidden md:flex gap-3">
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-bold cursor-pointer">
-                  <CircleUserRound size={24} />
+                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-bold cursor-pointer overflow-hidden border border-orange-100">
+                  {userRole === 'Business' && businessProfile?.profileImage ? (
+                    <Image
+                      src={businessProfile.profileImage}
+                      alt="Profile"
+                      width={40}
+                      height={40}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <CircleUserRound size={24} />
+                  )}
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
@@ -156,9 +209,13 @@ const FrontPageNavbar = () => {
 
                 {userRole === 'Participant' && (
                   <>
-                    <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => router.push('/participant/wallet')} className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>My Wallet</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/participant/settings')} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                      <span>Profile Settings</span>
                     </DropdownMenuItem>
                   </>
                 )}
@@ -207,6 +264,10 @@ const FrontPageNavbar = () => {
           <Link href="/deals" className={getLinkClass("/deals")}>Deals</Link>
           <Link href="/reward" className={getLinkClass("/reward")}>Rewards</Link>
           <Link href="/campaigns" className={getLinkClass("/campaigns")}>Campaigns</Link>
+          <div className="border-t my-2"></div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Matching Points</p>
+          <Link href="/matching-rewards?view=customer" className={getLinkClass("/matching-rewards")} onClick={() => setMenuOpen(false)}>For Customers</Link>
+          <Link href="/matching-rewards?view=business" className={getLinkClass("/matching-rewards")} onClick={() => setMenuOpen(false)}>For Businesses</Link>
           <div className="border-t my-3"></div>
           {!isAuthenticated && (
             <Link href="/business/signup">

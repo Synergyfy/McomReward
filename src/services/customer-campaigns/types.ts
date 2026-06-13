@@ -1,5 +1,12 @@
 import { RewardResponse } from "@/services/rewards/types";
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface CampaignBusiness {
   id: string;
   name: string;
@@ -141,6 +148,7 @@ export interface ParticipantBalance {
   campaignId: string;
   campaignName: string;
   balance: number;
+  stampBalance?: number;
 }
 
 export interface ParticipantGlobalBalanceResponse {
@@ -155,18 +163,32 @@ export interface ParticipantProfileResponse {
   email: string;
   role: string;
   uniqueCode: string;
-  global_total_points: number;
-  matching_points: number;
-  point_utilization: number;
-  total_points_earned: number;
-  total_points_redeemed: number;
+  globalTotalPoints: number;
+  global_total_points?: number;
+  matchingPoints: number;
+  matching_points?: number;
+  pointUtilization: number;
+  point_utilization?: number;
+  totalPointsEarned: number;
+  total_points_earned?: number;
+  totalPointsRedeemed: number;
+  total_points_redeemed?: number;
   isDisabled: boolean;
-  created_at: string;
-  updated_at: string;
-  campaign_balances: {
+  createdAt: string;
+  created_at?: string;
+  updatedAt: string;
+  updated_at?: string;
+  campaignBalances: {
+    campaignId: string;
+    campaignName: string;
+    balance: number;
+    stampBalance: number;
+  }[];
+  campaign_balances?: {
     campaign_id: string;
     campaign_name: string;
     balance: number;
+    stamp_balance?: number;
   }[];
 }
 
@@ -249,22 +271,28 @@ export interface UniqueCodeResponse {
   uniqueCode: string;
 }
 
+import { BusinessReward } from "../business-reward/types";
+
+export type PointHistoryType = 'EARN' | 'REDEEM' | 'MATCHING' | 'PURCHASED_EXTRA' | 'STAMP_EARN' | 'STAMP_REDEEM';
+
 export interface ParticipantHistoryItem {
   id: string;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  type: 'EARN' | 'REDEEM';
+  type: PointHistoryType;
   points: number;
+  stamps?: number;
   redemptionCode: string | null;
   description: string;
   campaign: {
     id: string;
     name: string;
-  };
+  } | null;
   reward: {
     title: string;
   } | null;
+  businessReward: BusinessReward | null;
   business: {
     name: string;
   };

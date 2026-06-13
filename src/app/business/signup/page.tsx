@@ -8,47 +8,49 @@ import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp, useAuth } from "@/services/business/hook";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function BusinessSignupPage() {
+function BusinessSignupContent() {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get('ref');
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-  } = useForm<BusinessSignUpDto>();
+    setValue,
+  } = useForm<BusinessSignUpDto>({
+    defaultValues: {
+      referralCode: refCode || '',
+    }
+  });
+
+  React.useEffect(() => {
+    if (refCode) {
+      setValue('referralCode', refCode);
+    }
+  }, [refCode, setValue]);
+
   const router = useRouter();
-
-
   const { mutateAsync: signUp, } = useBusinessSignUp();
-  // useAuth handles login logic. We don't have a specific 'skipRedirect' param in the hook based on previous reading,
-  // but let's check if we can rely on its default behavior or if we need to handle redirection manually.
-  // The hook implementation does redirection in onSuccess.
-  // If we want to use it here, we will just call it.
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
 const onSubmit = async (data: BusinessSignUpDto) => {
   try {
-    // Destructure to guarantee no 'name' property is sent (since backend CreateBusinessDto forbids it)
     const { name, ...cleanData } = data as any;
-    // 1️⃣ Call the signup mutation
     const response = await signUp(cleanData);
     console.log("Signup response:", response);
 
-    // 2️⃣ Automatically sign in after signup
-     await login({
+    await login({
       email: data.email,
       password: data.password,
     });
-
-    // The useAuth hook will handle the redirection to /business/onboard if not onboarded,
-    // which matches the original intent (router.push('/business/onboard')).
-
     toast.success('Business account created successfully!');
-    // router.push('/business/onboard'); // Removed as useAuth handles it
 
   } catch (error: any) {
     console.error('Signup or login error:', error);
@@ -60,10 +62,8 @@ const onSubmit = async (data: BusinessSignUpDto) => {
   }
 };
 
-
   const handleGoogleSignup = () => {
     console.log("Google signup clicked");
-    // TODO: integrate with NextAuth or Firebase Google sign-in
   };
 
   return (
@@ -76,7 +76,6 @@ const onSubmit = async (data: BusinessSignUpDto) => {
           Sign up to manage your vouchers, staff, and rewards
         </p>
 
-        {/* Sign up with Google */}
         <Button
           type="button"
           onClick={handleGoogleSignup}
@@ -93,7 +92,6 @@ const onSubmit = async (data: BusinessSignUpDto) => {
           <div className="flex-1 h-px bg-gray-300" />
         </div>
 
-        {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -102,7 +100,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="firstName"
                 type="text"
                 placeholder="John"
-                {...register("firstName", { required: "First Name is required" })}
+{...register("firstName", { required: "First Name is required" })}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -116,7 +114,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-                {...register("lastName", { required: "Last Name is required" })}
+{...register("lastName", { required: "Last Name is required" })}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -220,3 +218,12 @@ const onSubmit = async (data: BusinessSignUpDto) => {
     </div>
   );
 }
+
+export default function BusinessSignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BusinessSignupContent />
+    </Suspense>
+  );
+}
+

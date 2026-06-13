@@ -6,6 +6,7 @@ import { UpdateStaffDto } from '@/services/staff/types';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import Image from 'next/image';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 const EditStaffPage = () => {
   const router = useRouter();
@@ -23,6 +24,8 @@ const EditStaffPage = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string | undefined>(undefined);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
   const [errors, setErrors] = useState<Partial<UpdateStaffDto>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -60,13 +63,25 @@ const EditStaffPage = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        setCropImage(reader.result as string);
+        setIsCropping(true);
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'avatar.jpg', {
+      type: 'image/jpeg',
+    });
+    setAvatarFile(croppedFile);
+    const url = URL.createObjectURL(croppedBlob);
+    setAvatarPreview(url);
+    setIsCropping(false);
+    setCropImage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,6 +215,17 @@ const EditStaffPage = () => {
           </div>
         </form>
       </div>
+      {isCropping && cropImage && (
+        <ImageCropper
+          image={cropImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropping(false);
+            setCropImage(null);
+          }}
+          aspect={1}
+        />
+      )}
     </div>
   );
 };

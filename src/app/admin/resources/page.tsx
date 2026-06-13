@@ -1,29 +1,29 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Edit, Trash2, BookOpen, Youtube, LifeBuoy } from 'lucide-react';
 import {
-  mockTrainingVideos,
   mockHelpArticles,
   mockLearningModules,
-  TrainingVideo,
   HelpArticle,
   LearningModule,
 } from '@/lib/mock-data/resources';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AddEditVideoModal } from '@/components/admin/resources/AddEditVideoModal'; // Will create this
-import { AddEditArticleModal } from '@/components/admin/resources/AddEditArticleModal'; // Will create this
-import { AddEditModuleModal } from '@/components/admin/resources/AddEditModuleModal'; // Will create this
+import { AddEditVideoModal } from '@/components/admin/resources/AddEditVideoModal';
+import { AddEditArticleModal } from '@/components/admin/resources/AddEditArticleModal';
+import { AddEditModuleModal } from '@/components/admin/resources/AddEditModuleModal';
+import { useGetTrainingVideos, useDeleteTrainingVideo } from '@/services/training-videos/hook';
+import { TrainingVideo } from '@/services/training-videos/types';
 
 export default function ResourcesPage() {
-  const [videos, setVideos] = useState<TrainingVideo[]>(mockTrainingVideos);
+  const { data: videoData, refetch: refetchVideos } = useGetTrainingVideos({ page: 1, limit: 100 }); // Fetch all or reasonably high limit for now
+  const deleteVideoMutation = useDeleteTrainingVideo();
+
   const [articles, setArticles] = useState<HelpArticle[]>(mockHelpArticles);
   const [modules, setModules] = useState<LearningModule[]>(mockLearningModules);
 
@@ -59,21 +59,27 @@ export default function ResourcesPage() {
   };
 
   const handleSaveVideo = (savedVideo: TrainingVideo) => {
+    // Refresh list is handled by react-query invalidation in the hook
     setShowAddEditVideoModal(false);
-    setTimeout(() => {
-      if (savedVideo.id.startsWith('new-')) {
-        setVideos(prev => [...prev, { ...savedVideo, id: `vid-${Date.now()}` }]);
-        handleShowFeedback("Video Added", `Video "${savedVideo.title}" has been added.`);
-      } else {
-        setVideos(prev => prev.map(video => (video.id === savedVideo.id ? savedVideo : video)));
-        handleShowFeedback("Video Updated", `Video "${savedVideo.title}" has been updated.`);
-      }
-    }, 300);
+    // Logic for feedback is now inside the modal's success handler or we can show a generic one here if needed,
+    // but the modal calls onShowFeedback already.
+    // However, the modal prop 'onSave' is currently just closing the modal or local state update in the old version.
+    // In the new version, the mutation is in the modal.
+    // We can just rely on the modal to handle the mutation and feedback.
+    // But this function is passed to the modal.
   };
 
   const handleDeleteVideo = (videoId: string) => {
-    setVideos(prev => prev.filter(video => video.id !== videoId));
-    handleShowFeedback("Video Deleted", `Video ${videoId} has been deleted.`);
+    if (confirm("Are you sure you want to delete this video?")) {
+        deleteVideoMutation.mutate(videoId, {
+            onSuccess: () => {
+                handleShowFeedback("Video Deleted", `Video has been deleted.`);
+            },
+            onError: (error: any) => {
+                 handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete video.");
+            }
+        });
+    }
   };
 
   // Handlers for Articles
@@ -155,24 +161,32 @@ export default function ResourcesPage() {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Target Audience</TableHead>
-                    <TableHead>Duration</TableHead>
+                    {/* Duration removed from display as it's not in the new schema, or we can calculate it/fetch it if backend supports.
+                        The mock had it, but the new API might not. I will remove it for now to be safe or leave blank. */}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {videos.map((video) => (
+                  {videoData?.items.map((video) => (
                     <TableRow key={video.id}>
                       <TableCell className="font-medium">{video.title}</TableCell>
-                      <TableCell>{video.targetAudience}</TableCell>
-                      <TableCell>{video.duration}</TableCell>
+                      <TableCell>{video.targetAudience === 'business' ? 'Business Owners' : 'Consumers'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {/* Note: Edit requires converting mapped type to form type if they differ, but they match closely. */}
                           <Button variant="outline" size="sm" onClick={() => handleAddEditVideo(video)}><Edit className="h-4 w-4" /></Button>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteVideo(video.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {(!videoData?.items || videoData.items.length === 0) && (
+                      <TableRow>
+                          <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                              No videos found.
+                          </TableCell>
+                      </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

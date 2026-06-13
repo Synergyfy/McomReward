@@ -219,7 +219,7 @@ export const getStampRewardStats = async (): Promise<StampRewardStats> => {
 // --- MOCK IMPLEMENTATIONS (For endpoints requiring Code/QR or unavailable) ---
 
 // Mock database
-let mockBusinessStampRewards: BusinessStampReward[] = [
+const mockBusinessStampRewards: BusinessStampReward[] = [
     {
         id: 'bsr-1',
         templateId: '1',
@@ -246,7 +246,7 @@ let mockBusinessStampRewards: BusinessStampReward[] = [
     },
 ];
 
-let mockCustomerStampCards: CustomerStampCard[] = [
+const mockCustomerStampCards: CustomerStampCard[] = [
     {
         id: 'csc-1',
         customerId: 'customer-1',
@@ -373,17 +373,16 @@ export const getCustomerStampCards = async (
 
 /**
  * Award a stamp
- * Backend: POST /business/stamps/scan
+ * Backend: POST /participant-campaign-balance/award-stamps
  */
 export const awardStamp = async (payload: AwardStampRequest): Promise<CustomerStampCard> => {
     try {
-        const dto: ScanParticipantQrDto = {
-            businessStampRewardId: payload.businessStampRewardId,
-            customerId: payload.customerId,
-            participantUniqueCode: payload.participantUniqueCode
+        const dto = {
+            participantUniqueCode: payload.participantUniqueCode,
+            stampCardId: payload.stampCardId
         };
 
-        const { data } = await apiClient.post<StampCardDto>('/business/stamps/scan', dto);
+        const { data } = await apiClient.post<StampCardDto>('/participant-campaign-balance/award-stamps', dto);
         return mapStampCardDtoToCustomerCard(data);
     } catch (error) {
         console.error('Failed to award stamp', error);

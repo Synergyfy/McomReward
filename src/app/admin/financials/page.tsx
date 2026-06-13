@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight, Search, Filter, RefreshCw } from 'lucide-react';
+import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight, Search, Filter, RefreshCw, User } from 'lucide-react';
 import {
   mockEscrows,
   mockPayoutRequests,
@@ -25,7 +25,10 @@ import { AddEditPointPackageModal } from '@/components/admin/financials/AddEditP
 import { useDebounce } from '@/hooks/use-debounce';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SeasonManagement } from '@/components/admin/financials/SeasonManagement';
 import { PaymentHistorySearchParams } from '@/services/financials/types';
+import { ManualOverrideModal } from '@/components/admin/tier-badge-control/ManualOverrideModal';
+import { useOverrideBusinessTier, useOverrideCustomerBadge } from '@/services/progression/hook';
 
 export default function FinancialsPage() {
   const [paymentFilters, setPaymentFilters] = useState<PaymentHistorySearchParams>({
@@ -66,6 +69,10 @@ export default function FinancialsPage() {
 
   const { data: pointPackages, isLoading: isLoadingPointPackages, error: pointPackagesError } = useGetPointPackages(1, 10);
   const deletePointPackageMutation = useDeletePointPackage();
+
+  // Override mutations for manual tier/badge override
+  const { mutate: overrideTier } = useOverrideBusinessTier();
+  const { mutate: overrideBadge } = useOverrideCustomerBadge();
 
   const handleFilterChange = (key: keyof PaymentHistorySearchParams, value: any) => {
     setPaymentFilters(prev => ({ ...prev, [key]: value, page: 1 }));
@@ -108,15 +115,31 @@ export default function FinancialsPage() {
   const [showPlanTypeSelectionModal, setShowPlanTypeSelectionModal] = useState(false);
   const [currentEditPlan, setCurrentEditPlan] = useState<Tier | undefined>(undefined);
   const [selectedPlanType, setSelectedPlanType] = useState<'standard' | 'seasonal'>('standard');
+  const [planTypeFilter, setPlanTypeFilter] = useState<'all' | 'standard' | 'seasonal'>('all');
 
   // State for Add/Edit Point Package Modal
   const [showAddEditPointPackageModal, setShowAddEditPointPackageModal] = useState(false);
   const [currentEditPointPackage, setCurrentEditPointPackage] = useState<PointPackage | undefined>(undefined);
 
+  // State for Manual Override Modal
+  const [showManualOverrideModal, setShowManualOverrideModal] = useState(false);
+
+  // Filter plans by type
+  const filteredPlans = plans?.filter(plan => {
+    if (planTypeFilter === 'all') return true;
+    return plan.type === planTypeFilter;
+  }) || [];
+
   const handleAddEditPlan = (plan?: Tier) => {
     setCurrentEditPlan(plan);
-    // Show selection modal for both New and Edit actions to allow type confirmation/change
-    setShowPlanTypeSelectionModal(true);
+    if (plan) {
+      // Editing: use the plan's existing type, skip selection modal
+      setSelectedPlanType(plan.type || 'standard');
+      setShowAddEditPlanModal(true);
+    } else {
+      // Creating: show type selection modal
+      setShowPlanTypeSelectionModal(true);
+    }
   };
 
   const handlePlanTypeSelected = (type: 'standard' | 'seasonal') => {
@@ -172,6 +195,22 @@ export default function FinancialsPage() {
   const handlePayoutAction = (payoutId: string, action: 'approved' | 'rejected') => {
     setPayouts(prev => prev.map(payout => (payout.id === payoutId ? { ...payout, status: action, processedAt: new Date() } : payout)));
     handleShowFeedback("Payout Request Updated", `Payout request ${payoutId} has been ${action}.`);
+  };
+
+  const handleManualOverride = (userId: string, newLevelId: string, type: 'tier' | 'badge') => {
+    const adminId = "current-admin-id";
+
+    if (type === 'tier') {
+      overrideTier({ businessId: userId, levelId: newLevelId, adminId }, {
+        onSuccess: () => handleShowFeedback("Override Applied", `Business Tier updated for ${userId}.`),
+        onError: () => handleShowFeedback("Error", "Failed to override tier.")
+      });
+    } else {
+      overrideBadge({ participantId: userId, badgeId: newLevelId, adminId }, {
+        onSuccess: () => handleShowFeedback("Override Applied", `Customer Badge updated for ${userId}.`),
+        onError: () => handleShowFeedback("Error", "Failed to override badge.")
+      });
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -243,6 +282,7 @@ export default function FinancialsPage() {
           <TabsTrigger value="payment-history">Payment History</TabsTrigger>
           <TabsTrigger value="escrow-management">Escrow Management</TabsTrigger>
           <TabsTrigger value="subscription-plans">Subscription Plans</TabsTrigger>
+          <TabsTrigger value="seasons">Seasons</TabsTrigger>
           <TabsTrigger value="payout-requests">Payout Requests</TabsTrigger>
           <TabsTrigger value="point-packages">Point Packages</TabsTrigger>
         </TabsList>
@@ -492,15 +532,29 @@ export default function FinancialsPage() {
                 <CardTitle>Subscription Plans</CardTitle>
                 <Button onClick={() => handleAddEditPlan()}><PlusCircle className="mr-2 h-4 w-4" /> Create New Plan</Button>
               </div>
+              {/* Plan Type Filter */}
+              <Tabs value={planTypeFilter} onValueChange={(v) => setPlanTypeFilter(v as 'all' | 'standard' | 'seasonal')} className="mt-4">
+                <TabsList>
+                  <TabsTrigger value="all">All Plans</TabsTrigger>
+                  <TabsTrigger value="standard">Standard Plans</TabsTrigger>
+                  <TabsTrigger value="seasonal">Seasonal Plans</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {isLoadingPlans && <p>Loading plans...</p>}
               {plansError && <p>Error loading plans.</p>}
-              {plans?.map((plan) => (
+              {!isLoadingPlans && !plansError && filteredPlans.length === 0 && (
+                <p className="text-muted-foreground col-span-full text-center py-8">No {planTypeFilter === 'all' ? '' : planTypeFilter} plans found.</p>
+              )}
+              {filteredPlans.map((plan) => (
                 <Card key={plan.id}>
                   <CardHeader>
                     <CardTitle className="flex justify-between items-center">
                       {plan.name}
+                      <Badge variant={plan.type === 'seasonal' ? 'secondary' : 'outline'} className="ml-2">
+                        {plan.type === 'seasonal' ? 'Seasonal' : 'Standard'}
+                      </Badge>
                     </CardTitle>
                     <div className="text-3xl font-bold">£{plan.monthlyPrice}<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                   </CardHeader>
@@ -522,6 +576,22 @@ export default function FinancialsPage() {
               ))}
             </CardContent>
           </Card>
+
+          {/* Manual User Override Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Manual User Override</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-muted-foreground">Manually promote or demote any user&apos;s tier or badge level.</p>
+              <Button onClick={() => setShowManualOverrideModal(true)}><User className="mr-2 h-4 w-4" /> Open Override Tool</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Seasons Tab */}
+        <TabsContent value="seasons">
+          <SeasonManagement />
         </TabsContent>
 
         {/* Payout Requests Tab */}
@@ -605,7 +675,7 @@ export default function FinancialsPage() {
                       <TableRow key={pkg.id}>
                         <TableCell>{pkg.name}</TableCell>
                         <TableCell>{pkg.points}</TableCell>
-                        <TableCell>£{parseFloat(pkg.price).toFixed(2)}</TableCell>
+                        <TableCell>£{Number(pkg.price).toFixed(2)}</TableCell>
                         <TableCell>{pkg.tiers.map((t: Tier) => t.name).join(', ') || 'All'}</TableCell>
                         <TableCell><Badge variant={pkg.isActive ? 'default' : 'secondary'}>{pkg.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -645,6 +715,12 @@ export default function FinancialsPage() {
         initialData={currentEditPointPackage}
         onSave={handleSavePointPackage}
         onShowFeedback={handleShowFeedback}
+      />
+
+      <ManualOverrideModal
+        isOpen={showManualOverrideModal}
+        onClose={() => setShowManualOverrideModal(false)}
+        onOverride={handleManualOverride}
       />
 
       <FeedbackDialog

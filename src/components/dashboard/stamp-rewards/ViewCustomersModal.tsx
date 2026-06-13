@@ -45,82 +45,6 @@ interface ViewCustomersModalProps {
     onAwardStamp?: () => void;
 }
 
-// Mock customer data for demonstration
-const mockEnrolledCustomers: CustomerStampCard[] = [
-    {
-        id: 'csc-1',
-        customerId: 'customer-1',
-        customerName: 'Alice Johnson',
-        customerEmail: 'alice@example.com',
-        customerAvatar: 'https://i.pravatar.cc/150?u=alice',
-        businessStampRewardId: 'bsr-1',
-        stampsCollected: 4,
-        stampsRequired: 5,
-        status: 'in_progress',
-        stampHistory: [],
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-2',
-        customerId: 'customer-2',
-        customerName: 'Bob Smith',
-        customerEmail: 'bob@example.com',
-        customerAvatar: 'https://i.pravatar.cc/150?u=bob',
-        businessStampRewardId: 'bsr-1',
-        stampsCollected: 5,
-        stampsRequired: 5,
-        status: 'completed',
-        stampHistory: [],
-        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-3',
-        customerId: 'customer-3',
-        customerName: 'Carol Davis',
-        customerEmail: 'carol@example.com',
-        customerAvatar: 'https://i.pravatar.cc/150?u=carol',
-        businessStampRewardId: 'bsr-1',
-        stampsCollected: 2,
-        stampsRequired: 5,
-        status: 'in_progress',
-        stampHistory: [],
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-4',
-        customerId: 'customer-4',
-        customerName: 'David Wilson',
-        customerEmail: 'david@example.com',
-        customerAvatar: 'https://i.pravatar.cc/150?u=david',
-        businessStampRewardId: 'bsr-1',
-        stampsCollected: 5,
-        stampsRequired: 5,
-        status: 'redeemed',
-        stampHistory: [],
-        completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        redeemedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: 'csc-5',
-        customerId: 'customer-5',
-        customerName: 'Emma Brown',
-        customerEmail: 'emma@example.com',
-        customerAvatar: 'https://i.pravatar.cc/150?u=emma',
-        businessStampRewardId: 'bsr-1',
-        stampsCollected: 1,
-        stampsRequired: 5,
-        status: 'in_progress',
-        stampHistory: [],
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-];
 
 const getStatusStyles = (status: string) => {
     switch (status) {
@@ -153,8 +77,14 @@ export default function ViewCustomersModal({
 
     const { mutate: redeemCard, isPending: isRedeeming } = useRedeemStampCard();
 
-    // Use mock data for demonstration
-    const customers = mockEnrolledCustomers;
+    // Fetch real data from live endpoint
+    const { data: customerCardsResponse, isLoading } = useGetCustomerStampCards(
+        reward?.id || '',
+        1,
+        100 // Fetch up to 100 for now, or implement infinite scroll/pagination later
+    );
+
+    const customers = customerCardsResponse?.data || [];
 
     // Filter customers - MUST be called before any early returns!
     const filteredCustomers = useMemo(() => {
@@ -205,19 +135,12 @@ export default function ViewCustomersModal({
                                 <DialogHeader className="p-0">
                                     <DialogTitle className="text-xl">Enrolled Customers</DialogTitle>
                                     <DialogDescription>
-                                        {reward.template.title}
+                                        {(reward as any).template?.title || (reward as any).title || 'Reward'}
                                     </DialogDescription>
                                 </DialogHeader>
                             </div>
                         </div>
-                        <Button
-                            onClick={onAwardStamp}
-                            size="sm"
-                            className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                        >
-                            <QrCode className="h-4 w-4" />
-                            Award Stamp
-                        </Button>
+
                     </div>
                 </div>
 
@@ -264,7 +187,12 @@ export default function ViewCustomersModal({
 
                 {/* Customer list */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {filteredCustomers.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm text-gray-500 animate-pulse">Loading customers...</p>
+                        </div>
+                    ) : filteredCustomers.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
                             <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                             <p className="font-medium">No customers found</p>
@@ -321,7 +249,7 @@ export default function ViewCustomersModal({
                                                             }`}
                                                     >
                                                         {i < customer.stampsCollected ? (
-                                                            reward.template.stampIcon || '⭐'
+                                                            (reward as any).template?.stampIcon || (reward as any).stamp_emoji || (reward as any).stampEmoji || '⭐'
                                                         ) : (
                                                             <span className="text-[10px]">{i + 1}</span>
                                                         )}

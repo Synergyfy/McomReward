@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockMatchingPointsSettings, MatchingPointsSettings } from '@/lib/mock-data/matching-points';
-import { initialSectors } from '@/lib/mock-data/sectors';
+
 import { AdjustMatchingPointsModal } from '@/components/admin/matching-points/AdjustMatchingPointsModal';
 import { EarningActionsManager } from '@/components/admin/matching-points/EarningActionsManager';
 import { ParticipantBadgesManager } from '@/components/admin/matching-points/ParticipantBadgesManager';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { Globe, SlidersHorizontal, Briefcase, Megaphone, BarChart, UserPlus, Loader2, Zap, Trophy } from 'lucide-react';
+import { Megaphone, UserPlus, Loader2, Zap, Trophy } from 'lucide-react';
 import { useAwardMatchingPoints, useToggleMatchingPoints } from '@/services/matching-points/hook';
 import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
 
@@ -59,20 +59,7 @@ export default function MatchingPointsSettingsPage() {
       errors.push('Default Minimum Points cannot be greater than Default Maximum Points.');
     }
 
-    currentSettings.sectorSpecificRanges.forEach((range) => {
-      const sector = initialSectors.find(s => s.id === range.sectorId);
-      const sectorName = sector ? sector.name : range.sectorId;
 
-      if (range.minPoints < 0 || !Number.isInteger(range.minPoints)) {
-        errors.push(`Min Points for sector ${sectorName} must be a non-negative integer.`);
-      }
-      if (range.maxPoints < 0 || !Number.isInteger(range.maxPoints)) {
-        errors.push(`Max Points for sector ${sectorName} must be a non-negative integer.`);
-      }
-      if (range.minPoints > range.maxPoints) {
-        errors.push(`Min Points for sector ${sectorName} cannot be greater than Max Points.`);
-      }
-    });
 
     return errors;
   };
@@ -123,59 +110,15 @@ export default function MatchingPointsSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5" /> Global Settings</CardTitle>
-              <CardDescription>Define the base rules for matching points across the platform.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="baseRatio">Base Matching Point Ratio</Label>
-                <Input
-                  id="baseRatio"
-                  type="number"
-                  step="0.1"
-                  value={settings.baseRatio}
-                  onChange={(e) => setSettings({ ...settings, baseRatio: parseFloat(e.target.value) })}
-                />
-                <p className="text-xs text-muted-foreground">e.g., 1 for 1:1, 0.5 for 1:0.5</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="defaultMinPoints">Default Minimum Points</Label>
-                <Input
-                  id="defaultMinPoints"
-                  type="number"
-                  value={settings.defaultMinPoints}
-                  onChange={(e) => setSettings({ ...settings, defaultMinPoints: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="defaultMaxPoints">Default Maximum Points</Label>
-                <Input
-                  id="defaultMaxPoints"
-                  type="number"
-                  value={settings.defaultMaxPoints}
-                  onChange={(e) => setSettings({ ...settings, defaultMaxPoints: parseInt(e.target.value) })}
-                />
-              </div>
-            </CardContent>
-          </Card>
+
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5" /> Monitoring & Manual Adjustment</CardTitle>
-              <CardDescription>Oversee point distribution and make manual changes.</CardDescription>
+              <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" /> Manual Adjustment</CardTitle>
+              <CardDescription>Manually adjust matching points for any user account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <Label>Total Matching Points Distributed:</Label>
-                <span className="font-bold text-2xl">123,456</span> {/* Mock value */}
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2"><UserPlus className="h-4 w-4" /> Manually Adjust Points</h3>
-                <p className="text-muted-foreground text-sm">Adjust matching points for any user account.</p>
-                <Button variant="outline" className="w-full" onClick={() => setShowAdjustModal(true)}>Open Manual Adjustment Tool</Button>
-              </div>
+              <Button variant="outline" className="w-full" onClick={() => setShowAdjustModal(true)}>Open Manual Adjustment Tool</Button>
             </CardContent>
           </Card>
         </div>
@@ -183,10 +126,9 @@ export default function MatchingPointsSettingsPage() {
         {/* Right Column */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="earning-rules">
-            <TabsList className="grid w-full grid-cols-4 h-auto"> {/* Changed to 4 columns and auto height for wrapping if needed on small screens */}
+            <TabsList className="grid w-full grid-cols-3 h-auto"> {/* Changed to 3 columns and auto height for wrapping if needed on small screens */}
               <TabsTrigger value="earning-rules" className="data-[state=active]:bg-yellow-100 data-[state=active]:text-yellow-700"><Zap className="mr-2 h-4 w-4" />Earning Rules</TabsTrigger>
               <TabsTrigger value="badge-levels" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"><Trophy className="mr-2 h-4 w-4" />Badge Levels</TabsTrigger>
-              <TabsTrigger value="sectors"><Briefcase className="mr-2 h-4 w-4" />Sector Ranges</TabsTrigger>
               <TabsTrigger value="campaigns"><Megaphone className="mr-2 h-4 w-4" />Campaign Toggles</TabsTrigger>
             </TabsList>
 
@@ -198,77 +140,7 @@ export default function MatchingPointsSettingsPage() {
               <ParticipantBadgesManager />
             </TabsContent>
 
-            <TabsContent value="sectors">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sector-Specific Ranges</CardTitle>
-                  <CardDescription>Override global point ranges for specific business sectors.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {initialSectors.map((sector) => {
-                    const range = settings.sectorSpecificRanges.find(r => r.sectorId === sector.id);
-                    const minPoints = range ? range.minPoints : settings.defaultMinPoints;
-                    const maxPoints = range ? range.maxPoints : settings.defaultMaxPoints;
 
-                    const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                      const newMin = parseInt(e.target.value);
-                      setSettings(prevSettings => {
-                        const existingRangeIndex = prevSettings.sectorSpecificRanges.findIndex(r => r.sectorId === sector.id);
-                        if (existingRangeIndex > -1) {
-                          const newRanges = [...prevSettings.sectorSpecificRanges];
-                          newRanges[existingRangeIndex] = { ...newRanges[existingRangeIndex], minPoints: newMin };
-                          return { ...prevSettings, sectorSpecificRanges: newRanges };
-                        } else {
-                          return {
-                            ...prevSettings,
-                            sectorSpecificRanges: [
-                              ...prevSettings.sectorSpecificRanges,
-                              { sectorId: sector.id, minPoints: newMin, maxPoints: maxPoints }
-                            ]
-                          };
-                        }
-                      });
-                    };
-
-                    const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                      const newMax = parseInt(e.target.value);
-                      setSettings(prevSettings => {
-                        const existingRangeIndex = prevSettings.sectorSpecificRanges.findIndex(r => r.sectorId === sector.id);
-                        if (existingRangeIndex > -1) {
-                          const newRanges = [...prevSettings.sectorSpecificRanges];
-                          newRanges[existingRangeIndex] = { ...newRanges[existingRangeIndex], maxPoints: newMax };
-                          return { ...prevSettings, sectorSpecificRanges: newRanges };
-                        } else {
-                          return {
-                            ...prevSettings,
-                            sectorSpecificRanges: [
-                              ...prevSettings.sectorSpecificRanges,
-                              { sectorId: sector.id, minPoints: minPoints, maxPoints: newMax }
-                            ]
-                          };
-                        }
-                      });
-                    };
-
-                    return (
-                      <div key={sector.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center border-b pb-4 last:border-b-0">
-                        <Label className="col-span-1 font-medium">{sector.name}</Label>
-                        <div className="col-span-2 grid grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <Label htmlFor={`min-${sector.id}`} className="text-xs">Min Points</Label>
-                            <Input id={`min-${sector.id}`} type="number" value={minPoints} onChange={handleMinChange} />
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor={`max-${sector.id}`} className="text-xs">Max Points</Label>
-                            <Input id={`max-${sector.id}`} type="number" value={maxPoints} onChange={handleMaxChange} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            </TabsContent>
             <TabsContent value="campaigns">
               <Card>
                 <CardHeader>

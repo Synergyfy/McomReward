@@ -29,7 +29,7 @@ interface DealsTableProps {
 
 export default function DealsTable({ deals }: DealsTableProps) {
   const getStatusVariant = (
-    status: 'pending' | 'approved' | 'declined',
+    status: 'pending' | 'approved' | 'declined' | 'flagged',
   ) => {
     switch (status) {
       case 'approved':
@@ -37,6 +37,8 @@ export default function DealsTable({ deals }: DealsTableProps) {
       case 'pending':
         return 'secondary';
       case 'declined':
+        return 'destructive';
+      case 'flagged':
         return 'destructive';
       default:
         return 'default';

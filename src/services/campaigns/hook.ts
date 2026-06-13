@@ -10,6 +10,7 @@ import {
   PaginatedCampaignsResponse,
   PaginatedCampaignAnalyticsResponse,
   DetailedCampaignAnalytics,
+  CampaignTierAnalyticsResponse,
   PaginatedAdminCampaignsResponse,
   PaginatedCustomerActivityResponseDto,
   PaginatedOngoingCampaignsResponse,
@@ -109,6 +110,9 @@ export const useGetClaimableCampaigns = (page: number = 1, limit: number = 10) =
 // Claim Campaign
 interface ClaimCampaignPayload {
   business_reward_ids?: string[];
+  start_date?: string;
+  end_date?: string;
+  total_slots?: number;
 }
 
 const claimCampaign = async ({ campaignId, payload }: { campaignId: string; payload: ClaimCampaignPayload }): Promise<BusinessCampaign> => {
@@ -220,7 +224,7 @@ export const useGetDetailedCampaignAnalytics = (campaignId: string) => {
 
 // Delete Campaign
 const deleteCampaign = async (campaignId: string): Promise<void> => {
-  await api.delete(`/campaigns/${campaignId}`);
+  await api.delete(`/business/campaigns/${campaignId}`);
 };
 
 export const useDeleteCampaign = () => {
@@ -305,7 +309,9 @@ export const useGetStaffOngoingCampaigns = (page: number = 1, limit: number = 10
 // Assuming /campaigns/:id returns the full campaign details. We'll cast it to OngoingCampaign for now.
 // If the structure differs significantly from the list view, we might need to adjust.
 const getStaffCampaignById = async (id: string): Promise<OngoingCampaign> => {
-  const { data } = await api.get<OngoingCampaign>(`/campaigns/${id}`);
+  const { data } = await api.get<OngoingCampaign>(`/campaigns/public/business-campaign/${id}`, {
+    _skipAuthRedirect: true
+  } as any);
   return data;
 };
 
@@ -346,5 +352,19 @@ const searchParticipantCampaigns = async (query: string): Promise<ParticipantCam
 export const useSearchParticipantCampaigns = () => {
   return useMutation({
     mutationFn: searchParticipantCampaigns,
+  });
+};
+
+// Get Campaign Tier Analytics
+const getCampaignTierAnalytics = async (campaignId: string): Promise<CampaignTierAnalyticsResponse> => {
+  const { data } = await api.get<CampaignTierAnalyticsResponse>(`/campaigns/${campaignId}/analytics/tiers`);
+  return data;
+};
+
+export const useGetCampaignTierAnalytics = (campaignId: string) => {
+  return useQuery({
+    queryKey: [ANALYTICS_QUERY_KEY, 'tiers', campaignId],
+    queryFn: () => getCampaignTierAnalytics(campaignId),
+    enabled: !!campaignId,
   });
 };

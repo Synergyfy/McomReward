@@ -34,6 +34,7 @@ export interface RefreshTokenResponse {
   user: {
     name: string;
     role: string;
+    isSuperBusiness?: boolean;
   };
   access_token: string;
   refresh_token: string;

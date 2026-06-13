@@ -21,6 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from 'sonner';
 
 export default function AdminCampaignsPage() {
@@ -57,12 +63,51 @@ export default function AdminCampaignsPage() {
           toast.success('Campaign deleted successfully');
           setDeleteCampaignId(null);
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error('Failed to delete campaign:', error);
-          toast.error('Failed to delete campaign');
+          const errorMessage = error.response?.data?.message || 'Failed to delete campaign';
+          toast.error(errorMessage);
           setDeleteCampaignId(null);
         }
       });
+    }
+  };
+
+  const formatCampaignType = (type: string) => {
+    if (!type) return 'N/A';
+    switch (type.toLowerCase()) {
+      case 'qr_code':
+        return 'QR Code';
+      case 'referral':
+        return 'Referral';
+      case 'social_or_email':
+        return 'Social or Email';
+      case 'special_occasion':
+        return 'Special Occasion';
+      default:
+        return type
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+    }
+  };
+
+  const formatAudienceType = (type: string) => {
+    if (!type) return 'N/A';
+    switch (type.toLowerCase()) {
+      case 'all':
+        return 'All';
+      case 'members':
+        return 'Members';
+      case 'badge_level':
+        return 'Badge Level';
+      case 'target_wishlist':
+        return 'Target Wishlist';
+      default:
+        return type
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
     }
   };
 
@@ -129,34 +174,41 @@ export default function AdminCampaignsPage() {
                   <h5 className="font-extrabold text-xl text-gray-900 mb-2 truncate">{campaign.name}</h5>
                   <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden text-ellipsis">{campaign.campaignMessage}</p>
 
+                  {campaign.targetTiers?.some(t => t.type === 'seasonal') && (
+                    <div className="flex flex-wrap justify-center gap-1 mb-4">
+                      {Array.from(new Set(campaign.targetTiers
+                        .filter(t => t.type === 'seasonal' && t.season)
+                        .map(t => JSON.stringify(t.season))))
+                        .map((sJson: any) => {
+                          const season = JSON.parse(sJson);
+                          return (
+                            <TooltipProvider key={season.id}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="cursor-help bg-blue-50 text-blue-700 border-blue-200">
+                                    {season.name}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">
+                                    {new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
+                    </div>
+                  )}
+
                   <div className="space-y-2 text-sm text-gray-800 my-5 border-t pt-4">
                     <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Reward:</span>
-                      <span className="font-semibold text-right">
-                        {campaign.rewards && campaign.rewards.length > 0
-                          ? campaign.rewards[0].title || 'Reward'
-                          : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="font-medium text-gray-600">Type:</span>
-                      <span className="font-semibold text-right">{campaign.campaignType}</span>
+                      <span className="font-semibold text-right">{formatCampaignType(campaign.campaignType)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium text-gray-600">Audience:</span>
-                      <span className="font-semibold text-right">{campaign.audienceType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Quantity:</span>
-                      <span className="font-semibold text-right">{campaign.quantity}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Start Date:</span>
-                      <span className="font-semibold text-right">{new Date(campaign.startDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">End Date:</span>
-                      <span className="font-semibold text-right">{new Date(campaign.endDate).toLocaleDateString()}</span>
+                      <span className="font-semibold text-right">{formatAudienceType(campaign.audienceType)}</span>
                     </div>
                   </div>
 
@@ -164,6 +216,11 @@ export default function AdminCampaignsPage() {
                     <Link href={`/admin/campaigns/${campaign.id}/overview`} className="flex-1">
                       <Button className="w-full py-2 text-md font-semibold bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
                         View Campaign
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/campaigns/${campaign.id}/analytics`} className="flex-1">
+                      <Button variant="outline" className="w-full py-2 text-md font-semibold border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors duration-200">
+                        Analytics
                       </Button>
                     </Link>
                     <Button

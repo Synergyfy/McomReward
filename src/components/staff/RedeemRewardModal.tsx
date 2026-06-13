@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Loader2, ScanLine, Gift, Receipt, CheckCircle } from "lucide-react";
-import { useScanParticipant, useGenerateCode } from "@/services/participant-campaign-balance/hook";
+import { Loader2, ScanLine, Gift } from "lucide-react";
+import { useScanParticipant } from "@/services/participant-campaign-balance/hook";
 import { toast } from "sonner";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { OngoingCampaignReward } from "@/services/campaigns/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface RedeemRewardModalProps {
   campaignId: string;
@@ -18,17 +18,25 @@ interface RedeemRewardModalProps {
 }
 
 export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps) {
+  const canPoints = reward.is_points_enabled || reward.isPointsEnabled || (reward.points_required ?? reward.pointsRequired ?? 0) > 0;
+  const canStamps = reward.is_stamps_enabled || reward.isStampsEnabled || (reward.stamps_required ?? reward.stampsRequired ?? 0) > 0;
+  const bothEnabled = canPoints && canStamps;
+
   const [isOpen, setIsOpen] = useState(false);
+  const [redemptionMethod, setRedemptionMethod] = useState<'points' | 'stamps'>(canPoints ? 'points' : 'stamps');
 
   // Direct Redeem State
   const [participantCode, setParticipantCode] = useState("");
   const [isScanningQR, setIsScanningQR] = useState(false);
 
-  // Generate Voucher State
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
-
   const { mutateAsync: scanParticipant, isPending: isRedeeming } = useScanParticipant();
-  const { mutateAsync: generateCode, isPending: isGenerating } = useGenerateCode();
+
+  const currentCost = useMemo(() => {
+    if (redemptionMethod === 'points') {
+      return `${reward.points_required ?? reward.pointsRequired ?? 0} points`;
+    }
+    return `${reward.stamps_required ?? reward.stampsRequired ?? 0} stamps`;
+  }, [redemptionMethod, reward]);
 
   const handleRedeemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,35 +45,15 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
         campaignId,
         participantCode,
         type: 'REDEEM',
-        rewardId: reward.id
-        // Points are not sent for REDEEM as per documentation
+        rewardId: reward.id,
+        redemptionMethod: redemptionMethod
       });
       // Trigger 4: Reward Redeemed
-      toast.success(`Participant ${participantCode} redeemed reward ${reward.title}.`);
+      toast.success(`Participant ${participantCode} redeemed reward ${reward.title} via ${redemptionMethod}.`);
       setIsOpen(false);
       setParticipantCode("");
-    } catch (error) {
-      toast.error("Failed to redeem reward. Check balance or code.");
-      console.error(error);
-    }
-  };
-
-  const handleGenerateVoucherSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      // Calculate expiresAt (default: 7 days from now)
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      const result = await generateCode({
-        campaignId,
-        type: 'REDEEM',
-        rewardId: reward.id,
-        expiresAt
-      });
-      setGeneratedCode(result.code);
-      toast.success("Voucher code generated successfully!");
-    } catch (error) {
-      toast.error("Failed to generate voucher code.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to redeem reward. Check balance or code.");
       console.error(error);
     }
   };
@@ -81,7 +69,7 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
   const resetState = () => {
     setParticipantCode("");
     setIsScanningQR(false);
-    setGeneratedCode(null);
+    setRedemptionMethod(canPoints ? 'points' : 'stamps');
   };
 
   return (
@@ -98,24 +86,22 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
             Redeem Reward
           </DialogTitle>
           <DialogDescription>
-            Redeem <strong>{reward.title}</strong> for <strong>{reward.pointsRequired} points</strong>.
+            Redeem <strong>{reward.title}</strong> for <strong>{currentCost}</strong>.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="direct" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="direct" className="flex gap-2 items-center">
-              <QrCode className="h-4 w-4" />
-              <span>Direct Redeem</span>
-            </TabsTrigger>
-            <TabsTrigger value="voucher" className="flex gap-2 items-center">
-              <Receipt className="h-4 w-4" />
-              <span>Create Voucher</span>
-            </TabsTrigger>
-          </TabsList>
+        {bothEnabled && (
+            <div className="flex items-center justify-center p-2 bg-gray-50 rounded-lg">
+                <Tabs value={redemptionMethod} onValueChange={(v) => setRedemptionMethod(v as 'points' | 'stamps')} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="points">Use Points</TabsTrigger>
+                        <TabsTrigger value="stamps">Use Stamps</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
+        )}
 
-          {/* Tab 1: Direct Redeem */}
-          <TabsContent value="direct" className="space-y-4 py-4">
+        <div className="space-y-4 py-4">
             {isScanningQR ? (
               <div className="relative w-full aspect-square max-w-[300px] mx-auto bg-black rounded-lg overflow-hidden">
                 <Scanner
@@ -164,38 +150,10 @@ export function RedeemRewardModal({ campaignId, reward }: RedeemRewardModalProps
                 />
               </div>
               <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={isRedeeming}>
-                {isRedeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : `Deduct ${reward.pointsRequired} Points & Redeem`}
+                {isRedeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : `Deduct ${currentCost} & Redeem`}
               </Button>
             </form>
-          </TabsContent>
-
-          {/* Tab 2: Generate Voucher */}
-          <TabsContent value="voucher" className="space-y-4 py-4">
-            <p className="text-sm text-gray-500">
-              Create a voucher code for this reward that the participant can claim later. The code will expire in 7 days.
-            </p>
-
-            {!generatedCode ? (
-              <form onSubmit={handleGenerateVoucherSubmit} className="space-y-4">
-                <Button type="submit" className="w-full" disabled={isGenerating}>
-                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Voucher Code"}
-                </Button>
-              </form>
-            ) : (
-              <div className="flex flex-col items-center justify-center space-y-4 bg-green-50 p-6 rounded-lg border border-green-100">
-                <CheckCircle className="h-12 w-12 text-green-500" />
-                <div className="text-center">
-                  <p className="text-sm text-green-600 font-medium">Voucher Generated!</p>
-                  <p className="text-3xl font-mono font-bold tracking-widest text-gray-900 mt-2">{generatedCode}</p>
-                  <p className="text-xs text-gray-500 mt-2">Give this code to the participant.</p>
-                </div>
-                <Button variant="outline" onClick={() => setGeneratedCode(null)} className="w-full">
-                  Create Another
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

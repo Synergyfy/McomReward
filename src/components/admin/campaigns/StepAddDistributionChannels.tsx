@@ -31,7 +31,7 @@ export default function StepAddDistributionChannels({ onNext, onBack }: StepProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 3: Add Distribution Channels</CardTitle>
+        <CardTitle>Step 4: Add Distribution Channels</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-gray-600">Select how you want to distribute your campaign:</p>

@@ -79,3 +79,11 @@ export interface AdminBusinessDetails {
   remainingPointBalance: number;
   extraPoints: number;
 }
+
+export interface CreateSuperBusinessDto {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  referralCode: string;
+}

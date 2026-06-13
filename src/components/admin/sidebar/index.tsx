@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp } from 'lucide-react';
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp, Image as ImageIcon } from 'lucide-react';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -13,8 +13,7 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
   const pathname = usePathname();
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isPlaqueManagementOpen, setIsPlaqueManagementOpen] = useState(false);
-  const [isSalesManagementOpen, setIsSalesManagementOpen] = useState(false);
-  const [isRewardsOpen, setIsRewardsOpen] = useState(false);
+
 
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
@@ -48,33 +47,10 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           </Link>
         </li>
         <li>
-          {/* Rewards Parent Link with Dropdown */}
-          <div
-            className={parentLinkClasses("/admin/rewards")}
-            onClick={() => setIsRewardsOpen(!isRewardsOpen)}
-          >
-            <div className="flex items-center">
-              <Award className="mr-3" />
-              Rewards
-            </div>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isRewardsOpen ? 'rotate-180' : ''}`} />
-          </div>
-          {isRewardsOpen && (
-            <ul className="ml-4 mt-1 space-y-1">
-              <li>
-                <Link href="/admin/rewards" className={linkClasses("/admin/rewards")}>
-                  <Award className="mr-3 h-4 w-4" />
-                  All Rewards
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/rewards/stamp-rewards" className={linkClasses("/admin/rewards/stamp-rewards")}>
-                  <Stamp className="mr-3 h-4 w-4" />
-                  Stamp Rewards
-                </Link>
-              </li>
-            </ul>
-          )}
+          <Link href="/admin/rewards" className={linkClasses("/admin/rewards")}>
+            <Award className="mr-3" />
+            Rewards
+          </Link>
         </li>
         <li>
           {/* User Management Parent Link with Dropdown */}
@@ -93,6 +69,11 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
               <li>
                 <Link href="/admin/users/business" className={linkClasses("/admin/users/business")}>
                   Business Owners
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin/super-business" className={linkClasses("/admin/super-business")}>
+                  Create Super Business
                 </Link>
               </li>
               <li>
@@ -127,24 +108,24 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
             Matching Points Settings
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/tier-badge-control" className={linkClasses("/admin/tier-badge-control")}>
             <Award className="mr-3" />
             Tier & Badge Control
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/deals-management" className={linkClasses("/admin/deals-management")}>
             <Tag className="mr-3" />
             Deals Management
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/partner-management" className={linkClasses("/admin/partner-management")}>
             <Handshake className="mr-3" />
             Partner Management
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/notifications-control" className={linkClasses("/admin/notifications-control")}>
             <Bell className="mr-3" />
@@ -155,6 +136,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/reporting-analytics" className={linkClasses("/admin/reporting-analytics")}>
             <BarChart className="mr-3" />
             Reporting & Analytics
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/media-library" className={linkClasses("/admin/media-library")}>
+            <ImageIcon className="mr-3" />
+            Media Library
           </Link>
         </li>
         {/* Plaque Management Parent Link with Dropdown */}
@@ -186,23 +173,6 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
                   Plaque Analytics
                 </Link>
               </li>
-            </ul>
-          )}
-        </li>
-        {/* Sales Management Parent Link with Dropdown */}
-        <li>
-          <div
-            className={parentLinkClasses("/admin/sales")}
-            onClick={() => setIsSalesManagementOpen(!isSalesManagementOpen)}
-          >
-            <div className="flex items-center">
-              <ShoppingCart className="mr-3" />
-              Sales Management
-            </div>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isSalesManagementOpen ? 'rotate-180' : ''}`} />
-          </div>
-          {isSalesManagementOpen && (
-            <ul className="ml-4 mt-1 space-y-1">
               <li>
                 <Link href="/admin/sales/sell-plaque" className={linkClasses("/admin/sales/sell-plaque")}>
                   Sell Plaque
@@ -229,17 +199,23 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           </Link>
         </li>
         <li>
+          <Link href="/admin/cashback-rules" className={linkClasses("/admin/cashback-rules")}>
+            <DollarSign className="mr-3" />
+            Credits Management
+          </Link>
+        </li>
+        <li>
           <Link href="/admin/resources" className={linkClasses("/admin/resources")}>
             <BookCopy className="mr-3" />
             Resources
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/admin/security" className={linkClasses("/admin/security")}>
             <ShieldHalf className="mr-3" />
             Security
           </Link>
-        </li>
+        </li> */}
         <li>
           <Link href="/admin/summary" className={linkClasses("/admin/summary")}>
             <PieChart className="mr-3" />

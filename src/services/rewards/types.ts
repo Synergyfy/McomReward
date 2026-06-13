@@ -1,6 +1,7 @@
 export interface CreateRewardRequest {
   title: string;
-  max_points: number;
+  max_points?: number;
+  max_stamps_required?: number;
   value: number;
   description: string;
   image: string;
@@ -13,12 +14,22 @@ export interface CreateRewardRequest {
   status: string;
   sector_ids: string[];
   tier_ids: string[];
+  is_points_enabled: boolean;
+  is_stamps_enabled: boolean;
+  stamp_emoji?: string;
+  image_source_type?: string;
+  library_asset_id?: string;
+  sector_id?: string;
+  category_id?: string;
+  sub_category_id?: string;
+  emoji?: string;
 }
 
 export interface UpdateRewardRequest {
   title?: string;
   pointsRequired?: number;
   max_points?: number;
+  max_stamps_required?: number;
   value?: number;
   description?: string;
   image?: string;
@@ -29,6 +40,18 @@ export interface UpdateRewardRequest {
   status?: string;
   expiry?: string;
   badgeLevel?: string[];
+  is_points_enabled?: boolean;
+  is_stamps_enabled?: boolean;
+  stamp_emoji?: string;
+  image_source_type?: string;
+  library_asset_id?: string;
+  sector_id?: string;
+  category_id?: string;
+  sub_category_id?: string;
+  emoji?: string;
+  audience?: string;
+  sector_ids?: string[];
+  tier_ids?: string[];
 }
 
 export interface RewardResponse {
@@ -37,6 +60,7 @@ export interface RewardResponse {
   pointRequired: number;
   maxPoints: number; // Corrected to match backend payload
   max_points?: number; // Kept as optional just in case
+  max_stamps_required?: number;
   value: number;
   description: string;
   image: string;
@@ -52,6 +76,14 @@ export interface RewardResponse {
   expiry: string;
   expiryDatetime?: string; // Corrected to match backend payload
   badgeLevel: string | string[];
+  is_points_enabled: boolean;
+  is_stamps_enabled: boolean;
+  stamp_emoji?: string;
+  audience?: string;
+  businessClaimedCount?: number;
+  totalRedemptionsCount?: number;
+  totalPointsRedeemed?: number;
+  totalStampsRedeemed?: number;
 }
 
 export interface GetRewardsResponse {

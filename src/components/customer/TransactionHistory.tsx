@@ -5,8 +5,9 @@ import { TransactionHistoryTable } from './TransactionHistoryTable';
 export function TransactionHistory() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  const [historyType, setHistoryType] = useState<'both' | 'points' | 'stamps'>('both');
 
-  const { data, isLoading } = useGetParticipantGlobalHistory(page, limit);
+  const { data, isLoading } = useGetParticipantGlobalHistory(page, limit, historyType);
 
   const transactions = data?.data || [];
   const totalPages = data ? Math.ceil(data.total / limit) : 0;
@@ -18,6 +19,8 @@ export function TransactionHistory() {
       page={page}
       totalPages={totalPages}
       onPageChange={setPage}
+      historyType={historyType}
+      onHistoryTypeChange={setHistoryType}
     />
   );
 }

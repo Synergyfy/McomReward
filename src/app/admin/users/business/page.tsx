@@ -11,9 +11,11 @@ import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
 import { useGuide } from '@/context/GuideContext';
 import { Suspense, useEffect } from 'react';
+import { useImpersonation } from '@/context/ImpersonationContext';
 
 function BusinessUsersContent() {
   const router = useRouter();
+  const { startImpersonation } = useImpersonation();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const { data: response, isLoading, isError } = useAdminBusinesses(page, limit);
@@ -61,6 +63,12 @@ function BusinessUsersContent() {
 
   const handleViewDetails = (userId: string) => {
     router.push(`/admin/users/business/${userId}`);
+  };
+
+  const handleImpersonate = (businessId: string) => {
+    // For now we use a placeholder admin ID since we don't have auth context with ID here easily
+    // In a real app, this should come from auth context
+    startImpersonation(businessId, 'admin-user');
   };
 
   if (isLoading) {
@@ -174,6 +182,7 @@ function BusinessUsersContent() {
             onAdjustUserPoints={handleAdjustUserPoints}
             onSuspendUser={handleSuspendUser}
             onViewDetails={handleViewDetails}
+            onImpersonate={handleImpersonate}
             router={router}
           />
         </div>

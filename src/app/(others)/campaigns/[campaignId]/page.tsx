@@ -23,10 +23,10 @@ export default function CampaignDetailPage({ params }: PageProps) {
   const { memberName, joinCampaign, isCampaignJoined } = useCampaignMembership();
 
   const { data: campaign, isLoading, error } = useGetPublicCampaignDetails(campaignId);
-  const { data: joinStatus } = useCheckCampaignJoinStatus(campaignId);
+  const { data: joinStatus, isLoading: isJoinStatusLoading } = useCheckCampaignJoinStatus(campaignId);
   const { mutate: joinCampaignMutation, isPending: isJoining } = useJoinCampaign();
 
-  const isMember = joinStatus?.isJoined || isCampaignJoined(campaignId);
+  const isMember = !!joinStatus?.isJoined;
 
   const handleJoinClick = () => {
     joinCampaignMutation(campaignId, {
@@ -45,7 +45,7 @@ export default function CampaignDetailPage({ params }: PageProps) {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || isJoinStatusLoading) {
     return <LoadingSpinner />;
   }
 

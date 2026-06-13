@@ -1,6 +1,6 @@
 
-
 import { BusinessReward } from '../business-reward/types';
+import { TierResponse } from '../tiers/types';
 
 export interface UpdateCampaignPayload extends Partial<CreateCampaignPayload> {
   // reward_ids for claimed campaigns (Admin Rewards)
@@ -26,6 +26,7 @@ export interface CreateCampaignPayload {
   start_date: string;
   end_date: string;
   quantity: number;
+  total_slots: number;
   audience_type: string;
   signUpPoint: number;
   banner_url: string;
@@ -49,6 +50,7 @@ export interface CreateCampaignPayload {
   footer_text: string;
   reward_ids?: string[];
   business_reward_ids?: string[];
+  target_tier_ids?: string[];
 }
 
 export interface CampaignResponse {
@@ -59,6 +61,8 @@ export interface CampaignResponse {
   startDate: string;
   endDate: string;
   quantity: number;
+  total_slots?: number;
+  remainingSlots?: number;
   audienceType: string;
   bannerUrl: string;
   logoUrl: string;
@@ -82,7 +86,7 @@ export interface CampaignResponse {
   footerText: string;
   rewards: Reward[];
   // Added to detect if it is a claimed campaign (has parent campaign)
-  campaign?: { id: string }; 
+  campaign?: { id: string };
   uniqueCode: string | null;
   createdAt: string;
   updatedAt: string;
@@ -92,7 +96,9 @@ export interface CampaignResponse {
   totalPointsRedeemed: number;
   totalMatchingPointsEarned: number;
   matchingPointsDisabledByAdmin: boolean;
+  rewardMode?: 'points' | 'stamps' | 'both';
   business_reward_ids?: string[];
+  targetTiers?: TierResponse[];
 }
 
 export enum CampaignType {
@@ -100,6 +106,7 @@ export enum CampaignType {
   LINK = 'link',
   BOTH = 'both',
   REFERRAL = 'referral',
+  MATCHING_POINT = 'matching_point',
 }
 
 export enum AudienceType {
@@ -119,6 +126,9 @@ export interface Reward {
   id: string;
   title: string;
   points_required: number;
+  pointsRequired?: number;
+  stamps_required?: number;
+  stampsRequired?: number;
   value: number;
   description: string;
   image: string;
@@ -134,10 +144,11 @@ export interface PublicCampaignResponse {
   start_date: string;
   end_date: string;
   quantity: number;
+  remainingSlots?: number;
   audience_type: string;
   banner_url: string;
   // Adding camelCase alternatives as potential fix for display issues if API returns camelCase
-  bannerUrl?: string; 
+  bannerUrl?: string;
   logo_url: string | null;
   logoUrl?: string | null;
   cta_text: string;
@@ -159,13 +170,13 @@ export interface Business {
 export interface BusinessCampaign {
   id: string;
   uniqueCode: string;
-  
+
   // --- Relations ---
-  business: Business; 
+  business: Business;
   campaign?: { id: string }; // Null for campaigns created from scratch
   businessRewards: BusinessReward[]; // The linked business rewards
   rewards: Reward[]; // Admin rewards
-  
+
   // --- Copied/Set Fields ---
   name: string;
   campaign_type: CampaignType; // Map to CampaignType enum
@@ -173,6 +184,8 @@ export interface BusinessCampaign {
   start_date: string;
   end_date: string;
   quantity: number;
+  total_slots?: number;
+  remainingSlots?: number;
   audience_type: AudienceType; // Map to AudienceType enum
   banner_url: string;
   logo_url: string;
@@ -181,19 +194,19 @@ export interface BusinessCampaign {
   cta_text_color: string;
   text_color: string;
   background_color: string;
-  
+
   signUpPoint: number;
   reward_type: RewardType; // Map to RewardType enum
   regular_points_threshold: number;
   matching_points_threshold: number;
-  
+
   // --- Statistics & Status ---
   total_points_earned: number;
   total_points_redeemed: number;
   total_matching_points_earned: number;
   matching_points_disabled_by_admin: boolean;
   disabled: boolean;
-  
+
   // --- Page Details ---
   earn_point_page_title: string;
   earn_point_page_description: string;
@@ -204,7 +217,7 @@ export interface BusinessCampaign {
   contact_email: string;
   contact_phone_number: string;
   footer_text: string;
-  
+
   // --- Timestamps ---
   created_at: string;
   updated_at: string;
@@ -226,18 +239,20 @@ export interface PaginatedCampaignsResponse extends PaginationMeta {
 export interface ParticipantCampaignSearchResponse {
   id: string;
   name: string;
-  campaign_type: string;
-  start_date: string;
-  end_date: string;
+  campaignType: string;
+  startDate: string;
+  endDate: string;
   disabled: boolean;
   business: {
     id: string;
     name: string;
   };
-  rewards: {
+  businessRewards: {
     id: string;
     title: string;
-    points_required: number;
+    pointRequired?: number;
+    points_required?: number;
+    stamps_required?: number;
   }[];
 }
 
@@ -245,6 +260,10 @@ export interface OngoingCampaignReward {
   id: string;
   title: string;
   pointsRequired: number;
+  points_required?: number;
+  pointRequired?: number; // Variant from some API responses
+  stamps_required?: number;
+  stampsRequired?: number;
   value: number;
   description: string;
   image: string;
@@ -259,6 +278,10 @@ export interface OngoingCampaignReward {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  is_points_enabled?: boolean;
+  isPointsEnabled?: boolean;
+  is_stamps_enabled?: boolean;
+  isStampsEnabled?: boolean;
 }
 
 export interface OngoingCampaign {
@@ -289,6 +312,7 @@ export interface OngoingCampaign {
   matchingPointsThreshold: number | null;
   totalMatchingPointsEarned: number;
   matchingPointsDisabledByAdmin: boolean;
+  rewardMode?: 'points' | 'stamps' | 'both';
   uniqueCode: string | null;
   earnPointPageTitle: string | null;
   earnPointPageDescription: string | null;
@@ -304,7 +328,10 @@ export interface OngoingCampaign {
     name: string;
   };
   rewards: OngoingCampaignReward[];
+  businessRewards?: OngoingCampaignReward[];
   participantCount: number;
+  howToEarn?: string[];
+  termsAndConditions?: string[];
 }
 
 export interface PaginatedOngoingCampaignsResponse extends PaginationMeta {
@@ -352,6 +379,7 @@ export interface TopReward {
   id: string;
   rTitle: string;
   rPointsRequired: number;
+  rStampsRequired?: number;
   totalRedemptions: string;
 }
 
@@ -383,4 +411,17 @@ export interface CustomerActivityResponseDto {
 
 export interface PaginatedCustomerActivityResponseDto extends PaginationMeta {
   data: CustomerActivityResponseDto[];
+}
+
+export interface CampaignTierAnalytics {
+  tierId: string;
+  tierName: string;
+  claimsCount: number;
+  totalParticipants: number;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+}
+
+export interface CampaignTierAnalyticsResponse {
+  data: CampaignTierAnalytics[];
 }

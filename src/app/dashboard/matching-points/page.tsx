@@ -1,24 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import MatchingPointsOverview from '@/components/dashboard/matching-points/MatchingPointsOverview';
-import MatchingPointsHistoryTable from '@/components/dashboard/matching-points/MatchingPointsHistoryTable';
-import { matchingPointsOverview as mockOverview } from '@/lib/mock-data/matchingPoints';
-import { useGetMatchingPointBalance, useGetMatchingPointsHistory } from '@/services/matching-points/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
 import { Loader2 } from 'lucide-react';
+import SuperBusinessView from '@/components/dashboard/matching-points/SuperBusinessView';
+import RegularBusinessView from '@/components/dashboard/matching-points/RegularBusinessView';
 
 export default function MatchingPointsPage() {
-  const { data: balanceData, isLoading: isBalanceLoading } = useGetMatchingPointBalance();
-  const { data: historyData, isLoading: isHistoryLoading } = useGetMatchingPointsHistory({ page: 1, limit: 10 });
+  const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
 
-  // Merge mock overview with real balance
-  const overview = {
-    ...mockOverview,
-    totalMatchingPoints: balanceData?.matching_points ?? 0,
-  };
-
-  if (isBalanceLoading || isHistoryLoading) {
+  if (isProfileLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -26,30 +17,11 @@ export default function MatchingPointsPage() {
     );
   }
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-gray-800">Matching Points</h1>
+  // Super Business View
+  if (profile?.isSuperBusiness) {
+    return <SuperBusinessView />;
+  }
 
-      {/* Overview, Earning, and Redemption Rules */}
-      <MatchingPointsOverview overview={overview} />
-
-      {/* Admin Notices or Restrictions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Notices & Restrictions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-            {mockOverview.adminNotices.map((notice, index) => (
-              <li key={index}>{notice}</li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* Matching Points Activity Log */}
-      <MatchingPointsHistoryTable history={historyData?.data || []} />
-    </div>
-  );
+  // Regular Business View
+  return <RegularBusinessView />;
 }
-

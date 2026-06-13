@@ -10,6 +10,7 @@ export interface User {
   name: string;
   isOnboarded: boolean;
   isEmailVerified: boolean;
+  isSuperBusiness?: boolean;
 }
 
 export interface BusinessLoginResponse {
@@ -25,6 +26,7 @@ export interface BusinessSignUpDto {
   password: string;
   confirmPassword?: string;
   referralCode?: string;
+  provisionCode?: string;
 }
 
 export interface CreateBusinessDto {
@@ -79,9 +81,9 @@ export interface BusinessProfile {
   profileImage?: string;
   banner?: string;
   description?: string;
-  category?: { id: string; name: string };
-  sectorId?: string;
-  subCategoryId?: string;
+  category?: { id: string; name: string; imageUrl?: string | null };
+  sector?: { id: string; name: string; imageUrl?: string | null };
+  subCategory?: { id: string; name: string; imageUrl?: string | null };
   socialMedia: { name: string; link: string }[];
   uniqueCode: string;
   role: string;
@@ -93,6 +95,7 @@ export interface BusinessProfile {
   stripeCustomerId: string | null;
   totalPointsEarned: number;
   totalPointsRedeemed: number;
+  isSuperBusiness?: boolean;
 }
 
 export interface UpdateBusinessProfileDto {

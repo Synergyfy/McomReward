@@ -131,3 +131,20 @@ export const useResendOtp = () => {
     mutationFn: resendOtp,
   });
 };
+
+// SSO Login
+const ssoLogin = async (token: string): Promise<any> => {
+  const { data } = await api.post('/auth/sso', { token });
+  return data;
+};
+
+export const useSsoLogin = () => {
+  return useMutation({
+    mutationFn: ssoLogin,
+    onSuccess: (data) => {
+      Cookies.set('access', data.accessToken);
+      Cookies.set('refresh', data.refreshToken);
+      setBearerToken(data.accessToken);
+    },
+  });
+};

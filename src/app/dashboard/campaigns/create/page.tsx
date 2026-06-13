@@ -12,11 +12,10 @@ import StepConfigureEarnPoints from '@/components/dashboard/campaigns/StepConfig
 import StepConfigureRedeemPoints from '@/components/dashboard/campaigns/StepConfigureRedeemPoints';
 import StepConfigureContactUs from '@/components/dashboard/campaigns/StepConfigureContactUs';
 import StepConfigureFooter from '@/components/dashboard/campaigns/StepConfigureFooter';
-import StepAddDistributionChannels from '@/components/dashboard/campaigns/StepAddDistributionChannels';
-import StepCampaignScheduling from '@/components/dashboard/campaigns/StepCampaignScheduling';
 import StepReviewAndCreate from '@/components/dashboard/campaigns/StepReviewAndCreate';
 
 import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
 import { useGetGeneralAnalytics } from '@/services/business-dashboard/hook';
 import Loader from '@/components/ui/loader';
 
@@ -24,9 +23,10 @@ export default function CreateCampaignPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
   const { data: subscription, isLoading: isSubLoading } = useGetMySubscription();
+  const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
   const { data: analytics, isLoading: isAnalyticsLoading } = useGetGeneralAnalytics();
 
-  const totalSteps = 9; // Updated total steps
+  const totalSteps = 7; // Updated total steps
 
   const handleNext = () => {
     setCurrentStep((prev) => prev + 1);
@@ -51,17 +51,13 @@ export default function CreateCampaignPage() {
       case 6:
         return <StepConfigureFooter onNext={handleNext} onBack={handleBack} />;
       case 7:
-        return <StepAddDistributionChannels onNext={handleNext} onBack={handleBack} />;
-      case 8:
-        return <StepCampaignScheduling onNext={handleNext} onBack={handleBack} />;
-      case 9:
         return <StepReviewAndCreate onBack={handleBack} />;
       default:
         return null;
     }
   };
 
-  if (isSubLoading || isAnalyticsLoading) {
+  if (isSubLoading || isAnalyticsLoading || isProfileLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader /></div>;
   }
 
@@ -69,8 +65,8 @@ export default function CreateCampaignPage() {
   const maxCampaigns = subscription?.tier?.configuration?.quotas?.maxActiveCampaigns;
   const currentActive = analytics?.totalActiveCampaigns || 0;
 
-  // Check if trial limit is reached
-  if (isTrial && typeof maxCampaigns === 'number' && currentActive >= maxCampaigns) {
+  // Check if trial limit is reached - Bypass for Super Business
+  if (!profile?.isSuperBusiness && isTrial && typeof maxCampaigns === 'number' && currentActive >= maxCampaigns) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">

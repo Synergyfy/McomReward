@@ -13,7 +13,9 @@ import { ArrowLeft, Save, Printer, Upload, Image as ImageIcon } from 'lucide-rea
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import MediaLibrary, { MediaAsset } from '@/components/dashboard/media-library/MediaLibrary';
+import MediaLibrary from '@/components/dashboard/media-library/MediaLibrary';
+import { LibraryAsset } from '@/services/media-library/types';
+import { ImageCropper } from '@/components/ui/image-cropper';
 
 // Create QR Plaque Page - Allows creating custom plaques with QR codes from library or device
 export default function CreatePlaquePage() {
@@ -27,12 +29,14 @@ export default function CreatePlaquePage() {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [isCropping, setIsCropping] = useState(false);
     const contentUrl = qrCodeUrl; // URL for the QR code image
     const previewQrCodeUrl = qrCodeUrl || '/placeholder-qr-code.png';
-    const handleSelectAsset = (asset: MediaAsset) => {
+    const handleSelectAsset = (asset: LibraryAsset) => {
         setQrCodeUrl(asset.url);
         setIsLibraryOpen(false);
-        toast.success(`Selected QR Code: ${asset.name}`);
+        toast.success(`Selected QR Code: ${asset.title}`);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,11 +44,20 @@ export default function CreatePlaquePage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setQrCodeUrl(reader.result as string);
-                toast.success("Image uploaded from device");
+                setCropImage(reader.result as string);
+                setIsCropping(true);
             };
             reader.readAsDataURL(file);
+            e.target.value = '';
         }
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        const url = URL.createObjectURL(croppedBlob);
+        setQrCodeUrl(url);
+        setIsCropping(false);
+        setCropImage(null);
+        toast.success("Image uploaded and cropped");
     };
 
     const handleSave = () => {
@@ -72,7 +85,7 @@ export default function CreatePlaquePage() {
 
     return (
         <div className="space-y-6">
-             {/* Print Styles */}
+            {/* Print Styles */}
             <style jsx global>{`
                 @media print {
                     body * {
@@ -206,7 +219,7 @@ export default function CreatePlaquePage() {
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold">Live Preview</h2>
-                         <Button variant="outline" size="sm" onClick={handlePrint}>
+                        <Button variant="outline" size="sm" onClick={handlePrint}>
                             <Printer className="mr-2 h-4 w-4" /> Print / PDF
                         </Button>
                     </div>
@@ -240,6 +253,20 @@ export default function CreatePlaquePage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+
+            {
+                isCropping && cropImage && (
+                    <ImageCropper
+                        image={cropImage}
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => {
+                            setIsCropping(false);
+                            setCropImage(null);
+                        }}
+                        aspect={1}
+                    />
+                )
+            }
+        </div >
     );
 }

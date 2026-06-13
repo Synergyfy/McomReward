@@ -65,7 +65,7 @@ export const ParticipantBadgesManager = () => {
         } as CreateParticipantBadgeDto;
 
         if (editingBadge) {
-            updateBadge({ id: editingBadge.id, payload }, {
+            updateBadge({ id: editingBadge.id, ...payload }, {
                 onSuccess: () => {
                     toast.success("Badge updated successfully");
                     setIsModalOpen(false);

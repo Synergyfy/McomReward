@@ -23,6 +23,7 @@ import RedeemPointsPagePreview from './previews/RedeemPointsPagePreview';
 import ContactUsPagePreview from './previews/ContactUsPagePreview';
 
 import FooterPreview from './previews/FooterPreview';
+import { useGetTiers } from '@/services/tiers/hook'; // Import to get tiers for seasonal dates
 
 interface StepProps {
   onBack: () => void;
@@ -37,9 +38,7 @@ const mockRewards = [
 
 import { useCreateCampaign } from '@/services/campaigns/hook';
 import { CreateCampaignPayload } from '@/services/campaigns/types';
-import { toast } from 'sonner'; // Assuming sonner is used, or use standard alert if not available. Reverting to console/alert if unsure, but keeping it simple.
-
-// ... imports
+import { toast } from 'sonner';
 
 export default function StepReviewAndCreate({ onBack }: StepProps) {
   const router = useRouter();
@@ -47,8 +46,9 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('campaignDetail');
 
-  const { mutate: createCampaign, isPending: isCreating } = useCreateCampaign();
+  const { mutateAsync: createCampaign, isPending: isCreating } = useCreateCampaign(); // Use mutateAsync for Promise handling
   const [isUploading, setIsUploading] = useState(false);
+  const { data: allTiers } = useGetTiers(); // Fetch tiers to get configured dates for seasonal
 
   const uploadImage = async (blobUrl: string): Promise<string | null> => {
     try {
@@ -75,10 +75,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
   };
 
   const handleCreateCampaign = async () => {
-    if (!formData.startDate || !formData.endDate) {
-      alert("Start date and end date are required.");
-      return;
-    }
 
     setIsUploading(true);
     let bannerUrl = formData.imageUrl;
@@ -103,63 +99,72 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
       return;
     }
 
-    const payload: CreateCampaignPayload = {
-      name: formData.campaignName,
-      campaign_type: formData.campaignType || 'qr_code',
-      campaign_message: formData.campaignMessage,
-      start_date: formData.startDate.toISOString(),
-      end_date: formData.endDate.toISOString(),
-      quantity: Number(formData.rewardsAvailable) || 0,
-      audience_type: formData.audienceType[0] || 'members', // Taking first element or default
-      signUpPoint: 0, // Default as not in form
-      banner_url: bannerUrl,
-      logo_url: logoUrl,
-      cta_text: formData.ctaButtonText,
-      cta_background_color: formData.ctaBgColor,
-      cta_text_color: formData.ctaTextColor,
-      text_color: formData.bgColorTextColor,
-      background_color: formData.bgColor,
-      reward_type: 'regular', // Default
-      regular_points_threshold: 0, // Default
-      matching_points_threshold: 0, // Default
-      earn_point_page_title: formData.earnTitle || '',
-      earn_point_page_description: formData.earnText || '',
-      redeem_reward_page_title: formData.redeemTitle || '',
-      redeem_reward_page_description: formData.redeemText || '',
-      contact_us_page_title: formData.contactTitle || '',
-      contact_us_page_description: formData.contactText || '',
-      contact_email: formData.contactEmail || '',
-      contact_phone_number: formData.contactPhone || '',
-      footer_text: formData.footerText || '',
-      ...(formData.rewardIds && formData.rewardIds.length > 0 ? { reward_ids: formData.rewardIds } : {}),
-    };
+    // Determine target tiers
+    const targetTierIds = (formData.target_tier_ids && formData.target_tier_ids.length > 0)
+      ? formData.target_tier_ids
+      : (formData.target_tier_id ? [formData.target_tier_id] : []);
 
-    console.log('Creating campaign with payload:', payload);
+    if (targetTierIds.length === 0) {
+      alert("No tier selected.");
+      setIsUploading(false);
+      return;
+    }
 
-    createCampaign(payload, {
-      onSuccess: (data) => {
-        console.log('Campaign created successfully:', data);
-        setShowSuccessDialog(true);
-        setIsUploading(false);
-      },
-      onError: (error) => {
-        console.error('Failed to create campaign:', error);
-        alert('Failed to create campaign. Please try again.');
-        setIsUploading(false);
-      }
-    });
+    try {
+      const payload: CreateCampaignPayload = {
+        name: formData.campaignName,
+        campaign_type: formData.campaignType || 'qr_code',
+        campaign_message: formData.campaignMessage,
+        start_date: '', // Templates don't need dates, they use tier seasons
+        end_date: '',
+        quantity: Number(formData.rewardsAvailable) || 0,
+        audience_type: formData.audienceType[0] || 'members',
+        signUpPoint: 0,
+        banner_url: bannerUrl,
+        logo_url: logoUrl,
+        cta_text: formData.ctaButtonText,
+        cta_background_color: formData.ctaBgColor,
+        cta_text_color: formData.ctaTextColor,
+        text_color: formData.bgColorTextColor,
+        background_color: formData.bgColor,
+        reward_type: 'regular',
+        regular_points_threshold: 0,
+        matching_points_threshold: 0,
+        earn_point_page_title: formData.earnTitle || '',
+        earn_point_page_description: formData.earnText || '',
+        redeem_reward_page_title: formData.redeemTitle || '',
+        redeem_reward_page_description: formData.redeemText || '',
+        contact_us_page_title: formData.contactTitle || '',
+        contact_us_page_description: formData.contactText || '',
+        contact_email: formData.contactEmail || '',
+        contact_phone_number: formData.contactPhone || '',
+        footer_text: formData.footerText || '',
+        ...(formData.rewardIds && formData.rewardIds.length > 0 ? { reward_ids: formData.rewardIds } : {}),
+        ...({ target_tier_ids: targetTierIds } as any)
+      };
+
+      await createCampaign(payload);
+
+      console.log('Campaign created successfully');
+      setShowSuccessDialog(true);
+      setIsUploading(false);
+
+    } catch (error) {
+      console.error('Failed to create campaign:', error);
+      alert('Failed to create campaign. Please try again.');
+      setIsUploading(false);
+    }
   };
 
   const handleDialogAcknowledge = () => {
     setShowSuccessDialog(false);
     resetFormData();
 
-    // Check if we are in a tour (this is a bit hacky, normally we'd pass a prop, but for speed/minimalism)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('tour') === 'true') {
-        router.push('/admin/users/business?tour=true');
+      router.push('/admin/users/business?tour=true');
     } else {
-        router.push('/admin/campaigns/list');
+      router.push('/admin/campaigns/list');
     }
   };
 
@@ -205,25 +210,10 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
             </div>
           </div>
 
-          <h4 className="text-lg font-semibold mb-3 mt-6">Distribution Channels</h4>
-          <div className="grid gap-2 mb-6 text-sm">
-            <p><strong>QR Code:</strong> {formData.distributionChannels.qrCode ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Share Link:</strong> {formData.distributionChannels.shareLink ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Embed Button:</strong> {formData.distributionChannels.embedButton ? 'Enabled' : 'Disabled'}</p>
-            <p><strong>Email Send:</strong> {formData.distributionChannels.emailSend ? 'Enabled' : 'Disabled'}</p>
-          </div>
-
-          <h4 className="text-lg font-semibold mb-3">Scheduling & Auto Rules</h4>
-          <div className="grid gap-2 mb-6 text-sm">
-            <p><strong>Stop after claims:</strong> {Number(formData.schedulingRules.stopAfterClaims) > 0 ? formData.schedulingRules.stopAfterClaims : 'Unlimited'}</p>
-            <p><strong>Pause on reward empty:</strong> {formData.schedulingRules.pauseOnRewardEmpty ? 'Yes' : 'No'}</p>
-            <p><strong>Auto-switch to points:</strong> {formData.schedulingRules.autoSwitchToPoints ? 'Yes' : 'No'}</p>
-          </div>
-
           <div className="flex justify-between mt-6">
             <Button variant="outline" onClick={onBack} disabled={isCreating || isUploading}>Back</Button>
             <Button id="campaign-submit-btn" onClick={handleCreateCampaign} disabled={isCreating || isUploading}>
-              {isUploading ? 'Uploading Images...' : isCreating ? 'Creating...' : 'Create Campaign'}
+              {isUploading ? 'Uploading Images...' : isCreating ? 'Creating... (' + (formData.target_tier_ids?.length || 1) + ')' : 'Create Campaign'}
             </Button>
           </div>
         </CardContent>
@@ -233,7 +223,7 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Campaign Created Successfully!</AlertDialogTitle>
             <AlertDialogDescription>
-              Your new campaign has been created. <br /><br />
+              Your new campaign(s) have been created. <br /><br />
               <strong>What's Next?</strong><br />
               You might want to add staff members to help manage this campaign.
             </AlertDialogDescription>

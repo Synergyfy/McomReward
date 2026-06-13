@@ -24,7 +24,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
-  Image
+  Image,
+  Wallet,
+  Banknote
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -73,7 +75,12 @@ export default function BusinessSidebar({
   const router = useRouter();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
 
-  const isFreeTier = useMemo(() => subscription?.tier === 'Free', [subscription]);
+  const isFreeTier = useMemo(() => {
+    if (profile?.isSuperBusiness) return false;
+    return subscription?.tier === 'Free';
+  }, [subscription, profile]);
+
+  const isSuperBusiness = profile?.isSuperBusiness;
 
   const enhancedLinkClasses = (path: string, exact: boolean = false) => {
     let classes = linkClasses(path, exact);
@@ -107,7 +114,7 @@ export default function BusinessSidebar({
     submenuKey = '',
     children
   }: {
-    icon: any,
+    icon?: any,
     label: string,
     href?: string,
     activePath?: string,
@@ -118,7 +125,7 @@ export default function BusinessSidebar({
 
     const Content = () => (
       <div className={`flex items-center w-full px-3 py-2 rounded-lg transition-all ${!hasSubmenu && href ? enhancedLinkClasses(href!, activePath === href) : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600 cursor-pointer'} ${isCollapsed ? 'justify-center' : ''}`}>
-        <Icon className={`${isCollapsed ? 'mr-0' : 'mr-3'} shrink-0`} size={20} />
+        {Icon && <Icon className={`${isCollapsed ? 'mr-0' : 'mr-3'} shrink-0`} size={20} />}
         {!isCollapsed && (
           <div className="flex-1 flex justify-between items-center overflow-hidden">
             <span className="truncate">{label}</span>
@@ -236,19 +243,16 @@ export default function BusinessSidebar({
         <ul className="space-y-1 text-sm font-medium pb-20">
           <SidebarItem icon={LayoutDashboard} label="Overview" href="/dashboard" />
 
-          <SidebarItem icon={Gift} label="Rewards" href="/dashboard/rewards" />
+          {/* <SidebarItem icon={Gift} label="Rewards" href="/dashboard/rewards" /> */}
 
-          <SidebarItem icon={Stamp} label="Stamp Rewards" href="/dashboard/stamp-rewards" />
+          <SidebarItem icon={Gift} label="All Rewards" href="/dashboard/stamp-rewards" />
 
           <SidebarItem icon={Megaphone} label="Campaigns" hasSubmenu submenuKey="campaigns">
             <SubItem href="/dashboard/campaigns/list" label="View Campaigns" />
             <SubItem href="/dashboard/campaign-performance" label="Performance" />
           </SidebarItem>
 
-          <SidebarItem icon={Ticket} label="Vouchers" hasSubmenu submenuKey="vouchers">
-            <SubItem href="/dashboard/vouchers/list" label="View Vouchers" />
-            <SubItem href="/dashboard/vouchers/create" label="Create Voucher" />
-          </SidebarItem>
+          <SidebarItem icon={Ticket} label="Mall Rewards" href="/dashboard/mall-rewards" />
 
           <SidebarItem icon={Heart} label="Wishlist Insights" href="/dashboard/wishlist-insights" />
 
@@ -271,18 +275,27 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Award} label="My Network" hasSubmenu submenuKey="myassets">
             <SubItem href="/dashboard/my-assets" label="Contacts" />
-            <SubItem href="/dashboard/my-assets/group-circles" label="Group Circles" />
+            <SidebarItem label="Group Circles" hasSubmenu submenuKey="groupcircles">
+              <SubItem href="/dashboard/my-assets/group-circles" label="Visualization" />
+            </SidebarItem>
             <SubItem href="/dashboard/my-assets/qr-plaques" label="QR Plaques" />
-            <SubItem href="/dashboard/affiliate" label="Affiliate" />
+            <SubItem href="/dashboard/affiliate" label="Referral" />
             <SubItem href="/dashboard/my-assets/nfc-cards" label="NFC Cards" />
+            <SubItem href="/dashboard/my-assets/customer-contact" label="Customer Contact" />
             <SubItem href="/dashboard/customer-activities" label="Customer Activities" />
           </SidebarItem>
 
           <SidebarItem icon={User} label="Business Profile" href="/dashboard/profile" />
 
-          <SidebarItem icon={Star} label="Tier" href="/dashboard/tier" />
+          <SidebarItem icon={Star} label="Progression" href="/dashboard/progression" />
 
-          <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
+          <SidebarItem icon={Wallet} label="Wallet & Credits" href="/dashboard/wallet" />
+
+          <SidebarItem icon={Banknote} label="Credit Rewards" href="/dashboard/cashback" />
+
+          {!isSuperBusiness && (
+            <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
+          )}
 
           <SidebarItem icon={Settings} label="Settings" href="/dashboard/account" />
 

@@ -2,23 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Select, { CSSObjectWithLabel } from 'react-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CloudinaryUpload } from '@/components/ui/cloudinary-upload';
 import DateTimePicker from './datePicker';
 import Image from 'next/image';
-import { Calendar, Users, Gift, Tag } from 'lucide-react';
+import { Calendar, Plus, X } from 'lucide-react';
 import { useCampaignForm } from '@/context/CampaignFormContext';
 import { useGetBusinessRewards } from '@/services/business-reward/hooks';
-import { useGetTiers } from '@/services/tiers/hook'; // Import useGetTiers hook
-import { useGetWishlistInsights } from '@/services/wishlist/hook';
-
-
+import { useGetMySubscription } from '@/services/tiers/hook';
+import { toast } from 'sonner';
+import SelectRewardModal from './SelectRewardModal';
+import { Badge } from '@/components/ui/badge';
 
 interface StepProps {
   onNext: () => void;
@@ -33,50 +31,40 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(formData.logoUrl || null);
   const dealName = searchParams.get('dealName');
 
-  // Fetch rewards using the hook
-  const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100); // Fetching first 100 for now
-  const rewards = rewardsData?.data || [];
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
-  // Fetch tiers using the hook
-  const { data: tiersData } = useGetTiers();
-  const tiers = tiersData || [];
+  // Fetch rewards to have access to full reward details if needed for initial load
+  // (though formData.selectedRewards should ideally be populated)
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetBusinessRewards(1, 100);
+  const { data: subscriptionData } = useGetMySubscription();
 
-  // Fetch wishlist insights using the hook
-  const { data: wishlistInsightsData, isLoading: isLoadingWishlist } = useGetWishlistInsights({ page: 1, limit: 100 });
-  const wishlistInsights = wishlistInsightsData?.data || [];
+  const isActive = formData.startDate && formData.endDate &&
+    new Date(formData.startDate) < new Date() &&
+    new Date(formData.endDate) > new Date();
 
-  const rewardOptions = rewards.map(r => ({
-    value: r.id,
-    label: r.title
-  })) || [];
-
-  const wishlistOptions = wishlistInsights.map(item => ({
-    value: item.itemName,
-    label: `${item.itemName} (${item.audienceSize} users)`
-  })) || [];
+  const isExpired = formData.endDate && new Date(formData.endDate) < new Date();
+  const isStartDateDisabled = !!(isActive && !isExpired);
 
   useEffect(() => {
     const from = searchParams.get('from');
     const itemName = searchParams.get('itemName');
-    const wishlistId = searchParams.get('wishlistId'); // Capture wishlistId
+    const wishlistId = searchParams.get('wishlistId');
 
     if (from === 'wishlist' && itemName) {
       updateFormData({
         campaignName: formData.campaignName || `${itemName} Campaign`,
-        audienceType: formData.audienceType.includes('wishlist_target')
-          ? formData.audienceType
-          : [...formData.audienceType, 'wishlist_target'],
+        audienceType: ['wishlist_target'],
         wishlistItemIds: [itemName],
-        wishlistAggregateId: wishlistId || undefined, // Store wishlist ID
+        wishlistAggregateId: wishlistId || undefined,
       });
     } else if (dealName && !formData.campaignName) {
       updateFormData({
         campaignName: `${dealName} Campaign`,
-        audienceType: ['wishlist_target'], // Assuming dealName also implies wishlist_target
+        audienceType: ['wishlist_target'],
         wishlistItemIds: [dealName],
       });
     }
-  }, [searchParams, formData.campaignName, updateFormData, dealName, formData.audienceType]);
+  }, [searchParams, formData.campaignName, updateFormData, dealName]);
 
   useEffect(() => {
     if (formData.imageUrl) setImagePreviewUrl(formData.imageUrl);
@@ -95,15 +83,23 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
   const handleNextClick = () => {
     const newErrors: Record<string, boolean> = {};
-    const { campaignName, rewardIds, startDate, endDate, rewardsAvailable, campaignMessage, ctaButtonText, audienceType, badgeLevels, wishlistItemIds } = formData;
+    const { campaignName, totalSlots, rewardIds, startDate, endDate, campaignMessage, audienceType, badgeLevels, wishlistItemIds, campaignType } = formData;
 
     if (!campaignName.trim()) newErrors.campaignName = true;
-    if (rewardIds.length === 0) newErrors.rewardIds = true;
-    if (!startDate) newErrors.startDate = true;
+    if (totalSlots === '' || totalSlots === undefined || totalSlots === null) newErrors.totalSlots = true;
+    // Skip reward validation for Matching Point campaigns
+    if (campaignType !== 'matching_point' && rewardIds.length === 0) newErrors.rewardIds = true;
+    if (!startDate) {
+      newErrors.startDate = true;
+    } else if (startDate < new Date()) {
+      // Allow past dates if editing an existing active campaign or just warn?
+      // For now, retaining strict check but alert is annoying if re-editing.
+      // Ideally check if it's a new campaign.
+      // Removing alert for better UX, just highlight error if strictly invalid logic is needed.
+      // newErrors.startDate = true;
+    }
     if (!endDate) newErrors.endDate = true;
-    if (rewardsAvailable === '' || Number(rewardsAvailable) <= 0) newErrors.rewardsAvailable = true;
     if (!campaignMessage.trim()) newErrors.campaignMessage = true;
-    if (!ctaButtonText.trim()) newErrors.ctaButtonText = true;
     if (audienceType.length === 0) newErrors.audienceType = true;
     if (audienceType.includes('badge_level') && (!badgeLevels || badgeLevels.length === 0)) newErrors.badgeLevels = true;
     if (audienceType.includes('wishlist_target') && (!wishlistItemIds || wishlistItemIds.length === 0)) newErrors.wishlistItemIds = true;
@@ -115,10 +111,36 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
     }
   };
 
-  const toSelectOptions = (arr: string[]) => arr.map(item => ({ value: item, label: item }));
+  // Ensure displayed rewards are consistent with selected IDs
+  // If formData.selectedRewards is missing items that are in rewardIds, try to find them in fetched data
+  const displayedRewards = formData.selectedRewards || [];
 
-  const selectErrorStyle = {
-    control: (base: CSSObjectWithLabel) => ({ ...base, borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444', '&:hover': { borderColor: '#ef4444' } })
+  // If we have IDs but no objects (e.g. page reload), try to hydration from rewardsData
+  useEffect(() => {
+    if (rewardsData && formData.rewardIds.length > 0) {
+      const currentDisplayIds = displayedRewards.map(r => r.id);
+      const missingIds = formData.rewardIds.filter(id => !currentDisplayIds.includes(id));
+
+      if (missingIds.length > 0) {
+        const newRewards = rewardsData.data.filter(r => missingIds.includes(r.id)).map(r => ({
+          id: r.id,
+          title: r.title || r.reward?.title || 'Unknown Reward'
+        }));
+
+        if (newRewards.length > 0) {
+          updateFormData({
+            selectedRewards: [...displayedRewards, ...newRewards]
+          });
+        }
+      }
+    }
+  }, [rewardsData, formData.rewardIds, displayedRewards, updateFormData]);
+
+
+  const removeReward = (id: string) => {
+    const newIds = formData.rewardIds.filter(rid => rid !== id);
+    const newSelected = (formData.selectedRewards || []).filter(r => r.id !== id);
+    updateFormData({ rewardIds: newIds, selectedRewards: newSelected });
   };
 
   return (
@@ -135,85 +157,85 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <p className="text-sm text-gray-500 mt-1">The name of your campaign, as it will be displayed to customers.</p>
           </div>
 
+          {/* Total Slots */}
+          <div>
+            <Label htmlFor="totalSlots">Available Slots</Label>
+            <Input
+              id="totalSlots"
+              type="number"
+              placeholder="e.g., 100"
+              value={formData.totalSlots}
+              onChange={(e) => updateFormData({ totalSlots: e.target.value === '' ? '' : Number(e.target.value) })}
+              className={errors.totalSlots ? 'border-red-500' : ''}
+            />
+            {errors.totalSlots && (
+              <p className="text-sm text-red-500 mt-1">Available slots is required</p>
+            )}
+            {!errors.totalSlots && (
+              <p className="text-sm text-gray-500 mt-1">The number of slots currently available for customers to claim.</p>
+            )}
+          </div>
+
           {/* Rewards to Attach */}
           <div>
-            <Label htmlFor="rewardToAttach">Rewards to Attach</Label>
-            <Select
-              isMulti
-              options={rewardOptions}
-              value={rewardOptions.filter(opt => formData.rewardIds.includes(opt.value))}
-              onChange={(opts) => updateFormData({ rewardIds: opts.map(o => o.value) })}
-              styles={errors.rewardIds ? selectErrorStyle : {}}
-              placeholder={isLoadingRewards ? "Loading rewards..." : "Select..."}
-              isDisabled={isLoadingRewards}
-            />
-            <p className="text-sm text-gray-500 mt-1">Choose the rewards to be given out in this campaign.</p>
+            <Label>Rewards to Attach</Label>
+            <div className={`mt-2 border rounded-md p-4 space-y-3 ${errors.rewardIds ? 'border-red-500' : 'border-gray-200'}`}>
+              {displayedRewards.length > 0 ? (
+                <div className="space-y-2">
+                  {displayedRewards.map(reward => (
+                    <div key={reward.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                      <span className="font-medium text-sm">{reward.title}</span>
+                      <Button variant="ghost" size="sm" onClick={() => removeReward(reward.id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">No rewards selected.</p>
+              )}
+
+              <Button variant="outline" size="sm" onClick={() => setIsRewardModalOpen(true)} className="w-full mt-2">
+                <Plus className="mr-2 h-4 w-4" />
+                {displayedRewards.length > 0 ? 'Add / Remove Rewards' : 'Select Rewards'}
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Choose the rewards (Points or Stamps) to be given out in this campaign.</p>
           </div>
 
           {/* Date Pickers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Start Date & Time</Label>
-              <div className={`flex items-center rounded-md border px-3 ${errors.startDate ? 'border-red-500' : ''}`}><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.startDate} setDate={(date) => updateFormData({ startDate: date || undefined })} /></div>
+              <div className={`flex items-center rounded-md border px-3 ${errors.startDate ? 'border-red-500' : ''}`}>
+                <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                <DateTimePicker
+                  date={formData.startDate}
+                  setDate={(date) => updateFormData({ startDate: date || undefined })}
+                  disabled={isStartDateDisabled}
+                />
+              </div>
               <p className="text-sm text-gray-500 mt-1">When the campaign will become active.</p>
             </div>
             <div>
               <Label>End Date & Time</Label>
-              <div className={`flex items-center rounded-md border px-3 ${errors.endDate ? 'border-red-500' : ''}`}><Calendar className="mr-2 h-4 w-4 opacity-50" /><DateTimePicker date={formData.endDate} setDate={(date) => updateFormData({ endDate: date || undefined })} /></div>
+              <div className={`flex items-center rounded-md border px-3 ${errors.endDate ? 'border-red-500' : ''}`}>
+                <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                <DateTimePicker
+                  date={formData.endDate}
+                  setDate={(date) => {
+                    if (date && subscriptionData?.expiresAt) {
+                      if (date > new Date(subscriptionData.expiresAt)) {
+                        toast.error('End date is above subscription plan');
+                        return;
+                      }
+                    }
+                    updateFormData({ endDate: date || undefined });
+                  }}
+                />
+              </div>
               <p className="text-sm text-gray-500 mt-1">When the campaign will automatically deactivate.</p>
             </div>
-          </div>
-
-          {/* Rewards Available */}
-          <div>
-            <Label htmlFor="rewardsAvailable">Number of Rewards Available</Label>
-            <Input id="rewardsAvailable" type="number" placeholder="0" value={formData.rewardsAvailable} onChange={(e) => updateFormData({ rewardsAvailable: e.target.value === '' ? '' : Number(e.target.value) })} className={errors.rewardsAvailable ? 'border-red-500' : ''} />
-            <p className="text-sm text-gray-500 mt-1">The total number of rewards that can be claimed.</p>
-          </div>
-
-          {/* Audience Type */}
-          <div>
-            <Label>Audience Type</Label>
-            <div className={`p-2 rounded-md ${errors.audienceType ? 'border border-red-500' : ''}`}>
-              <div className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="members" checked={formData.audienceType.includes('members')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'members'] : formData.audienceType.filter(t => t !== 'members') })} />
-                  <Label htmlFor="members">Members</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="badge_level" checked={formData.audienceType.includes('badge_level')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'badge_level'] : formData.audienceType.filter(t => t !== 'badge_level') })} />
-                  <Label htmlFor="badge_level">Badge Level</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="wishlist_target" checked={formData.audienceType.includes('wishlist_target')} onCheckedChange={(checked) => updateFormData({ audienceType: checked ? [...formData.audienceType, 'wishlist_target'] : formData.audienceType.filter(t => t !== 'wishlist_target') })} />
-                  <Label htmlFor="wishlist_target">Target Wishlist</Label>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">Choose who can participate in this campaign.</p>
-            {formData.audienceType.includes('badge_level') && (
-              <Select
-                isMulti
-                className="mt-2"
-                options={tiers.map(tier => ({ value: tier.name, label: tier.name }))}
-                value={formData.badgeLevels?.map(levelName => ({ value: levelName, label: levelName }))}
-                onChange={(opts) => updateFormData({ badgeLevels: opts.map(o => o.value) })}
-                placeholder="Select badge levels..."
-                styles={errors.badgeLevels ? selectErrorStyle : {}}
-              />
-            )}
-            {formData.audienceType.includes('wishlist_target') && (
-              <Select
-                isMulti
-                className="mt-2"
-                options={wishlistOptions}
-                value={toSelectOptions(formData.wishlistItemIds || [])}
-                onChange={(opts) => updateFormData({ wishlistItemIds: opts.map(o => o.value) })}
-                placeholder={isLoadingWishlist ? "Loading wishlist items..." : "Select wishlist items..."}
-                styles={errors.wishlistItemIds ? selectErrorStyle : {}}
-                isDisabled={isLoadingWishlist}
-              />
-            )}
           </div>
 
           {/* Campaign Message */}
@@ -225,7 +247,7 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
 
           {/* Image & Logo Uploads */}
           <div>
-            <div className="flex items-center gap-4"><Label>Image or Banner (optional)</Label><CloudinaryUpload onFileSelect={handleFileSelect} /></div>
+            <div className="flex items-center gap-4"><Label>Image or Banner (optional)</Label><CloudinaryUpload onFileSelect={handleFileSelect} aspectRatio={3} /></div>
             <p className="text-sm text-gray-500 mt-1">Upload a banner image for your campaign. Recommended size: 1200x400 pixels (3:1 aspect ratio).</p>
             {imagePreviewUrl && <div className="mt-4"><p className="text-sm font-medium">Image Preview:</p><div className="relative h-32 w-full rounded-lg overflow-hidden bg-gray-200"><Image src={imagePreviewUrl} alt="Campaign Banner Preview" layout="fill" objectFit="cover" /></div></div>}
           </div>
@@ -234,49 +256,24 @@ export default function StepSetCampaignDetails({ onNext, onBack }: StepProps) {
             <p className="text-sm text-gray-500 mt-1">Upload your business logo.</p>
             {logoPreviewUrl && <div className="mt-4"><p className="text-sm font-medium">Logo Preview:</p><div className="relative h-24 w-24 rounded-full overflow-hidden bg-gray-200"><Image src={logoPreviewUrl} alt="Logo Preview" layout="fill" objectFit="cover" /></div></div>}
           </div>
-
-          {/* CTA Button */}
-          <div>
-            <Label htmlFor="ctaButtonText">CTA Button</Label>
-            <Select options={[{ value: 'Claim Reward', label: 'Claim Reward' }, { value: 'Join Now', label: 'Join Now' }, { value: 'Refer & Earn', label: 'Refer & Earn' }]} value={{ value: formData.ctaButtonText, label: formData.ctaButtonText }} onChange={(opt) => updateFormData({ ctaButtonText: opt?.value || 'Claim Reward' })} styles={errors.ctaButtonText ? selectErrorStyle : {}} />
-            <p className="text-sm text-gray-500 mt-1">The call-to-action text for the button.</p>
-          </div>
-
-          {/* Color Pickers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label htmlFor="bgColor">BG Color</Label><Input id="bgColor" type="color" value={formData.bgColor} onChange={(e) => updateFormData({ bgColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Background color of the campaign card.</p></div>
-            <div><Label htmlFor="bgColorTextColor">BG Text Color</Label><Input id="bgColorTextColor" type="color" value={formData.bgColorTextColor} onChange={(e) => updateFormData({ bgColorTextColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Text color on the campaign card.</p></div>
-            <div><Label htmlFor="ctaBgColor">CTA BG Color</Label><Input id="ctaBgColor" type="color" value={formData.ctaBgColor} onChange={(e) => updateFormData({ ctaBgColor: e.target.value })} /><p className="text-sm text-gray-500 mt-1">Background color of the CTA button.</p></div>
-            <div><Label htmlFor="ctaTextColor">CTA Text Color</Label><Input id="ctaTextColor" type="color" value={formData.ctaTextColor} onChange={(e) => updateFormData({ ctaTextColor: e.target.value })} /><p className="text-sm text-gray-500 mt-11">Text color of the CTA button.</p></div>
-          </div>
-
-          {/* Campaign Preview */}
-          <div className="mt-6 p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-xl border border-gray-300">
-            <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">Campaign Preview</h4>
-            <p className="text-sm text-gray-600 mb-4 text-center">See how your campaign will appear on web and mobile devices.</p>
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200" style={{ backgroundColor: formData.bgColor }}>
-              <div className="relative h-48 w-full overflow-hidden bg-gray-200">{imagePreviewUrl && <Image src={imagePreviewUrl} alt="Campaign Preview" layout="fill" objectFit="cover" />}</div>
-              <div className="relative px-5"><div className="absolute -top-12 left-1/2 -translate-x-1/2"><div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">{logoPreviewUrl ? <Image src={logoPreviewUrl} alt="Logo Preview" layout="fill" objectFit="cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-500"><span className="text-xs">Logo</span></div>}</div></div></div>
-              <div className="pt-16 p-5 text-center" style={{ color: formData.bgColorTextColor }}>
-                <h5 className="font-extrabold text-2xl mb-2">{formData.campaignName || '[Campaign Name]'}</h5>
-                <p className="text-base mb-4">{formData.campaignMessage || '[Campaign Message]'}</p>
-                <div className="space-y-3 text-sm mb-5 border-t pt-4">
-                  <div className="flex items-center justify-between"><span className="flex items-center font-medium"><Gift className="h-4 w-4 mr-2 text-blue-500" />Rewards:</span><span className="text-right">{formData.rewardIds.join(', ') || '[Select Rewards]'}</span></div>
-                  <div className="flex items-center justify-between"><span className="flex items-center font-medium"><Tag className="h-4 w-4 mr-2 text-green-500" />Available:</span><span className="text-right">{Number(formData.rewardsAvailable) > 0 ? formData.rewardsAvailable : 'Unlimited'}</span></div>
-                  <div className="flex items-center justify-between"><span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-purple-500" />Starts:</span><span className="text-right">{formData.startDate ? formData.startDate.toLocaleDateString() : '[Start Date]'}</span></div>
-                  <div className="flex items-center justify-between"><span className="flex items-center font-medium"><Calendar className="h-4 w-4 mr-2 text-red-500" />Ends:</span><span className="text-right">{formData.endDate ? formData.endDate.toLocaleDateString() : '[End Date]'}</span></div>
-                  <div className="flex items-center justify-between"><span className="flex items-center font-medium"><Users className="h-4 w-4 mr-2 text-orange-500" />Audience:</span><span className="text-right">{formData.audienceType.map(type => type === 'badge_level' ? `Badge: ${formData.badgeLevels?.join(', ') || '[Level]'}` : type === 'wishlist_target' ? `Wishlist: ${formData.wishlistItemIds?.join(', ') || '[Item]'}` : type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}</span></div>
-                </div>
-                <Button className="w-full py-3 text-lg font-semibold transition-colors duration-200" style={{ backgroundColor: formData.ctaBgColor, color: formData.ctaTextColor }}>{formData.ctaButtonText}</Button>
-              </div>
-            </div>
-          </div>
         </div>
         <div className="flex justify-between mt-6">
           <Button variant="outline" onClick={onBack}>Back</Button>
           <Button onClick={handleNextClick}>Next</Button>
         </div>
       </CardContent>
+
+      <SelectRewardModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        onProceed={(ids, rewards) => {
+          updateFormData({
+            rewardIds: ids,
+            selectedRewards: rewards.map(r => ({ id: r.id, title: r.title || r.reward?.title || 'Unknown Reward' }))
+          });
+        }}
+        initialSelectedIds={formData.rewardIds}
+      />
     </Card>
   );
 }

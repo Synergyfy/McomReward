@@ -109,9 +109,18 @@ export default function ModernHeader({ onMenuClick, profile: propsProfile, balan
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="sm:hidden" />
                             <DropdownMenuSeparator className="sm:hidden" />
-                            <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">Settings</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/participant/settings')} className="cursor-pointer">
+                                Settings
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    // Basic logout logic if useLogout isn't easily accessible here
+                                    // though it should be imported from the hook
+                                    router.push('/login');
+                                }}
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                            >
                                 Log out
                             </DropdownMenuItem>
                         </DropdownMenuContent>

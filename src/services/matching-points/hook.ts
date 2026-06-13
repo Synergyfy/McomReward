@@ -1,159 +1,253 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import {
-  AwardMatchingPointsRequest, AwardMatchingPointsResponse, ToggleMatchingPointsRequest, ToggleMatchingPointsResponse,
-  GetMatchingPointBalanceResponse, GetMatchingPointsHistoryParams, GetMatchingPointsHistoryResponse,
-  EarningAction, CreateEarningActionDto, UpdateEarningActionDto, ParticipantBadge, CreateParticipantBadgeDto, UpdateParticipantBadgeDto
+  AwardMatchingPointsRequest,
+  AwardMatchingPointsResponse,
+  GetMatchingPointBalanceResponse,
+  GetMatchingPointsHistoryParams,
+  GetMatchingPointsHistoryResponse,
+  ToggleMatchingPointsRequest,
+  ToggleMatchingPointsResponse,
+  EarningAction,
+  CreateEarningActionDto,
+  UpdateEarningActionDto,
+  ParticipantBadge,
+  CreateParticipantBadgeDto,
+  UpdateParticipantBadgeDto,
+  PaginatedRewardsResponse,
+  CreateMatchingRewardDto,
+  MatchingPointReward,
+  PaginatedRedemptionsResponse
 } from './types';
-// import { LoginResponse } from '@/services/auth/types'; // Not used in this file
 
-// const STAFF_QUERY_KEY = 'staff'; // Incorrect, removing or commenting out
-const MATCHING_POINTS_QUERY_KEY = 'matchingPoints'; // Corrected
-
-// Create Staff
-const awardMatchingPoints = async (data: AwardMatchingPointsRequest): Promise<AwardMatchingPointsResponse> => {
-  const response = await api.post<AwardMatchingPointsResponse>('/admin/award-matching-points', data);
-  return response.data;
-};
+// --- Matching Points Management ---
 
 export const useAwardMatchingPoints = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: awardMatchingPoints,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY] });
-    },
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: AwardMatchingPointsRequest) => {
+            const response = await api.post<AwardMatchingPointsResponse>('/matching-points/award', data);
+            return response.data;
+        },
+        onSuccess: () => {
+             queryClient.invalidateQueries({ queryKey: ['matchingPointBalance'] });
+             queryClient.invalidateQueries({ queryKey: ['matchingPointsHistory'] });
+        }
+    });
 };
 
-const toggleMatchingPoints = async (data: ToggleMatchingPointsRequest): Promise<ToggleMatchingPointsResponse> => {
-  const response = await api.post<ToggleMatchingPointsResponse>('/admin/toggle-matching-points', data);
-  return response.data;
+export const useGetMatchingPointBalance = (businessId?: string) => {
+    return useQuery({
+        queryKey: ['matchingPointBalance', businessId],
+        queryFn: async () => {
+            const config = businessId ? { headers: { 'x-business-id': businessId } } : {};
+            const { data } = await api.get<GetMatchingPointBalanceResponse>('/matching-points/balance', config);
+            return data;
+        },
+    });
+};
+
+export const useGetMatchingPointsHistory = (params: GetMatchingPointsHistoryParams) => {
+     return useQuery({
+        queryKey: ['matchingPointsHistory', params],
+        queryFn: async () => {
+            const { data } = await api.get<GetMatchingPointsHistoryResponse>('/matching-points/history', { params });
+            return data;
+        },
+    });
 };
 
 export const useToggleMatchingPoints = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: toggleMatchingPoints,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MATCHING_POINTS_QUERY_KEY] });
-    },
-  });
+    return useMutation({
+        mutationFn: async (data: ToggleMatchingPointsRequest) => {
+            const response = await api.post<ToggleMatchingPointsResponse>('/matching-points/toggle', data);
+            return response.data;
+        }
+    });
 };
 
-// Get Matching Point Balance
-const fetchMatchingPointBalance = async (): Promise<GetMatchingPointBalanceResponse> => {
-  const { data } = await api.get<GetMatchingPointBalanceResponse>('/matching-points/balance');
-  return data;
-};
 
-export const useGetMatchingPointBalance = () => {
-  return useQuery({
-    queryKey: [MATCHING_POINTS_QUERY_KEY, 'balance'],
-    queryFn: fetchMatchingPointBalance,
-  });
-};
-
-// Get Matching Points History
-const fetchMatchingPointsHistory = async (params: GetMatchingPointsHistoryParams): Promise<GetMatchingPointsHistoryResponse> => {
-  const { data } = await api.get<GetMatchingPointsHistoryResponse>('/matching-points/history', { params });
-  return data;
-};
-
-export const useGetMatchingPointsHistory = (params: GetMatchingPointsHistoryParams = {}) => {
-  return useQuery({
-    queryKey: [MATCHING_POINTS_QUERY_KEY, 'history', params],
-    queryFn: () => fetchMatchingPointsHistory(params),
-  });
-};
-
-// Get Earning Actions
-const fetchEarningActions = async (): Promise<EarningAction[]> => {
-  const { data } = await api.get<EarningAction[]>('/participant-progression/earning-actions');
-  return data;
-};
+// --- Earning Actions Hooks ---
 
 export const useGetEarningActions = () => {
-  return useQuery({
-    queryKey: ['earning-actions'],
-    queryFn: fetchEarningActions,
-  });
-};
-
-// Create Earning Action
-const createEarningAction = async (data: CreateEarningActionDto): Promise<EarningAction> => {
-  const response = await api.post<EarningAction>('/participant-progression/earning-actions', data);
-  return response.data;
+    return useQuery({
+        queryKey: ['earningActions'],
+        queryFn: async () => {
+            const { data } = await api.get<EarningAction[]>('/earning-actions');
+            return data;
+        }
+    });
 };
 
 export const useCreateEarningAction = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createEarningAction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['earning-actions'] });
-    }
-  });
-};
-
-// Update Earning Action
-const updateEarningAction = async ({ id, payload }: { id: string, payload: UpdateEarningActionDto }): Promise<EarningAction> => {
-  const response = await api.patch<EarningAction>(`/participant-progression/earning-actions/${id}`, payload);
-  return response.data;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: CreateEarningActionDto) => {
+            const response = await api.post<EarningAction>('/earning-actions', data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['earningActions'] });
+        }
+    });
 };
 
 export const useUpdateEarningAction = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateEarningAction,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['earning-actions'] });
-    }
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...data }: UpdateEarningActionDto & { id: string }) => {
+            const response = await api.patch<EarningAction>(`/earning-actions/${id}`, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['earningActions'] });
+        }
+    });
 };
 
-// Get Participant Badges
-const fetchParticipantBadges = async (): Promise<ParticipantBadge[]> => {
-  const { data } = await api.get<ParticipantBadge[]>('/participant-progression/badges');
-  return data;
+export const useDeleteEarningAction = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await api.delete(`/earning-actions/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['earningActions'] });
+        }
+    });
 };
+
+// --- Participant Badges Hooks ---
 
 export const useGetParticipantBadges = () => {
-  return useQuery({
-    queryKey: ['participant-badges'],
-    queryFn: fetchParticipantBadges,
-  });
-};
-
-// Create Participant Badge
-const createParticipantBadge = async (data: CreateParticipantBadgeDto): Promise<ParticipantBadge> => {
-  const response = await api.post<ParticipantBadge>('/participant-progression/badges', data);
-  return response.data;
+    return useQuery({
+        queryKey: ['participantBadges'],
+        queryFn: async () => {
+            const { data } = await api.get<ParticipantBadge[]>('/participant-badges');
+            return data;
+        }
+    });
 };
 
 export const useCreateParticipantBadge = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createParticipantBadge,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['participant-badges'] });
-    }
-  });
-};
-
-// Update Participant Badge
-const updateParticipantBadge = async ({ id, payload }: { id: string, payload: UpdateParticipantBadgeDto }): Promise<ParticipantBadge> => {
-  const response = await api.patch<ParticipantBadge>(`/participant-progression/badges/${id}`, payload);
-  return response.data;
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: CreateParticipantBadgeDto) => {
+            const response = await api.post<ParticipantBadge>('/participant-badges', data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['participantBadges'] });
+        }
+    });
 };
 
 export const useUpdateParticipantBadge = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateParticipantBadge,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['participant-badges'] });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...data }: UpdateParticipantBadgeDto & { id: string }) => {
+            const response = await api.patch<ParticipantBadge>(`/participant-badges/${id}`, data);
+            return response.data;
+        },
+        onSuccess: () => {
+             queryClient.invalidateQueries({ queryKey: ['participantBadges'] });
+        }
+    });
+};
+
+export const useDeleteParticipantBadge = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await api.delete(`/participant-badges/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['participantBadges'] });
+        }
+    });
+};
+
+// --- Matching Points Rewards (Super Business & Redemption) ---
+
+// New Hook for Redemptions
+export const useGetRedeemedMatchingRewards = (params: { page?: number; limit?: number } = {}) => {
+  return useQuery({
+    queryKey: ['matchingPointRewards', 'redeemed', params],
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedRedemptionsResponse>('/matching-points/rewards/redeemed', { params });
+      return data;
     }
   });
+};
+
+export const useCreateMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateMatchingRewardDto) => {
+      const response = await api.post('/matching-points/rewards', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+    }
+  });
+};
+
+export const useGetCreatedMatchingRewards = (params: { page?: number; limit?: number } = {}) => {
+  return useQuery({
+    queryKey: ['matchingPointRewards', 'created', params],
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedRewardsResponse>('/matching-points/rewards/created', { params });
+      return data;
+    }
+  });
+};
+
+export const useDeleteMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/matching-points/rewards/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+    }
+  });
+};
+
+export const useSuspendMatchingReward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.patch(`/matching-points/rewards/${id}/suspend`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+    }
+  });
+};
+
+export const useGetPublicMatchingRewards = (params: { target_audience?: string, page?: number, limit?: number } = {}) => {
+  return useQuery({
+    queryKey: ['matchingPointRewards', 'public', params],
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedRewardsResponse>('/matching-points/rewards/public', { params });
+      return data;
+    }
+  });
+};
+
+export const useRedeemMatchingReward = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { data } = await api.post(`/matching-points/rewards/${id}/redeem`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['matchingPointRewards'] });
+            queryClient.invalidateQueries({ queryKey: ['matchingPointsHistory'] });
+            queryClient.invalidateQueries({ queryKey: ['matchingPointBalance'] });
+        }
+    });
 };

@@ -1,10 +1,6 @@
-export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
+﻿export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
 
-export type GroupCircleDuration = 90 | 180 | 270 | 360;
-
-export type GroupCircleVisibility = 'PRIVATE' | 'INVITE_ONLY';
-
-export type GroupCircleInteractionLevel = 'READ' | 'MESSAGE' | 'COLLABORATE';
+export type GroupCircleDuration = 90 | 180 | 270 | 360 | string;
 
 export type GroupCircleStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -52,45 +48,36 @@ export interface Contribution {
 
 export interface CreateGroupCircleDto {
     name: string;
-    description: string;
     type: GroupCircleType;
     duration: GroupCircleDuration;
-    visibility: GroupCircleVisibility;
-    interactionLevel: GroupCircleInteractionLevel;
     contributionAmount: number;
     networkIds: string[];
+    referredBusinessIds?: string[];
 }
+
+import { NetworkContact } from '../network-contacts/types';
 
 export interface GroupCircleMember {
     id: string;
     role: MemberRole;
     drawDate?: string;
-    network: {
-        id: string;
-        fullName: string;
-        businessName?: string;
-        email?: string;
-        phone?: string;
-        locationTag?: string;
-        relationshipTag?: string;
-        status?: string;
-        hasSharingPermission?: boolean;
-    };
+    network: NetworkContact;
 }
 
 export interface GroupCircle {
     id: string;
     name: string;
-    description: string;
     type: GroupCircleType;
     duration: number;
-    visibility: GroupCircleVisibility;
-    interactionLevel: GroupCircleInteractionLevel;
     status: GroupCircleStatus;
     contributionAmount: number;
     payoutFrequency: PayoutFrequency;
     currentRound: number;
     startDate: string;
+    description?: string;
+    season?: string;
+    tags?: string[];
+    terms?: string[];
     members: GroupCircleMember[];
 }
 export interface GroupCirclesQueryParams {
@@ -110,12 +97,10 @@ export interface GroupCirclesResponse {
 }
 export interface UpdateGroupCircleDto {
     name?: string;
-    description?: string;
     type?: GroupCircleType;
     duration?: GroupCircleDuration;
-    visibility?: GroupCircleVisibility;
-    interactionLevel?: GroupCircleInteractionLevel;
     networkIds?: string[];
+    referredBusinessIds?: string[];
     contributionAmount?: number;
 }
 export interface SendMessageDto {
@@ -131,7 +116,7 @@ export interface GroupCircleMessage {
     senderName: string;
     senderId: string;
     recipientId?: string;
-    created_at: string;
+    createdAt: string;
 }
 
 export interface MessageQueryParams {
@@ -151,3 +136,22 @@ export interface MessagesResponse {
         prevPage: number | null;
     };
 }
+
+export interface DiscoverableCircle extends GroupCircle {
+    ownerName: string;
+    isPublic: boolean;
+    memberCount: number;
+}
+
+export interface DiscoverableCirclesResponse {
+    data: DiscoverableCircle[];
+    meta: {
+        total: number;
+        page: number;
+        lastPage: number;
+        nextPage: number | null;
+        prevPage: number | null;
+    };
+}
+
+

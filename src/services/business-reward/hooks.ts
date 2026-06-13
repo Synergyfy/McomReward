@@ -6,7 +6,51 @@ import {
   BusinessReward,
   GetRewardsResponse,
   UpdateBusinessRewardDto,
+  GetMallRewardHistoryResponse,
+  MallRewardStats,
 } from './types';
+
+const fetchMallRewardHistory = async (page: number, limit: number) => {
+  const { data } = await api.get<GetMallRewardHistoryResponse>(
+    `/rewards/business/mall-reward-history`, { params: { page, limit } }
+  );
+  return data;
+};
+
+export const useGetMallRewardHistory = (page: number, limit: number) => {
+  return useQuery({
+    queryKey: ['mallRewardHistory', page, limit],
+    queryFn: () => fetchMallRewardHistory(page, limit),
+  });
+};
+
+const fetchMallRewardStats = async () => {
+  const { data } = await api.get<MallRewardStats>(
+    `/rewards/business/mall-reward-stats`
+  );
+  return data;
+};
+
+export const useGetMallRewardStats = () => {
+  return useQuery({
+    queryKey: ['mallRewardStats'],
+    queryFn: fetchMallRewardStats,
+  });
+};
+
+const fetchParticipantMallRewardHistory = async (page: number, limit: number) => {
+  const { data } = await api.get<GetMallRewardHistoryResponse>(
+    `/rewards/participant/mall-reward-history`, { params: { page, limit } }
+  );
+  return data;
+};
+
+export const useGetParticipantMallRewardHistory = (page: number, limit: number) => {
+  return useQuery({
+    queryKey: ['participantMallRewardHistory', page, limit],
+    queryFn: () => fetchParticipantMallRewardHistory(page, limit),
+  });
+};
 
 const fetchBusinessRewards = async (page: number, limit: number, businessId?: string) => {
   const { data } = await api.get<GetBusinessRewardsResponse>(

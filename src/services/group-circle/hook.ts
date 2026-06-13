@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
-import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse, UpdateGroupCircleDto, SendMessageDto, GroupCircleMessage, MessageQueryParams, MessagesResponse, AddMemberDto, InitiateContributionDto, InitiateContributionResponse, VerifyContributionDto, Contribution } from './types';
+import { CreateGroupCircleDto, GroupCircle, GroupCirclesQueryParams, GroupCirclesResponse, UpdateGroupCircleDto, SendMessageDto, GroupCircleMessage, MessageQueryParams, MessagesResponse, AddMemberDto, InitiateContributionDto, InitiateContributionResponse, VerifyContributionDto, Contribution, DiscoverableCirclesResponse } from './types';
 
 const GROUP_CIRCLE_QUERY_KEY = 'groupCircles';
+const DISCOVERABLE_CIRCLES_QUERY_KEY = 'discoverableCircles';
 const GROUP_CIRCLE_MESSAGES_QUERY_KEY = 'groupCircleMessages';
 
 const fetchGroupCircles = async (params: GroupCirclesQueryParams): Promise<GroupCirclesResponse> => {
@@ -12,6 +13,16 @@ const fetchGroupCircles = async (params: GroupCirclesQueryParams): Promise<Group
     };
     const response = await api.get<GroupCirclesResponse>('/group-circles', { params: apiParams });
     return response.data;
+};
+
+const fetchDiscoverableCircles = async (): Promise<DiscoverableCirclesResponse> => {
+    // This endpoint should return circles the user can join
+    const response = await api.get<DiscoverableCirclesResponse>('/group-circles/discover');
+    return response.data;
+};
+
+const joinGroupCircle = async (id: string): Promise<void> => {
+    await api.post(`/group-circles/${id}/join`);
 };
 
 const createGroupCircle = async (data: CreateGroupCircleDto): Promise<GroupCircle> => {
@@ -143,6 +154,25 @@ export const useVerifyGroupCircleContribution = () => {
         mutationFn: verifyContribution,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
+        },
+    });
+};
+
+export const useGetDiscoverableCircles = () => {
+    return useQuery({
+        queryKey: [DISCOVERABLE_CIRCLES_QUERY_KEY],
+        queryFn: fetchDiscoverableCircles,
+    });
+};
+
+export const useJoinGroupCircle = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: joinGroupCircle,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [GROUP_CIRCLE_QUERY_KEY] });
+            queryClient.invalidateQueries({ queryKey: [DISCOVERABLE_CIRCLES_QUERY_KEY] });
         },
     });
 };

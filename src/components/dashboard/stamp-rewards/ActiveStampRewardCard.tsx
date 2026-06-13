@@ -98,13 +98,17 @@ export default function ActiveStampRewardCard({
                 <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/50 dark:to-amber-900/50 flex-shrink-0 ring-2 ring-white dark:ring-gray-800 shadow-lg">
-                            {reward.customImage || template.image ? (
+                            {(reward.customImage || template.image) && ((reward.customImage || template.image || '').startsWith('http') || (reward.customImage || template.image || '').startsWith('/')) ? (
                                 <Image
                                     src={reward.customImage || template.image || ''}
                                     alt={template.title}
                                     fill
                                     className="object-cover"
                                 />
+                            ) : (reward.customImage || template.image) ? (
+                                <div className="absolute inset-0 flex items-center justify-center text-3xl">
+                                    {reward.customImage || template.image}
+                                </div>
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <Stamp className="h-7 w-7 text-orange-500" />
@@ -211,7 +215,22 @@ export default function ActiveStampRewardCard({
                             <TooltipTrigger asChild>
                                 <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 cursor-help">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Stamp className="h-4 w-4 text-orange-500" />
+                                        {(template.stampIcon) ? (
+                                            (template.stampIcon.startsWith('http') || template.stampIcon.startsWith('/')) ? (
+                                                <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                                                    <Image
+                                                        src={template.stampIcon}
+                                                        alt="Stamp"
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm leading-none">{template.stampIcon}</span>
+                                            )
+                                        ) : (
+                                            <Stamp className="h-4 w-4 text-orange-500" />
+                                        )}
                                         <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Stamps</span>
                                     </div>
                                     <p className="text-xl font-bold text-gray-900 dark:text-white">
@@ -276,15 +295,6 @@ export default function ActiveStampRewardCard({
                     >
                         <Eye className="h-4 w-4" />
                         View Customers
-                    </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => onAwardStamp(reward)}
-                        disabled={reward.status !== 'active'}
-                        className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50"
-                    >
-                        <QrCode className="h-4 w-4" />
-                        Award Stamp
                     </Button>
                 </div>
 

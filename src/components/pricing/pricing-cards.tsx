@@ -2,14 +2,14 @@
 
 import PricingCard from "./pricing-card"
 import SeasonalPricingCard from "./seasonal-pricing-card"
-import { Target, Award, Medal, Crown, Trophy, type LucideIcon, Loader2, Sparkles } from "lucide-react"
+import { Target, Award, Medal, Crown, Trophy, type LucideIcon, Loader2 } from "lucide-react"
 import type { BillingCycle } from "@/lib/content"
 import { Reveal } from "@/components/ui/reveal"
 import { useGetTiers } from "@/services/payment/hook"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface PricingCardsProps {
   billingCycle: BillingCycle
+  activeTab?: string
 }
 
 // Map product tier names to their icon components to keep rendering data-driven.
@@ -21,7 +21,7 @@ const iconByTier: Record<string, LucideIcon> = {
   Platinum: Crown,
 }
 
-export default function PricingCards({ billingCycle }: PricingCardsProps) {
+export default function PricingCards({ billingCycle, activeTab }: PricingCardsProps) {
   const { data: tiers, isLoading, error } = useGetTiers();
 
   if (isLoading) {
@@ -45,8 +45,7 @@ export default function PricingCards({ billingCycle }: PricingCardsProps) {
   }).map((t) => ({
     name: t.name,
     description: t.description || "Unlock your potential",
-    quarterlyPrice: parseFloat(t.quaterlyPrice),
-    annualPrice: parseFloat(t.annualPrice),
+          quarterlyPrice: parseFloat(t.quarterlyPrice),    annualPrice: parseFloat(t.annualPrice),
     includesNfc: t.includesNfc ?? false,
     icon: iconByTier[t.name] ?? Target,
     features: t.features,
@@ -79,46 +78,31 @@ export default function PricingCards({ billingCycle }: PricingCardsProps) {
 
   return (
     <div>
-      {seasonalTiers.length > 0 ? (
-        <Tabs defaultValue="standard" className="w-full flex flex-col items-center">
-          <TabsList className="mb-8 grid w-[400px] grid-cols-2">
-            <TabsTrigger value="standard">Standard Plans</TabsTrigger>
-            <TabsTrigger value="seasonal" className="flex items-center gap-2">
-              Seasonal Offers <Sparkles className="h-3 w-3 text-amber-500" />
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="standard" className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {standardTiers.map((tier, index) => (
-                <Reveal key={tier.name} animationClass="card-reveal" delayMs={index * 100}>
-                  <PricingCard tier={tier} billingCycle={billingCycle} />
-                </Reveal>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="seasonal" className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
-              {seasonalTiers.map((tier, index) => (
-                <Reveal key={tier.id} animationClass="card-reveal" delayMs={index * 100}>
-                  <SeasonalPricingCard tier={tier} />
-                </Reveal>
-              ))}
-            </div>
-            {seasonalTiers.length === 0 && (
-              <p className="text-center text-muted-foreground py-10">No seasonal offers available at the moment.</p>
-            )}
-          </TabsContent>
-        </Tabs>
+      {activeTab === 'seasonal' ? (
+        // Seasonal Plans
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
+          {seasonalTiers.length === 0 ? (
+            <p className="col-span-full text-center text-muted-foreground py-10">No seasonal offers available at the moment.</p>
+          ) : (
+            seasonalTiers.map((tier, index) => (
+              <Reveal key={tier.id} animationClass="card-reveal" delayMs={index * 100}>
+                <SeasonalPricingCard tier={tier} />
+              </Reveal>
+            ))
+          )}
+        </div>
       ) : (
+        // Standard Plans
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {standardTiers.length === 0 && <p className="col-span-full text-center text-muted-foreground">No standard plans available.</p>}
-          {standardTiers.map((tier, index) => (
-            <Reveal key={tier.name} animationClass="card-reveal" delayMs={index * 100}>
-              <PricingCard tier={tier} billingCycle={billingCycle} />
-            </Reveal>
-          ))}
+          {standardTiers.length === 0 ? (
+            <p className="col-span-full text-center text-muted-foreground">No standard plans available.</p>
+          ) : (
+            standardTiers.map((tier, index) => (
+              <Reveal key={tier.name} animationClass="card-reveal" delayMs={index * 100}>
+                <PricingCard tier={tier} billingCycle={billingCycle} />
+              </Reveal>
+            ))
+          )}
         </div>
       )}
     </div>

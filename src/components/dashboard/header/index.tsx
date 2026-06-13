@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Loader2, Bell, Coins, Menu, Shield, User, TrendingDown, Layers } from 'lucide-react';
+import { Loader2, Bell, Menu, User, Wallet, Coins, Star, Gift, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { tierIcons, tierStyles, TierName } from '@/components/ui/tierBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,32 +14,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
-import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance } from '@/services/business/hook';
+import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance, useGetBusinessMonthlyStampBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
-import { useLogout } from '@/services/auth/hook'; // Import useLogout hook
+import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
 import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { BusinessProfile } from '@/services/business/types';
-
-interface SubscriptionType {
-  tier?: { name: string };
-  // Add other relevant properties from your Subscription type
-}
+import { Subscription } from '@/services/tiers/types';
 
 interface MonthlyBalanceType {
   remaining?: number;
   monthlyLimit?: number;
   used?: number;
-  // Add other relevant properties from your MonthlyBalance type
 }
 
 interface BusinessHeaderProps {
   onMenuClick: () => void;
   // Optional props for impersonation mode
   profile?: Partial<BusinessProfile>;
-  subscription?: SubscriptionType;
+  subscription?: Partial<Subscription>; // Updated to Partial to allow incomplete objects in Admin views
   monthlyBalance?: MonthlyBalanceType;
   isLoading?: boolean; // Unified loading prop for impersonation
   isError?: boolean; // Unified error prop for impersonation
@@ -61,6 +57,7 @@ export default function BusinessHeader({
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
   const { data: businessSubscription } = useGetBusinessSubscription();
   const { data: pointPackageBalance } = useGetPointPackageBalance();
+  const { data: stampMonthlyBalance } = useGetBusinessMonthlyStampBalance();
 
   // Notification hooks
   const { data: notificationsData, isLoading: isNotificationsLoading } = useGetNotifications({ limit: 5 });
@@ -74,9 +71,12 @@ export default function BusinessHeader({
 
   // Unify loading and error states
   const isLoading = propIsLoading ?? (hookIsLoadingSubscription || hookIsLoadingProfile || hookIsLoadingMonthlyBalance);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isError = propIsError ?? (hookIsErrorSubscription || hookIsErrorProfile || hookIsErrorMonthlyBalance);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const tierName = subscription?.tier?.name;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const userBadge = pointPackageBalance?.totalBalance?.toLocaleString() ?? '0';
   const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
 
@@ -84,7 +84,17 @@ export default function BusinessHeader({
   const notifications = notificationsData?.data ?? [];
 
   // Check if user is on Free tier
-  const isFreeTier = businessSubscription?.tier === 'Free';
+  const isFreeTier = businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness;
+  const isSuperBusiness = profile?.isSuperBusiness;
+
+  // Override tier name for Super Business
+  const displayTierName = isSuperBusiness ? 'Super Business' : tierName;
+
+  const TierIcon = displayTierName ? (tierIcons[displayTierName as TierName] || Crown) : Crown;
+  // Use Platinum style for Super Business or default
+  const tierStyle = isSuperBusiness
+    ? (tierStyles['Platinum'] || "bg-gray-100 text-gray-700")
+    : (displayTierName && displayTierName !== 'N/A' ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
 
   const handleLogout = () => {
     logoutMutation(undefined, {
@@ -131,47 +141,127 @@ export default function BusinessHeader({
       {/* Right-side elements */}
       <div className="flex items-center gap-4 md:gap-6">
         {!isFreeTier && (
-          <div className="hidden sm:flex items-center gap-4 text-sm font-medium text-gray-600">
-            {/* Points Balance */}
-            <div className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-yellow-500" />
-              {isLoading ? (
-                <span>...</span>
-              ) : isError ? (
-                <span className='text-red-500'>Error</span>
-              ) : (
-                <span className='whitespace-nowrap'>
-                  {monthlyBalance?.remaining?.toLocaleString() ?? 0} / {monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0}
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            {/* Point Balance Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span>Point Balance</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-green-600" />
+                  Points Details
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-medium">
+                      {isSuperBusiness ? 'Unlimited' : (monthlyBalance?.monthlyLimit?.toLocaleString() ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Used</span>
+                    <span className="font-medium text-red-600">{monthlyBalance?.used?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Remaining</span>
+                    <span className="font-medium text-green-600">
+                      {isSuperBusiness ? 'Unlimited' : (monthlyBalance?.remaining?.toLocaleString() ?? 0)}
+                    </span>
+                  </div>
+                </div>
+                {!isSuperBusiness && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-purple-600" />
+                      Add-ons
+                    </DropdownMenuLabel>
+                    <div className="px-2 py-1.5 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Balance</span>
+                        <span className="font-medium">
+                          {pointPackageBalance?.totalBalance?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Used Points */}
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-orange-500" />
-              <span>Used: {isLoading ? '...' : isError ? 'N/A' : monthlyBalance?.used?.toLocaleString() ?? 0}</span>
-            </div>
+            {/* Stamp Balance Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  <span>Stamp Balance</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-blue-600" />
+                  Stamp Details
+                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Monthly Limit</span>
+                    <span className="font-medium">
+                      {isSuperBusiness ? 'Unlimited' : (stampMonthlyBalance?.monthlyLimit?.toLocaleString() ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Used</span>
+                    <span className="font-medium text-orange-600">{stampMonthlyBalance?.used?.toLocaleString() ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Remaining</span>
+                    <span className="font-medium text-blue-600">
+                       {isSuperBusiness ? 'Unlimited' : ((stampMonthlyBalance?.monthlyLimit ?? 0) - (stampMonthlyBalance?.used ?? 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {!isSuperBusiness && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-purple-600" />
+                      Add-ons
+                    </DropdownMenuLabel>
+                    <div className="px-2 py-1.5 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Balance</span>
+                        <span className="font-medium">
+                          {stampMonthlyBalance?.extraStamps?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Add-on Status */}
-            <div className="flex items-center gap-2">
-              <Layers className="h-5 w-5 text-purple-500" />
-              <div className="flex flex-col leading-3">
-                <span className="text-[10px] text-gray-500 whitespace-nowrap">add-on:</span>
-                <span className="text-sm">{userBadge}</span>
-              </div>
-            </div>
+            {displayTierName && (
+  <div
+    className={`
+      flex items-center gap-2
+      px-4 py-1.5
+      min-w-[120px]
+      justify-center
+      rounded-full
+      font-semibold text-sm
+      whitespace-nowrap
+      ${tierStyle}
+    `}
+  >
+    <TierIcon className="h-5 w-5 flex-shrink-0" />
+    <span className="truncate">{displayTierName}</span>
+  </div>
+)}
 
-            {/* Badge Status */}
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-500" />
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : isError ? (
-                <Badge variant="destructive">Error</Badge>
-              ) : (
-                <Badge variant="secondary">{tierName || 'N/A'}</Badge>
-              )}
-            </div>
           </div>
         )}
 

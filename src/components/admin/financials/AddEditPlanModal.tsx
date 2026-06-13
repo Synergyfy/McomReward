@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useCreateTier, useUpdateTier } from '@/services/financials';
+import { useCreateTier, useUpdateTier, useGetSeasons } from '@/services/financials';
 import { Tier, TierConfiguration, TierQuotas, TierFeatureFlags, TierProgressBonuses, SeasonalVariant, ProgressionLevel, ProgressionConditions, ProgressionBenefits, TrialConfiguration } from '@/services/financials/types';
 import { PlusCircle, Trash2, Info } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +29,8 @@ const defaultConfiguration: TierConfiguration = {
     maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
+    monthlyStampsAllowance: 0,
+    monthlyRewardBudget: 0,
     maxTeamMembers: 1,
   },
   featureFlags: {
@@ -56,13 +58,15 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [monthlyPrice, setMonthlyPrice] = useState('');
   const [annualPrice, setAnnualPrice] = useState('');
-  const [quaterlyPrice, setQuaterlyPrice] = useState('');
+  const [quarterlyPrice, setQuarterlyPrice] = useState('');
+  const [seasonId, setSeasonId] = useState('');
   const [features, setFeatures] = useState<string[]>(['']);
 
   const [configuration, setConfiguration] = useState<TierConfiguration>(defaultConfiguration);
 
   const createTierMutation = useCreateTier();
   const updateTierMutation = useUpdateTier();
+  const { data: seasons } = useGetSeasons();
 
   useEffect(() => {
     if (initialData) {
@@ -70,13 +74,12 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
       // Prioritize the passed planType (from selection modal) if available, otherwise fallback to existing data
       // This allows users to "convert" a plan or fix missing types
       setType(planType || initialData.type || 'standard');
-      setStartDate(initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : '');
-      setEndDate(initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : '');
+      setSeasonId(initialData.season_id || '');
       setFixedPrice(initialData.fixedPrice || '');
       setQrCodeCount(initialData.qrCodeCount?.toString() || '0');
       setStatus((initialData.status as 'draft' | 'published') || 'draft');
       setMonthlyPrice(initialData.monthlyPrice);
-      setQuaterlyPrice(initialData.quaterlyPrice ?? '');
+      setQuarterlyPrice(initialData.quarterlyPrice ?? '');
       setAnnualPrice(initialData.annualPrice);
       setFeatures(initialData.features.length > 0 ? initialData.features : ['']);
 
@@ -119,13 +122,12 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     } else {
       setName('');
       setType(planType); // Use prop when creating
-      setStartDate('');
-      setEndDate('');
+      setSeasonId('');
       setFixedPrice('');
       setQrCodeCount('0');
       setStatus('draft');
       setMonthlyPrice('');
-      setQuaterlyPrice('');
+      setQuarterlyPrice('');
       setAnnualPrice('');
       setFeatures(['']);
       setConfiguration(defaultConfiguration);
@@ -152,13 +154,12 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
     const planData = {
       name,
       type,
-      start_date: type === 'seasonal' && startDate ? new Date(startDate).toISOString() : undefined,
-      end_date: type === 'seasonal' && endDate ? new Date(endDate).toISOString() : undefined,
+      season_id: type === 'seasonal' ? seasonId : undefined,
       fixed_price: type === 'seasonal' && fixedPrice ? parseFloat(fixedPrice) : undefined,
       qrCodeCount: parseInt(qrCodeCount) || 0,
       status,
       monthly_price: parseFloat(monthlyPrice) || 0,
-      quaterly_price: parseFloat(quaterlyPrice) || 0,
+      quarterly_price: parseFloat(quarterlyPrice) || 0,
       annual_price: parseFloat(annualPrice) || 0,
       features: features.filter(f => f.trim() !== ''),
       configuration,
@@ -221,11 +222,12 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className={`grid w-full ${type === 'standard' ? 'grid-cols-5' : 'grid-cols-3'}`}>
             <TabsTrigger value="details">Basic Details</TabsTrigger>
             <TabsTrigger value="configuration">Configuration</TabsTrigger>
             <TabsTrigger value="progression">Progression (Pro/Pro+)</TabsTrigger>
             {type === 'standard' && <TabsTrigger value="trial">Trial</TabsTrigger>}
+            {type === 'standard' && <TabsTrigger value="variants">Seasonal Variants</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 py-4">
@@ -253,28 +255,25 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
             </div>
 
             {type === 'seasonal' && (
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <LabelWithTooltip label="Fixed Price" tooltip="One-time price for this seasonal plan." />
                   <Input id="fixedPrice" type="number" value={fixedPrice} onChange={(e) => setFixedPrice(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <LabelWithTooltip label="Start Date" tooltip="When this seasonal plan becomes active." />
-                  <Input
-                    id="startDate"
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <LabelWithTooltip label="End Date" tooltip="When this seasonal plan expires." />
-                  <Input
-                    id="endDate"
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
+                  <LabelWithTooltip label="Associated Season" tooltip="The season that defines the active dates and styling for this plan." />
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={seasonId}
+                    onChange={(e) => setSeasonId(e.target.value)}
+                  >
+                    <option value="">Select a Season</option>
+                    {seasons?.map((season) => (
+                      <option key={season.id} value={season.id}>
+                        {season.name} ({new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -286,7 +285,7 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
               </div>
               <div>
                 <LabelWithTooltip label="Quarterly Price" tooltip="The cost of the plan billed every 3 months." />
-                <Input id="quaterlyPrice" type="number" value={quaterlyPrice} onChange={(e) => setQuaterlyPrice(e.target.value)} placeholder="0.00" />
+                <Input id="quarterlyPrice" type="number" value={quarterlyPrice} onChange={(e) => setQuarterlyPrice(e.target.value)} placeholder="0.00" />
               </div>
               <div>
                 <LabelWithTooltip label="Annual Price" tooltip="The cost of the plan billed yearly." />
@@ -353,6 +352,23 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
               trial={configuration.trial || { quotas: {}, featureFlags: {} }}
               onChange={(t) => setConfiguration(prev => ({ ...prev, trial: t }))}
             />
+          </TabsContent>
+
+          <TabsContent value="variants" className="space-y-6 py-4">
+            <Accordion type="multiple" className="w-full">
+              {['winter', 'summer', 'autumn', 'spring'].map((season) => (
+                <AccordionItem key={season} value={season}>
+                  <AccordionTrigger className="capitalize">{season} Variant Overrides</AccordionTrigger>
+                  <AccordionContent>
+                    <SeasonalVariantSection
+                      title={season.charAt(0).toUpperCase() + season.slice(1)}
+                      variant={configuration[season as keyof TierConfiguration] as SeasonalVariant || { quotas: {}, featureFlags: {}, progressBonuses: {} }}
+                      onChange={(data) => updateSeasonalVariant(season as any, data)}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </TabsContent>
         </Tabs>
 
@@ -460,6 +476,24 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
             type="number"
             value={quotas.monthlyPointsAllowance ?? ''}
             onChange={(e) => onChange('monthlyPointsAllowance', parseInt(e.target.value))}
+            placeholder="Inherit"
+          />
+        </div>
+        <div>
+          <LabelWithTooltip label="Monthly Stamps Allowance" tooltip="The number of stamps a business can award for free each month." />
+          <Input
+            type="number"
+            value={quotas.monthlyStampsAllowance ?? ''}
+            onChange={(e) => onChange('monthlyStampsAllowance', parseInt(e.target.value))}
+            placeholder="Inherit"
+          />
+        </div>
+        <div>
+          <LabelWithTooltip label="Monthly Reward Budget" tooltip="The monetary budget allocated for Gift Cards, Vouchers, and Coupons rewards each month. Once exhausted, businesses can top up their balance to continue rewarding customers." />
+          <Input
+            type="number"
+            value={quotas.monthlyRewardBudget ?? ''}
+            onChange={(e) => onChange('monthlyRewardBudget', parseInt(e.target.value))}
             placeholder="Inherit"
           />
         </div>
@@ -678,21 +712,21 @@ function SeasonalVariantSection({ variant, onChange, title }: { variant: Seasona
   const updateQuota = (key: keyof TierQuotas, value: number) => {
     onChange({
       ...variant,
-      quotas: { ...variant.quotas, [key]: value }
+      quotas: { ...(variant.quotas || {}), [key]: value }
     });
   };
 
   const updateFeatureFlag = (key: keyof TierFeatureFlags, value: boolean) => {
     onChange({
       ...variant,
-      featureFlags: { ...variant.featureFlags, [key]: value }
+      featureFlags: { ...(variant.featureFlags || {}), [key]: value }
     });
   };
 
   const updateProgressBonus = (key: string, value: number) => {
     onChange({
       ...variant,
-      progressBonuses: { ...variant.progressBonuses, [key]: value }
+      progressBonuses: { ...(variant.progressBonuses || {}), [key]: value }
     });
   };
 
@@ -726,6 +760,32 @@ function SeasonalVariantSection({ variant, onChange, title }: { variant: Seasona
       <QuotasSection quotas={variant.quotas || {}} onChange={updateQuota} />
       <FeatureFlagsSection flags={variant.featureFlags || {}} onChange={updateFeatureFlag} />
       <ProgressBonusesSection bonuses={variant.progressBonuses || {}} onChange={updateProgressBonus} />
+
+      <div className="border p-4 rounded-md space-y-4">
+        <h3 className="font-semibold text-lg">Progression Overrides for {title}</h3>
+        <Accordion type="multiple" className="w-full">
+          <AccordionItem value="pro">
+            <AccordionTrigger>Pro Level Overrides ({title})</AccordionTrigger>
+            <AccordionContent>
+              <ProgressionLevelSection
+                level={variant.pro as ProgressionLevel || { conditions: {}, benefits: {} }}
+                onChange={(data) => onChange({ ...variant, pro: data })}
+                title={`Pro (${title})`}
+              />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="pro_plus">
+            <AccordionTrigger>Pro Plus Level Overrides ({title})</AccordionTrigger>
+            <AccordionContent>
+              <ProgressionLevelSection
+                level={variant.pro_plus as ProgressionLevel || { conditions: {}, benefits: {} }}
+                onChange={(data) => onChange({ ...variant, pro_plus: data })}
+                title={`Pro Plus (${title})`}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
     </div>
   );
 }

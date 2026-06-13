@@ -14,7 +14,7 @@ export const isTierName = (name: string): name is TierName => {
 };
 
 
-const tierStyles = {
+export const tierStyles = {
   Bronze: "bg-amber-100 text-amber-700",
   Silver: "bg-gray-200 text-gray-700",
   Gold: "bg-yellow-100 text-yellow-700",

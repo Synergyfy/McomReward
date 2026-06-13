@@ -37,9 +37,10 @@ export default function BusinessLoginPage() {
 
       toast.success("Login successful! Redirecting...");
       // Redirection is handled by the useAuth hook onSuccess callback
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed. Please try again.");
+      const errorMessage = error?.response?.data?.message || "Login failed. Please check your credentials.";
+      toast.error(errorMessage);
     }
   };
 
@@ -87,7 +88,13 @@ export default function BusinessLoginPage() {
               id="email"
               type="email"
               placeholder="you@business.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                  message: "Invalid email address"
+                }
+              })}
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">
@@ -103,7 +110,13 @@ export default function BusinessLoginPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                {...register("password", { required: "Password is required" })}
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be at least 6 characters"
+                  }
+                })}
               />
               <button
                 type="button"

@@ -66,13 +66,13 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     register,
     reset,
     formState: { errors },
-  } = useForm<FormInput, unknown, PointPackageOutput>({
-    resolver: zodResolver(pointPackageSchema),
+  } = useForm<FormInput>({
+    resolver: zodResolver(pointPackageSchema, undefined, { raw: true }),
     defaultValues: {
       name: '',
       description: '',
-      points: '0', // Default as string
-      price: '0',  // Default as string
+      points: '0',
+      price: '0',
       currency: 'GBP',
       tier_ids: [],
       is_active: true,
@@ -106,12 +106,17 @@ export const AddEditPointPackageModal: React.FC<AddEditPointPackageModalProps> =
     }
   }, [initialData, isOpen, reset]);
 
-  const onSubmit = async (data: PointPackageOutput) => {
+  const onSubmit = async (data: FormInput) => {
     try {
       let savedPackage: PointPackage;
       const payload: PointPackageCreateInput = {
-        ...data,
+        name: data.name,
+        description: data.description,
+        points: Number(data.points),
+        price: Number(data.price),
+        currency: data.currency,
         tier_ids: data.tier_ids || [],
+        is_active: data.is_active,
       }
 
       if (initialData) {

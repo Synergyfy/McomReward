@@ -60,9 +60,13 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const isLoginRequest = originalRequest?.url?.includes('/login') ||
+      originalRequest?.url?.includes('/auth/login') ||
+      originalRequest?.url?.includes('/participant/login') ||
+      originalRequest?.url?.includes('/admin/login');
 
-    // If error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // If error is 401, not a login request, and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !isLoginRequest && !originalRequest._retry) {
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -92,8 +96,9 @@ api.interceptors.response.use(
         processQueue(error, null);
         isRefreshing = false;
 
-        // Redirect to login page if in browser AND not skipping auth redirect
-        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect) {
+        // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
+        const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
           window.location.href = '/login';
         }
 
@@ -138,8 +143,9 @@ api.interceptors.response.use(
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
 
-        // Redirect to login page if in browser AND not skipping auth redirect
-        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect) {
+        // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
+        const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
           window.location.href = '/login';
         }
 

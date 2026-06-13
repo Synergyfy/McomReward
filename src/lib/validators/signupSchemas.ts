@@ -26,7 +26,7 @@ export const createBusinessSchema = z.object({
 
 export const businessSignUpSchema = z.object({
   name: z.string().min(2, "Business name is required"),
-  email: z.email("Valid email is required"),
+  email: z.string().email("Valid email is required"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
   confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters long"),
   inviteCode: z.string().optional(),

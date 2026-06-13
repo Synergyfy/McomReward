@@ -27,8 +27,10 @@ export default function BusinessSignupForm() {
 
   const onSubmit = async (data: BusinessSignUpDto) => {
     try {
+      // Destructure to guarantee no 'name' property is sent (since backend CreateBusinessDto forbids it)
+      const { name, ...cleanData } = data as any;
       // 1️⃣ Call the signup mutation
-      const response = await signUp(data);
+      const response = await signUp(cleanData);
       console.log("Signup response:", response);
 
       // 2️⃣ Automatically sign in after signup
@@ -39,9 +41,13 @@ export default function BusinessSignupForm() {
 
       toast.success("Business account created successfully!");
       // Redirection handled by useAuth
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup or login error:", error);
-      toast.error("Failed to create account. Please try again.");
+      const rawMessage = error?.response?.data?.message;
+      const errorMessage = Array.isArray(rawMessage)
+        ? rawMessage.join(", ")
+        : rawMessage || "Failed to create account. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -77,19 +83,35 @@ export default function BusinessSignupForm() {
 
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="name">
-              Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Your Name"
-              {...register("name", { required: "Name is required" })}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">
+                First Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="John"
+                {...register("firstName", { required: "First Name is required" })}
+              />
+              {errors.firstName && (
+                <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="lastName">
+                Last Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                {...register("lastName", { required: "Last Name is required" })}
+              />
+              {errors.lastName && (
+                <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+              )}
+            </div>
           </div>
           <div>
             <Label htmlFor="email">
@@ -139,26 +161,7 @@ export default function BusinessSignupForm() {
               </p>
             )}
           </div>
-          <div>
-            <Label htmlFor="confirmPassword">
-              Confirm Password <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="referalcode"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              {...register("confirmPassword", {
-                required: "Confirm Password is required",
-                validate: (value) =>
-                  value === watch("password") || "Passwords do not match",
-              })}
-            />
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
+
           <div>
             <Label htmlFor="confirmPassword">
               Confirm Password <span className="text-red-500">*</span>

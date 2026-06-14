@@ -25,11 +25,47 @@ export const createBusinessSchema = z.object({
 });
 
 export const businessSignUpSchema = z.object({
-  name: z.string().min(2, "Business name is required"),
-  email: z.string().email("Valid email is required"),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
-  confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters long"),
-  inviteCode: z.string().optional(),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name must be at most 50 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "First name must only contain letters, spaces, hyphens, or apostrophes"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be at most 50 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "Last name must only contain letters, spaces, hyphens, or apostrophes"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z
+    .string()
+    .min(1, "Please confirm your password"),
+  referralCode: z
+    .string()
+    .max(50, "Referral code must be at most 50 characters")
+    .regex(/^[a-zA-Z0-9]*$/, "Referral code must only contain letters and numbers")
+    .optional()
+    .or(z.literal('')),
+  provisionCode: z
+    .string()
+    .max(50, "Provision code must be at most 50 characters")
+    .regex(/^[a-zA-Z0-9]*$/, "Provision code must only contain letters and numbers")
+    .optional()
+    .or(z.literal('')),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 export const staffSchema = z.object({

@@ -2,16 +2,21 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp, useAuth } from "@/services/business/hook";
-import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
+import { businessSignUpSchema } from "@/lib/validators/signupSchemas";
 import Link from "next/link";
 import { Suspense } from "react";
+import z from "zod";
+
+type FormValues = z.infer<typeof businessSignUpSchema>;
 
 function BusinessSignupContent() {
   const searchParams = useSearchParams();
@@ -21,9 +26,9 @@ function BusinessSignupContent() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    watch,
     setValue,
-  } = useForm<BusinessSignUpDto>({
+  } = useForm<FormValues>({
+    resolver: zodResolver(businessSignUpSchema),
     defaultValues: {
       referralCode: refCode || '',
     }
@@ -35,15 +40,13 @@ function BusinessSignupContent() {
     }
   }, [refCode, setValue]);
 
-  const router = useRouter();
   const { mutateAsync: signUp, } = useBusinessSignUp();
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
 const onSubmit = async (data: BusinessSignUpDto) => {
   try {
-    const { name, ...cleanData } = data as any;
-    const response = await signUp(cleanData);
+    const response = await signUp(data);
     console.log("Signup response:", response);
 
     await login({
@@ -100,7 +103,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="firstName"
                 type="text"
                 placeholder="John"
-{...register("firstName", { required: "First Name is required" })}
+{...register("firstName")}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -114,7 +117,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-{...register("lastName", { required: "Last Name is required" })}
+{...register("lastName")}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -129,7 +132,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
               id="email"
               type="email"
               placeholder="email@example.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email")}
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">
@@ -144,8 +147,13 @@ const onSubmit = async (data: BusinessSignUpDto) => {
               id="referralCode"
               type="text"
               placeholder="Enter referral code"
-              {...register("referralCode")}
+{...register("referralCode")}
             />
+            {errors.referralCode && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.referralCode.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -155,13 +163,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters",
-                  },
-                })}
+{...register("password")}
               />
               <button
                 type="button"
@@ -183,11 +185,7 @@ const onSubmit = async (data: BusinessSignUpDto) => {
               id="confirmPassword"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              {...register("confirmPassword", {
-                required: "Confirm Password is required",
-                validate: (value) =>
-                  value === watch("password") || "Passwords do not match",
-              })}
+{...register("confirmPassword")}
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">

@@ -2,15 +2,20 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FcGoogle } from "react-icons/fc";
 import { useBusinessSignUp, useAuth } from "@/services/business/hook";
-import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.
-import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import { BusinessSignUpDto } from "@/services/business/types";
+import { businessSignUpSchema } from "@/lib/validators/signupSchemas";
 import Link from "next/link";
+import z from "zod";
+
+type FormValues = z.infer<typeof businessSignUpSchema>;
 
 interface BusinessSignupFormProps {
   provisionCode?: string;
@@ -24,9 +29,9 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    watch,
     setValue,
-  } = useForm<BusinessSignUpDto>({
+  } = useForm<FormValues>({
+    resolver: zodResolver(businessSignUpSchema),
     defaultValues: {
       referralCode: refCode || '',
       provisionCode: provisionCode || '',
@@ -42,17 +47,13 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
     }
   }, [refCode, provisionCode, setValue]);
 
-  const router = useRouter();
   const { mutateAsync: signUp } = useBusinessSignUp();
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: BusinessSignUpDto) => {
     try {
-      // Destructure to guarantee no 'name' property is sent (since backend CreateBusinessDto forbids it)
-      const { name, ...cleanData } = data as any;
-      // 1️⃣ Call the signup mutation
-      const response = await signUp(cleanData);
+      const response = await signUp(data);
       console.log("Signup response:", response);
 
       // 2️⃣ Automatically sign in after signup
@@ -114,7 +115,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
                 id="firstName"
                 type="text"
                 placeholder="John"
-{...register("firstName", { required: "First Name is required" })}
+{...register("firstName")}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
@@ -128,7 +129,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-{...register("lastName", { required: "Last Name is required" })}
+{...register("lastName")}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
@@ -143,7 +144,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
               id="email"
               type="email"
               placeholder="email@example.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email")}
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">
@@ -161,13 +162,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters",
-                  },
-                })}
+{...register("password")}
               />
               <button
                 type="button"
@@ -191,11 +186,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
               id="confirmPassword"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              {...register("confirmPassword", {
-                required: "Confirm Password is required",
-                validate: (value) =>
-                  value === watch("password") || "Passwords do not match",
-              })}
+{...register("confirmPassword")}
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
@@ -210,7 +201,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
               id="referralCode"
               type="text"
               placeholder="Enter referral code"
-              {...register("referralCode")}
+{...register("referralCode")}
             />
             {errors.referralCode && (
               <p className="text-red-500 text-sm mt-1">

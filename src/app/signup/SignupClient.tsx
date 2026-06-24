@@ -6,13 +6,14 @@ import { Building2, User, ArrowLeft } from "lucide-react";
 import CustomerSignupPage from "@/components/Forms/CustomerSignupForm";
 import BusinessSignupForm from "@/components/Forms/BusinessSignupForm";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface SignupClientProps {
   provisionCode?: string;
 }
 
 function SignupCard({ provisionCode }: { provisionCode?: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTypeParam = searchParams.get("type");
   const refCode = searchParams.get("ref");
@@ -32,12 +33,12 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
   return (
     <motion.div
       layout
-      className="relative w-full lg:w-[480px] bg-white border border-gray-100 shadow-2xl rounded-3xl overflow-hidden"
+      className="relative w-full lg:w-[480px] bg-white border border-slate-200/60 shadow-2xl rounded-3xl overflow-hidden text-slate-800"
     >
       {/* Header */}
-      <div className="text-center py-6 border-b border-gray-100 bg-white">
-        <h1 className="text-2xl font-bold text-gray-800">Create your account</h1>
-        <p className="text-sm text-gray-500 mt-1">Choose how you want to join Loyalty CardX</p>
+      <div className="text-center py-6 border-b border-slate-100 bg-white">
+        <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
+        <p className="text-sm text-slate-500 mt-1">Choose how you want to join Loyalty CardX</p>
       </div>
 
       {/* FORM AREA */}
@@ -57,14 +58,14 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
               transition={{ duration: 0.4 }}
               className="text-center w-full flex flex-col items-center justify-center flex-1"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">Get Started</h2>
-              <p className="text-gray-500 text-sm mb-8">
+              <h2 className="text-xl font-semibold text-slate-900 mb-2">Get Started</h2>
+              <p className="text-slate-500 text-sm mb-8">
                 Select your role below to begin your journey
               </p>
 
               <div className="flex flex-col gap-4 w-full">
                 <button
-                  onClick={() => setSelectedType("customer")}
+                  onClick={() => router.push("/customer")}
                   className="flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-xl transition shadow-sm"
                 >
                   <User size={20} />
@@ -73,7 +74,7 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
 
                 <button
                   onClick={() => setSelectedType("business")}
-                  className="flex items-center justify-center gap-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition shadow-sm"
+                  className="flex items-center justify-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-800 font-medium py-3 rounded-xl transition shadow-sm"
                 >
                   <Building2 size={20} />
                   Sign up as Business
@@ -96,7 +97,7 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
             >
               <button
                 onClick={() => setSelectedType(null)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-4"
+                className="flex items-center gap-2 text-sm text-slate-500 hover:text-orange-500 mb-4"
               >
                 <ArrowLeft size={18} /> Back
               </button>
@@ -122,7 +123,7 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
             >
               <button
                 onClick={() => setSelectedType(null)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-orange-600 mb-4"
+                className="flex items-center gap-2 text-sm text-slate-500 hover:text-orange-500 mb-4"
               >
                 <ArrowLeft size={18} /> Back
               </button>
@@ -137,8 +138,8 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
       </motion.div>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 bg-white text-center py-5 space-y-2">
-        <p className="text-sm text-gray-600">
+      <div className="border-t border-slate-100 bg-white text-center py-5 space-y-2">
+        <p className="text-sm text-slate-600">
           Already have an account?{" "}
           <Link
             href="/login"
@@ -147,7 +148,7 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
             Log in
           </Link>
         </p>
-        <p className="text-xs text-gray-400 max-w-sm mx-auto">
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">
           By signing up, you agree to our{" "}
           <Link href="/terms" className="text-orange-500 hover:underline">
             Terms of Service
@@ -165,20 +166,20 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
 
 export default function SignupClient({ provisionCode }: SignupClientProps) {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center bg-white p-4 md:p-8">
+    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center bg-slate-50 p-4 md:p-8 text-slate-800">
       {/* LEFT — Intro Section */}
       <div className="hidden lg:flex flex-col justify-center items-start w-1/2 px-12 space-y-6">
-        <h1 className="text-4xl font-extrabold text-orange-600">Loyalty CardX</h1>
-        <p className="text-gray-600 text-lg leading-relaxed max-w-md">
+        <h1 className="text-4xl font-extrabold text-orange-500">Loyalty CardX</h1>
+        <p className="text-slate-600 text-lg leading-relaxed max-w-md">
           Earn rewards, grow loyalty, and connect smarter.
           Join as a <span className="text-orange-500 font-semibold">Customer</span> or{" "}
           <span className="text-orange-500 font-semibold">Business</span> — the choice is yours 🚀
         </p>
-        <div className="h-1 w-24 bg-orange-400 rounded-full"></div>
+        <div className="h-1 w-24 bg-orange-500 rounded-full"></div>
       </div>
 
       {/* RIGHT — Auth Card */}
-      <Suspense fallback={<div className="w-full lg:w-[480px] h-[600px] bg-white rounded-3xl animate-pulse" />}>
+      <Suspense fallback={<div className="w-full lg:w-[480px] h-[600px] bg-slate-100 rounded-3xl animate-pulse" />}>
         <SignupCard provisionCode={provisionCode} />
       </Suspense>
 
@@ -188,16 +189,16 @@ export default function SignupClient({ provisionCode }: SignupClientProps) {
           width: 6px;
         }
         .custom-scroll::-webkit-scrollbar-track {
-          background: #f9f9f9;
+          background: #f1f5f9;
           border-radius: 8px;
         }
         .custom-scroll::-webkit-scrollbar-thumb {
-          background: #f97316;
+          background: #f54900;
           border-radius: 8px;
           transition: background 0.3s ease;
         }
         .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: #ea580c;
+          background: #ff843a;
         }
       `}</style>
     </div>

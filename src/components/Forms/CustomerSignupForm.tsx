@@ -99,12 +99,12 @@ export default function CustomerSignupPage() {
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 text-slate-800">
       <div>
-        <h2 className="text-2xl font-semibold text-center text-gray-800">
+        <h2 className="text-2xl font-semibold text-center text-slate-900">
           Join <span className="text-orange-500">MCOM Rewards</span>
         </h2>
-        <p className="text-center text-gray-500 text-sm">
+        <p className="text-center text-slate-500 text-sm mb-4">
           Sign up to start earning rewards and discovering local deals
         </p>
 
@@ -113,64 +113,68 @@ export default function CustomerSignupPage() {
           type="button"
           onClick={handleGoogleSignup}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50"
+          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800"
         >
           <FcGoogle className="w-5 h-5" />
           Continue with Google
         </Button>
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-px bg-gray-300" />
-          <span className="text-gray-500 text-sm">or</span>
-          <div className="flex-1 h-px bg-gray-300" />
+        <div className="flex items-center gap-2 my-4">
+          <div className="flex-1 h-px bg-slate-200/60" />
+          <span className="text-slate-400 text-sm">or</span>
+          <div className="flex-1 h-px bg-slate-200/60" />
         </div>
 
         {/* SIGNUP FORM */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label>Full Name</Label>
+            <Label className="text-slate-700">Full Name</Label>
             <Input
               placeholder="John Doe"
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
               {...register("name", { required: "Full name is required" })}
             />
             {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
             )}
           </div>
 
           <div>
-            <Label>Email</Label>
+            <Label className="text-slate-700">Email</Label>
             <Input
               type="email"
               placeholder="you@example.com"
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
               {...register("email", { required: "Email is required" })}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
             )}
           </div>
 
           <div>
-            <Label>Password</Label>
+            <Label className="text-slate-700">Password</Label>
             <Input
               type="password"
               placeholder="••••••••"
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
               {...register("password", { required: "Password is required" })}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
           </div>
 
           <div>
-            <Label>Confirm Password</Label>
+            <Label className="text-slate-700">Confirm Password</Label>
             <Input
               type="password"
               placeholder="••••••••"
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
               {...register("confirmPassword", { required: "Confirm Password is required" })}
             />
             {errors.confirmPassword && (
-              <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
             )}
           </div>
 

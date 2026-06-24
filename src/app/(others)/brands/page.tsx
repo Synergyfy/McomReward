@@ -2,153 +2,133 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Search, Star, ArrowRight, ChevronLeft } from 'lucide-react';
 
-const categories = ["All Brands", "Fashion", "Travel", "Entertainment", "Food", "Tech", "Home", "Beauty"];
+const categories = ["All Brands", "Fashion", "Tech", "Travel", "Beauty", "Home"];
 
-const featuredBrands = [
-  {
-    id: "luxe-avenue",
-    name: "Luxe Avenue",
-    category: "Fashion",
-    cashback: "Up to 25% back",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuB83BZEE2BGyotHyBpLqZ8fyPAICwRB6gy_ad7r9fLznUgbL7HO1jbSbqZyjPHmHDOs2x3cv9-0RJs5aMhKZncyFyQp7PM643nW6YCXPwgYJsEjGhHaThU4g7eqI_JHFwjX_nhLPtga09pUfoKAR5SOo4Zx225anqVUCrDNff4EanE8fsYsUaGnylvA9R0lLk2zpW-BMmhW7VlYCzjsKRePZYBo-XHibSG1yoZ1J0ENyHxW48ewzJ-h1fYwrNzJtUr91bbX4ftxBNFz"
-  },
-  {
-    id: "artisan-coffee",
-    name: "Artisan Coffee House",
-    category: "Food",
-    cashback: "Elite Partner status",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCpN2nAYiIYXfgnYOwvw4WDZondTITWQgtSgb7l8vodmd8HCbDiek6h4Rsf3JcDI82vRsfynrX0Z2CE32kN2HaCbUXqaWuuHaxUW5gZj5bAsCSLrx5CE0IuZr_iGzGHqPHlulEMxYlnRNe8gg9rKbP3iKaqKPzGWUCL4YkAVHGZ-thg9M1_68WPBhvh_cr-afaqpoxI5uWLsS5aoKu0aj9FDSstIfUi67E4sa6uWPmuR77KgJePGHjthAwapjRBCKsQJAmXzy9zurY7"
-  },
-  {
-    id: "techpulse",
-    name: "TechPulse",
-    category: "Tech",
-    cashback: "Up to 12% back",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuDhn57Hj_t8cpcjZuPvTufq7-YMafF1_O71bOcoKsMG5RfWKFn_vh_szZ4Z_3eTpMU7dbuKa6ZBhVAinJ1dXF45FoUjOlvkvTY4WZrmWQg7EUqfuXoeXto0HNnILYkTuZyGCnGtPuQ-jYCd2cm7SxccASXvF-JR1Sa_Z71cwBqCQHamL7xnk_Jy9rETfOsv9ji6bpdZUj6j4kFZ1NUYKdH93h_BqYapGEp_dcDEajRG6j-6b2SCS250L4G2mwZZw7PsbPDCmBg62sbD"
-  },
-  {
-    id: "haven-home",
-    name: "Haven Home",
-    category: "Home",
-    cashback: "Up to 18% back",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBjTkXaT-GcECRMZpbbbdlb5ACkz5IqN_Mv1fvD1r87AXlYwM7hg0fscYnWzjc6bBE_tVQZ2gcKsCYV-pkwYN1Y7K9pFr9lnprs9GxyfGQntLkba7As6_DtMZVjSsH94ZI4H33cqQWxL04AZQwFiF8lZ-yOHfIvi6TSVsAX0HZbzRjAv-JzgcZ9ONjv6yacZnSkTUbqyXkksxlAhLTDXN_ecm1nphEIO2Z8A6xocKfBMuWRSinHkdfg-m_ji1PdDEyBy-FxmMZKjz3w"
-  },
-  {
-    id: "skybound",
-    name: "Skybound",
-    category: "Travel",
-    cashback: "Up to 20% back",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuDh4YKJGiEpoCj6ewsrW9hfojSMr-Calv-WNkA01FIQdv_-L4LjPHc2qkDISS0XfP_n-EHPzyuuV-3DvE3JGOz8nGrNxatI7LeXVJ8EdKzpKFpWlHZC75hpHY88WVSE1N6G1N7Y2qQIwCoTxf3taEvhYYBjUySTwpJqGU6retEA1RQ7EUEEil9seDm5xlSjBLxmdXiHCfgSwYyKBR3y-4X6MCptce-sPzcy6PTkHioMWmpdq-hFu1hscDESGK1R7YiLNL0A8FV7i61E"
-  }
-];
-
-const popularBrands = [
+const brandsData = [
   {
     id: "nike",
     name: "Nike",
     category: "Fashion",
-    offer: "Get 8% Cashback + 2x Points",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCp48G7lQWvtSKokkqAHV9R8g_aF-TpcLs-7aeg19j2d98-vN5oevc-DSJcPzQ-dhvcooatfVWwiNfJ6dJrUmFFX27T0XApn_1wadHTta5se4Tf4dSzQbsw-lTexbvOdzwgws111mGjrEvKwGHRuZR5h_qXB6BECqRUISS_reOSUic6c903RroU19xddOoz5uArE_9tFhFw5S7rnQsGsOt_BDk_zwTEO3mS-YH7TSbs2KeCeofnayROJijGQFnNzXViFPunR2g74EmD"
+    cashback: "Up to 10% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAQ48UrlbL1g30kbVrOcXO_AQfnOYkrCYkRFqjIHgto5ohYsNN9Fp6YS3UQbGyyna8EPQkt-IrfmxpMLZUaXkkSWGFtz4VuHWF1v-l9rfXMLHDFZsz6cCh1b_p1_ofHVJ88M06kPzd-4tufBUbJ9O_FlYpKbkVwKq99eNlMlIkv7uHaMCfoKXLVZgcWo_qT7DPBhZ-jEH2fNypXwN0JuiZxMR4X9VFfV-B24yQNVOMt2MA-9Dai9X51gSiAzY3nNkdRhjlFFl1DywA",
+    bgColor: "bg-white"
   },
   {
-    id: "uber",
-    name: "Uber",
-    category: "Travel",
-    offer: "10% Cashback on Premium Rides",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAJZWmbKDgtapuXSFwPnJic0N42gteMRNnsyxKs8gvtgE2pk6XbeHhOBymnw4YG9loBurwA7qu81PtvkFhvsDEd0pzhLIzbmKuLDHOsWUc33h_r9qs75SFb588DURbd5eeW67_2GawGjhR4Iar7ujXQYLI1qY1XUQRMC7DBf1rXsMR8jszfxrWhbETFPX5DO9HVDm-tWw14V48R0J6YoEysJRNqKo-0kBY4Ax8nB2Jlz-fARySvr8phhFI7toYfjYd9iBfrmaqSdu0l"
-  },
-  {
-    id: "starbucks",
-    name: "Starbucks",
-    category: "Food",
-    offer: "Free Drink stamp on £15 purchase",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCdkmAd7VVkI6d-BJeXPo_t8uBGn7gBj294OFMvuRMFSg5p2R7Dg2yg1Xv5I7MwHfQNZz24rbU-VA-tEztYWdYvw-ydWeHm84gEy4Aj_oW1ZisZn_wD2-zbmsZXYjwT7tuF9bYqnvGy6xZ-GDev8_h81I22CYq5TMvKoJ6My797vdXP-3-m48RhhnAUKIrdXY_rIAt8QpphqWupMutcIfFilORPTyNeVrN-q0Ne246KfoaeuZl7FLxLHwBLhwAGouxc8W62xamOUPvy"
-  },
-  {
-    id: "netflix",
-    name: "Netflix",
-    category: "Entertainment",
-    offer: "5% cashback on monthly subscription",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCoGqlIRuED0GO8fjmsjsbbcxBRIw57gBdUCqsoTV7YMizjczo-bpemEaPCcEqCdZ-WWBaj4rqOwiYfsVDTkkGizzh9_6qiTRxeKpOZb_qbDeqg5x92Ne6BVyZ6G7gri_u2DBt-b7-pjKQYUDviMGvLO3-NHhKZMDzkDNNWLxFwJxNM0WRG_h5pXgWgT7GdFZQ5BXYJT56ChhOflZd6C4GUjffodGZ5lVDla-Xa1vZ1jpGlDmsAUD9666IZefXkUAebhNsxibabZyiG"
-  },
-  {
-    id: "amazon",
-    name: "Amazon",
+    id: "apple",
+    name: "Apple",
     category: "Tech",
-    offer: "Up to 5% Cashback + Free Points",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAivVTAvQ1_GqV_dr7iW0m79Y-BR1t2kkFUSb0eXobTt9hRXBs2F0hu_cR1cevnqxLNEkD1xldkNUYXyOxt69siXh3KL_mg0f040kONjnLPSJYTYU3oJF-H_Gf2pyO4olyJM7sYUn0qYBQcHgRRiBtGcOBKgUCX77T2P0_0HfnJZSWEJxE5U44nXBnXRsYHiT-dRmON8u4GNXaUsc_QRq7ZLoESmZiR0hJabV_d-iGF_2nyinNDQZj4yrblpEQZzmVTTb31wlWPYu1b"
+    cashback: "5% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBidYnMTj_B204xeYGxYUHQXaMLHF2mTSLSWbDfNkiV94ys5Bmx-zFCLM0lZnohMB8LOMgvVdDr-xgt6unBBRewHNk0qFGFEeCLCJkO5GGUeJEgKEbD58_vi_Dk3n6rcdClzf8VvdyemmNfiJmbAbEPTVSr2UOKPFvrg5PWiafDaD6QpbRT95Yjd6r3qWYgoRcn2-nkHQyn3bWmVXW79QkaxU9JA3dpHIJIlrihjYA6EgqIHfg4o4ipsQ8y6ItU8ZapDJn1iYY1PXo",
+    bgColor: "bg-white"
+  },
+  {
+    id: "sephora",
+    name: "Sephora",
+    category: "Beauty",
+    cashback: "8% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCtTryZ7O1js8jdpZn2en9_C5jGnvJrlfXyAk3EB2xPeyAu6favewsk_VgnZi8KCtsBZlk88vEiHhNCs7FHoOVvQLI4GqW0T1QHfpCwhtf9Dd0uOUcWWb6E088ZdEwcR2VYz66FyZ2E3m198X03GRhFFRfzsUhGqlUVuN72bL-UEVHFS3N0NGMGaELV9l64Hkmrh0WzKM9CkDiYbE7HT1OwOp8bbHK2gtt5jwppXfL7e-Bqa-NQ4J8A46cdgcVFWkWXOWfLt5alHWw",
+    bgColor: "bg-gray-50 border border-gray-200"
+  },
+  {
+    id: "airbnb",
+    name: "Airbnb",
+    category: "Travel",
+    cashback: "4% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWm5rQE5G2K4QR53CsF0RbYaZkYCrOAs2q9Q8QhjE6FexLkbThYHqdFHOto4JlEVJ7DnSiFP6_HCPo4VFsf7kDzborsLxod3WhLiCeO31EvdufxMQfc2zW-jdJVw5PE9Kf8vzBA-k9BKwqSoTBcSUycokP93sqk48UofW4oN67xQBMkqMrdg9V9LXsJiuYRX7d2IaeXGdF1XSj2HNjl4mbBmp6enTlPRATShmUaPpFPOFkjPeZwTIEiWnnrdtZ1FNEDyQwoROcgFA",
+    bgColor: "bg-white"
+  },
+  {
+    id: "adidas",
+    name: "Adidas",
+    category: "Fashion",
+    cashback: "Up to 7% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuA6LeKteFeeTM-OQVyzay82rTi1aX7tyOtq7alktmCo_dUzUaj-Q3Lh9CQITbexbfH_8WOPiu-lwde9gQDHK3xBEbWbMJoAjdPRDG-ehdezV1qV8EhBmTiBecmJ47LsMljp-9Rv6Zf9L2PJuuJ7QaBGPOFBIKKM0VvvkYtsw2Sx3ZLDDMeflv-kp-l7rDQu9wIk3ZD1n9utak2ZR2Y2tYMWtibunwqug2jSOaL_hNQ5wQX0LO_ET4KRFsH7UkTTHoa5vPN8Ez3OOPc",
+    bgColor: "bg-white"
+  },
+  {
+    id: "farfetch",
+    name: "Farfetch",
+    category: "Fashion",
+    cashback: "6.5% Cashback",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAF975FP-IOHkLjzlqeNX55JhFeGm_Y3qZC2oD-QfQUHMIxaPlSC0RkuTwKXB6L-zT7z0i8-Y-FjdWaF_nOocwfeanl09GqDp0OtLR4PcBq3VU_CKCX_o45awBk3ZtBxKN26VIcx_NAKzud7UH34mW_x68qJwbld50yDTMN5yZCd2j5FaP0phbW5DO7FNc7S_uRJ4gakBv4xFPabrmAMcqqPFD_1fCBwa4Ddwowy-c9xzJJwmgGFJH-TSW1Sl9CTcyOA_BZ_5LwRSI",
+    bgColor: "bg-black"
   }
 ];
 
 export default function BrandsMarketplace() {
   const [selectedCategory, setSelectedCategory] = useState("All Brands");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredFeatured = selectedCategory === "All Brands"
-    ? featuredBrands
-    : featuredBrands.filter(b => b.category.toLowerCase() === selectedCategory.toLowerCase());
-
-  const filteredPopular = selectedCategory === "All Brands"
-    ? popularBrands
-    : popularBrands.filter(b => b.category.toLowerCase() === selectedCategory.toLowerCase());
+  const filteredBrands = brandsData.filter((brand) => {
+    const matchesCategory = selectedCategory === "All Brands" || brand.category === selectedCategory;
+    const matchesSearch = brand.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
-    <div className="bg-surface-bright text-on-surface min-h-screen py-8 max-w-7xl mx-auto px-6">
-      
-      {/* Hero Section: Asymmetric Bento */}
-      <section className="mb-12">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          
-          {/* Highlight Card */}
-          <div className="md:col-span-8 relative overflow-hidden rounded-[32px] bg-orange-500 p-8 min-h-[360px] flex flex-col justify-end group shadow-lg">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="relative z-10 text-white max-w-lg space-y-4">
-              <span className="inline-block px-4 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold">
-                Featured Brands
+    <div className="bg-[#f9fafb] text-gray-800 min-h-screen pb-32 pt-6 max-w-6xl mx-auto px-4 md:px-8 space-y-8">
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <Link href="/participant/market" className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm shrink-0">
+            <ChevronLeft size={20} />
+          </Link>
+          <div>
+            <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider hidden sm:block">MCOM Mall</p>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">Brands Marketplace</h1>
+          </div>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <input
+            type="text"
+            placeholder="Search brands..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-full text-sm bg-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all shadow-sm"
+          />
+          <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
+        </div>
+      </header>
+
+      {/* Brand of the Month Banner */}
+      <section>
+        <div className="relative w-full h-56 rounded-3xl overflow-hidden shadow-md group border border-gray-100">
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            style={{
+              backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDGCHUjr8eBa-imslrrNDsiANhOcp2qCRUjlwy3M_z0iOexsIUvSPBOg2FzX0hbXdS6ZL89jPSUixGheN33T9cvz6n93RPMSYb9xIuXzYr85gGDlTaZ-Y8rnT5pNk0sRM9S4CgJwu2tqOyz8oxUUzXpW7M8WyeEbKG3i0hM57dLtzk1OSUZL-B5mv1W1r6FOAZs2kBV9xg6zhCAhr5Rz33ERxIyHX2G8KS77voWu6q4uYbZiJZDPCh2YLRkNeg7Ud6aIC8A4_Gf3nc')"
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent z-10" />
+          <div className="absolute bottom-0 left-0 p-8 z-20 w-full flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="bg-orange-600 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 inline-block shadow-sm shadow-orange-600/20">
+                BRAND OF THE MONTH
               </span>
-              <h1 className="text-3xl md:text-5xl font-bold font-headline-lg leading-tight tracking-tight">
-                Exclusive Deals. Up to 25% back.
-              </h1>
-              <p className="text-sm opacity-90 leading-relaxed">
-                Shop your favorite premium labels and earn massive rewards on every purchase through the MCOM ecosystem.
-              </p>
-              <div>
-                <button className="bg-white text-orange-600 px-6 py-2.5 rounded-full font-bold text-xs hover:scale-105 transition active:scale-95">
-                  Explore All Brands
-                </button>
-              </div>
+              <h2 className="text-3xl font-extrabold text-white leading-tight tracking-tight">Apple Luxe</h2>
+              <p className="text-sm font-semibold text-orange-400 mt-1">Exclusive 12% Rewards</p>
             </div>
+            <Link href="/brands/apple" className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-2xl font-bold text-sm text-center shadow-lg shadow-orange-600/10 active:scale-95 transition-all">
+              Shop Now
+            </Link>
           </div>
-
-          {/* Secondary Hero Card */}
-          <div className="md:col-span-4 rounded-[32px] bg-amber-500/10 border border-amber-500/20 p-8 flex flex-col justify-between group overflow-hidden relative shadow-sm min-h-[300px]">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold font-headline-lg text-amber-900">Limited Offer</h2>
-              <p className="text-xs text-amber-800/80">Double rewards on all Tech brands this weekend.</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-4xl font-extrabold text-orange-600 tracking-tight">+15%</span>
-              <p className="text-xs font-semibold text-amber-900">Extra Loyalty Points</p>
-            </div>
-            <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:scale-125 transition-all duration-700" />
-          </div>
-
         </div>
       </section>
 
-      {/* Category Filter Bar */}
-      <section className="hidden md:block mb-8 sticky top-16 z-40 py-2 bg-surface-bright/90 backdrop-blur-md">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+      {/* Category Navigation */}
+      <section className="overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
+        <div className="flex gap-2">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+              className={`px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat
-                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
-                  : 'text-gray-500 hover:bg-gray-50'
+                  ? 'bg-orange-600 text-white shadow-md shadow-orange-600/15'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
               {cat}
@@ -157,157 +137,87 @@ export default function BrandsMarketplace() {
         </div>
       </section>
 
-      {/* Featured Partners */}
-      <section className="mb-16">
-        <div className="flex items-center justify-between mb-6 relative">
-          <h3 className="text-2xl font-bold font-headline-lg text-gray-900 flex items-center gap-2">
-            <span className="material-symbols-outlined text-orange-500">verified</span>
-            Featured Partners
-          </h3>
-          
-          {/* Desktop "See All" Link */}
-          <span className="hidden md:inline text-orange-500 font-bold text-xs hover:underline cursor-pointer">See All</span>
-
-          {/* Mobile "See More" Dropdown Selector */}
-          <div className="md:hidden relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="text-orange-500 font-bold text-xs hover:underline flex items-center gap-1 cursor-pointer"
+      {/* Brands Grid (Bento/Asymmetric Style) */}
+      <section className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-6">
+        {filteredBrands.map((brand) => (
+          <div
+            key={brand.id}
+            className="bg-white p-3 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-orange-500/20 transition-all duration-300 flex flex-col justify-between group"
+          >
+            <div className="space-y-2 sm:space-y-4">
+              <div className={`w-10 h-10 sm:w-14 sm:h-14 ${brand.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2.5 overflow-hidden shadow-sm`}>
+                <img className="w-full h-full object-contain" src={brand.logo} alt={brand.name} />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-base font-extrabold text-gray-900 group-hover:text-orange-600 transition-colors leading-tight truncate">{brand.name}</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-orange-600 mt-1 truncate">{brand.cashback}</p>
+              </div>
+            </div>
+            <Link
+              href={`/brands/${brand.id}`}
+              className="mt-4 sm:mt-6 w-full text-center bg-gray-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-500/20 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 active:scale-98"
             >
-              <span>{selectedCategory === "All Brands" ? "See More" : selectedCategory}</span>
-              <motion.span 
-                animate={{ rotate: isDropdownOpen ? 180 : 0 }}
-                transition={{ duration: 0.15 }}
-                className="material-symbols-outlined text-xs font-bold"
-              >
-                expand_more
-              </motion.span>
-            </button>
-
-            <AnimatePresence>
-              {isDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 bg-white border border-gray-150 rounded-2xl shadow-xl z-20 w-44 overflow-hidden divide-y divide-gray-50"
-                  >
-                    {/* "See More" mapping to "All Brands" */}
-                    <button
-                      onClick={() => {
-                        setSelectedCategory("All Brands");
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between ${
-                        selectedCategory === "All Brands" ? 'bg-orange-50 text-orange-600' : 'text-gray-600'
-                      }`}
-                    >
-                      <span>See More</span>
-                      {selectedCategory === "All Brands" && (
-                        <span className="material-symbols-outlined text-orange-500 text-xs font-bold">check</span>
-                      )}
-                    </button>
-
-                    {/* Other category filters */}
-                    {categories.filter(cat => cat !== "All Brands").map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => {
-                          setSelectedCategory(cat);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center justify-between ${
-                          selectedCategory === cat ? 'bg-orange-50 text-orange-600' : 'text-gray-600'
-                        }`}
-                      >
-                        <span>{cat}</span>
-                        {selectedCategory === cat && (
-                          <span className="material-symbols-outlined text-orange-500 text-xs font-bold">check</span>
-                        )}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+              Shop Now
+            </Link>
           </div>
-        </div>
+        ))}
 
-        <AnimatePresence mode="popLayout">
-          <motion.div 
-            layout 
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {filteredFeatured.map((brand) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                key={brand.id}
-                className="bg-white rounded-3xl p-6 border border-gray-100 flex flex-col items-center text-center group cursor-pointer shadow-sm hover:border-orange-500/20 hover:-translate-y-1 transition-all"
-              >
-                <Link href={brand.id === 'artisan-coffee' ? `/merchants/${brand.id}` : `/brands/${brand.id}`} className="flex flex-col items-center text-center w-full h-full">
-                  <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform overflow-hidden p-3 border border-gray-100">
-                    <img className="w-full h-full object-contain" src={brand.logo} alt={brand.name} />
-                  </div>
-                  <h4 className="font-bold text-base text-gray-800 mb-1 hover:text-orange-500 transition-colors">{brand.name}</h4>
-                  <span className="text-orange-500 font-bold text-xs mb-2 block">{brand.cashback}</span>
-                  <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[9px] uppercase tracking-wider font-bold">
-                    {brand.category}
+        {/* Featured Large Card: Dyson */}
+        {("All Brands" === selectedCategory || "Tech" === selectedCategory) && (
+          <div className="bg-white rounded-3xl p-0 overflow-hidden col-span-2 border border-orange-500/25 shadow-md shadow-orange-500/5 group">
+            <div className="flex flex-col sm:flex-row">
+              <div className="w-full sm:w-1/3 h-48 sm:h-auto overflow-hidden relative">
+                <img
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWTs4WeLCQLrEy7bbqfMzXFpDjnI7Pj-97FMNDZ5CEQE0YJdcYVN5iuaML5eKPk6xbtS4iL-464mRplmXijRnsoRbYQ1G12WI1vDoyBR8W61ToQvUipC45zTCyVIfX5wqm4Wmk_uWs_nKsC8imb4S6KwaEs_YbrmWTKtqH1lxq3e7jQtpOEd-PIwzib5z-HdYaELChJyt1rFVO5bz9s2gtQ3vbf3TVjvVxUOKLxkAdUCzKxg3QVCE8p5jXAi838uMOy21O70L85tQ"
+                  alt="Dyson"
+                />
+              </div>
+              <div className="p-4 sm:p-8 flex flex-col justify-center flex-1 space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-1 text-orange-600">
+                  <Star size={12} className="fill-orange-600" />
+                  <span className="font-bold text-[9px] sm:text-[10px] uppercase tracking-wider">FEATURED PARTNER</span>
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-xl font-extrabold text-gray-900 mb-1">Dyson Technology</h3>
+                  <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed">
+                    Experience the next generation of engineering with exclusive 15% cashback for Gold Members.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <span className="text-lg sm:text-2xl font-black text-orange-600">
+                    15% <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">Cashback</span>
                   </span>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
+                  <Link href="/brands/dyson" className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-[10px] sm:text-xs shadow-lg shadow-orange-600/10 active:scale-95 transition-all">
+                    Shop Dyson
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* Popular Right Now */}
-      <section className="bg-gray-50 rounded-[40px] p-8 md:p-12 border border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-          <div>
-            <h3 className="text-3xl font-bold font-headline-lg text-gray-900 mb-2">Popular Right Now</h3>
-            <p className="text-xs text-gray-500 max-w-xl">Join thousands of members shopping these top-trending brands this week.</p>
+      {/* Coming Soon Panel */}
+      <section>
+        <div className="bg-orange-600/5 rounded-3xl p-6 flex flex-col items-center text-center border border-orange-500/10 space-y-4">
+          <div className="space-y-1">
+            <h4 className="text-base font-extrabold text-orange-600">Coming Soon</h4>
+            <p className="text-xs text-gray-500 max-w-md">
+              New exclusive partnerships with Luxury Travel brands arriving next week.
+            </p>
+          </div>
+          <div className="flex items-center -space-x-3">
+            <div className="w-9 h-9 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">AA</div>
+            <div className="w-9 h-9 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-400">LH</div>
+            <div className="w-9 h-9 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-400">BA</div>
+            <div className="w-9 h-9 rounded-full border-2 border-white bg-orange-600 flex items-center justify-center text-white text-[10px] font-extrabold">
+              +8
+            </div>
           </div>
         </div>
-
-        <AnimatePresence mode="popLayout">
-          <motion.div 
-            layout 
-            className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-          >
-            {filteredPopular.map((brand) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                key={brand.id}
-                className="bg-white p-3.5 md:p-5 rounded-3xl border border-gray-100 flex items-center gap-3 md:gap-4 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <Link href={`/brands/${brand.id}`} className="flex flex-col sm:flex-row items-center sm:items-start md:items-center gap-3 md:gap-4 w-full h-full text-center sm:text-left">
-                  <div className="w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-2xl overflow-hidden bg-gray-50 p-2 border border-gray-100 flex items-center justify-center">
-                    <img className="w-full h-full object-contain" src={brand.logo} alt={brand.name} />
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <h4 className="font-bold text-xs md:text-base text-gray-800 hover:text-orange-500 transition-colors truncate">{brand.name}</h4>
-                    <p className="text-[10px] md:text-xs text-orange-500 font-semibold leading-tight">{brand.offer}</p>
-                    <span className="inline-block bg-gray-100 text-gray-500 text-[8px] md:text-[9px] px-2 py-0.5 rounded-full font-bold uppercase">
-                      {brand.category}
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
       </section>
-
     </div>
   );
 }
+

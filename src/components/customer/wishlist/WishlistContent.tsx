@@ -13,14 +13,13 @@ interface WishlistContentProps {
   data?: PaginatedResponse<WishlistItem>;
   isLoading: boolean;
   error: unknown;
-  isAdmin?: boolean; // Prop to disable actions if needed for admin
+  isAdmin?: boolean;
   onCreate?: (item: WishlistFormValues) => Promise<void>;
   onUpdate?: (id: string, item: WishlistFormValues) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isMutating?: boolean;
 }
 
-// Adapter function to convert Service WishlistItem to Component WishlistItem
 const adaptWishlistItem = (item: WishlistItem): CardWishlistItem => ({
   id: item.id,
   name: item.itemName,
@@ -117,19 +116,19 @@ export default function WishlistContent({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl min-h-screen">
+    <div className="container mx-auto px-4 py-8 max-w-7xl min-h-screen bg-[#f9fafb] text-gray-800">
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
         <div className="text-left">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
              <span className="block text-primary xl:inline">My Wishlist</span>
           </h1>
-          <p className="mt-3 text-lg text-gray-500 dark:text-gray-400 sm:max-w-xl">
+          <p className="mt-3 text-lg text-gray-500 sm:max-w-xl">
              Your curated collection of desires, goals, and dream items.
           </p>
         </div>
         {!isAdmin && (
             <div>
-            <Button onClick={handleCreate} disabled={isMutating} size="lg" className="rounded-full shadow-lg hover:shadow-xl transition-all">
+            <Button onClick={handleCreate} disabled={isMutating} size="lg" className="rounded-full shadow-lg bg-[#f54900] hover:bg-[#f54900]/90 text-white border-none transition-all">
                 {isMutating ? <Loader2 className="h-5 w-5 animate-spin mr-2"/> : <Plus className="h-5 w-5 mr-2" />}
                 Create New Wish
             </Button>
@@ -141,22 +140,22 @@ export default function WishlistContent({
         <div className="flex justify-center items-center h-96">
           <div className="flex flex-col items-center gap-3">
              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-             <p className="text-muted-foreground animate-pulse">Loading your wishes...</p>
+             <p className="text-gray-500 animate-pulse">Loading your wishes...</p>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {wishlistItems.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 bg-gray-50 dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-800">
-               <div className="bg-white dark:bg-zinc-800 p-4 rounded-full shadow-sm mb-4">
+            <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+               <div className="bg-gray-50 p-4 rounded-full shadow-sm mb-4 border border-gray-100">
                   <Plus className="h-10 w-10 text-gray-400" />
                </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your wishlist is empty</h3>
-              <p className="text-gray-500 dark:text-gray-400 mt-2 text-center max-w-sm">
+              <h3 className="text-xl font-semibold text-gray-900">Your wishlist is empty</h3>
+              <p className="text-gray-500 mt-2 text-center max-w-sm">
                 Start building your dream collection by adding items you love.
               </p>
               {!isAdmin && (
-                  <Button variant="link" onClick={handleCreate} className="mt-4 text-primary">
+                  <Button variant="link" onClick={handleCreate} className="mt-4 text-[#f54900] hover:text-[#f54900]/90">
                     Add your first item &rarr;
                   </Button>
               )}

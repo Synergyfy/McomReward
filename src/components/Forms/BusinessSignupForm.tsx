@@ -77,59 +77,59 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
   const handleGoogleSignup = () => {
     console.log("Google signup clicked");
     // TODO: integrate with NextAuth or Firebase Google sign-in
-  };
-
-  return (
-    <div className="h-full flex items-center justify-center bg-white ">
-      <div className="bg-white w-full max-w-md p-8 rounded-2xl  space-y-6">
-        <h2 className="text-2xl font-semibold text-center text-gray-800">
+  };  return (
+    <div className="h-full flex items-center justify-center bg-transparent text-slate-800">
+      <div className="bg-transparent w-full max-w-md p-2 space-y-6">
+        <h2 className="text-2xl font-semibold text-center text-slate-900">
           Manage your vouchers, staff, and rewards
         </h2>
-        <p className="text-center text-gray-500 text-sm"></p>
+        <p className="text-center text-slate-500 text-sm"></p>
 
         {/* Sign up with Google */}
         <Button
           type="button"
           onClick={handleGoogleSignup}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50"
+          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800"
         >
           <FcGoogle className="w-5 h-5" />
           Sign up with Google
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-px bg-gray-300" />
-          <span className="text-gray-500 text-sm">or</span>
-          <div className="flex-1 h-px bg-gray-300" />
+          <div className="flex-1 h-px bg-slate-200/60" />
+          <span className="text-slate-400 text-sm">or</span>
+          <div className="flex-1 h-px bg-slate-200/60" />
         </div>
 
         {/* Email Signup Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">
+              <Label htmlFor="firstName" className="text-slate-700">
                 First Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="firstName"
                 type="text"
                 placeholder="John"
-{...register("firstName")}
+                className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                {...register("firstName")}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
               )}
             </div>
             <div>
-              <Label htmlFor="lastName">
+              <Label htmlFor="lastName" className="text-slate-700">
                 Last Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="lastName"
                 type="text"
                 placeholder="Doe"
-{...register("lastName")}
+                className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                {...register("lastName")}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
@@ -137,13 +137,14 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
             </div>
           </div>
           <div>
-            <Label htmlFor="email">
+            <Label htmlFor="email" className="text-slate-700">
               Email <span className="text-red-500">*</span>
             </Label>
             <Input
               id="email"
               type="email"
               placeholder="email@example.com"
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
               {...register("email")}
             />
             {errors.email && (
@@ -154,7 +155,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
           </div>
 
           <div>
-            <Label htmlFor="password">
+            <Label htmlFor="password" className="text-slate-700">
               Password <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
@@ -162,11 +163,12 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-{...register("password")}
+                className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                {...register("password")}
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-3 text-sm text-gray-500"
+                className="absolute inset-y-0 right-3 text-sm text-slate-500 hover:text-orange-500"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -179,14 +181,15 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
             )}
           </div>
           <div>
-            <Label htmlFor="confirmPassword">
+            <Label htmlFor="confirmPassword" className="text-slate-700">
               Confirm Password <span className="text-red-500">*</span>
             </Label>
             <Input
               id="confirmPassword"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-{...register("confirmPassword")}
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+              {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
               <p className="text-red-500 text-sm mt-1">
@@ -196,12 +199,13 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
           </div>
 
           <div>
-            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+            <Label htmlFor="referralCode" className="text-slate-700">Referral Code (Optional)</Label>
             <Input
               id="referralCode"
               type="text"
               placeholder="Enter referral code"
-{...register("referralCode")}
+              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+              {...register("referralCode")}
             />
             {errors.referralCode && (
               <p className="text-red-500 text-sm mt-1">
@@ -212,7 +216,7 @@ export default function BusinessSignupForm({ provisionCode }: BusinessSignupForm
 
           <Button
             type="submit"
-            className="w-full bg-orange-500 text-white"
+            className="w-full bg-orange-500 hover:bg-orange-650 text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Creating Account..." : "Sign Up"}

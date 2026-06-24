@@ -43,7 +43,7 @@ export default function MobileBottomNav() {
   return (
     <>
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-white/90 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-2xl">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-[#101415]/90 backdrop-blur-md border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] rounded-t-2xl">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
@@ -53,7 +53,7 @@ export default function MobileBottomNav() {
               className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] transition-all duration-200 ${
                 active
                   ? 'text-orange-500 font-semibold scale-105'
-                  : 'text-gray-500 hover:text-orange-500'
+                  : 'text-[#e0e3e5]/70 hover:text-orange-500'
               }`}
             >
               <span
@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
           className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] transition-all duration-200 ${
             isSheetOpen
               ? 'text-orange-500 font-semibold scale-105'
-              : 'text-gray-500 hover:text-orange-500'
+              : 'text-[#e0e3e5]/70 hover:text-orange-500'
           }`}
           aria-label="More menu"
         >
@@ -103,15 +103,15 @@ export default function MobileBottomNav() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="md:hidden fixed bottom-20 left-0 w-full z-45 max-h-[70vh] overflow-y-auto bg-white rounded-t-[32px] border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] pb-10"
+              className="md:hidden fixed bottom-20 left-0 w-full z-45 max-h-[70vh] overflow-y-auto bg-[#101415] rounded-t-[32px] border-t border-white/5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] pb-10 text-[#e0e3e5]"
             >
               {/* Drawer Handle */}
               <div className="flex justify-center py-3">
-                <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                <div className="w-12 h-1.5 bg-white/10 rounded-full" />
               </div>
 
               <div className="px-6 py-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-5">Explore MCOM Ecosystem</h3>
+                <h3 className="text-lg font-bold text-[#e0e3e5] mb-5">Explore MCOM Ecosystem</h3>
                 
                 {/* 2-Column Bento Grid Layout for Drawer Items */}
                 <div className="grid grid-cols-2 gap-3">
@@ -124,13 +124,13 @@ export default function MobileBottomNav() {
                         onClick={() => setIsSheetOpen(false)}
                         className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all duration-200 active:scale-95 ${
                           active
-                            ? 'bg-orange-50 border-orange-200 text-orange-600'
-                            : 'bg-gray-50/50 border-gray-100 text-gray-700 hover:bg-gray-50 hover:border-gray-200'
+                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
+                            : 'bg-[#1d2022] border-white/5 text-[#e0e3e5] hover:bg-[#1d2022]/80 hover:border-white/10'
                         }`}
                       >
                         <div
                           className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            active ? 'bg-orange-500 text-white' : 'bg-white text-gray-500 border border-gray-100'
+                            active ? 'bg-orange-500 text-white' : 'bg-[#101415] text-[#e0e3e5]/70 border border-white/5'
                           }`}
                         >
                           <span className="material-symbols-outlined text-[20px]">{item.icon}</span>

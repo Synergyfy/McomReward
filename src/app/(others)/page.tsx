@@ -93,7 +93,7 @@ export default function Homepage() {
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
-                href="/signup"
+                href="/customer"
                 className="px-8 py-3.5 bg-orange-500 text-white font-bold rounded-full shadow-lg shadow-orange-500/20 hover:shadow-xl hover:bg-orange-600 transition duration-200 active:scale-95 text-center"
               >
                 Join Free
@@ -195,7 +195,7 @@ export default function Homepage() {
           <div className="relative z-10 space-y-6 pt-8">
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/signup"
+                href="/customer"
                 className="px-6 py-3 bg-orange-500 text-white font-bold rounded-full text-xs text-center shadow shadow-orange-500/20 active:scale-95 transition-transform"
               >
                 Join Free

@@ -38,13 +38,13 @@ export default function CustomerLayout({
         {/* Mobile overlay */}
         {isSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+            className="fixed inset-0 bg-black/15 backdrop-blur-[2px] z-30 md:hidden"
             onClick={toggleSidebar}
           ></div>
         )}
 
         {/* Sidebar */}
-        <CustomerSidebar isOpen={isSidebarOpen} basePath="/participant" />
+        <CustomerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} basePath="/participant" />
 
         {/* Main content */}
         <div className="flex-1 md:ml-64 flex flex-col">
@@ -71,7 +71,7 @@ export default function CustomerLayout({
 
           {/* Header */}
           <ModernHeader onMenuClick={toggleSidebar} />
-          <main className="p-4 sm:p-6 md:p-10 flex-1">
+          <main className="p-3 sm:p-6 md:p-10 flex-1">
             {children}
           </main>
         </div>

@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 
 const OthersLayout = ({ children }: { children: React.ReactNode }) => {
     return (
-        <div className="min-h-screen flex flex-col bg-surface-bright">
+        <div className="min-h-screen flex flex-col bg-[#f9fafb]">
             <PublicHeader />
-            <main className="min-h-screen bg-white text-gray-800 mt-16">
+            <main className="min-h-screen bg-[#f9fafb] text-gray-800 mt-16">
                 {children}
             </main>
             <PublicFooter />

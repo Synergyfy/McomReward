@@ -3,15 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wallet, Megaphone, Heart, Settings, HandCoins, Stamp, Ticket, Trophy, Zap } from 'lucide-react';
+import { Wallet, Megaphone, Heart, Settings, HandCoins, Stamp, Ticket, Trophy, Zap, Store, Gift, MapPin, CreditCard, Home } from 'lucide-react';
 
 interface CustomerSidebarProps {
   isOpen: boolean;
+  onClose?: () => void;
   activePath?: string;
   basePath?: string;
 }
 
-export default function CustomerSidebar({ isOpen, activePath, basePath = '' }: CustomerSidebarProps) {
+export default function CustomerSidebar({ isOpen, onClose, activePath, basePath = '' }: CustomerSidebarProps) {
   const pathname = usePathname();
   const currentPath = activePath || pathname;
 
@@ -21,8 +22,10 @@ export default function CustomerSidebar({ isOpen, activePath, basePath = '' }: C
     // Simplifying: construct the full target path.
     const fullPath = `${basePath}${path}`;
 
-    // Check if the current path matches the target path.
-    const isActive = currentPath === fullPath || currentPath?.startsWith(fullPath + '/');
+    // Check if the current path matches the target path. For root path, use exact match to avoid matching all sub-routes.
+    const isActive = path === "" 
+      ? currentPath === fullPath
+      : currentPath === fullPath || currentPath?.startsWith(fullPath + '/');
 
     return `flex items-center p-2 rounded-lg transition-colors duration-200 ${isActive ? 'bg-orange-600 text-white' : 'text-gray-600 hover:bg-orange-100 hover:text-orange-600'}`;
   };
@@ -36,58 +39,72 @@ export default function CustomerSidebar({ isOpen, activePath, basePath = '' }: C
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
     >
-      <h2 className="text-2xl font-bold mb-6 text-orange-600 tracking-tighter">M-Com Rewards</h2>
+      <Link href={`${basePath || '/participant'}`} onClick={onClose}>
+        <h2 className="text-2xl font-bold mb-6 text-orange-600 tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">M-Com Rewards</h2>
+      </Link>
       <ul className="space-y-2">
         <li className="mb-2">
-          <Link href={`${basePath}/wallet`} className={linkClasses("/wallet")}>
+          <Link href={`${basePath}`} className={linkClasses("")} onClick={onClose}>
+            <Home className="mr-3 text-orange-600" />
+            Home Page
+          </Link>
+        </li>
+        <li className="mb-2">
+          <Link href={`${basePath}/wallet`} className={linkClasses("/wallet")} onClick={onClose}>
             <Wallet className="mr-3 text-blue-500" />
             My Wallet
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/credits`} className={linkClasses("/credits")}>
+          <Link href={`${basePath}/market`} className={linkClasses("/market")} onClick={onClose}>
+            <Store className="mr-3 text-orange-500" />
+            Marketplace Hub
+          </Link>
+        </li>
+        <li className="mb-2">
+          <Link href={`${basePath}/credits`} className={linkClasses("/credits")} onClick={onClose}>
             <Zap className="mr-3 text-yellow-500 fill-yellow-500" />
             Credits & Rewards
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/progression`} className={linkClasses("/progression")}>
+          <Link href={`${basePath}/progression`} className={linkClasses("/progression")} onClick={onClose}>
             <Trophy className="mr-3 text-amber-500" />
             My Progression
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/mall-rewards`} className={linkClasses("/mall-rewards")}>
+          <Link href={`${basePath}/mall-rewards`} className={linkClasses("/mall-rewards")} onClick={onClose}>
             <Ticket className="mr-3" />
             My Mall Rewards
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/my-campaigns`} className={linkClasses("/my-campaigns")}>
+          <Link href={`${basePath}/my-campaigns`} className={linkClasses("/my-campaigns")} onClick={onClose}>
             <Megaphone className="mr-3" />
             My Campaigns
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/wishlist`} className={linkClasses("/wishlist")}>
+          <Link href={`${basePath}/wishlist`} className={linkClasses("/wishlist")} onClick={onClose}>
             <Heart className="mr-3" />
             My Wishlist
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/stamp-rewards`} className={linkClasses("/stamp-rewards")}>
+          <Link href={`${basePath}/stamp-rewards`} className={linkClasses("/stamp-rewards")} onClick={onClose}>
             <Stamp className="mr-3" />
             Stamp Rewards
           </Link>
         </li>
         <li className="mb-2">
-          <Link href={`${basePath}/redemption`} className={linkClasses("/redemption")}>
+          <Link href={`${basePath}/redemption`} className={linkClasses("/redemption")} onClick={onClose}>
             <HandCoins className="mr-3" />
             Redemption
           </Link>
         </li>
         <li className="mt-8">
-          <Link href={`${basePath}/settings`} className={linkClasses("/settings")}>
+          <Link href={`${basePath}/settings`} className={linkClasses("/settings")} onClick={onClose}>
             <Settings className="mr-3" />
             Settings
           </Link>

@@ -1,9 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useGetCreditsBalance, useGetCreditsHistory } from '@/services/cashback/hook';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import Link from 'next/link';
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Wallet,
   History,
@@ -15,223 +25,294 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  CreditCard,
+  Gift,
+  Award,
+  Search,
+  Lock,
+  ChevronUp,
+  ChevronDown,
+  MoreVertical,
+  Activity,
+  SlidersHorizontal,
+  Store,
+  Gamepad2,
+  Ticket
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ParticipantWalletPage() {
-  const [page, setPage] = useState(1);
-  const limit = 5;
+const giftCardsData = [
+  {
+    id: "amazon",
+    name: "Amazon",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBkoHb8eaUbHwA7u5xjuYZVut4isT5oADueDohEFS9a_7SVamdHk-auIn1q26QJq_zk30tDe_Q85f6rll4m0ssNicpxT2d1v9s6pPmtdKZ5_fBV3ZZ-ovnocGSnUxt-1a1edYKhciynFqvNR0plQ9Q99FzS-bevDKbvwhuPOeb1SC8t4YEX3TWJyC63_XWuxY15zEou5NsL7raAzADHol7BduN5itSHNS6XaWd6vRh67vo4k8sd9ruS38-WV8fcUqN6rY9vXQ5w_8A",
+    value: 250.00
+  },
+  {
+    id: "starbucks",
+    name: "Starbucks",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDaAqqajmX0l_gLPVy8SdfAp0x7RhzBINLbzr_eH6lkgTtewIVH_vibvMHHGUvS6CaRFX25OsDu6jneriGqfYp79YZWTYcrLsqQSfTNSwhqfp1JhRmZGU4Y4ki_y7kVch6CNtmubWsr0PBwFA4LjxGbh_REtgf45Kv1_DgZ6jhHSyEBr6AoMB8M3lBlLFVX7HN30lt8Twy8LKMiWU6xR-5jOWy6zdMGP3zbXSkWhG1YiQxJ5kU5tsHAiBsEB9ksrMTuu61188ThYSE",
+    value: 45.20
+  },
+  {
+    id: "nike",
+    name: "Nike",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbsXKtzxksBxkYlYWF7R_nnDpdYQXcBAwlGSSkw4qSIuzJZKEU8IeR-ERfaVywm3Pk7j8nFRQoP2yoRijUptm1oT1LCBBtUngFD7ZhBjnOBLbRC8oiOeTyr7sgtgmw6-8E1YtYOFawkqy_d7VxXDby9dCNggMm_m5gTP-dPuErBreWxLyjaTliyScC3ojL3lC1KgXxa9lNe4jj9GGJxhxZpgax7eeAcTMG4KshaHVu2RwztD3qojq7aYPKKooTmUiNOgJPjfcrH98",
+    value: 120.00
+  },
+  {
+    id: "apple",
+    name: "Apple",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDEY6rtn3Qlp4vM4zPPPsfVErV4oE4NdaOVlMkRwXBxwyv61a9eKik2qzUiNr89hyhFdi0rBYLm4H6_cNQzboyt65JXHbuQSSVZsqxsCKwV6vp5nmYrhvjGUZYoY0tgVZTN0IoyuhlZt9V4d92Ie-BDuJAmWMsSi5Uc2gm1nDfeqjdGUqzCkYf-9exFrQ8IuSJf-EkZebZVXKmpldOFkf5X18YCN0dnwM6nhNMC5xN-ZiL18skyoEce-ZFoPm94Q4ZVxkuMrZGqlm4",
+    value: 500.00
+  }
+];
 
-  const { data: balanceData, isLoading: isBalanceLoading } = useGetCreditsBalance();
-  const { data: historyData, isLoading: isHistoryLoading } = useGetCreditsHistory(page, limit);
+export default function ParticipantWalletPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("gift-cards");
+
+  const { data: balanceData } = useGetCreditsBalance();
+  const { data: historyData, isLoading: isHistoryLoading } = useGetCreditsHistory(1, 10);
 
   const historyItems = historyData?.data || [];
-  const meta = historyData?.meta;
-  const totalPages = meta?.totalPages || 1;
 
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'AVAILABLE': return <Badge variant="secondary" className="bg-green-100/80 text-green-700 hover:bg-green-100 border-green-200">Available</Badge>;
-      case 'REDEEMED': return <Badge variant="outline" className="text-slate-400 border-slate-200">Redeemed</Badge>;
-      case 'EXPIRING_SOON': return <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Expiring</Badge>;
-      case 'EXPIRED': return <Badge variant="destructive" className="bg-red-50 text-red-600 border-red-100">Expired</Badge>;
-      default: return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+  const getCategoryTitle = () => {
+    switch (activeTab) {
+      case "gift-cards":
+        return "My Gift Cards";
+      case "vouchers":
+        return "My Vouchers";
+      case "loyalty":
+        return "Loyalty Progression";
+      case "history":
+        return "Wallet Activity History";
+      default:
+        return "Wallet Items";
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 space-y-8 max-w-6xl mx-auto">
-      {/* Header section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 flex items-center gap-2">
-            My Wallet <Sparkles className="w-6 h-6 text-orange-500 fill-orange-500" />
-          </h1>
-          <p className="text-slate-500 font-medium">Manage your claimed credits and spendable currency.</p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 shadow-sm transition-all hover:border-orange-200 hover:shadow-md">
-          <ShieldCheck className="w-4 h-4 text-green-600" />
-          <span className="text-xs font-semibold text-slate-600">Verified Wallet Balance</span>
-        </div>
-      </motion.div>
+    <div className="min-h-screen bg-[#f9fafb] text-gray-800 pb-32 pt-6 max-w-6xl mx-auto px-4 md:px-8 space-y-10">
+      
+      {/* Wallet Balance Hero Section - Styled for Light Theme */}
+      <section className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 border border-gray-200/80 shadow-md group">
+        {/* Glow Decoration */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary opacity-5 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Value</p>
+              <h2 className="text-5xl font-extrabold tracking-tight mt-1 text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#ff843a] leading-none">
+                £{(balanceData?.availableCashback ?? 12450.00).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h2>
+            </div>
+            <div className="bg-primary/5 px-4 py-1 rounded-full border border-primary/10">
+              <span className="text-[10px] font-black tracking-widest text-primary">PRO PLAN</span>
+            </div>
+          </div>
 
-      {/* Hero Balance Section */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="md:col-span-2"
-        >
-          <Card className="border-none bg-orange-600 text-white shadow-2xl relative overflow-hidden h-full min-h-[220px]">
-            {/* Background patterns */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-20 -mt-20 blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-400 rounded-full -ml-16 -mb-16 blur-2xl"></div>
+          <div className="grid grid-cols-2 gap-6 mt-6 border-t border-gray-100 pt-6">
+            <div className="flex flex-col">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Points Balance</p>
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-primary fill-primary animate-pulse" />
+                <span className="text-xl font-bold text-gray-900">48,290</span>
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Cashback</p>
+              <div className="flex items-center gap-1.5">
+                <Wallet className="w-4 h-4 text-green-600" />
+                <span className="text-xl font-bold text-green-600">£142.50</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Sections Grid/Flow with filter Dropdown replacing top scrollbar */}
+      <div className="space-y-12">
+        
+        {/* Header with Filter Dropdown */}
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+          <h3 className="text-xl font-bold text-gray-900 tracking-tight">{getCategoryTitle()}</h3>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="border-orange-500/20 text-primary hover:bg-orange-500/10 font-bold text-xs gap-1.5 rounded-full px-4">
+                Category: {activeTab === "gift-cards" ? "Gift Cards" : "Vouchers"} <ChevronDown size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white border border-gray-200 text-gray-800 shadow-lg rounded-xl" align="end">
+              <DropdownMenuItem onClick={() => setActiveTab("gift-cards")} className="cursor-pointer hover:bg-gray-50 focus:bg-orange-500/5 focus:text-primary font-bold text-xs">
+                Gift Cards
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("vouchers")} className="cursor-pointer hover:bg-gray-50 focus:bg-orange-500/5 focus:text-primary font-bold text-xs">
+                Vouchers
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/brands')} className="cursor-pointer hover:bg-gray-50 focus:bg-orange-500/5 focus:text-primary font-bold text-xs">
+                Brands Marketplace
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/participant')} className="cursor-pointer hover:bg-gray-50 focus:bg-orange-500/5 focus:text-primary font-bold text-xs border-t border-gray-100">
+                Hub Homepage
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Gift Cards Section */}
+        {activeTab === "gift-cards" && (
+          <section className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {giftCardsData.map((card) => (
+                <div key={card.id} className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-col gap-4 relative group cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:border-primary/20">
+                  <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center p-2 overflow-hidden border border-gray-100">
+                    <img className="w-full h-full object-contain" src={card.image} alt={card.name} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-bold">{card.name}</p>
+                    <p className="text-xl font-extrabold text-gray-900 mt-1">£{card.value.toFixed(2)}</p>
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <MoreVertical size={16} className="text-gray-400" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Vouchers Section */}
+        {activeTab === "vouchers" && (
+          <section className="py-16 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+              <Ticket className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-semibold">No active vouchers found.</p>
+          </section>
+        )}
+
+        {/* Loyalty Status Section - Unconditional */}
+        <section className="space-y-6">
+          <h3 className="text-xl font-bold text-gray-900 tracking-tight">Loyalty Status</h3>
+          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-6">
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">NEXT REWARD</p>
+                <p className="text-xl font-extrabold text-gray-900 mt-1">1,710 pts to Platinum</p>
+              </div>
+              <p className="text-xs font-bold text-primary bg-primary/5 border border-primary/10 px-2.5 py-0.5 rounded-full">92% Complete</p>
             </div>
 
-            <CardContent className="p-8 relative h-full flex flex-col justify-between">
-              <div className="flex justify-between items-start">
-                <motion.div
-                  whileHover={{ rotate: 15 }}
-                  className="p-3 bg-white/20 backdrop-blur-md rounded-2xl cursor-default"
-                >
-                  <Wallet className="w-8 h-8 text-white" />
-                </motion.div>
-                <div className="text-right">
-                  <p className="text-orange-100 text-xs font-semibold uppercase tracking-widest opacity-80">Claimed Balance</p>
-                  <h2 className="text-5xl font-semibold mt-1">£{(balanceData?.availableCashback ?? 0).toFixed(2)}</h2>
-                </div>
-              </div>
+            {/* Progress bar with premium orange gradient glow */}
+            <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                style={{ width: "92%" }} 
+                className="h-full bg-gradient-to-r from-primary to-[#ff843a] rounded-full shadow-[0_0_8px_rgba(245,73,0,0.2)]"
+              />
+            </div>
 
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
-                  <p className="text-[10px] font-semibold text-orange-100 uppercase opacity-80">Pending Claims</p>
-                  <p className="text-xl font-semibold">£{(balanceData?.pendingAmount ?? 0).toFixed(2)}</p>
+            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary border border-primary/10">
+                  <span className="material-symbols-outlined text-lg">confirmation_number</span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
-                  <p className="text-[10px] font-semibold text-orange-100 uppercase opacity-80">Expiring Currency</p>
-                  <p className="text-xl font-semibold">£{(balanceData?.expiringSoon ?? 0).toFixed(2)}</p>
+                <div>
+                  <p className="text-xs font-bold text-gray-900">Free Flight Voucher</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Unlocked at 50k Pts</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              <Lock className="w-4 h-4 text-gray-400" />
+            </div>
+          </div>
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="border-none shadow-xl h-full bg-white overflow-hidden flex flex-col">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-500 uppercase tracking-tighter">
-                <Clock className="w-4 h-4" /> Credits Snapshot
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2 flex-grow flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
-                    <span>Unclaimed Credits</span>
-                    <span>{balanceData?.credits ?? 0} CR</span>
-                  </div>
-                  <Progress value={((balanceData?.credits ?? 0) / (balanceData?.progression.nextLevel?.creditsNeeded ?? 50)) * 100} className="h-2 bg-slate-100" />
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  You have {balanceData?.credits ?? 0} credits waiting to be unlocked. Reaching your next level will allow you to claim £50 in rewards!
-                </p>
-              </div>
+        {/* Recent Activity Section - Unconditional */}
+        <section className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-900 tracking-tight">Recent Activity</h3>
+            <SlidersHorizontal size={18} className="text-gray-400 cursor-pointer hover:text-primary transition-colors" />
+          </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-3 text-orange-600 bg-orange-50/50 p-3 rounded-xl border border-orange-50">
-                  <Info className="w-4 h-4 flex-shrink-0" />
-                  <p className="text-[10px] font-semibold leading-tight">
-                    Visit the Credits page to contribute and unlock your unclaimed rewards.
-                  </p>
+          <div className="flex flex-col gap-4">
+            {/* Activity Item 1 */}
+            <div className="flex items-center justify-between p-5 bg-white rounded-2xl hover:bg-gray-50 border border-gray-200 shadow-sm transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center text-primary">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Market Purchase</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Today, 2:45 PM</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              <div className="text-right">
+                <p className="text-sm font-extrabold text-green-600">+450 Pts</p>
+                <p className="text-xs text-gray-400 mt-0.5">-£24.99</p>
+              </div>
+            </div>
+
+            {/* Activity Item 2 */}
+            <div className="flex items-center justify-between p-5 bg-white rounded-2xl hover:bg-gray-50 border border-gray-200 shadow-sm transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center text-primary animate-pulse">
+                  <Gamepad2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Spin Win</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Yesterday</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-extrabold text-green-600">+1,200 Pts</p>
+                <p className="text-xs text-gray-400 mt-0.5">MCOMSpin</p>
+              </div>
+            </div>
+
+            {/* Activity Item 3 */}
+            <div className="flex items-center justify-between p-5 bg-white rounded-2xl hover:bg-gray-50 border border-gray-200 shadow-sm transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center text-primary">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Gift Card Claimed</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Oct 24, 2023</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-extrabold text-primary">-10,000 Pts</p>
+                <p className="text-xs text-gray-400 mt-0.5">£100 Apple</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      {/* History Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-none shadow-2xl bg-white overflow-hidden">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 flex flex-row items-center justify-between py-6">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-800">
-                <History className="w-5 h-5 text-orange-500" />
-                Wallet Activity
-              </CardTitle>
-              <CardDescription className="text-xs font-medium">Log of your redemptions and claimed credit history.</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} variant="outline" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:shadow-md transition-all">
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} variant="outline" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:shadow-md transition-all">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-slate-50">
-              <AnimatePresence mode="popLayout">
-                {isHistoryLoading ? (
-                  <div key="loading" className="p-12 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                  </div>
-                ) : (
-                  <div key="list">
-                    {historyItems.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="group p-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-indigo-50/30 transition-all cursor-default"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-2xl ${Number(item.amount ?? 0) >= 0 ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-500'} group-hover:scale-110 transition-transform shadow-sm`}>
-                            {Number(item.amount ?? 0) >= 0 ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900 leading-tight">{item.description}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-tight">{item.createdAt.split('T')[0]}</span>
-                              <span className="text-slate-200">|</span>
-                              <span className="text-[10px] font-semibold text-orange-500 uppercase">{item.unit === 'CREDITS' ? 'CREDIT EARNING' : 'WALLET TRANSACTION'}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6 mt-4 md:mt-0 text-right">
-                          <div className="hidden lg:block text-right">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Status</p>
-                            <div className="mt-1">{getStatusBadge(item.status)}</div>
-                          </div>
-                          <div className="min-w-[100px]">
-                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-tighter">Value</p>
-                            <p className={`text-xl font-semibold mt-1 ${Number(item.amount ?? 0) >= 0 ? 'text-green-600' : 'text-slate-900'}`}>
-                              {Number(item.amount ?? 0) >= 0 ? '+' : ''}{item.unit === 'GBP' ? '£' : ''}{Math.abs(Number(item.amount ?? 0)).toFixed(2)}{item.unit === 'CREDITS' ? ' CR' : ''}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                    {historyItems.length === 0 && (
-                      <div className="p-20 text-center">
-                        <div className="p-4 bg-slate-50 rounded-full inline-block mb-4">
-                          <Clock className="w-8 h-8 text-slate-300" />
-                        </div>
-                        <p className="text-slate-500 font-semibold">No activity found yet.</p>
-                        <Button variant="link" className="text-orange-600 mt-2">Start earning credits</Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="bg-slate-50/50 p-4 border-t border-slate-100 text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Page {page} of {totalPages}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* BottomNavBar Section */}
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-white border-t border-gray-150 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl md:hidden">
+        <Link href="/participant" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
+          <span className="material-symbols-outlined text-[20px]">home</span>
+          <span className="text-[10px] font-bold mt-0.5">Home</span>
+        </Link>
+        <Link href="/participant/market" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
+          <span className="material-symbols-outlined text-[20px]">storefront</span>
+          <span className="text-[10px] font-bold mt-0.5">Market</span>
+        </Link>
+        <Link href="/participant/wallet" className="flex flex-col items-center justify-center bg-orange-100 text-orange-600 rounded-full px-4 py-1 scale-down duration-200 transition-transform active:scale-90">
+          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+          <span className="text-[10px] font-bold mt-0.5">Wallet</span>
+        </Link>
+        <Link href="/play-win" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
+          <span className="material-symbols-outlined text-[20px]">casino</span>
+          <span className="text-[10px] font-bold mt-0.5">Games</span>
+        </Link>
+        <Link href="/participant/settings" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
+          <span className="material-symbols-outlined text-[20px]">person</span>
+          <span className="text-[10px] font-bold mt-0.5">Profile</span>
+        </Link>
+      </nav>
     </div>
   );
 }

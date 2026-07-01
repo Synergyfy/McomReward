@@ -75,7 +75,8 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
                 <button
                   onClick={() => {
                     const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000";
-                    window.location.href = `${solutionsUrl}/getstarted/business?source=mcomloyalty`;
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3005";
+                    window.location.href = `${solutionsUrl}/getstarted/business?source=mcomloyalty&redirect=${encodeURIComponent(`${appUrl}/sso-login`)}`;
                   }}
                   className="flex items-center justify-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-800 font-medium py-3 rounded-xl transition shadow-sm"
                 >

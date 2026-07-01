@@ -23,7 +23,7 @@ function SsoLoginContent() {
           if (data.user.role === "Business") {
             router.push("/dashboard");
           } else {
-            router.push("/dashboard"); // Or wherever participants go
+            router.push("/participant"); // Or wherever participants go
           }
         })
         .catch((error) => {

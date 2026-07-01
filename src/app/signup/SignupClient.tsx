@@ -73,7 +73,10 @@ function SignupCard({ provisionCode }: { provisionCode?: string }) {
                 </button>
 
                 <button
-                  onClick={() => setSelectedType("business")}
+                  onClick={() => {
+                    const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000";
+                    window.location.href = `${solutionsUrl}/getstarted/business?source=mcomloyalty`;
+                  }}
                   className="flex items-center justify-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-800 font-medium py-3 rounded-xl transition shadow-sm"
                 >
                   <Building2 size={20} />

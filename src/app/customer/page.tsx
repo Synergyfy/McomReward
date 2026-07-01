@@ -6,6 +6,12 @@ import { motion } from 'framer-motion';
 import { Search, Trophy, Gift, Milestone, ArrowRight, Calendar, Sparkles, Gamepad2, Activity, Heart, Shield } from 'lucide-react';
 
 export default function CustomerLanding() {
+  const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000";
+  const [appUrl, setAppUrl] = React.useState("http://localhost:3005");
+
+  React.useEffect(() => {
+    setAppUrl(window.location.origin);
+  }, []);
   return (
     <div className="bg-slate-50 text-slate-800 min-h-screen pb-32">
       {/* Header */}
@@ -45,12 +51,12 @@ export default function CustomerLanding() {
               Experience a world where every purchase is a victory. Join 5 million members unlocking exclusive lifestyle brands, gaming thrills, and elite events daily.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link 
-                href="/customer/signup" 
+              <a 
+                href={`${solutionsUrl}/register/customer?source=mcomloyalty&redirect=${encodeURIComponent(`${appUrl}/sso-login`)}`} 
                 className="bg-primary text-white hover:bg-orange-600 px-8 py-4 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all text-center"
               >
                 Join the Club
-              </Link>
+              </a>
               <Link 
                 href="/membership" 
                 className="bg-white/10 hover:bg-white/15 backdrop-blur-md text-white border border-white/10 px-8 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all text-center"
@@ -218,12 +224,12 @@ export default function CustomerLanding() {
               <h2 className="text-2xl font-bold text-slate-900">Ready to claim your status?</h2>
               <p className="text-slate-500 text-xs md:text-sm">It takes 30 seconds to start winning.</p>
             </div>
-            <Link 
-              href="/customer/signup" 
+            <a 
+              href={`${solutionsUrl}/register/customer?source=mcomloyalty&redirect=${encodeURIComponent(`${appUrl}/sso-login`)}`} 
               className="relative z-10 bg-primary text-white hover:bg-orange-600 px-8 py-3.5 rounded-full font-bold text-xs md:text-sm transition-transform active:scale-95 shadow-lg shrink-0"
             >
               Get Started Now
-            </Link>
+            </a>
           </div>
         </section>
       </main>

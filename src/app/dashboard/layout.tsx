@@ -34,6 +34,9 @@ export default function DashboardLayout({
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
 
   useEffect(() => {
+    const bypassSso = process.env.NEXT_PUBLIC_BYPASS_SSO === "true";
+    if (bypassSso) return; // Skip all auth checks in bypass mode
+
     // Role-based access control
     const role = localStorage.getItem('userRole');
     if (role === 'Participant') {

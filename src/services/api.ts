@@ -20,6 +20,11 @@ const api = axios.create({
   },
 });
 
+// Bypass SSO flag — set early so the response interceptor can check it
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_BYPASS_SSO === 'true') {
+  localStorage.setItem('mcom_bypass_sso', 'true');
+}
+
 // This function sets the bearer token for all subsequent API requests.
 export const setBearerToken = (token: string) => {
   api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -162,10 +167,14 @@ api.interceptors.response.use(
         processQueue(error, null);
         isRefreshing = false;
 
-        // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
-        const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
-        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
-          window.location.href = '/login';
+        // Skip redirect in bypass mode
+        const isBypassSso = typeof window !== 'undefined' && localStorage.getItem('mcom_bypass_sso') === 'true';
+        if (!isBypassSso) {
+          // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
+          const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+          if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
+            window.location.href = '/login';
+          }
         }
 
         return Promise.reject(error);
@@ -209,10 +218,14 @@ api.interceptors.response.use(
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
 
-        // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
-        const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
-        if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
-          window.location.href = '/login';
+        // Skip redirect in bypass mode
+        const isBypassSsoRefresh = typeof window !== 'undefined' && localStorage.getItem('mcom_bypass_sso') === 'true';
+        if (!isBypassSsoRefresh) {
+          // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
+          const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
+          if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
+            window.location.href = '/login';
+          }
         }
 
         return Promise.reject(refreshError);

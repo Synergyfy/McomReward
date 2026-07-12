@@ -88,7 +88,7 @@ export const useAuth = () => {
       } else if (data.user.role === 'Participant') {
         router.push('/participant');
       } else {
-        router.push('/dashboard');
+        router.push('/loyalty-setup');
       }
     },
   });
@@ -126,7 +126,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
         } else if (data.user.role === 'Participant') {
           router.push('/participant');
         } else {
-          router.push('/dashboard');
+          router.push('/loyalty-setup');
         }
       }
     },

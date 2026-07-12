@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
+import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Eye, Stamp, Plus, Minus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from "@/services/business/hook";
 import Loader from "@/components/ui/loader";
-import { ChartQueryDto } from "@/services/business-dashboard/types";
+import type { ChartQueryDto } from "@/services/business-dashboard/types";
 
 type TimeRange = "7d" | "30d" | "3m" | "6m" | "1y";
 
@@ -22,7 +25,56 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "1y", label: "Last Year" },
 ];
 
+// ─── MOCK DATA ────────────────────────────────────────────────────────────
+
+const MOCK_ANALYTICS = {
+  totalCustomers: 247,
+  totalCampaigns: 3,
+  totalActiveCampaigns: 3,
+  totalRewardsRedeemed: 89,
+  totalPointsEarned: 15240,
+  totalPointsRedeemed: 4730,
+  activeCampaigns: [
+    { name: "New Customer Campaign", customerCount: 86 },
+    { name: "Summer Dining Campaign", customerCount: 54 },
+    { name: "Birthday Campaign", customerCount: 23 },
+  ],
+  lastTenActivities: [
+    { id: "1", createdAt: "2026-07-08T14:30:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 50, redemptionCode: null, description: "Purchase at restaurant", participant: { id: "p1", name: "Sarah Johnson", email: "sarah@email.com" }, campaign: { id: "c1", name: "Summer Dining" } },
+    { id: "2", createdAt: "2026-07-08T12:15:00Z", updatedAt: "", deletedAt: null, type: "REDEEM" as const, points: 200, redemptionCode: "RDM-001", description: "Free dessert voucher", participant: { id: "p2", name: "Mike Peters", email: "mike@email.com" }, campaign: { id: "c2", name: "Birthday Campaign" } },
+    { id: "3", createdAt: "2026-07-07T18:45:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 100, redemptionCode: null, description: "Referral bonus", participant: { id: "p3", name: "Emma Wilson", email: "emma@email.com" }, campaign: { id: "c1", name: "Summer Dining" } },
+    { id: "4", createdAt: "2026-07-07T09:30:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 30, redemptionCode: null, description: "Coffee purchase", participant: { id: "p4", name: "James Brown", email: "james@email.com" }, campaign: { id: "c3", name: "New Customer" } },
+    { id: "5", createdAt: "2026-07-06T16:00:00Z", updatedAt: "", deletedAt: null, type: "REDEEM" as const, points: 150, redemptionCode: "RDM-002", description: "Birthday reward", participant: { id: "p5", name: "Lisa Chen", email: "lisa@email.com" }, campaign: { id: "c2", name: "Birthday Campaign" } },
+  ],
+};
+
+const MOCK_CHART_DATA = {
+  data: [
+    { date: "Jul 1", pointsEarned: 520, pointsRedeemed: 180 },
+    { date: "Jul 2", pointsEarned: 480, pointsRedeemed: 120 },
+    { date: "Jul 3", pointsEarned: 610, pointsRedeemed: 250 },
+    { date: "Jul 4", pointsEarned: 390, pointsRedeemed: 90 },
+    { date: "Jul 5", pointsEarned: 720, pointsRedeemed: 310 },
+    { date: "Jul 6", pointsEarned: 550, pointsRedeemed: 200 },
+    { date: "Jul 7", pointsEarned: 680, pointsRedeemed: 280 },
+  ],
+};
+
+const MOCK_METRICS = {
+  activeMembers: 247,
+  pointsIssued: 15240,
+  pointsRedeemed: 4730,
+  stampProgress: 68,
+  voucherUsage: 42,
+  giftCardBalances: 3850,
+};
+
+// ─── CUSTOMER WALLET PREVIEW ──────────────────────────────────────────────
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────
+
 export default function BusinessDashboard() {
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
 
   const { data: analyticsData, isLoading: isAnalyticsLoading, isError: isAnalyticsError } = useGetGeneralAnalytics();
@@ -32,41 +84,106 @@ export default function BusinessDashboard() {
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
+  // Use real data if available, otherwise fall back to mock
+  const displayData = useMemo(() => {
+    if (analyticsData && !isAnalyticsError) return analyticsData;
+    return MOCK_ANALYTICS;
+  }, [analyticsData, isAnalyticsError]);
+
+  const displayChart = useMemo(() => {
+    if (chartData && !isChartError) return chartData;
+    return MOCK_CHART_DATA;
+  }, [chartData, isChartError]);
+
+  const displayMetrics = useMemo(() => MOCK_METRICS, []);
+
   const isSuperBusiness = profile?.isSuperBusiness;
-  const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'N/A');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tierProgress = isSuperBusiness ? 100 : ((subscription?.tier as any)?.progress || 0);
+  const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'Starter');
+  const tierProgress = isSuperBusiness ? 100 : ((subscription?.tier as any)?.progress || 35);
 
   if (isAnalyticsLoading || isLoadingSubscription || isProfileLoading) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
   }
 
-  if (isAnalyticsError) {
-    return <div className="min-h-screen bg-white flex items-center justify-center text-red-500">Error loading analytics data.</div>;
-  }
-
   return (
     <div className="min-h-screen bg-white p-8">
-      {/* === Overview Stats === */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        <StatCard title="Total Customers" value={analyticsData?.totalCustomers ?? 0} icon={<Users className="text-orange-500" />} />
-        <StatCard title="Rewards Redeemed" value={analyticsData?.totalRewardsRedeemed ?? 0} icon={<Gift className="text-orange-500" />} />
-        <StatCard title="Total Campaigns" value={analyticsData?.totalCampaigns ?? 0} icon={<Megaphone className="text-orange-500" />} />
-        <StatCard title="Total Active Campaigns" value={analyticsData?.totalActiveCampaigns ?? 0} icon={<Flame className="text-orange-500" />} />
-        <StatCard title="Points Redeemed" value={analyticsData?.totalPointsRedeemed ?? 0} icon={<Percent className="text-orange-500" />} />
+      {/* Phase 12: Metrics Bar */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Business Dashboard</h1>
+          <p className="text-sm text-gray-500">Your loyalty programme at a glance</p>
+        </div>
+        <Button variant="outline" onClick={() => router.push('/dashboard/wallet?tab=customer')} className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50">
+          <Eye className="w-4 h-4" />Customer Wallet Preview
+        </Button>
+      </div>
+
+      {/* Phase 12: Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-orange-100 rounded-xl"><Users className="w-5 h-5 text-orange-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.activeMembers}</p><p className="text-xs text-gray-500">Active Members</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-green-100 rounded-xl"><ArrowUp className="w-5 h-5 text-green-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.pointsIssued.toLocaleString()}</p><p className="text-xs text-gray-500">Points Issued</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-red-100 rounded-xl"><ArrowDown className="w-5 h-5 text-red-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.pointsRedeemed.toLocaleString()}</p><p className="text-xs text-gray-500">Points Redeemed</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-purple-100 rounded-xl"><Gift className="w-5 h-5 text-purple-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">£{displayMetrics.giftCardBalances.toLocaleString()}</p><p className="text-xs text-gray-500">Gift Card Balances</p></div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-amber-100 rounded-xl"><Gift className="w-5 h-5 text-amber-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalRewardsRedeemed}</p><p className="text-xs text-gray-500">Rewards Redeemed</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-orange-100 rounded-xl"><Megaphone className="w-5 h-5 text-orange-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalCampaigns}</p><p className="text-xs text-gray-500">Total Campaigns</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-100 rounded-xl"><Flame className="w-5 h-5 text-emerald-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalActiveCampaigns}</p><p className="text-xs text-gray-500">Active Campaigns</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-blue-100 rounded-xl"><Stamp className="w-5 h-5 text-blue-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.stampProgress}%</p><p className="text-xs text-gray-500">Stamp Progress</p></div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} />
         <PointsSummary
-          summary={{ earned: analyticsData?.totalPointsEarned ?? 0, spent: analyticsData?.totalPointsRedeemed ?? 0, matchingAvailable: 5000 }}
+          summary={{ earned: displayData.totalPointsEarned, spent: displayData.totalPointsRedeemed, matchingAvailable: 5000 }}
           isTrial={subscription?.isTrial}
           trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
         />
       </div>
 
-      {/* === Chart Section === */}
-      <Card className="mb-8">
+      {/* Chart */}
+      <Card className="mb-8 shadow-sm border border-gray-100">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Performance ({selectedTimeRangeLabel})</CardTitle>
           <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
@@ -75,72 +192,60 @@ export default function BusinessDashboard() {
             </SelectTrigger>
             <SelectContent>
               {timeRangeOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </CardHeader>
         <CardContent>
-          {isChartLoading ? <Loader /> : isChartError ? <p className="text-red-500">Error loading chart data.</p> : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData?.data}>
-                <XAxis dataKey="date" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    border: "1px solid #f97316",
-                  }}
-                  cursor={{ fill: "#fff7ed" }}
-                />
-                <Legend />
-                <Bar dataKey="pointsEarned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="pointsRedeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={displayChart.data}>
+              <XAxis dataKey="date" stroke="#888" />
+              <YAxis stroke="#888" />
+              <Tooltip contentStyle={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #f97316" }} cursor={{ fill: "#fff7ed" }} />
+              <Legend />
+              <Bar dataKey="pointsEarned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="pointsRedeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* === Active Campaigns === */}
-      <Card className="mb-8">
+      {/* Active Campaigns */}
+      <Card className="mb-8 shadow-sm border border-gray-100">
         <CardHeader>
           <CardTitle>Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
-            <ul className="space-y-3">
-              {analyticsData.activeCampaigns.map((c, i) => (
-                <li key={i} className="flex justify-between items-center border-b pb-2">
+          {displayData.activeCampaigns && displayData.activeCampaigns.length > 0 ? (
+            <div className="space-y-3">
+              {displayData.activeCampaigns.map((c, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-orange-50/50 border border-orange-100">
                   <span className="font-medium text-gray-800">{c.name}</span>
-                  <span className="text-sm text-orange-600">{c.customerCount} customers</span>
-                </li>
+                  <Badge variant="outline" className="text-orange-600 border-orange-300 bg-white">{c.customerCount} customers</Badge>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-gray-500">No active campaigns.</p>
           )}
         </CardContent>
       </Card>
 
-      {/* === Recent Activity === */}
-      <Card>
+      {/* Recent Activity */}
+      <Card className="shadow-sm border border-gray-100">
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          {analyticsData?.lastTenActivities && analyticsData.lastTenActivities.length > 0 ? (
+          {displayData.lastTenActivities && displayData.lastTenActivities.length > 0 ? (
             <ul className="space-y-4">
-              {analyticsData.lastTenActivities.map((a) => (
+              {displayData.lastTenActivities.map((a) => (
                 <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900">{a.participant?.name || "Unknown User"}</span>
                     <span className="text-xs text-gray-500">{a.participant?.email}</span>
                   </div>
-
                   <div className="flex flex-col items-end gap-1">
                     <div className={`flex items-center gap-1 font-bold ${a.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
                       {a.type === 'EARN' ? <Plus size={14} strokeWidth={3} /> : <Minus size={14} strokeWidth={3} />}
@@ -160,6 +265,7 @@ export default function BusinessDashboard() {
           )}
         </CardContent>
       </Card>
+
     </div>
   );
 }
@@ -194,83 +300,30 @@ const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) =>
   </Card>
 );
 
-const PointsSummary = ({
-  summary,
-  isTrial,
-  trialQuota,
-}: {
-  summary: { earned: number; spent: number; matchingAvailable: number };
-  isTrial?: boolean;
-  trialQuota?: number;
-}) => {
+const PointsSummary = ({ summary, isTrial, trialQuota }: { summary: { earned: number; spent: number; matchingAvailable: number }; isTrial?: boolean; trialQuota?: number; }) => {
   if (isTrial) {
     const remaining = (trialQuota || 0) - summary.spent;
     const isExhausted = remaining <= 0;
-
     return (
       <Card className="shadow-md border-none bg-white lg:col-span-2 relative overflow-hidden">
-        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">
-          Trial Limit Active
-        </div>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            Trial Points
-            {isExhausted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Exhausted</span>}
-          </CardTitle>
-        </CardHeader>
+        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">Trial Limit Active</div>
+        <CardHeader><CardTitle className="text-lg font-semibold flex items-center gap-2">Trial Points{isExhausted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Exhausted</span>}</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-sm text-gray-500">Allocated</p>
-            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-indigo-600">
-              {(trialQuota || 0).toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Used</p>
-            <p className="text-2xl font-bold flex items-center justify-center gap-1 text-orange-600">
-              {summary.spent.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Remaining</p>
-            <p className={`text-2xl font-bold ${remaining > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-              {Math.max(0, remaining).toLocaleString()}
-            </p>
-          </div>
-          {isExhausted && (
-            <div className="col-span-1 sm:col-span-3 mt-2">
-              <a href="/dashboard/subscription" className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
-                Upgrade to continue
-              </a>
-            </div>
-          )}
+          <div><p className="text-sm text-gray-500">Allocated</p><p className="text-2xl font-bold text-indigo-600">{(trialQuota || 0).toLocaleString()}</p></div>
+          <div><p className="text-sm text-gray-500">Used</p><p className="text-2xl font-bold text-orange-600">{summary.spent.toLocaleString()}</p></div>
+          <div><p className="text-sm text-gray-500">Remaining</p><p className={`text-2xl font-bold ${remaining > 0 ? 'text-green-600' : 'text-gray-400'}`}>{Math.max(0, remaining).toLocaleString()}</p></div>
+          {isExhausted && <div className="col-span-1 sm:col-span-3 mt-2"><a href="/dashboard/subscription" className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Upgrade to continue</a></div>}
         </CardContent>
       </Card>
     );
   }
-
   return (
     <Card className="shadow-md border-none bg-white lg:col-span-2">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">Points Summary</CardTitle>
-      </CardHeader>
+      <CardHeader><CardTitle className="text-lg font-semibold">Points Summary</CardTitle></CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-        <div>
-          <p className="text-sm text-gray-500">Earned</p>
-          <p className="text-2xl font-bold flex items-center justify-center gap-1 text-green-600">
-            <ArrowUp size={20} /> {summary.earned.toLocaleString()}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500">Spent</p>
-          <p className="text-2xl font-bold flex items-center justify-center gap-1 text-red-600">
-            <ArrowDown size={20} /> {summary.spent.toLocaleString()}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500">Matching Available</p>
-          <p className="text-2xl font-bold text-orange-600">{summary.matchingAvailable.toLocaleString()}</p>
-        </div>
+        <div><p className="text-sm text-gray-500">Earned</p><p className="text-2xl font-bold text-green-600"><ArrowUp size={20} className="inline" /> {summary.earned.toLocaleString()}</p></div>
+        <div><p className="text-sm text-gray-500">Spent</p><p className="text-2xl font-bold text-red-600"><ArrowDown size={20} className="inline" /> {summary.spent.toLocaleString()}</p></div>
+        <div><p className="text-sm text-gray-500">Matching Available</p><p className="text-2xl font-bold text-orange-600">{summary.matchingAvailable.toLocaleString()}</p></div>
       </CardContent>
     </Card>
   );

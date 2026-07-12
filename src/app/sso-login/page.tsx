@@ -21,7 +21,7 @@ function SsoLoginContent() {
           toast.success("Welcome back!");
           // Redirect based on role
           if (data.user.role === "Business") {
-            router.push("/dashboard");
+            router.push("/loyalty-setup");
           } else {
             router.push("/participant"); // Or wherever participants go
           }

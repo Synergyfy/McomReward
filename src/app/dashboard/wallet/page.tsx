@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useGetWallet, useInitiateWalletTopup, useVerifyWalletTopup } from '@/services/wallet/hook';
 import { useGetCashbackBalance } from '@/services/cashback/hook';
@@ -155,7 +155,7 @@ function CustomerPreviewTab() {
   );
 }
 
-export default function WalletPage() {
+function WalletPageContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'customer' ? 'customer' : 'business';
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -421,5 +421,13 @@ export default function WalletPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function WalletPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>}>
+      <WalletPageContent />
+    </Suspense>
   );
 }

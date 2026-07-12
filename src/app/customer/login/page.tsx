@@ -17,7 +17,7 @@ type LoginData = {
 export default function CustomerLoginPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginData>();
   const router = useRouter();
-  const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000";
+  const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "https://mcomsolutions.vercel.app";
   const [appUrl, setAppUrl] = useState("http://localhost:3005");
 
   useEffect(() => {

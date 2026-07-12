@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Search, Trophy, Gift, Milestone, ArrowRight, Calendar, Sparkles, Gamepad2, Activity, Heart, Shield } from 'lucide-react';
 
 export default function CustomerLanding() {
-  const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000";
+  const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "https://mcomsolutions.vercel.app";
   const [appUrl, setAppUrl] = React.useState("http://localhost:3005");
 
   React.useEffect(() => {

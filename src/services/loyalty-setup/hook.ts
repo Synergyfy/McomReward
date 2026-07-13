@@ -1,7 +1,10 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { SectorTemplate, LoyaltySetupProgress, SaveSetupRequest, RewardCustomization } from "./types";
+import type {
+  SectorTemplate, LoyaltySetupProgress, SaveSetupRequest, RewardCustomization,
+  RewardEngineConfig, TierConfig,
+} from "./types";
 
 function detectSectorKey(sectorName: string | undefined | null): string {
   if (!sectorName) return "retail";
@@ -116,6 +119,36 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       ],
     },
   ],
+  gym: [
+    {
+      id: "tpl-gym",
+      name: "Gym & Fitness Rewards Pack",
+      description: "Welcome trial offer, birthday perk, referral bonus, and a visit-based stamp card to keep members coming back.",
+      sectorKey: "gym",
+      rewards: [
+        { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Free personal training session on signup", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "💪" },
+        { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "Free smoothie on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
+        { id: "rw-referral", key: "referral", name: "Referral Reward", description: "Refer a friend and both get a free week", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "👥" },
+        { id: "rw-visit", key: "visit", name: "Visit Reward", description: "Visit 10 times, get a free month upgrade", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 10, image: "🔄" },
+      ],
+      campaigns: [
+        { id: "camp-new", key: "new-customer", name: "New Member Campaign", description: "Welcome new members with a free PT session and smoothie.", includedRewardKeys: ["welcome"] },
+        { id: "camp-birthday", key: "birthday", name: "Birthday Campaign", description: "Celebrate member birthdays with a free smoothie and referral bonus.", includedRewardKeys: ["birthday", "referral"] },
+      ],
+    },
+  ],
+  custom: [
+    {
+      id: "tpl-custom",
+      name: "Custom Rewards Pack",
+      description: "Start from scratch and build your own loyalty programme. You configure everything in the next steps.",
+      sectorKey: "custom",
+      rewards: [
+        { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Configure your own welcome offer", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎯" },
+      ],
+      campaigns: [],
+    },
+  ],
 };
 
 export function getTemplatesForSector(sectorKey: string): SectorTemplate[] {
@@ -133,6 +166,8 @@ function defaultProgress(): LoyaltySetupProgress {
     selectedTemplateId: null,
     rewardCustomizations: {},
     campaignDescriptions: {},
+    enabledEngines: null,
+    tierConfig: null,
     hasCompletedSetup: false,
   };
 }
@@ -141,7 +176,10 @@ function getStoredProgress(): LoyaltySetupProgress {
   if (typeof window === "undefined") return defaultProgress();
   try {
     const raw = localStorage.getItem(PROGRESS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...defaultProgress(), ...parsed };
+    }
   } catch { /* ignore */ }
   return defaultProgress();
 }
@@ -170,6 +208,8 @@ export function useSaveLoyaltySetup() {
         selectedTemplateId: data.selectedTemplateId,
         rewardCustomizations: data.rewardCustomizations,
         campaignDescriptions: data.campaignDescriptions,
+        enabledEngines: data.enabledEngines,
+        tierConfig: data.tierConfig,
         hasCompletedSetup: true,
       };
       storeProgress(progress);
@@ -260,3 +300,53 @@ export function useSaveCampaignDescriptions() {
     },
   });
 }
+
+export function useSaveEngineConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: RewardEngineConfig) => {
+      await new Promise((r) => setTimeout(r, 200));
+      const progress = getStoredProgress();
+      progress.enabledEngines = config;
+      storeProgress(progress);
+      return progress;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    },
+  });
+}
+
+export function useSavePointsEngine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: PointsEngineConfig) => {
+      await new Promise((r) => setTimeout(r, 200));
+      const progress = getStoredProgress();
+      progress.pointsEngineConfig = config;
+      storeProgress(progress);
+      return progress;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    },
+  });
+}
+
+export function useSaveTierConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: TierConfig) => {
+      await new Promise((r) => setTimeout(r, 200));
+      const progress = getStoredProgress();
+      progress.tierConfig = config;
+      storeProgress(progress);
+      return progress;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    },
+  });
+}
+
+

@@ -37,6 +37,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Restaurant Rewards Pack",
       description: "Welcome reward, birthday treat, referral incentive, and a visit-based loyalty stamp card.",
       sectorKey: "restaurant",
+      benefits: ["Increase repeat visits by up to 35%", "Boost average order value with reward-driven upsells", "Reduce customer acquisition cost through referrals", "Build a loyal diner community with birthday perks"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Spend £20, receive a free dessert voucher", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎉" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "Free dessert on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -56,6 +57,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Coffee Shop Rewards Pack",
       description: "Welcome pastry offer, birthday coffee, and a buy-5-get-1-free stamp card.",
       sectorKey: "cafe",
+      benefits: ["Drive morning foot traffic with pastry incentives", "Increase frequency with buy-5-get-1-free stamp cards", "Boost customer satisfaction with birthday treats", "Encourage trial of higher-margin items"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Buy any coffee, receive a free pastry", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "☕" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "Free coffee on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -73,6 +75,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Retail Rewards Pack",
       description: "Welcome discount, birthday voucher, and a referral reward — build a complete retail loyalty ecosystem.",
       sectorKey: "retail",
+      benefits: ["Increase average transaction value with spend-based rewards", "Drive repeat purchases through birthday and seasonal offers", "Grow customer base organically with referral incentives", "Improve customer retention with a structured loyalty programme"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Spend £50, receive £5 off your next purchase", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🛍️" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "£10 birthday voucher", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -90,6 +93,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Salon Rewards Pack",
       description: "First-visit discount, birthday freebie, referral incentive, and a loyalty stamp card.",
       sectorKey: "salon",
+      benefits: ["Fill appointment books with first-visit discount offers", "Increase visit frequency with loyalty stamp cards", "Generate new leads through client referral rewards", "Delight customers with personalised birthday perks"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "20% off your first visit", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "💇" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "Free treatment up to £30 on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -108,6 +112,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Service Business Rewards Pack",
       description: "New-client discount, birthday credit, and referral reward.",
       sectorKey: "service",
+      benefits: ["Attract new clients with first-booking discount", "Secure repeat bookings through loyalty incentives", "Build a referral network among existing clients", "Stand out from competitors with a professional loyalty programme"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "15% off your first booking", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "📋" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "£20 credit on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -125,6 +130,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Gym & Fitness Rewards Pack",
       description: "Welcome trial offer, birthday perk, referral bonus, and a visit-based stamp card to keep members coming back.",
       sectorKey: "gym",
+      benefits: ["Boost membership sign-ups with free trial sessions", "Increase member retention with visit-based rewards", "Grow membership base through referral incentives", "Enhance member experience with birthday and achievement perks"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Free personal training session on signup", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "💪" },
         { id: "rw-birthday", key: "birthday", name: "Birthday Reward", description: "Free smoothie on your birthday", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎂" },
@@ -143,6 +149,7 @@ const SECTOR_TEMPLATES: Record<string, SectorTemplate[]> = {
       name: "Custom Rewards Pack",
       description: "Start from scratch and build your own loyalty programme. You configure everything in the next steps.",
       sectorKey: "custom",
+      benefits: ["Full flexibility to design your own loyalty programme", "Choose exactly which rewards and campaigns to offer", "Tailor every aspect to your specific business needs"],
       rewards: [
         { id: "rw-welcome", key: "welcome", name: "Welcome Reward", description: "Configure your own welcome offer", rewardType: "Voucher", pointsRequired: 0, stampsRequired: 0, image: "🎯" },
       ],

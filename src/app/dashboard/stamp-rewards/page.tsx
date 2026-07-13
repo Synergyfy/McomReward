@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -80,6 +81,14 @@ export default function BusinessStampRewardsPage() {
     const [isCreateStampRewardModalOpen, setIsCreateStampRewardModalOpen] = useState(false);
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isTierLimitModalOpen, setIsTierLimitModalOpen] = useState(false);
+
+    // Auto-open claim reward modal from query param
+    const searchParams = useSearchParams();
+    useEffect(() => {
+      if (searchParams.get('action') === 'claimReward') {
+        setIsClaimModalOpen(true);
+      }
+    }, [searchParams]);
     const [tierLimitMessage, setTierLimitMessage] = useState('');
     const [editingReward, setEditingReward] = useState<Reward | null>(null);
     const [editingBusinessRewardId, setEditingBusinessRewardId] = useState<string | null>(null);

@@ -88,9 +88,6 @@ export default function CampaignsScreen({ template, templateRewards, onComplete,
             <ArrowLeft className="w-4 h-4" />Back
           </button>
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-200 mb-5">
-              <Award className="w-8 h-8 text-white" />
-            </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Campaign Templates</h1>
             <p className="text-gray-500 max-w-lg mx-auto">
               Admin has prepared campaigns for your template. You can <span className="font-semibold text-gray-700">edit</span> each one or continue with the defaults.

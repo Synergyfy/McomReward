@@ -26,7 +26,8 @@ import {
   Store,
   Image,
   Wallet,
-  Banknote
+  Banknote,
+  BarChart3,
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -242,6 +243,10 @@ export default function BusinessSidebar({
       <div className="flex-1 overflow-y-auto overflow-x-hidden -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300">
         <ul className="space-y-1 text-sm font-medium pb-20">
           <SidebarItem icon={LayoutDashboard} label="Overview" href="/dashboard" />
+
+          <SidebarItem icon={BarChart3} label="Analytics" href="/dashboard/analytics" />
+
+          <SidebarItem icon={Users} label="Customers" href="/dashboard/customers" />
 
           {/* <SidebarItem icon={Gift} label="Rewards" href="/dashboard/rewards" /> */}
 

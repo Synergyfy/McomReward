@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Users, Gift, Megaphone, Flame, Percent, Star, ArrowUp, ArrowDown, Eye, Stamp, Plus, Minus } from "lucide-react";
+import { Users, Gift, Megaphone, Percent, Star, ArrowUp, ArrowDown, Eye, Plus, Minus, TrendingUp, RefreshCw, CheckCircle, PlusCircle, CreditCard, Stamp, List } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -61,12 +61,14 @@ const MOCK_CHART_DATA = {
 };
 
 const MOCK_METRICS = {
-  activeMembers: 247,
-  pointsIssued: 15240,
-  pointsRedeemed: 4730,
-  stampProgress: 68,
-  voucherUsage: 42,
-  giftCardBalances: 3850,
+  totalMembers: 247,
+  totalPointsIssued: 15240,
+  totalPointsRedeemed: 4730,
+  activeCampaigns: 3,
+  giftCardsIssued: 42,
+  giftCardsRedeemed: 18,
+  repeatCustomerRate: 68,
+  revenueGenerated: 28500,
 };
 
 // ─── CUSTOMER WALLET PREVIEW ──────────────────────────────────────────────
@@ -106,74 +108,89 @@ export default function BusinessDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      {/* Phase 12: Metrics Bar */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Dashboard</h1>
-          <p className="text-sm text-gray-500">Your loyalty programme at a glance</p>
-        </div>
-        <Button variant="outline" onClick={() => router.push('/dashboard/wallet?tab=customer')} className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50">
-          <Eye className="w-4 h-4" />Customer Wallet Preview
-        </Button>
+    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Business Dashboard</h1>
+        <p className="text-xs sm:text-sm text-gray-500">Your loyalty programme at a glance</p>
       </div>
 
-      {/* Phase 12: Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+      {/* KPI Cards - 2 columns on mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-orange-100 rounded-xl"><Users className="w-5 h-5 text-orange-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.activeMembers}</p><p className="text-xs text-gray-500">Active Members</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-orange-100 rounded-xl"><Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalMembers}</p><p className="text-[10px] sm:text-xs text-gray-500">Total Members</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-green-100 rounded-xl"><ArrowUp className="w-5 h-5 text-green-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.pointsIssued.toLocaleString()}</p><p className="text-xs text-gray-500">Points Issued</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-green-100 rounded-xl"><ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalPointsIssued.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Points Issued</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-red-100 rounded-xl"><ArrowDown className="w-5 h-5 text-red-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.pointsRedeemed.toLocaleString()}</p><p className="text-xs text-gray-500">Points Redeemed</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-red-100 rounded-xl"><ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalPointsRedeemed.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Points Redeemed</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-purple-100 rounded-xl"><Gift className="w-5 h-5 text-purple-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">£{displayMetrics.giftCardBalances.toLocaleString()}</p><p className="text-xs text-gray-500">Gift Card Balances</p></div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-amber-100 rounded-xl"><Gift className="w-5 h-5 text-amber-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalRewardsRedeemed}</p><p className="text-xs text-gray-500">Rewards Redeemed</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-purple-100 rounded-xl"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.activeCampaigns}</p><p className="text-[10px] sm:text-xs text-gray-500">Active Campaigns</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-orange-100 rounded-xl"><Megaphone className="w-5 h-5 text-orange-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalCampaigns}</p><p className="text-xs text-gray-500">Total Campaigns</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-amber-100 rounded-xl"><Gift className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.giftCardsIssued}</p><p className="text-[10px] sm:text-xs text-gray-500">Gift Cards Issued</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-100 rounded-xl"><Flame className="w-5 h-5 text-emerald-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayData.totalActiveCampaigns}</p><p className="text-xs text-gray-500">Active Campaigns</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-blue-100 rounded-xl"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.giftCardsRedeemed}</p><p className="text-[10px] sm:text-xs text-gray-500">Gift Cards Redeemed</p></div>
           </CardContent>
         </Card>
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-blue-100 rounded-xl"><Stamp className="w-5 h-5 text-blue-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{displayMetrics.stampProgress}%</p><p className="text-xs text-gray-500">Stamp Progress</p></div>
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-emerald-100 rounded-xl"><RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.repeatCustomerRate}%</p><p className="text-[10px] sm:text-xs text-gray-500">Repeat Rate</p></div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-indigo-100 rounded-xl"><TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" /></div>
+            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">£{displayMetrics.revenueGenerated.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Revenue</p></div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      {/* Quick Actions */}
+      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <Button onClick={() => router.push('/dashboard/campaigns/list')} className="bg-orange-500 hover:bg-orange-600 text-white gap-2 text-xs sm:text-sm h-9 sm:h-10">
+              <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Create Campaign
+            </Button>
+            <Button onClick={() => router.push('/dashboard/stamp-rewards?action=claimReward')} variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 gap-2 text-xs sm:text-sm h-9 sm:h-10">
+              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Add Reward
+            </Button>
+            <Button onClick={() => router.push('/dashboard/stamp-rewards?action=claimReward')} variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 gap-2 text-xs sm:text-sm h-9 sm:h-10">
+              <Stamp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Create Stamp Card
+            </Button>
+            <Button onClick={() => router.push('/dashboard/customers')} variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 gap-2 text-xs sm:text-sm h-9 sm:h-10">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />View Customers
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} />
         <PointsSummary
           summary={{ earned: displayData.totalPointsEarned, spent: displayData.totalPointsRedeemed, matchingAvailable: 5000 }}
@@ -183,11 +200,11 @@ export default function BusinessDashboard() {
       </div>
 
       {/* Chart */}
-      <Card className="mb-8 shadow-sm border border-gray-100">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Performance ({selectedTimeRangeLabel})</CardTitle>
+      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+        <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-0 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Performance ({selectedTimeRangeLabel})</CardTitle>
           <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[130px] sm:w-[180px] text-xs sm:text-sm h-8 sm:h-10">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -197,13 +214,13 @@ export default function BusinessDashboard() {
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+        <CardContent className="p-3 sm:p-6">
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={displayChart.data}>
-              <XAxis dataKey="date" stroke="#888" />
-              <YAxis stroke="#888" />
+              <XAxis dataKey="date" stroke="#888" tick={{ fontSize: 11 }} />
+              <YAxis stroke="#888" tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #f97316" }} cursor={{ fill: "#fff7ed" }} />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
               <Bar dataKey="pointsEarned" name="Points Earned" fill="#f97316" radius={[4, 4, 0, 0]} />
               <Bar dataKey="pointsRedeemed" name="Points Redeemed" fill="#fbbf24" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -212,39 +229,39 @@ export default function BusinessDashboard() {
       </Card>
 
       {/* Active Campaigns */}
-      <Card className="mb-8 shadow-sm border border-gray-100">
-        <CardHeader>
-          <CardTitle>Active Campaigns</CardTitle>
+      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+        <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Active Campaigns</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
           {displayData.activeCampaigns && displayData.activeCampaigns.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {displayData.activeCampaigns.map((c, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-orange-50/50 border border-orange-100">
-                  <span className="font-medium text-gray-800">{c.name}</span>
-                  <Badge variant="outline" className="text-orange-600 border-orange-300 bg-white">{c.customerCount} customers</Badge>
+                <div key={i} className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-orange-50/50 border border-orange-100">
+                  <span className="font-medium text-gray-800 text-xs sm:text-sm truncate mr-2">{c.name}</span>
+                  <Badge variant="outline" className="text-orange-600 border-orange-300 bg-white text-[10px] sm:text-xs flex-shrink-0">{c.customerCount} customers</Badge>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No active campaigns.</p>
+            <p className="text-gray-500 text-xs sm:text-sm">No active campaigns.</p>
           )}
         </CardContent>
       </Card>
 
       {/* Recent Activity */}
       <Card className="shadow-sm border border-gray-100">
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+        <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Recent Activity</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
           {displayData.lastTenActivities && displayData.lastTenActivities.length > 0 ? (
-            <ul className="space-y-4">
+            <ul className="space-y-2.5 sm:space-y-4">
               {displayData.lastTenActivities.map((a) => (
-                <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                  <div className="flex flex-col">
-                    <span className="font-medium text-gray-900">{a.participant?.name || "Unknown User"}</span>
-                    <span className="text-xs text-gray-500">{a.participant?.email}</span>
+                <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-2.5 sm:pb-3 last:border-0 last:pb-0">
+                  <div className="flex flex-col min-w-0 mr-2">
+                    <span className="font-medium text-gray-900 text-xs sm:text-sm truncate">{a.participant?.name || "Unknown User"}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500 truncate">{a.participant?.email}</span>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <div className={`flex items-center gap-1 font-bold ${a.type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
@@ -284,16 +301,16 @@ const StatCard = ({ title, value, icon }: { title: string; value: string | numbe
 
 const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) => (
   <Card className="shadow-md border-none bg-white lg:col-span-1">
-    <CardHeader>
-      <CardTitle className="text-lg font-semibold">Business Tier</CardTitle>
+    <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
+      <CardTitle className="text-sm sm:text-lg font-semibold">Business Tier</CardTitle>
     </CardHeader>
-    <CardContent>
+    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-orange-500 font-bold text-xl">{tier.name}</span>
-        <Star className="text-yellow-400 fill-yellow-400" />
+        <span className="text-orange-500 font-bold text-lg sm:text-xl">{tier.name}</span>
+        <Star className="text-yellow-400 fill-yellow-400 w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <Progress value={tier.progress} className="w-full" />
-      <p className="text-sm text-gray-500 mt-2">
+      <Progress value={tier.progress} className="w-full h-2" />
+      <p className="text-xs sm:text-sm text-gray-500 mt-2">
         {tier.name === 'Super Business' ? 'Unlimited Access' : `${tier.progress}% to the next tier`}
       </p>
     </CardContent>
@@ -306,24 +323,24 @@ const PointsSummary = ({ summary, isTrial, trialQuota }: { summary: { earned: nu
     const isExhausted = remaining <= 0;
     return (
       <Card className="shadow-md border-none bg-white lg:col-span-2 relative overflow-hidden">
-        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">Trial Limit Active</div>
-        <CardHeader><CardTitle className="text-lg font-semibold flex items-center gap-2">Trial Points{isExhausted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Exhausted</span>}</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div><p className="text-sm text-gray-500">Allocated</p><p className="text-2xl font-bold text-indigo-600">{(trialQuota || 0).toLocaleString()}</p></div>
-          <div><p className="text-sm text-gray-500">Used</p><p className="text-2xl font-bold text-orange-600">{summary.spent.toLocaleString()}</p></div>
-          <div><p className="text-sm text-gray-500">Remaining</p><p className={`text-2xl font-bold ${remaining > 0 ? 'text-green-600' : 'text-gray-400'}`}>{Math.max(0, remaining).toLocaleString()}</p></div>
-          {isExhausted && <div className="col-span-1 sm:col-span-3 mt-2"><a href="/dashboard/subscription" className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">Upgrade to continue</a></div>}
+        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-bl-lg font-bold">Trial Limit Active</div>
+        <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6"><CardTitle className="text-sm sm:text-lg font-semibold flex items-center gap-2">Trial Points{isExhausted && <span className="text-[10px] sm:text-xs bg-red-100 text-red-600 px-1.5 sm:px-2 py-0.5 rounded-full border border-red-200">Exhausted</span>}</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-3 gap-2 sm:gap-4 text-center p-3 sm:p-6 pt-0 sm:pt-6">
+          <div><p className="text-[10px] sm:text-sm text-gray-500">Allocated</p><p className="text-base sm:text-2xl font-bold text-indigo-600">{(trialQuota || 0).toLocaleString()}</p></div>
+          <div><p className="text-[10px] sm:text-sm text-gray-500">Used</p><p className="text-base sm:text-2xl font-bold text-orange-600">{summary.spent.toLocaleString()}</p></div>
+          <div><p className="text-[10px] sm:text-sm text-gray-500">Remaining</p><p className={`text-base sm:text-2xl font-bold ${remaining > 0 ? 'text-green-600' : 'text-gray-400'}`}>{Math.max(0, remaining).toLocaleString()}</p></div>
+          {isExhausted && <div className="col-span-3 mt-2"><a href="/dashboard/subscription" className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-indigo-700 transition">Upgrade to continue</a></div>}
         </CardContent>
       </Card>
     );
   }
   return (
     <Card className="shadow-md border-none bg-white lg:col-span-2">
-      <CardHeader><CardTitle className="text-lg font-semibold">Points Summary</CardTitle></CardHeader>
-      <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-        <div><p className="text-sm text-gray-500">Earned</p><p className="text-2xl font-bold text-green-600"><ArrowUp size={20} className="inline" /> {summary.earned.toLocaleString()}</p></div>
-        <div><p className="text-sm text-gray-500">Spent</p><p className="text-2xl font-bold text-red-600"><ArrowDown size={20} className="inline" /> {summary.spent.toLocaleString()}</p></div>
-        <div><p className="text-sm text-gray-500">Matching Available</p><p className="text-2xl font-bold text-orange-600">{summary.matchingAvailable.toLocaleString()}</p></div>
+      <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6"><CardTitle className="text-sm sm:text-lg font-semibold">Points Summary</CardTitle></CardHeader>
+      <CardContent className="grid grid-cols-3 gap-2 sm:gap-4 text-center p-3 sm:p-6 pt-0 sm:pt-6">
+        <div><p className="text-[10px] sm:text-sm text-gray-500">Earned</p><p className="text-base sm:text-2xl font-bold text-green-600"><ArrowUp size={14} className="inline sm:hidden" /><ArrowUp size={20} className="hidden sm:inline" /> {summary.earned.toLocaleString()}</p></div>
+        <div><p className="text-[10px] sm:text-sm text-gray-500">Spent</p><p className="text-base sm:text-2xl font-bold text-red-600"><ArrowDown size={14} className="inline sm:hidden" /><ArrowDown size={20} className="hidden sm:inline" /> {summary.spent.toLocaleString()}</p></div>
+        <div><p className="text-[10px] sm:text-sm text-gray-500">Matching</p><p className="text-base sm:text-2xl font-bold text-orange-600">{summary.matchingAvailable.toLocaleString()}</p></div>
       </CardContent>
     </Card>
   );

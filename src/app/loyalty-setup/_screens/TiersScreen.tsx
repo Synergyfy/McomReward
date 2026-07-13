@@ -52,9 +52,6 @@ export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip 
             <ArrowLeft className="w-4 h-4" />Back
           </button>
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-200 mb-5">
-              <Trophy className="w-8 h-8 text-white" />
-            </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Customer Tiers</h1>
             <p className="text-gray-500 max-w-lg mx-auto">Set up a tier system to reward your most loyal customers with escalating benefits.</p>
           </div>

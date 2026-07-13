@@ -317,22 +317,6 @@ export function useSaveEngineConfig() {
   });
 }
 
-export function useSavePointsEngine() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (config: PointsEngineConfig) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.pointsEngineConfig = config;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
-}
-
 export function useSaveTierConfig() {
   const queryClient = useQueryClient();
   return useMutation({

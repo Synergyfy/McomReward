@@ -46,6 +46,7 @@ interface BusinessSidebarProps {
   toggleCollapse?: () => void;
   profile?: Partial<BusinessProfile>;
   isLoading?: boolean;
+  onNavClick?: () => void;
 }
 
 const StoreIcon = ({ isCollapsed }: { isCollapsed?: boolean }) => (
@@ -58,11 +59,32 @@ export default function BusinessSidebar({
   toggleCollapse,
   profile: propProfile,
   isLoading: propIsLoading,
+  onNavClick,
 }: BusinessSidebarProps) {
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
+  // Submenu ancestry: key → parent keys that should stay open when this one opens
+  const submenuAncestry: Record<string, string[]> = {
+    groupcircles: ['myassets'],
+  };
+
   const toggleSubmenu = (key: string) => {
-    setOpenSubmenus(prev => ({ ...prev, [key]: !prev[key] }));
+    setOpenSubmenus(prev => {
+      const isOpening = !prev[key];
+      if (isOpening) {
+        const next: Record<string, boolean> = {};
+        // Keep ancestors open (nested submenus shouldn't collapse their parent)
+        const ancestors = submenuAncestry[key] ?? [];
+        for (const k of Object.keys(prev)) {
+          if (prev[k] && ancestors.includes(k)) {
+            next[k] = true;
+          }
+        }
+        next[key] = true;
+        return next;
+      }
+      return { ...prev, [key]: false };
+    });
   }
 
   const linkClasses = useLinkClasses();
@@ -176,7 +198,7 @@ export default function BusinessSidebar({
     return (
       <li>
         <TooltipWrapper>
-          <Link href={href!} className="block focus:outline-none">
+          <Link href={href!} className="block focus:outline-none" onClick={onNavClick}>
             <Content />
           </Link>
         </TooltipWrapper>
@@ -187,7 +209,7 @@ export default function BusinessSidebar({
   // Helper method for sub-links to avoid prop drilling madness
   const SubItem = ({ href, label }: { href: string, label: string }) => (
     <li>
-      <Link href={href} className={enhancedLinkClasses(href)}>
+      <Link href={href} className={enhancedLinkClasses(href)} onClick={onNavClick}>
         {label}
       </Link>
     </li>
@@ -283,9 +305,7 @@ export default function BusinessSidebar({
             <SidebarItem label="Group Circles" hasSubmenu submenuKey="groupcircles">
               <SubItem href="/dashboard/my-assets/group-circles" label="Visualization" />
             </SidebarItem>
-            <SubItem href="/dashboard/my-assets/qr-plaques" label="QR Plaques" />
             <SubItem href="/dashboard/affiliate" label="Referral" />
-            <SubItem href="/dashboard/my-assets/nfc-cards" label="NFC Cards" />
             <SubItem href="/dashboard/my-assets/customer-contact" label="Customer Contact" />
             <SubItem href="/dashboard/customer-activities" label="Customer Activities" />
           </SidebarItem>

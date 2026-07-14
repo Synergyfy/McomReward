@@ -1,0 +1,167 @@
+{
+  "tiers": [
+    {
+      "name": "Trial",
+      "description": "Test features before committing",
+      "quarterlyPrice": 0,
+      "annualPrice": 0,
+      "includesNfc": false,
+      "features": [
+        "All core features",
+        "Limited QR codes",
+        "Email support"
+      ]
+    },
+    {
+      "name": "Bronze",
+      "description": "Starter tools to get you visible and selling.",
+      "quarterlyPrice": 135,
+      "annualPrice": null,
+      "includesNfc": false,
+      "features": [
+        "Done-For-You Setup",
+        "10 QR codes",
+        "Email support"
+      ]
+    },
+    {
+      "name": "Silver",
+      "description": "More reach, more rewards, more customers.",
+      "quarterlyPrice": 291,
+      "annualPrice": null,
+      "includesNfc": false,
+      "features": [
+        "Everything in Bronze",
+        "20 QR codes",
+        "Priority email support"
+      ]
+    },
+    {
+      "name": "Gold",
+      "description": "Priority support and premium assets.",
+      "quarterlyPrice": 435,
+      "annualPrice": null,
+      "includesNfc": true,
+      "features": [
+        "Everything in Silver",
+        "NFC business card included",
+        "Advanced marketing pack"
+      ]
+    },
+    {
+      "name": "Platinum",
+      "description": "Full service, maximum exposure, and total support.",
+      "quarterlyPrice": 585,
+      "annualPrice": null,
+      "includesNfc": true,
+      "features": [
+        "Everything in Gold",
+        "Dedicated account manager",
+        "Largest marketing pack"
+      ]
+    }
+  ],
+  "featuresForComparison": [
+    "Monthly Points Allocation",
+    "Max Campaigns",
+    "Max Rewards per Campaign",
+    "Edit Admin Rewards",
+    "Edit Admin Campaigns",
+    "Create Rewards from Scratch",
+    "Create Campaigns from Scratch",
+    "Number of QR Plaques",
+    "NFC Items Supported",
+    "Advanced Analytics",
+    "Audience Segmentation",
+    "Team Members",
+    "Support"
+  ],
+  "comparisonMatrix": {
+    "Trial": [
+      "0 pts",
+      1,
+      1,
+      false,
+      false,
+      false,
+      false,
+      0,
+      false,
+      "Basic",
+      false,
+      1,
+      "Email"
+    ],
+    "Bronze": [
+      "1,000 pts",
+      3,
+      3,
+      false,
+      false,
+      false,
+      false,
+      3,
+      false,
+      "Basic",
+      false,
+      1,
+      "Email"
+    ],
+    "Silver": [
+      "3,000 pts",
+      7,
+      5,
+      true,
+      true,
+      true,
+      true,
+      10,
+      true,
+      "Standard",
+      true,
+      3,
+      "Priority Email"
+    ],
+    "Gold": [
+      "7,000 pts",
+      15,
+      8,
+      true,
+      true,
+      true,
+      true,
+      25,
+      true,
+      "Pro",
+      true,
+      7,
+      "Chat"
+    ],
+    "Platinum": [
+      "15,000 pts",
+      "Unlimited",
+      "Unlimited",
+      true,
+      true,
+      true,
+      true,
+      "Unlimited",
+      true,
+      "Enterprise",
+      true,
+      "Unlimited",
+      "Dedicated Manager"
+    ]
+  },
+  "trial": {
+    "durationDays": 7,
+    "creditCardRequired": true
+  },
+  "coupons": [
+    {
+      "code": "WELCOME10",
+      "discountPercent": 10,
+      "expiresAt": "2099-12-31"
+    }
+  ]
+}

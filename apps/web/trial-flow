@@ -1,0 +1,301 @@
+# Trial Experience UI Flow for Business Owners
+
+This document explains, step by step, how the *Business Owner Trial Experience* should work on the platform. It shows what the business owner will see, what they can do, and what parts will be limited until they upgrade. All logic is simplified for developers to implement without missing any detail.
+
+---
+
+# 1. Entry Point: Business Starts a Trial
+
+### Trigger Points
+
+A business owner can start a 7‑day trial from:
+
+* Pricing page
+* During onboarding
+* Pop-up offer when trying to access paid features
+
+### After Clicking "Start 7-Day Trial":
+
+System actions:
+
+1. Create a *Trial Subscription Record* tied to selected plan (Bronze/Silver/Gold/Platinum).
+2. Assign trial points (based on Trial Settings Page rules).
+3. Activate limited features (trial-only permissions).
+4. Start countdown timer (7 days).
+
+UI shown:
+
+* Success page
+* “Welcome to Your 7‑Day Trial of [Plan].”
+* Countdown timer card
+* Quick actions:
+
+  * Create Campaign
+  * View Trial Features
+  * Compare with Full Plan
+
+---
+
+# 2. Business Dashboard During Trial
+
+## A. Trial Status Banner (Top of Dashboard)
+
+Always visible.
+
+*Content:*
+
+* "You are currently on a 7‑Day Trial of [Plan]."
+* Time left: *e.g., 6 Days 12 Hours Remaining*
+* Progress bar: visual countdown
+* *Upgrade Now button*
+* *See Full Benefits link*
+
+---
+
+## B. Points Indicator (Trial Mode)
+
+Shows:
+
+* Trial Points Allocated
+* Points Used
+* Points Remaining
+* "Trial Limit Active" tag
+
+If trial points are exhausted:
+
+* Replace action buttons with: "Upgrade to continue."
+
+---
+
+## C. Campaign Creation (Trial Mode)
+
+When business attempts to create a campaign:
+
+If within trial limits:
+
+* Allow creation
+* Show tag: *Trial Campaign*
+* Remind top banner: “Upgrade to unlock unlimited access.”
+
+If above trial limits:
+
+* Block action
+* Show modal:
+
+  * "This action is not available during trial. Upgrade to [Plan] to continue."
+  * Display locked items
+  * Upgrade button
+
+Locked examples:
+
+* Creating more than trial campaign limit
+* Accessing premium campaign types
+* Adding more than trial reward limit
+
+---
+
+## D. Reward Creation (Trial Mode)
+
+Trial limitations include:
+
+* Max number of rewards per campaign
+* No high‑tier reward types (as defined by admin)
+* No ability to use advanced editors (if restricted)
+
+When restricted:
+
+* Show blurred UI
+* Show tooltip: "Available after upgrading."
+
+---
+
+# 3. Locked Feature Indicators During Trial
+
+All locked features must show:
+
+* A lock icon
+* A short message explaining why
+* A tooltip or modal when clicked
+
+Examples:
+
+### Locked Example – Analytics
+
+If user clicks Analytics (Premium Feature):
+
+* Show modal:
+
+  * Title: "Upgrade Required"
+  * Body: "Advanced Analytics is not included in the trial. Upgrade to access full insights."
+  * Button: *View Plans*
+
+### Locked Example – Points Purchase
+
+Trial users cannot buy extra points.
+
+Clicking "Buy Points" shows:
+
+* "You cannot buy additional points during the trial. Upgrade your plan to unlock this feature."
+
+---
+
+# 4. Daily Trial Notifications
+
+System shows non-intrusive alerts:
+
+### Day 1–3: Soft Reminders
+
+* "Enjoy your trial of [Plan]. Upgrade anytime."
+
+### Day 4–5: Medium Reminders
+
+* "Your trial ends soon. Upgrade to avoid losing access."
+
+### Day 6–7: Urgent Reminders
+
+* Banner turns orange/red
+* “Trial expires in less than 24 hours. Upgrade now to keep your campaigns active.”
+
+Also:
+
+* Campaigns created during trial will show a warning tag: "Will be paused if not upgraded."
+
+---
+
+# 5. Trial Expiry Flow
+
+When the 7 days end:
+
+### Step 1 – Immediate Lockout of Premium Features
+
+System automatically:
+
+* Pauses all trial-created campaigns
+* Locks reward creation/edit
+* Locks advanced analytics
+* Sets points to *0*
+* Shows upgrade modal
+
+### Step 2 – Forced Upgrade Popup
+
+Before accessing dashboard:
+
+* Display full-screen modal:
+
+  * "Your trial has ended. Upgrade to continue using your campaigns."
+  * Show plan comparison
+  * Show upgrade button
+
+User can still:
+
+* View their dashboard in “read-only mode”
+* View but NOT edit campaigns
+* View analytics summary (not details)
+
+---
+
+# 6. If User Upgrades Before Trial Ends (Ideal Path)
+
+System actions:
+
+1. Convert trial subscription → paid subscription
+2. Keep existing trial campaigns active
+3. Activate full plan limits
+4. Reset point allocation to full monthly amount
+
+UI changes:
+
+* Remove all trial labels
+* Remove countdown timer
+* Dashboard becomes fully active
+
+---
+
+# 7. If User Does NOT Upgrade After Trial Ends
+
+System behavior:
+
+* Campaigns remain paused until payment
+* Rewards cannot be claimed by customers
+* Business cannot create new campaigns
+* Points remain 0
+
+UI:
+
+* Large banner: “Upgrade to reactivate your account.”
+* Only active buttons: Upgrade / Manage Billing
+
+---
+
+# 8. UI Components Developers Must Build
+
+### A. Trial Banner Component
+
+### B. Trial Countdown Timer
+
+### C. Trial Points Indicator
+
+### D. Locked Feature Overlay
+
+### E. Upgrade Modal
+
+### F. Trial-to-Paid Conversion Handler
+
+### G. Campaign Pause Mechanism
+
+---
+
+# 9. Developer Logic Summary
+
+### Trial Start
+
+
+StartTrial(plan):
+  Create trial subscription
+  Set trial_end = now + 7 days
+  Assign trial_points
+  Activate trial_permissions
+
+
+### Trial Active State
+
+
+If now < trial_end:
+  trial_active = true
+Else:
+  trial_active = false
+
+
+### Feature Lock Logic
+
+
+If trial_active AND feature not in trial_permissions:
+    Block + Show Upgrade Modal
+
+
+### Trial Expiry
+
+
+If now >= trial_end:
+   Pause campaigns
+   Lock points
+   Lock editing
+   Show upgrade screen
+
+
+---
+
+# 10. Final Outcome
+
+This UI flow ensures:
+
+* Trial gives a real taste of each plan
+* No abuse of features
+* Clear upgrade motivation
+* Consistent, predictable behavior for developers to build
+
+Let me know if you want:
+
+* Mockups for each screen
+* API endpoints for trial logic
+* Backend data model for trials

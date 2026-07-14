@@ -1,0 +1,427 @@
+
+import { BusinessReward } from '../business-reward/types';
+import { TierResponse } from '../tiers/types';
+
+export interface UpdateCampaignPayload extends Partial<CreateCampaignPayload> {
+  // reward_ids for claimed campaigns (Admin Rewards)
+  reward_ids?: string[];
+  // business_reward_ids for custom campaigns (Business Rewards)
+  business_reward_ids?: string[];
+}
+
+export interface CreateCampaignRequest {
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  rewardId: string;
+  thumbnailUrl: string;
+  subImageUrls: string[];
+}
+
+export interface CreateCampaignPayload {
+  name: string;
+  campaign_type: string;
+  campaign_message: string;
+  start_date: string;
+  end_date: string;
+  quantity: number;
+  total_slots: number;
+  audience_type: string;
+  signUpPoint: number;
+  banner_url: string;
+  logo_url: string;
+  cta_text: string;
+  cta_background_color: string;
+  cta_text_color: string;
+  text_color: string;
+  background_color: string;
+  reward_type: string;
+  regular_points_threshold: number;
+  matching_points_threshold: number;
+  earn_point_page_title: string;
+  earn_point_page_description: string;
+  redeem_reward_page_title: string;
+  redeem_reward_page_description: string;
+  contact_us_page_title: string;
+  contact_us_page_description: string;
+  contact_email: string;
+  contact_phone_number: string;
+  footer_text: string;
+  reward_ids?: string[];
+  business_reward_ids?: string[];
+  target_tier_ids?: string[];
+}
+
+export interface CampaignResponse {
+  id: string;
+  name: string;
+  campaignType: string;
+  campaignMessage: string;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+  total_slots?: number;
+  remainingSlots?: number;
+  audienceType: string;
+  bannerUrl: string;
+  logoUrl: string;
+  ctaText: string;
+  ctaBackgroundColor: string;
+  ctaTextColor: string;
+  textColor: string;
+  backgroundColor: string;
+  signUpPoint: number;
+  rewardType: string;
+  regularPointsThreshold: number;
+  matchingPointsThreshold: number;
+  earnPointPageTitle: string;
+  earnPointPageDescription: string;
+  redeemRewardPageTitle: string;
+  redeemRewardPageDescription: string;
+  contactUsPageTitle: string;
+  contactUsPageDescription: string;
+  contactEmail: string;
+  contactPhoneNumber: string;
+  footerText: string;
+  rewards: Reward[];
+  // Added to detect if it is a claimed campaign (has parent campaign)
+  campaign?: { id: string };
+  uniqueCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  disabled: boolean;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  totalMatchingPointsEarned: number;
+  matchingPointsDisabledByAdmin: boolean;
+  rewardMode?: 'points' | 'stamps' | 'both';
+  business_reward_ids?: string[];
+  targetTiers?: TierResponse[];
+}
+
+export enum CampaignType {
+  QR_CODE = 'qr_code',
+  LINK = 'link',
+  BOTH = 'both',
+  REFERRAL = 'referral',
+  MATCHING_POINT = 'matching_point',
+}
+
+export enum AudienceType {
+  ALL = 'all',
+  MEMBERS = 'members',
+  BADGE_LEVEL = 'badge_level',
+  TARGET_WISHLIST = 'target_wishlist',
+}
+
+export enum RewardType {
+  REGULAR = 'regular',
+  MATCHING = 'matching',
+  BOTH = 'both',
+}
+
+export interface Reward {
+  id: string;
+  title: string;
+  points_required: number;
+  pointsRequired?: number;
+  stamps_required?: number;
+  stampsRequired?: number;
+  value: number;
+  description: string;
+  image: string;
+  quantity: number;
+  disabled: boolean;
+}
+
+export interface PublicCampaignResponse {
+  id: string;
+  name: string;
+  campaign_type: string; // API returns string, but we can map to enum if needed
+  campaign_message: string;
+  start_date: string;
+  end_date: string;
+  quantity: number;
+  remainingSlots?: number;
+  audience_type: string;
+  banner_url: string;
+  // Adding camelCase alternatives as potential fix for display issues if API returns camelCase
+  bannerUrl?: string;
+  logo_url: string | null;
+  logoUrl?: string | null;
+  cta_text: string;
+  cta_background_color: string;
+  cta_text_color: string;
+  text_color: string;
+  background_color: string;
+  disabled: boolean;
+  rewards: Reward[];
+  businessRewards?: BusinessReward[];
+  uniqueCode?: string; // Present in my-created-campaigns example
+}
+
+export interface Business {
+  id: string;
+  name: string;
+}
+
+export interface BusinessCampaign {
+  id: string;
+  uniqueCode: string;
+
+  // --- Relations ---
+  business: Business;
+  campaign?: { id: string }; // Null for campaigns created from scratch
+  businessRewards: BusinessReward[]; // The linked business rewards
+  rewards: Reward[]; // Admin rewards
+
+  // --- Copied/Set Fields ---
+  name: string;
+  campaign_type: CampaignType; // Map to CampaignType enum
+  campaign_message: string;
+  start_date: string;
+  end_date: string;
+  quantity: number;
+  total_slots?: number;
+  remainingSlots?: number;
+  audience_type: AudienceType; // Map to AudienceType enum
+  banner_url: string;
+  logo_url: string;
+  cta_text: string;
+  cta_background_color: string;
+  cta_text_color: string;
+  text_color: string;
+  background_color: string;
+
+  signUpPoint: number;
+  reward_type: RewardType; // Map to RewardType enum
+  regular_points_threshold: number;
+  matching_points_threshold: number;
+
+  // --- Statistics & Status ---
+  total_points_earned: number;
+  total_points_redeemed: number;
+  total_matching_points_earned: number;
+  matching_points_disabled_by_admin: boolean;
+  disabled: boolean;
+
+  // --- Page Details ---
+  earn_point_page_title: string;
+  earn_point_page_description: string;
+  redeem_reward_page_title: string;
+  redeem_reward_page_description: string;
+  contact_us_page_title: string;
+  contact_us_page_description: string;
+  contact_email: string;
+  contact_phone_number: string;
+  footer_text: string;
+
+  // --- Timestamps ---
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  next: number | null;
+  previous: number | null;
+}
+
+export interface PaginatedCampaignsResponse extends PaginationMeta {
+  data: PublicCampaignResponse[];
+}
+
+export interface ParticipantCampaignSearchResponse {
+  id: string;
+  name: string;
+  campaignType: string;
+  startDate: string;
+  endDate: string;
+  disabled: boolean;
+  business: {
+    id: string;
+    name: string;
+  };
+  businessRewards: {
+    id: string;
+    title: string;
+    pointRequired?: number;
+    points_required?: number;
+    stamps_required?: number;
+  }[];
+}
+
+export interface OngoingCampaignReward {
+  id: string;
+  title: string;
+  pointsRequired: number;
+  points_required?: number;
+  pointRequired?: number; // Variant from some API responses
+  stamps_required?: number;
+  stampsRequired?: number;
+  value: number;
+  description: string;
+  image: string;
+  quantity: number;
+  disabled: boolean;
+  rewardType: string;
+  badgeLevel: string;
+  rewardSource: string;
+  audience: string;
+  expiryDatetime: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  is_points_enabled?: boolean;
+  isPointsEnabled?: boolean;
+  is_stamps_enabled?: boolean;
+  isStampsEnabled?: boolean;
+}
+
+export interface OngoingCampaign {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  name: string;
+  campaignType: string;
+  campaignMessage: string;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+  audienceType: string;
+  bannerUrl: string;
+  logoUrl: string | null;
+  ctaText: string;
+  ctaBackgroundColor: string;
+  ctaTextColor: string;
+  disabled: boolean;
+  textColor: string;
+  backgroundColor: string;
+  signUpPoint: number | null;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+  rewardType: string;
+  regularPointsThreshold: number | null;
+  matchingPointsThreshold: number | null;
+  totalMatchingPointsEarned: number;
+  matchingPointsDisabledByAdmin: boolean;
+  rewardMode?: 'points' | 'stamps' | 'both';
+  uniqueCode: string | null;
+  earnPointPageTitle: string | null;
+  earnPointPageDescription: string | null;
+  redeemRewardPageTitle: string | null;
+  redeemRewardPageDescription: string | null;
+  contactUsPageTitle: string | null;
+  contactUsPageDescription: string | null;
+  contactEmail: string | null;
+  contactPhoneNumber: string | null;
+  footerText: string | null;
+  business: {
+    id: string;
+    name: string;
+  };
+  rewards: OngoingCampaignReward[];
+  businessRewards?: OngoingCampaignReward[];
+  participantCount: number;
+  howToEarn?: string[];
+  termsAndConditions?: string[];
+}
+
+export interface PaginatedOngoingCampaignsResponse extends PaginationMeta {
+  data: OngoingCampaign[];
+}
+
+export interface PaginatedAdminCampaignsResponse extends PaginationMeta {
+  data: CampaignResponse[];
+}
+
+export interface CampaignAnalytics {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  disabled: boolean;
+  sector: string | null;
+  status: 'active' | 'inactive';
+  totalParticipants: string;
+  totalPointsAwarded: string;
+  totalRewardsRedeemed: string;
+  redemptionRate: number;
+}
+
+export interface PaginatedCampaignAnalyticsResponse extends PaginationMeta {
+  data: CampaignAnalytics[];
+}
+
+export interface WeeklyChartData {
+  date: string;
+  pointsAwarded: string;
+  rewardsRedeemed: string;
+  newParticipants: string;
+}
+
+export interface RankedParticipant {
+  id: string;
+  pName: string;
+  pEmail: string;
+  totalPointsEarned: string;
+  totalRedemptions: string;
+}
+
+export interface TopReward {
+  id: string;
+  rTitle: string;
+  rPointsRequired: number;
+  rStampsRequired?: number;
+  totalRedemptions: string;
+}
+
+export interface DetailedCampaignAnalytics {
+  totalParticipants: string;
+  totalRewardsRedeemed: string;
+  totalPointsAwarded: string | null;
+  redemptionRate: number;
+  weeklyChartData: WeeklyChartData[];
+  rankedParticipants: RankedParticipant[];
+  topRewards: TopReward[];
+}
+
+export enum PointHistoryType {
+  EARN = 'EARN',
+  REDEEM = 'REDEEM',
+  MATCHING = 'MATCHING',
+}
+
+export interface CustomerActivityResponseDto {
+  participantName: string;
+  participantId?: string;
+  activityType: PointHistoryType;
+  details: string;
+  campaignName: string;
+  date: Date;
+
+}
+
+export interface PaginatedCustomerActivityResponseDto extends PaginationMeta {
+  data: CustomerActivityResponseDto[];
+}
+
+export interface CampaignTierAnalytics {
+  tierId: string;
+  tierName: string;
+  claimsCount: number;
+  totalParticipants: number;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+}
+
+export interface CampaignTierAnalyticsResponse {
+  data: CampaignTierAnalytics[];
+}

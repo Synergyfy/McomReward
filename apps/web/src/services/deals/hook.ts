@@ -1,0 +1,231 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '../api';
+import {
+  CreateDealDto,
+  Deal,
+  DeactivateDealDto,
+  FilterDealDto,
+  PaginatedDealsResponse,
+  UpdateDealDto,
+  UpdateDealStatusDto,
+  DealAnalytics,
+  ReportTimeSpentDto,
+} from './types';
+
+const DEALS_QUERY_KEY = 'deals';
+
+const createDeal = async (dealData: CreateDealDto): Promise<Deal> => {
+  const { data } = await api.post<Deal>('/deals', dealData);
+  return data;
+};
+
+const getDeals = async (
+  params: FilterDealDto,
+): Promise<PaginatedDealsResponse> => {
+  const { data } = await api.get<PaginatedDealsResponse>('/deals', {
+    params,
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+const getMyDeals = async (
+  params: FilterDealDto,
+): Promise<PaginatedDealsResponse> => {
+  const { data } = await api.get<PaginatedDealsResponse>('/deals/my-deals', {
+    params,
+  });
+  return data;
+};
+
+const getPublicDeals = async (
+  params: FilterDealDto,
+): Promise<PaginatedDealsResponse> => {
+  const { data } = await api.get<PaginatedDealsResponse>('/deals/public/all', {
+    params,
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+const getDeal = async (id: string): Promise<Deal> => {
+  const { data } = await api.get<Deal>(`/deals/${id}`, {
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+const getPublicDeal = async (id: string): Promise<Deal> => {
+  const { data } = await api.get<Deal>(`/deals/public/${id}`, {
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+const updateDeal = async ({
+  id,
+  ...dealData
+}: UpdateDealDto & { id: string }): Promise<Deal> => {
+  const { data } = await api.patch<Deal>(`/deals/${id}`, dealData);
+  return data;
+};
+
+const deleteDeal = async (id: string): Promise<void> => {
+  await api.delete(`/deals/${id}`);
+};
+
+const deactivateDeal = async ({
+  id,
+  ...dealData
+}: DeactivateDealDto & { id: string }): Promise<Deal> => {
+  const { data } = await api.patch<Deal>(`/deals/${id}/deactivate`, dealData);
+  return data;
+};
+
+const getAdminDeals = async (
+  params: FilterDealDto,
+): Promise<PaginatedDealsResponse> => {
+  const { data } = await api.get<PaginatedDealsResponse>('/deals/admin/all', {
+    params,
+  });
+  return data;
+};
+
+const updateDealStatus = async ({
+  id,
+  status,
+}: UpdateDealStatusDto & { id: string }): Promise<Deal> => {
+  const { data } = await api.patch<Deal>(`/deals/${id}/status`, { status });
+  return data;
+};
+
+const getDealAnalytics = async (id: string): Promise<DealAnalytics> => {
+  const { data } = await api.get<DealAnalytics>(`/deals/my-deals/${id}/analytics`);
+  return data;
+};
+
+const reportTimeSpent = async (data: ReportTimeSpentDto): Promise<void> => {
+  await api.post('/deals/public/analytics/time', data);
+};
+
+export const useCreateDeal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createDeal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useGetDeals = (params: FilterDealDto) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, params],
+    queryFn: () => getDeals(params),
+  });
+};
+
+export const useGetMyDeals = (params: FilterDealDto) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'my-deals', params],
+    queryFn: () => getMyDeals(params),
+  });
+};
+
+export const useGetPublicDeals = (params: FilterDealDto) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'public', params],
+    queryFn: () => getPublicDeals(params),
+  });
+};
+
+export const useGetDeal = (id: string) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, id],
+    queryFn: () => getDeal(id),
+    enabled: !!id,
+  });
+};
+
+export const useGetPublicDeal = (id: string) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'public', id],
+    queryFn: () => getPublicDeal(id),
+    enabled: !!id,
+  });
+};
+
+export const useUpdateDeal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateDeal,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [DEALS_QUERY_KEY, variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useDeleteDeal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteDeal,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useDeactivateDeal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deactivateDeal,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [DEALS_QUERY_KEY, variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useGetAdminDeals = (params: FilterDealDto) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'admin', params],
+    queryFn: () => getAdminDeals(params),
+  });
+};
+
+export const useUpdateDealStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateDealStatus,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [DEALS_QUERY_KEY, variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: [DEALS_QUERY_KEY] });
+    },
+  });
+};
+
+export const useGetDealAnalytics = (id: string) => {
+  return useQuery({
+    queryKey: [DEALS_QUERY_KEY, 'analytics', id],
+    queryFn: () => getDealAnalytics(id),
+    enabled: !!id,
+  });
+};
+
+export const useReportTimeSpent = () => {
+  return useMutation({
+    mutationFn: reportTimeSpent,
+  });
+};

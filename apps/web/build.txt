@@ -1,0 +1,52 @@
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./src/app/(others)/matching-rewards/[id]/page.tsx:7:1
+Export useGetPublicMatchingRewardById doesn't exist in target module
+   5 | import Link from 'next/link';
+   6 | import { useRouter } from 'next/navigation';
+>  7 | import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 | import { Button } from "@/components/ui/button";
+   9 | import { Badge } from "@/components/ui/badge";
+  10 | import { ArrowLeft, Share2, Heart, ShieldCheck, Clock, Box, Info, Lock } from "lucide-react";
+
+The export useGetPublicMatchingRewardById was not found in module [project]/src/services/matching-points/hook.ts [app-client] (ecmascript).
+Did you mean to import useGetPublicMatchingRewards?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Client Component Browser]
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Client Component SSR]
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Server Component]
+
+
+./src/app/(others)/matching-rewards/[id]/page.tsx:7:1
+Export useGetPublicMatchingRewardById doesn't exist in target module
+   5 | import Link from 'next/link';
+   6 | import { useRouter } from 'next/navigation';
+>  7 | import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 | import { Button } from "@/components/ui/button";
+   9 | import { Badge } from "@/components/ui/badge";
+  10 | import { ArrowLeft, Share2, Heart, ShieldCheck, Clock, Box, Info, Lock } from "lucide-react";
+
+The export useGetPublicMatchingRewardById was not found in module [project]/src/services/matching-points/hook.ts [app-ssr] (ecmascript).
+Did you mean to import useGetPublicMatchingRewards?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Client Component Browser]
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Client Component SSR]
+    ./src/app/(others)/matching-rewards/[id]/page.tsx [Server Component]
+
+
+    at <unknown> (./src/app/(others)/matching-rewards/[id]/page.tsx:7:1)
+    at <unknown> (./src/app/(others)/matching-rewards/[id]/page.tsx:7:1)

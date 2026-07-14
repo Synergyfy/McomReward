@@ -89,6 +89,7 @@ export default function LoyaltySetupPage() {
   const handleWelcomeComplete = async () => { await markWelcomeSeen(); setStep("profile"); };
   const handleWelcomeSkip = () => router.push("/dashboard");
   const handleProfileComplete = async () => { await markEcosystemIntroSeen(); setStep("templates"); };
+  const handleProfileBack = () => setStep("welcome");
   const handleTemplateSelect = async (id: string) => { await selectTemplate(id); setStep("campaigns"); };
   const handleTemplateBack = () => setStep("profile");
 
@@ -170,7 +171,7 @@ export default function LoyaltySetupPage() {
         )}
         {step === "profile" && (
           <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <ProfileScreen onComplete={handleProfileComplete} onBack={handleWelcomeComplete} />
+            <ProfileScreen onComplete={handleProfileComplete} onBack={handleProfileBack} />
           </motion.div>
         )}
         {step === "templates" && (

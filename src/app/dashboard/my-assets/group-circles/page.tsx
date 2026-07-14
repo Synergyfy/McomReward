@@ -353,21 +353,22 @@ export default function GroupCirclesPage() {
     }, []);
 
     return (
-        <div className="w-full min-h-screen bg-zinc-50/20 dark:bg-zinc-950/20 p-4 md:p-6 flex flex-col gap-6 relative">
+        <div className="w-full min-h-screen bg-zinc-50/20 dark:bg-zinc-950/20 p-3 md:p-6 flex flex-col gap-4 md:gap-6 relative">
             {/* Layer 1: Page Heading & Action Buttons */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight font-display text-zinc-900 dark:text-zinc-50">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display text-zinc-900 dark:text-zinc-50">
                         Circles Visualization
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <p className="text-muted-foreground mt-0.5 md:mt-1 text-xs md:text-sm">
                         Enterprise-grade network mapping and collaboration.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-2 w-full md:w-auto">
                     <Button
-                        className="bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl flex-1 md:flex-none"
+                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl flex-1 md:flex-none text-xs md:text-sm px-3 md:px-4"
                         disabled={missingMandatory.length > 0}
                         onClick={() => {
                             setIsEditing(false);
@@ -376,12 +377,13 @@ export default function GroupCirclesPage() {
                             setCreateOpen(true);
                         }}
                     >
-                        <Plus className="w-4 h-4 mr-2" /> Create Free Circle
+                        <Plus className="w-3.5 h-3.5 mr-1.5" /> Create
                     </Button>
 
                     <Button
                         variant="outline"
-                        className="hidden lg:flex border-zinc-200 rounded-xl"
+                        size="sm"
+                        className="hidden lg:inline-flex border-zinc-200 rounded-xl"
                         disabled={missingMandatory.length > 0}
                         onClick={() => {
                             setIsEditing(false);
@@ -397,17 +399,18 @@ export default function GroupCirclesPage() {
 
                     <Button
                         variant="outline"
-                        className="border-zinc-200 rounded-xl"
+                        size="sm"
+                        className="border-zinc-200 rounded-xl text-xs md:text-sm px-3 md:px-4"
                         onClick={() => setJoinOpen(true)}
                     >
-                        <Globe className="w-4 h-4 mr-2" /> Join Circle
+                        <Globe className="w-3.5 h-3.5 mr-1.5" /> Join
                     </Button>
                 </div>
             </div>
 
             {/* Layer 2: Combined Circle Selector, Toggles & Filters */}
             {(circles.length > 0 || selectedCircle) && (
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-zinc-900/50 p-2 rounded-[2rem] border border-zinc-200/50 backdrop-blur-sm">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 bg-white/50 dark:bg-zinc-900/50 p-1.5 md:p-2 rounded-2xl md:rounded-[2rem] border border-zinc-200/50 backdrop-blur-sm">
                     <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                         {circles.length > 0 && (
                             <CircleSelector
@@ -573,45 +576,45 @@ export default function GroupCirclesPage() {
             </AnimatePresence>
 
             {/* Layer 4: Main Content Card */}
-            <div className="flex-1 min-h-[1125px] flex gap-6 relative">
+            <div className="flex-1 min-h-[500px] md:min-h-[1125px] flex gap-4 md:gap-6 relative">
                 <div className="flex-1 relative flex flex-col">
-                    <Card className="flex-1 relative overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-[3rem] shadow-xl shadow-orange-500/5">
+                    <Card className="flex-1 relative overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl md:rounded-[3rem] shadow-xl shadow-orange-500/5">
                         {selectedCircle ? (
                             <>
-                                <div className="absolute top-6 left-6 z-10">
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn("p-2 rounded-xl text-white shadow-lg", GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.gradient || "bg-zinc-500")}>
-                                            {React.createElement(GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.icon || Zap, { className: "w-5 h-5" })}
+                                <div className="absolute top-3 md:top-6 left-3 md:left-6 z-10 right-3 md:right-auto">
+                                    <div className="flex items-center gap-2 md:gap-3">
+                                        <div className={cn("p-1.5 md:p-2 rounded-xl text-white shadow-lg", GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.gradient || "bg-zinc-500")}>
+                                            {React.createElement(GROUP_CIRCLE_TYPES.find(t => t.id === selectedCircle.type)?.icon || Zap, { className: "w-4 h-4 md:w-5 md:h-5" })}
                                         </div>
-                                        <div>
-                                            <h2 className="text-2xl font-display font-bold text-zinc-800 dark:text-zinc-100">{selectedCircle.name}</h2>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-orange-200 text-orange-700 bg-orange-50/50">
+                                        <div className="min-w-0">
+                                            <h2 className="text-base md:text-2xl font-display font-bold text-zinc-800 dark:text-zinc-100 truncate">{selectedCircle.name}</h2>
+                                            <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground mt-0.5 flex-wrap">
+                                                <Badge variant="outline" className="text-[9px] md:text-[10px] py-0 h-3.5 md:h-4 border-orange-200 text-orange-700 bg-orange-50/50">
                                                     {selectedCircle.type}
                                                 </Badge>
-                                                <span>•</span>
-                                                <span className="font-medium">{selectedCircle.durationDays} Duration</span>
-                                                <span>•</span>
+                                                <span className="hidden md:inline">•</span>
+                                                <span className="font-medium">{selectedCircle.durationDays}d</span>
+                                                <span className="hidden md:inline">•</span>
                                                 <span className="font-medium text-emerald-600">{selectedCircle.members.length} Members</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
+                                <div className="absolute top-3 md:top-6 right-3 md:right-6 z-10 flex items-center gap-1.5 md:gap-2">
                                     <Button
                                         size="icon"
                                         variant="ghost"
                                         onClick={() => setIsMemberListOpen(true)}
-                                        className="h-10 w-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors shadow-sm border border-zinc-200"
+                                        className="h-8 w-8 md:h-10 md:w-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors shadow-sm border border-zinc-200"
                                     >
-                                        <List className="w-4 h-4" />
+                                        <List className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                     </Button>
                                     <TooltipProvider>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-10 w-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors shadow-sm border border-zinc-200">
-                                                    <Settings className="w-4 h-4" />
+                                                <Button size="icon" variant="ghost" className="h-8 w-8 md:h-10 md:w-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors shadow-sm border border-zinc-200">
+                                                    <Settings className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-44 bg-white/95 backdrop-blur-md border-orange-100 z-[10000] p-1 rounded-xl">
@@ -635,9 +638,9 @@ export default function GroupCirclesPage() {
                                                 initial={{ opacity: 0, scale: 0.95 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, scale: 1.05 }}
-                                                className="absolute inset-0 flex items-center justify-center p-10"
+                                                className="absolute inset-0 flex items-center justify-center p-4 md:p-10"
                                             >
-                                                <div className="w-full h-full max-w-[800px] max-h-[800px] relative">
+                                                <div className="w-full h-full max-w-full md:max-w-[800px] max-h-full md:max-h-[800px] relative">
                                                     <MultiLayerRadialGraph
                                                         members={selectedCircle.members}
                                                         onMemberClick={setActiveMember}
@@ -654,7 +657,7 @@ export default function GroupCirclesPage() {
                                                 initial={{ opacity: 0, x: 20 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 exit={{ opacity: 0, x: -20 }}
-                                                className="absolute inset-0 pt-28 px-12 pb-12 overflow-y-auto"
+                                                className="absolute inset-0 pt-20 md:pt-28 px-3 md:px-12 pb-3 md:pb-12 overflow-y-auto"
                                             >
                                                 <CircleCollaboration
                                                     circleId={selectedCircle.id}
@@ -667,28 +670,29 @@ export default function GroupCirclesPage() {
                                     </AnimatePresence>
                                 </div>
 
-                                <div className="absolute bottom-6 right-6 z-10 flex gap-3">
-                                    <Button onClick={() => setInviteOpen(true)} className="rounded-full h-12 px-6 bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-lg border">
-                                        <UserPlus className="w-4 h-4 mr-2" /> Invite Members
+                                <div className="absolute bottom-4 md:bottom-6 right-3 md:right-6 z-10 flex gap-2 md:gap-3">
+                                    <Button onClick={() => setInviteOpen(true)} size="sm" className="rounded-full h-10 md:h-12 px-4 md:px-6 bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-lg border text-xs md:text-sm">
+                                        <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Invite
                                     </Button>
                                     <Button
                                         onClick={() => { setChatType('GROUP'); setChatMemberId(null); setIsChatOverlayOpen(true); }}
-                                        className="rounded-full h-12 px-6 bg-orange-600 text-white hover:bg-orange-700 shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
+                                        size="sm"
+                                        className="rounded-full h-10 md:h-12 px-4 md:px-6 bg-orange-600 text-white hover:bg-orange-700 shadow-xl shadow-orange-500/20 flex items-center justify-center gap-1.5 text-xs md:text-sm"
                                     >
-                                        <MessageSquare className="w-4 h-4" /> Circle Chat
+                                        <MessageSquare className="w-3.5 h-3.5" /> Chat
                                     </Button>
                                 </div>
                             </>
                         ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-10 text-center">
-                                <div className="w-32 h-32 rounded-full bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center mb-8 relative">
-                                    <Globe className="w-16 h-16 text-orange-200 animate-pulse" />
+                            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4 md:p-10 text-center">
+                                <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center mb-4 md:mb-8 relative">
+                                    <Globe className="w-10 h-10 md:w-16 md:h-16 text-orange-200 animate-pulse" />
                                     <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-200 animate-[spin_10s_linear_infinite]" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Select an Active Circle</h3>
-                                <p className="max-w-xs mt-2 text-zinc-500">Pick a circle from the selector above to visualize your collaborative network and start collaborating.</p>
+                                <h3 className="text-lg md:text-2xl font-bold text-zinc-800 dark:text-zinc-100">Select an Active Circle</h3>
+                                <p className="max-w-xs mt-1 md:mt-2 text-xs md:text-sm text-zinc-500">Pick a circle from the selector above to visualize your collaborative network and start collaborating.</p>
                                 <Button
-                                    className="mt-8 bg-zinc-900 text-white rounded-xl h-11 px-8"
+                                    className="mt-4 md:mt-8 bg-zinc-900 text-white rounded-xl h-9 md:h-11 px-6 md:px-8 text-xs md:text-sm"
                                     disabled={missingMandatory.length > 0}
                                     onClick={() => {
                                         setIsEditing(false);
@@ -697,7 +701,7 @@ export default function GroupCirclesPage() {
                                         setCreateOpen(true);
                                     }}
                                 >
-                                    <Plus className="w-4 h-4 mr-2" /> Create Free Circle
+                                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Create Free Circle
                                 </Button>
                             </div>
                         )}
@@ -925,7 +929,7 @@ export default function GroupCirclesPage() {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-4 py-4"
                             >
-                                <div className={cn("grid gap-4", newCircleData.type === 'SMART_MONEY' ? "grid-cols-2" : "grid-cols-1")}>
+                                <div className={cn("grid gap-4", newCircleData.type === 'SMART_MONEY' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Circle Name</Label>
                                         <Input

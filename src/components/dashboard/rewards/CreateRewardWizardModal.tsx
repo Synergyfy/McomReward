@@ -976,50 +976,54 @@ export default function CreateRewardWizardModal({
                 )}
               </div>
 
-              {/* Gallery Images */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Gallery Images (Optional)</label>
-                <p className="text-xs text-gray-500 mb-2">Upload up to 3 additional images (max 5MB each)</p>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('gallery-upload-dashboard')?.click()}
-                      disabled={galleryPreviewUrls.length >= 3}
-                    >
-                      Upload Gallery Images
-                    </Button>
-                    <input
-                      id="gallery-upload-dashboard"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleGallerySelect}
-                      disabled={galleryPreviewUrls.length >= 3}
-                    />
-                    <span className="text-xs text-gray-500">{galleryPreviewUrls.length}/3 images</span>
-                  </div>
+              {!readonlyImage && (
+                <>
+                  {/* Gallery Images */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Gallery Images (Optional)</label>
+                    <p className="text-xs text-gray-500 mb-2">Upload up to 3 additional images (max 5MB each)</p>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('gallery-upload-dashboard')?.click()}
+                          disabled={galleryPreviewUrls.length >= 3}
+                        >
+                          Upload Gallery Images
+                        </Button>
+                        <input
+                          id="gallery-upload-dashboard"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleGallerySelect}
+                          disabled={galleryPreviewUrls.length >= 3}
+                        />
+                        <span className="text-xs text-gray-500">{galleryPreviewUrls.length}/3 images</span>
+                      </div>
 
-                  {galleryPreviewUrls.length > 0 && (
-                    <div className="flex flex-wrap gap-4 mt-2">
-                      {galleryPreviewUrls.map((url, index) => (
-                        <div key={index} className="relative h-24 w-24 rounded-lg overflow-hidden border">
-                          <Image src={url} alt={`Gallery ${index + 1}`} layout="fill" objectFit="cover" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
-                          >
-                            X
-                          </button>
+                      {galleryPreviewUrls.length > 0 && (
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          {galleryPreviewUrls.map((url, index) => (
+                            <div key={index} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                              <Image src={url} alt={`Gallery ${index + 1}`} layout="fill" objectFit="cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryImage(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center text-xs"
+                              >
+                                X
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
 
               {/* Validation Summary */}
               {showAllErrors && Object.keys(errors).length > 0 && (

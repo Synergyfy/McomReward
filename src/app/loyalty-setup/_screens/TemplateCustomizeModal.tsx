@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Gift, Stamp, Filter, Pencil, CheckCircle } from "lucide-react";
+import { Search, Gift, Stamp, Filter, Pencil, CheckCircle, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SectorTemplate, TemplateReward } from "@/services/loyalty-setup/types";
 
@@ -35,7 +35,7 @@ interface TemplateCustomizeModalProps {
   isOpen: boolean;
   onClose: () => void;
   template: SectorTemplate;
-  onUseTemplate: (templateId: string) => void;
+  onSave: (template: SectorTemplate) => void;
   onRewardsChanged?: (template: SectorTemplate) => void;
   onEditReward?: (reward: TemplateReward) => void;
 }
@@ -44,12 +44,13 @@ export default function TemplateCustomizeModal({
   isOpen,
   onClose,
   template,
-  onUseTemplate,
+  onSave,
   onRewardsChanged,
   onEditReward,
 }: TemplateCustomizeModalProps) {
   const [activeFilter, setActiveFilter] = useState<RewardFilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(template.rewards.map((r) => r.id)));
   const [localRewards, setLocalRewards] = useState<TemplateReward[]>(template.rewards);
 
   const filteredRewards = useMemo(() => {
@@ -67,11 +68,26 @@ export default function TemplateCustomizeModal({
     return filtered;
   }, [localRewards, activeFilter, searchQuery]);
 
+  const toggleReward = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleEditReward = (reward: TemplateReward) => {
     onEditReward?.(reward);
   };
 
-  const hasRewards = localRewards.length > 0;
+  const handleSave = () => {
+    const selectedRewards = localRewards.filter((r) => selectedIds.has(r.id));
+    const updatedTemplate = { ...template, rewards: selectedRewards };
+    onSave(updatedTemplate);
+  };
+
+  const hasSelected = selectedIds.size > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -81,7 +97,7 @@ export default function TemplateCustomizeModal({
             <Gift className="w-5 h-5 text-orange-500" />
             Customise: {template.name}
           </DialogTitle>
-          <p className="text-sm text-gray-500">Review and edit the rewards in this template before using it.</p>
+          <p className="text-sm text-gray-500">Select the rewards you want and customise them as needed.</p>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 mb-4">
@@ -117,13 +133,12 @@ export default function TemplateCustomizeModal({
           </div>
         </div>
 
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+          <span>{selectedIds.size} of {localRewards.length} rewards selected</span>
+        </div>
+
         <div className="flex-grow overflow-y-auto p-1 min-h-[300px]">
-          {!hasRewards ? (
-            <div className="text-center py-12">
-              <Gift className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">This template has no rewards.</p>
-            </div>
-          ) : filteredRewards.length === 0 ? (
+          {filteredRewards.length === 0 ? (
             <div className="text-center py-12">
               <Filter className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No rewards match your filter.</p>
@@ -132,8 +147,15 @@ export default function TemplateCustomizeModal({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredRewards.map((r) => {
                 const category = getRewardCategory(r);
+                const isSelected = selectedIds.has(r.id);
                 return (
-                  <Card key={r.id} className="flex flex-col hover:shadow-md transition-shadow">
+                  <Card
+                    key={r.id}
+                    className={`flex flex-col hover:shadow-md transition-shadow cursor-pointer ${
+                      isSelected ? "ring-2 ring-orange-400 border-orange-300" : ""
+                    }`}
+                    onClick={() => toggleReward(r.id)}
+                  >
                     <CardHeader className="pb-2">
                       <div className="relative w-full h-32 rounded-t-lg overflow-hidden bg-gray-100 mb-3 flex items-center justify-center">
                         {r.image?.startsWith("http") || r.image?.startsWith("/") ? (
@@ -141,9 +163,20 @@ export default function TemplateCustomizeModal({
                         ) : (
                           <span className="text-5xl">{r.image || "🎁"}</span>
                         )}
-                        <div className="absolute top-2 right-2">{rewardTypeBadge(category)}</div>
+                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                          {rewardTypeBadge(category)}
+                        </div>
+                        <div className="absolute top-2 left-2">
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            isSelected ? "bg-orange-500 border-orange-500" : "bg-white border-gray-300"
+                          }`}>
+                            {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                          </div>
+                        </div>
                       </div>
-                      <CardTitle className="text-lg leading-tight">{r.name}</CardTitle>
+                      <CardTitle className="text-lg leading-tight flex items-center gap-2">
+                        <span>{r.name}</span>
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow pb-2">
                       <p className="text-sm text-gray-600 mb-3 h-10 overflow-hidden line-clamp-2">{r.description}</p>
@@ -166,11 +199,12 @@ export default function TemplateCustomizeModal({
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="pt-2">
+                    <CardFooter className="pt-2 flex gap-2">
                       <Button
                         variant="outline"
-                        className="w-full text-orange-600 border-orange-200 hover:bg-orange-50"
-                        onClick={() => handleEditReward(r)}
+                        size="sm"
+                        className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50"
+                        onClick={(e) => { e.stopPropagation(); handleEditReward(r); }}
                       >
                         <Pencil className="w-3.5 h-3.5 mr-1" />
                         Edit
@@ -183,13 +217,22 @@ export default function TemplateCustomizeModal({
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t flex justify-center">
+        <div className="mt-4 pt-4 border-t flex justify-center gap-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onClose}
+            className="px-8 py-6 text-lg rounded-xl"
+          >
+            Cancel
+          </Button>
           <Button
             size="lg"
-            onClick={() => onUseTemplate(template.id)}
+            disabled={!hasSelected}
+            onClick={handleSave}
             className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 min-w-[280px]"
           >
-            Use This Template <CheckCircle className="ml-2 w-5 h-5" />
+            <Save className="mr-2 w-5 h-5" /> Save Changes
           </Button>
         </div>
       </DialogContent>

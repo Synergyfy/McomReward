@@ -53,8 +53,8 @@ const refreshToken = async (): Promise<RefreshTokenResponse> => {
     throw new Error('No refresh token available');
   }
 
-  const { data } = await api.post<RefreshTokenResponse>('/auth/refresh', {
-    refresh_token: refreshTokenValue,
+  const { data } = await api.post<RefreshTokenResponse>('/auth/refresh-token', {
+    refreshToken: refreshTokenValue,
   });
   return data;
 };
@@ -63,11 +63,13 @@ export const useRefreshToken = () => {
   return useMutation({
     mutationFn: refreshToken,
     onSuccess: (data) => {
+      const accessToken = data.accessToken || data.access_token || '';
+      const refreshTokenValue = data.refreshToken || data.refresh_token || '';
       // Update tokens in cookies
-      Cookies.set('access', data.access_token);
-      Cookies.set('refresh', data.refresh_token);
+      Cookies.set('access', accessToken);
+      Cookies.set('refresh', refreshTokenValue);
       // Update bearer token for subsequent requests
-      setBearerToken(data.access_token);
+      setBearerToken(accessToken);
     },
   });
 };

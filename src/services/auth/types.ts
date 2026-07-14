@@ -36,8 +36,10 @@ export interface RefreshTokenResponse {
     role: string;
     isSuperBusiness?: boolean;
   };
-  access_token: string;
-  refresh_token: string;
+  access_token?: string;
+  refresh_token?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface ParticipantLoginDto {

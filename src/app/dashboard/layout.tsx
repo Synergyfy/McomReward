@@ -3,6 +3,7 @@
 import BusinessSidebar from '@/components/dashboard/sidebar/index';
 import BusinessHeader from '@/components/dashboard/header';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { GuideProvider } from '@/context/GuideContext';
 import FloatingGuide from '@/components/Guide/FloatingGuide';
@@ -12,7 +13,7 @@ import { useGetBusinessProfile } from '@/services/business/hook';
 import TrialBanner from '@/components/dashboard/trial-banner';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Button } from '@/components/ui/button';
-import { Eye, X } from 'lucide-react';
+import { LayoutDashboard, Gift, Megaphone, Users, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DashboardLayout({
@@ -77,6 +78,7 @@ export default function DashboardLayout({
           isOpen={isSidebarOpen}
           isCollapsed={isSidebarCollapsed}
           toggleCollapse={toggleCollapse}
+          onNavClick={() => setIsSidebarOpen(false)}
         />
 
         {/* Main content */}
@@ -113,10 +115,40 @@ export default function DashboardLayout({
 
           {/* Header for mobile */}
           <BusinessHeader onMenuClick={toggleSidebar} />
-          <main className="p-4 mt-4 sm:p-6 md:p-10 flex-1">
+          <main className="p-4 mt-4 sm:p-6 md:p-10 flex-1 pb-20 md:pb-10">
             {children}
           </main>
         </div>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-around h-16 px-2">
+            {[
+              { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+              { href: '/dashboard/stamp-rewards', label: 'Rewards', icon: Gift },
+              { href: '/dashboard/campaigns/list', label: 'Campaigns', icon: Megaphone },
+              { href: '/dashboard/customers', label: 'Customers', icon: Users },
+            ].map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href || pathname.startsWith(href + '/');
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0 flex-1 ${
+                    isActive ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-orange-50' : ''}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-medium leading-none">{label}</span>
+                  {isActive && <div className="w-1 h-1 rounded-full bg-orange-500 mt-0.5" />}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
         <FloatingGuide />
       </div>

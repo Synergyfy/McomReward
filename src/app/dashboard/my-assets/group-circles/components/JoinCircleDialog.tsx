@@ -142,7 +142,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
     return (
         <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else onOpenChange(true); }}>
             <DialogContent className={cn(
-                "p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl transition-all duration-500",
+                "p-0 overflow-hidden rounded-2xl md:rounded-[2.5rem] border-none shadow-2xl transition-all duration-500",
                 step === "search" ? "sm:max-w-[550px]" : "sm:max-w-[500px]"
             )}>
                 <AnimatePresence mode="wait">
@@ -171,7 +171,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
                                 </div>
                             </div>
 
-                            <ScrollArea className="h-[450px]">
+                            <ScrollArea className="h-[350px] md:h-[450px]">
                                 <div className="p-6 space-y-4">
                                     {isLoading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">

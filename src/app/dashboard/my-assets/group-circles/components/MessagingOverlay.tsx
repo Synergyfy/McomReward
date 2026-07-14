@@ -48,7 +48,7 @@ export const MessagingOverlay = React.memo(({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 w-[400px] h-[600px] z-[100] flex flex-col pointer-events-auto"
+            className="fixed bottom-4 md:bottom-24 right-3 md:right-6 w-[calc(100%-24px)] md:w-[400px] h-[500px] md:h-[600px] z-[100] flex flex-col pointer-events-auto"
         >
             <Card className="flex-1 flex flex-col border-white/20 dark:border-zinc-800 shadow-[0_32px_128px_-16px_rgba(249,115,22,0.15)] overflow-hidden rounded-[32px] bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl">
                 <CardHeader className="py-4 px-6 border-b bg-gradient-to-r from-zinc-50/50 to-white/50 dark:from-zinc-900/50 dark:to-zinc-950/50 flex flex-row items-center justify-between space-y-0 flex-none backdrop-blur-md">

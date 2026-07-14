@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mcom-reward-api-one.vercel.app/api/v1').replace(/\/$/, '');
+
 const nextConfig: NextConfig = {
   images: {
     // Added placehold.co to remotePatterns to resolve next/image error
@@ -88,7 +90,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'https://mcom-loyalty-api-one.vercel.app/api/v1/:path*',
+        destination: `${apiBaseUrl}/:path*`,
       },
     ];
   },

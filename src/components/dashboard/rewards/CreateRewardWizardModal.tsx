@@ -40,6 +40,7 @@ interface CreateRewardWizardModalProps {
   // Keeping these for potential backward compatibility if any component uses them
   initialIsPointsEnabled?: boolean;
   initialIsStampsEnabled?: boolean;
+  readonlyImage?: boolean;
 }
 
 export default function CreateRewardWizardModal({
@@ -49,7 +50,8 @@ export default function CreateRewardWizardModal({
   onSave,
   enabledModes,
   initialIsPointsEnabled,
-  initialIsStampsEnabled
+  initialIsStampsEnabled,
+  readonlyImage,
 }: CreateRewardWizardModalProps) {
   const router = useRouter();
   const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
@@ -287,10 +289,10 @@ export default function CreateRewardWizardModal({
       newErrors.mallRewardValue = 'Reward Value is required for Vouchers, Gift Cards, and Coupons.';
     }
 
-    if (!isEditMode && !selectedFile && !imagePreviewUrl) newErrors.image = 'Image is required.';
+    if (!readonlyImage && !isEditMode && !selectedFile && !imagePreviewUrl) newErrors.image = 'Image is required.';
 
     setErrors(newErrors);
-  }, [name, description, pointsRequired, stampsRequired, maxPoints, selectedFile, imagePreviewUrl, isEditMode, isPointsExceedingMax, isPointsEnabled, isStampsEnabled, isVoucherType, mallRewardValue]);
+  }, [name, description, pointsRequired, stampsRequired, maxPoints, selectedFile, imagePreviewUrl, isEditMode, isPointsExceedingMax, isPointsEnabled, isStampsEnabled, isVoucherType, mallRewardValue, readonlyImage]);
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -454,7 +456,7 @@ export default function CreateRewardWizardModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Reward' : 'Create New Reward'}</DialogTitle>
             <Progress value={progressValue} className="mt-2" />
@@ -926,32 +928,51 @@ export default function CreateRewardWizardModal({
                 <label className="block text-sm font-medium mb-2">
                   Reward Image {!isEditMode && <span className="text-red-500">*</span>}
                 </label>
-                <div className={`rounded-lg ${shouldShowError('image') ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}>
-                  <CloudinaryUpload onFileSelect={handleFileSelect} />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">An image representing the reward.</p>
-                {shouldShowError('image') && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.image}
-                  </p>
-                )}
-                {imagePreviewUrl && (
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="relative h-20 w-20 rounded-lg overflow-hidden border-2 border-green-200">
-                      {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/') || imagePreviewUrl.startsWith('blob:') || imagePreviewUrl.startsWith('data:')) ? (
-                        <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
-                          {imagePreviewUrl}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Image uploaded
+                {readonlyImage && imagePreviewUrl ? (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-20 w-20 rounded-lg overflow-hidden border-2 border-gray-200">
+                        {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/') || imagePreviewUrl.startsWith('blob:') || imagePreviewUrl.startsWith('data:')) ? (
+                          <Image src={imagePreviewUrl} alt="Reward" layout="fill" objectFit="cover" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                            {imagePreviewUrl}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">Image set by template. Not editable during setup.</p>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    <div className={`rounded-lg ${shouldShowError('image') ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}>
+                      <CloudinaryUpload onFileSelect={handleFileSelect} />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">An image representing the reward.</p>
+                    {shouldShowError('image') && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.image}
+                      </p>
+                    )}
+                    {imagePreviewUrl && (
+                      <div className="mt-4 flex items-center gap-3">
+                        <div className="relative h-20 w-20 rounded-lg overflow-hidden border-2 border-green-200">
+                          {(imagePreviewUrl.startsWith('http') || imagePreviewUrl.startsWith('/') || imagePreviewUrl.startsWith('blob:') || imagePreviewUrl.startsWith('data:')) ? (
+                            <Image src={imagePreviewUrl} alt="Preview" layout="fill" objectFit="cover" />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gray-50">
+                              {imagePreviewUrl}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-green-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Image uploaded
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, User, Building2, MapPin, Phone, Globe, Edit3 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Building2, MapPin, Phone, Globe, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,6 @@ export default function ProfileScreen({ onComplete, onBack }: ProfileScreenProps
           </button>
 
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-200 mb-5">
-              <User className="w-8 h-8 text-white" />
-            </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Confirm Your Profile</h1>
             <p className="text-gray-500 max-w-lg mx-auto">We&apos;ve pulled your information from M-Com Central. Review and continue.</p>
           </div>

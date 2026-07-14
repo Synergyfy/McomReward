@@ -61,7 +61,7 @@ export default function RewardTypeSelectionDialog({
                 setSelectedTypes([]);
             }
         }}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle className="text-center">Create New Reward</DialogTitle>
                     <DialogDescription className="text-center">

@@ -5,6 +5,7 @@ export interface SectorTemplate {
   sectorKey: string;
   rewards: TemplateReward[];
   campaigns: TemplateCampaign[];
+  benefits?: string[];
 }
 
 export interface TemplateReward {

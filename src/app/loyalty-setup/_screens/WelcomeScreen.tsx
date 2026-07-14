@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight, HeartHandshake, Repeat, TrendingUp, Zap, Play } from "lucide-react";
+import { ArrowRight, HeartHandshake, Repeat, TrendingUp, Zap, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -22,8 +22,8 @@ export default function WelcomeScreen({ onComplete, onSkip }: WelcomeScreenProps
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-orange-50 via-white to-white px-4">
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-2xl mx-auto text-center">
         <div className="mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-200 mb-6">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="mb-6">
+            <span className="text-3xl font-bold text-orange-600 tracking-tight">Loyalty CardX</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">Welcome to MCOM<br /><span className="text-orange-600">Reward & Loyalty</span></h1>
           <p className="text-lg text-gray-500 max-w-lg mx-auto">Your all-in-one loyalty activation platform. We already understand your business — now let&apos;s set up the tools to reward your customers.</p>

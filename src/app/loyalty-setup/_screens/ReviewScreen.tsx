@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, CheckCircle, Loader2, User, Package, Zap, Star, Trophy, Eye, PartyPopper, Edit3, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle, Loader2, User, Package, Zap, Star, Trophy, PartyPopper, Edit3, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +41,6 @@ export default function ReviewScreen({ template, customizations, engines, tierCo
             <ArrowLeft className="w-4 h-4" />Back
           </button>
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-200 mb-5">
-              <Eye className="w-8 h-8 text-white" />
-            </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Review & Activate</h1>
             <p className="text-gray-500 max-w-lg mx-auto">Everything is set. Review your programme below and activate when ready.</p>
           </div>

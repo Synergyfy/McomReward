@@ -195,7 +195,6 @@ export default function TemplateScreen({ sectorKey, templates, onSelect, onBack,
             <ArrowLeft className="w-4 h-4" />Back
           </button>
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-200 mb-5"><Package className="w-8 h-8 text-white" /></div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Choose Your Template</h1>
             <p className="text-gray-500 max-w-lg mx-auto">Admin has prepared templates for <span className="font-semibold text-gray-700">{displayName}</span>. Select one to customize.</p>
           </div>
@@ -246,6 +245,7 @@ export default function TemplateScreen({ sectorKey, templates, onSelect, onBack,
           onClose={handleRewardWizardClose}
           reward={templateRewardToReward(editingRewardFromCustomize)}
           onSave={handleRewardWizardSave}
+          readonlyImage
           enabledModes={
             editingRewardFromCustomize
               ? [

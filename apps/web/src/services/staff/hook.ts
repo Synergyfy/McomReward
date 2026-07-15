@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from '../api';
+import api, { setBearerToken } from '../api';
 import { Staff, CreateStaffDto, UpdateStaffDto, PaginatedStaffResponse } from './types';
 import { LoginResponse } from '@/services/auth/types';
+import Cookies from 'js-cookie';
 
 const STAFF_QUERY_KEY = 'staff';
 
@@ -30,7 +31,10 @@ export const useStaffLogin = () => {
 
   return useMutation({
     mutationFn: staffSignIn,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setBearerToken(data.accessToken);
       queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEY] });
     },
   });

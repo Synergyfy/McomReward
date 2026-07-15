@@ -35,13 +35,13 @@ export default function MerchantCreditsSettingsPage() {
     };
 
     return (
-        <div className="p-6 space-y-8 max-w-4xl mx-auto">
+        <div className="p-4 md:p-6 space-y-8 max-w-4xl mx-auto">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Credit Configuration</h1>
+                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Credit Configuration</h1>
                 <p className="text-muted-foreground font-medium">Control how your customers earn credits and redeem rewards for your services.</p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {/* Main Settings Form */}
                 <div className="md:col-span-2 space-y-6">
                     <Card className="border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
@@ -120,7 +120,7 @@ export default function MerchantCreditsSettingsPage() {
                     </Card>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-4">
+                    <div className="flex flex-col md:flex-row gap-4">
                         <Button
                             className="flex-1 h-14 text-sm font-semibold uppercase tracking-widest shadow-xl shadow-orange-200 bg-orange-600 hover:bg-orange-700 transition-all active:scale-95 text-white border-none"
                             onClick={handleSave}

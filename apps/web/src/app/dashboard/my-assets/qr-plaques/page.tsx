@@ -196,7 +196,7 @@ export default function QRPlaquesPage() {
 
             <div className="space-y-6">
                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <h2 className="text-3xl font-bold tracking-tight">QR Plaques</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">QR Plaques</h2>
                     <div className="flex items-center gap-2">
                         <div className="bg-gray-100 px-3 py-1.5 rounded-md text-sm font-medium text-gray-700">
                             {isSubscriptionLoading ? (
@@ -243,87 +243,89 @@ export default function QRPlaquesPage() {
                     {isLoading ? (
                         <div className="text-center py-8 text-gray-500">Loading plaques...</div>
                     ) : (
-                        <table className="w-full">
-                            <thead className="text-left text-sm font-semibold text-gray-600 border-b">
-                                <tr>
-                                    <th className="p-4">Plaque ID</th>
-                                    <th className="p-4">Name / Price</th>
-                                    <th className="p-4">Assigned To</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Linked Offer</th>
-                                    {/* <th className="p-4">Scans</th> */}
-                                    {/* <th className="p-4">Redemptions</th> */}
-                                    <th className="p-4 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {plaques.length === 0 ? (
-                                    <tr><td colSpan={7} className="text-center py-8 text-gray-500">No plaques found.</td></tr>
-                                ) : (
-                                    plaques.map((plaque: QrPlaque) => (
-                                        <tr key={plaque.id} className="border-b hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setViewPlaque(plaque)}>
-                                            <td className="p-4 font-medium" onClick={(e) => e.stopPropagation()}>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleCopyId(plaque.id)}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    {plaque.id.length > 8 ? `${plaque.id.substring(0, 8)}...` : plaque.id}
-                                                    <Copy className="h-3 w-3" />
-                                                </Button>
-                                            </td>
-                                            <td className="p-4">{plaque.status === 'FOR_SALE' ? plaque.price : plaque.name}</td>
-                                            <td className="p-4">
-                                                {plaque.networkContact ? (
-                                                    <div>
-                                                        <div className="font-medium">{plaque.networkContact.fullName}</div>
-                                                        {plaque.networkContact.businessName && (
-                                                            <div className="text-xs text-gray-500">{plaque.networkContact.businessName}</div>
-                                                        )}
-                                                    </div>
-                                                ) : plaque.ownerName ? (
-                                                    plaque.ownerName
-                                                ) : (
-                                                    <span className="text-gray-400 italic">Unassigned</span>
-                                                )}
-                                            </td>
-                                            <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(plaque.status)}`}>{plaque.status}</span></td>
-                                            <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                                                {plaque.contentUrl ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[600px]">
+                                <thead className="text-left text-sm font-semibold text-gray-600 border-b">
+                                    <tr>
+                                        <th className="p-4">Plaque ID</th>
+                                        <th className="p-4">Name / Price</th>
+                                        <th className="p-4">Assigned To</th>
+                                        <th className="p-4">Status</th>
+                                        <th className="p-4">Linked Offer</th>
+                                        {/* <th className="p-4">Scans</th> */}
+                                        {/* <th className="p-4">Redemptions</th> */}
+                                        <th className="p-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {plaques.length === 0 ? (
+                                        <tr><td colSpan={7} className="text-center py-8 text-gray-500">No plaques found.</td></tr>
+                                    ) : (
+                                        plaques.map((plaque: QrPlaque) => (
+                                            <tr key={plaque.id} className="border-b hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setViewPlaque(plaque)}>
+                                                <td className="p-4 font-medium whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => setViewPlaque(plaque)}
+                                                        onClick={() => handleCopyId(plaque.id)}
                                                         className="flex items-center gap-2"
                                                     >
-                                                        <QrCode className="h-3 w-3" />
-                                                        View QR Code
+                                                        {plaque.id.length > 8 ? `${plaque.id.substring(0, 8)}...` : plaque.id}
+                                                        <Copy className="h-3 w-3" />
                                                     </Button>
-                                                ) : (
-                                                    <span className="text-gray-400 text-sm">N/A</span>
-                                                )}
-                                            </td>
-                                            {/* <td className="p-4">{plaque.scans || 0}</td> */}
-                                            {/* <td className="p-4">{plaque.redemptions || 0}</td> */}
-                                            <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => setViewPlaque(plaque)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => setPlaqueToPrint(plaque)}><Printer className="mr-2 h-4 w-4" /> Print / PDF</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleOpenModal(plaque, setConfigureModalOpen)}><Settings className="mr-2 h-4 w-4" /> Configure</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleOpenModal(plaque, setAssignModalOpen)}><LinkIcon className="mr-2 h-4 w-4" /> Assign</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleOpenModal(plaque, setSaleModalOpen)}><Pencil className="mr-2 h-4 w-4" /> Mark for Sale</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleOpenModal(plaque, setDeactivateModalOpen)}><Trash2 className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                </td>
+                                                <td className="p-4 whitespace-nowrap">{plaque.status === 'FOR_SALE' ? plaque.price : plaque.name}</td>
+                                                <td className="p-4">
+                                                    {plaque.networkContact ? (
+                                                        <div>
+                                                            <div className="font-medium">{plaque.networkContact.fullName}</div>
+                                                            {plaque.networkContact.businessName && (
+                                                                <div className="text-xs text-gray-500">{plaque.networkContact.businessName}</div>
+                                                            )}
+                                                        </div>
+                                                    ) : plaque.ownerName ? (
+                                                        plaque.ownerName
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">Unassigned</span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusClass(plaque.status)}`}>{plaque.status}</span></td>
+                                                <td className="p-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                                    {plaque.contentUrl ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setViewPlaque(plaque)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <QrCode className="h-3 w-3" />
+                                                            View QR Code
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-gray-400 text-sm">N/A</span>
+                                                    )}
+                                                </td>
+                                                {/* <td className="p-4">{plaque.scans || 0}</td> */}
+                                                {/* <td className="p-4">{plaque.redemptions || 0}</td> */}
+                                                <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => setViewPlaque(plaque)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => setPlaqueToPrint(plaque)}><Printer className="mr-2 h-4 w-4" /> Print / PDF</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenModal(plaque, setConfigureModalOpen)}><Settings className="mr-2 h-4 w-4" /> Configure</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenModal(plaque, setAssignModalOpen)}><LinkIcon className="mr-2 h-4 w-4" /> Assign</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenModal(plaque, setSaleModalOpen)}><Pencil className="mr-2 h-4 w-4" /> Mark for Sale</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenModal(plaque, setDeactivateModalOpen)}><Trash2 className="mr-2 h-4 w-4" /> Deactivate</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
 

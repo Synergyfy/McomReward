@@ -33,11 +33,11 @@ const AllStaffPage = () => {
   }
 
   return (
-    <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">All Staff</h1>
+    <div className="container mx-auto p-4 md:p-6">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">All Staff</h1>
         <Link href="/dashboard/staff/add">
-          <p className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+          <p className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 w-full sm:w-auto text-center">
             Add Staff
           </p>
         </Link>

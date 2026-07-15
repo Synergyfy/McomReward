@@ -39,7 +39,7 @@ export default function PartnerNetworkPage() {
     return (
         <div className="space-y-8">
             {/* Group Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Group Name" value={partnerNetworkData.groupOverview.name} icon={Users} />
                 <StatCard title="Total Members" value={partnerNetworkData.groupOverview.members} icon={Users} />
                 <StatCard title="Total Scans" value={partnerNetworkData.groupOverview.totalScans.toLocaleString()} icon={ScanLine} />
@@ -55,6 +55,7 @@ export default function PartnerNetworkPage() {
 
             {/* Partner List */}
             <div className="bg-white p-4 rounded-lg shadow">
+                <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="text-left text-sm font-semibold text-gray-600 border-b">
                         <tr>
@@ -104,6 +105,7 @@ export default function PartnerNetworkPage() {
                         ))}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     );

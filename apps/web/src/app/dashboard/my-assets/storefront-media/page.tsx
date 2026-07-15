@@ -60,7 +60,7 @@ export default function StorefrontMediaPage() {
                                 Your browser does not support the video tag.
                             </video>
                         </div>
-                        <div className="grid grid-cols-3 gap-4 text-center border-t pt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center border-t pt-4">
                             <div className="flex flex-col items-center">
                                 <Eye className="h-6 w-6 text-orange-500 mb-1" />
                                 <p className="text-2xl font-bold">{mediaAssetsData.storefrontVideo.analytics.views.toLocaleString()}</p>
@@ -82,7 +82,7 @@ export default function StorefrontMediaPage() {
                     {/* Right Column: Media Gallery */}
                     <div className="space-y-4">
                         <h4 className="font-semibold text-gray-700">Your Media</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {mediaAssetsData.gallery.map((asset, index) => (
                                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden group shadow-md">
                                     <img src={asset.thumbnail} alt={asset.type} className="w-full h-full object-cover" />

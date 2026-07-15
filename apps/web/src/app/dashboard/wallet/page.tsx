@@ -348,6 +348,7 @@ function WalletPageContent() {
             </CardHeader>
             <CardContent>
               {wallet?.transactions && wallet.transactions.length > 0 ? (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -387,6 +388,7 @@ function WalletPageContent() {
                       })}
                   </TableBody>
                 </Table>
+                </div>
               ) : (
                 <div className="text-center py-10 text-muted-foreground">
                   No transactions found.

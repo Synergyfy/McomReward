@@ -32,7 +32,7 @@ export default function RedeemPointsPagePreview({ campaign }: RedeemPointsPagePr
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-800">{campaign.redeemRewardPageTitle || 'Redeem Your Points'}</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800">{campaign.redeemRewardPageTitle || 'Redeem Your Points'}</h1>
           <div className="mt-2 text-lg text-gray-600">
             <span dangerouslySetInnerHTML={{ __html: campaign.redeemRewardPageDescription || 'Use your points to claim exclusive rewards and discounts.' }} />
             {' '}
@@ -48,7 +48,7 @@ export default function RedeemPointsPagePreview({ campaign }: RedeemPointsPagePr
             // const canRedeem = userPoints >= reward.points_required; // Not relevant for admin preview
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-                <div className="relative h-48 w-full">
+                <div className="relative h-40 sm:h-48 w-full">
                   <Image
                     src={reward.image || 'https://via.placeholder.com/400x300?text=No+Image'}
                     alt={reward.title}
@@ -60,7 +60,7 @@ export default function RedeemPointsPagePreview({ campaign }: RedeemPointsPagePr
                   <CardTitle className="text-2xl font-bold text-gray-800">{reward.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col justify-between">
-                  <CardDescription className="text-lg text-gray-700 mb-4 h-20 line-clamp-3">
+                  <CardDescription className="text-lg text-gray-700 mb-4 line-clamp-3">
                     {reward.description}
                   </CardDescription>
                   <div className="flex items-center justify-between mb-4">

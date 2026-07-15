@@ -35,7 +35,7 @@ export default function CampaignDetailedPerformancePage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6 flex justify-center items-center">
+            <div className="min-h-screen bg-gray-50 p-4 md:p-6 flex justify-center items-center">
                 <p className="text-lg text-gray-500">Loading detailed analytics...</p>
             </div>
         );
@@ -43,7 +43,7 @@ export default function CampaignDetailedPerformancePage() {
 
     if (!analytics) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6 flex flex-col justify-center items-center">
+            <div className="min-h-screen bg-gray-50 p-4 md:p-6 flex flex-col justify-center items-center">
                 <p className="text-lg text-gray-500 mb-4">Analytics not found.</p>
                 <Button onClick={() => router.back()}>Go Back</Button>
             </div>
@@ -51,17 +51,17 @@ export default function CampaignDetailedPerformancePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-8">
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
-                    <h1 className="text-3xl font-bold text-gray-900">Campaign Performance Details</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Campaign Performance Details</h1>
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
@@ -102,11 +102,11 @@ export default function CampaignDetailedPerformancePage() {
 
                 {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="col-span-1">
+                        <Card className="col-span-1">
                         <CardHeader>
                             <CardTitle>Weekly Performance</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-[300px]">
+                        <CardContent className="h-[200px] md:h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={analytics.weeklyChartData || []}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -125,7 +125,7 @@ export default function CampaignDetailedPerformancePage() {
                         <CardHeader>
                             <CardTitle>New Participants Trend</CardTitle>
                         </CardHeader>
-                        <CardContent className="h-[300px]">
+                        <CardContent className="h-[200px] md:h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={analytics.weeklyChartData || []}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -147,30 +147,32 @@ export default function CampaignDetailedPerformancePage() {
                             <CardTitle>Top Rewards</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Reward Title</TableHead>
-                                        <TableHead>Points Required</TableHead>
-                                        <TableHead className="text-right">Redemptions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {analytics.topRewards && analytics.topRewards.length > 0 ? (
-                                        analytics.topRewards.map((reward) => (
-                                            <TableRow key={reward.id}>
-                                                <TableCell className="font-medium">{reward.rTitle}</TableCell>
-                                                <TableCell>{reward.rPointsRequired}</TableCell>
-                                                <TableCell className="text-right">{reward.totalRedemptions}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-gray-500">No rewards data available</TableCell>
+                                            <TableHead>Reward Title</TableHead>
+                                            <TableHead>Points Required</TableHead>
+                                            <TableHead className="text-right">Redemptions</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {analytics.topRewards && analytics.topRewards.length > 0 ? (
+                                            analytics.topRewards.map((reward) => (
+                                                <TableRow key={reward.id}>
+                                                    <TableCell className="font-medium">{reward.rTitle}</TableCell>
+                                                    <TableCell>{reward.rPointsRequired}</TableCell>
+                                                    <TableCell className="text-right">{reward.totalRedemptions}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center text-gray-500">No rewards data available</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -179,33 +181,35 @@ export default function CampaignDetailedPerformancePage() {
                             <CardTitle>Top Participants</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Points Earned</TableHead>
-                                        <TableHead className="text-right">Redemptions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {analytics.rankedParticipants && analytics.rankedParticipants.length > 0 ? (
-                                        analytics.rankedParticipants.map((participant) => (
-                                            <TableRow key={participant.id}>
-                                                <TableCell className="font-medium">
-                                                    <div>{participant.pName}</div>
-                                                    <div className="text-xs text-gray-500">{participant.pEmail}</div>
-                                                </TableCell>
-                                                <TableCell>{participant.totalPointsEarned}</TableCell>
-                                                <TableCell className="text-right">{participant.totalRedemptions}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-gray-500">No participants data available</TableCell>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Points Earned</TableHead>
+                                            <TableHead className="text-right">Redemptions</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {analytics.rankedParticipants && analytics.rankedParticipants.length > 0 ? (
+                                            analytics.rankedParticipants.map((participant) => (
+                                                <TableRow key={participant.id}>
+                                                    <TableCell className="font-medium">
+                                                        <div>{participant.pName}</div>
+                                                        <div className="text-xs text-gray-500">{participant.pEmail}</div>
+                                                    </TableCell>
+                                                    <TableCell>{participant.totalPointsEarned}</TableCell>
+                                                    <TableCell className="text-right">{participant.totalRedemptions}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center text-gray-500">No participants data available</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

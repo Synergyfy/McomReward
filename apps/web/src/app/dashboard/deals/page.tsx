@@ -122,7 +122,7 @@ export default function DealsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Total Deals', value: stats.total, icon: Tag, color: 'text-primary' },
           { label: 'Live Deals', value: stats.active, icon: CheckCircle2, color: 'text-emerald-500' },
@@ -166,7 +166,7 @@ export default function DealsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px] h-14 rounded-2xl border-gray-100 bg-white shadow-sm font-semibold">
+              <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-14 rounded-2xl border-gray-100 bg-white shadow-sm font-semibold">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-gray-100">
@@ -185,7 +185,7 @@ export default function DealsPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px] h-14 rounded-2xl border-gray-100 bg-white shadow-sm font-semibold">
+              <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-14 rounded-2xl border-gray-100 bg-white shadow-sm font-semibold">
                 <SelectValue placeholder="Deal Type" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-gray-100">
@@ -222,7 +222,7 @@ export default function DealsPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[40px] border border-dashed border-gray-200">
+          <div className="flex flex-col items-center justify-center py-16 sm:py-24 bg-white rounded-2xl sm:rounded-[40px] border border-dashed border-gray-200">
             <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6 text-gray-300">
               <Tag size={40} />
             </div>

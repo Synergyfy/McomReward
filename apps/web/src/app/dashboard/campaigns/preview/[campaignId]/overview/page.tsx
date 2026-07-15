@@ -66,12 +66,12 @@ export default function CampaignPreviewPage() {
   }, [claimableCampaignsData, campaignId]);
 
   if (isLoadingCampaigns) {
-    return <div className="p-8 text-center">Loading campaign details...</div>;
+    return <div className="p-4 md:p-8 text-center">Loading campaign details...</div>;
   }
 
   if (!campaign) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-4 md:p-8 text-center">
         <p className="text-lg text-red-600 mb-2">Campaign not found or not claimable.</p>
         <p className="text-sm text-gray-500">ID: {Array.isArray(campaignId) ? campaignId.join(',') : campaignId}</p>
       </div>

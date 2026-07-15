@@ -447,7 +447,7 @@ export default function CampaignsListPage() {
               </div>
 
               {/* Action Buttons Grid */}
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-2">
                 <Button
                   asChild
                   variant="outline"
@@ -526,12 +526,12 @@ export default function CampaignsListPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
         {/* ... existing header/search content ... */}
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Campaigns</h1>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Campaigns</h1>
               <p className="text-gray-600">Manage and create your loyalty campaigns.</p>
             </div>
             <Button

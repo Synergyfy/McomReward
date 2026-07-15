@@ -50,8 +50,8 @@ export default function PublicHeader() {
         router.push('/login');
       },
       onError: () => {
-        Cookies.remove('access');
-        Cookies.remove('refresh');
+        Cookies.remove('access', { path: '/' });
+        Cookies.remove('refresh', { path: '/' });
         localStorage.removeItem('userRole');
         localStorage.removeItem('userName');
         router.push('/login');

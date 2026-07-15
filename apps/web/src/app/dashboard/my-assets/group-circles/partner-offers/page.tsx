@@ -126,7 +126,7 @@ function PartnerOffersContent() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50/30 dark:bg-zinc-950/30 p-6 md:p-10 space-y-8">
+        <div className="min-h-screen bg-zinc-50/30 dark:bg-zinc-950/30 p-4 md:p-6 space-y-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1">
@@ -136,7 +136,7 @@ function PartnerOffersContent() {
                     >
                         <ArrowLeft className="w-4 h-4" /> Back to Circles
                     </Link>
-                    <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
                         Partner Offers {circleName ? `for ${circleName}` : ""}
                     </h1>
                     <p className="text-zinc-500 font-medium">Manage and monitor your collaborative campaign partnerships {circleName ? `within your ${circleName} circle` : ""}.</p>
@@ -201,7 +201,7 @@ function PartnerOffersContent() {
                         {isLoading ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="h-[400px] rounded-[2rem] bg-zinc-100 animate-pulse" />
+                                    <div key={i} className="h-[250px] md:h-[400px] rounded-xl md:rounded-[2rem] bg-zinc-100 animate-pulse" />
                                 ))}
                             </div>
                         ) : adoptedCampaigns.length > 0 ? (
@@ -216,7 +216,7 @@ function PartnerOffersContent() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.1 }}
                                     >
-                                        <Card className="overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group">
+                                        <Card className="overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl md:rounded-[2rem] shadow-sm hover:shadow-xl transition-all group">
                                             <div className="relative h-40 w-full overflow-hidden">
                                                 <Image
                                                     src={campaign.bannerUrl}
@@ -271,7 +271,7 @@ function PartnerOffersContent() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-32 text-center bg-white rounded-[3rem] border border-zinc-100 shadow-sm">
+                            <div className="flex flex-col items-center justify-center py-16 md:py-32 text-center bg-white rounded-2xl md:rounded-[3rem] border border-zinc-100 shadow-sm">
                                 <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center mb-6">
                                     <Zap className="w-12 h-12 text-orange-200" />
                                 </div>
@@ -307,7 +307,7 @@ function PartnerOffersContent() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.1 }}
                                 >
-                                    <Card className="overflow-hidden border-zinc-200/60 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-[2rem] hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 group flex flex-col h-full">
+                                    <Card className="overflow-hidden border-zinc-200/60 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-xl md:rounded-[2rem] hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 group flex flex-col h-full">
                                         <div className="relative h-44 w-full overflow-hidden">
                                             <Image
                                                 src={campaign.bannerUrl}
@@ -383,7 +383,7 @@ function PartnerOffersContent() {
 
             {/* Adopt Confirmation Dialog */}
             <Dialog open={adoptOpen} onOpenChange={setAdoptOpen}>
-                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem]">
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-xl md:rounded-[2rem]">
                     <div className="relative h-32 w-full bg-orange-600 flex items-center justify-center">
                         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
                         <Share2 className="w-16 h-16 text-white/20 absolute -right-4 -top-4 rotate-12" />

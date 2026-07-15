@@ -17,7 +17,7 @@ export default function SupportPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-gray-800">Support & Help Center</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Support & Help Center</h1>
 
       {/* FAQs Section */}
       <div>

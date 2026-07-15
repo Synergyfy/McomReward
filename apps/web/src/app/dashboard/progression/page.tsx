@@ -67,7 +67,7 @@ export default function ProgressionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Status Column */}
         <div className="lg:col-span-12">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 md:p-12 text-white shadow-2xl">
+          <div className="relative overflow-hidden rounded-2xl md:rounded-[2.5rem] bg-slate-900 p-8 md:p-12 text-white shadow-2xl">
             {/* Background elements */}
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-orange-600/20 rounded-full blur-[100px]" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-[80px]" />
@@ -109,7 +109,7 @@ export default function ProgressionPage() {
                     nextLevel={nextLevel}
                   />
                 ) : (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] p-10 text-center space-y-4 h-full flex flex-col justify-center min-w-[320px]">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl md:rounded-[2rem] p-10 text-center space-y-4 h-full flex flex-col justify-center min-w-[320px]">
                     <Trophy className="h-16 w-16 text-emerald-400 mx-auto" />
                     <div>
                       <h3 className="text-2xl font-bold text-white mb-2">Peak Growth!</h3>
@@ -129,7 +129,7 @@ export default function ProgressionPage() {
       </div>
 
       {/* Upgrade CTA / Footer section */}
-      <Card className="border-none bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-[2rem] overflow-hidden shadow-xl">
+      <Card className="border-none bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-2xl md:rounded-[2rem] overflow-hidden shadow-xl">
         <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="text-center md:text-left">
             <h3 className="text-2xl md:text-3xl font-bold mb-3">Want more business power?</h3>

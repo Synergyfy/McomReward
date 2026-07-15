@@ -156,9 +156,9 @@ function EditCampaignContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Campaign</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Edit Campaign</h1>
         <p className="text-gray-600 mb-8">Update your loyalty campaign details.</p>
 
         <Progress value={(currentStep / totalSteps) * 100} className="mb-8" />

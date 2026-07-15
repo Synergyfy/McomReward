@@ -66,8 +66,8 @@ export const useAuth = () => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('isOnboarded', String(data.user.isOnboarded));
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
 
       if (data.user.role === 'Business' && !data.user.isEmailVerified) {
@@ -102,8 +102,8 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
     onSuccess: async (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
 
       // Only redirect if skipRedirect is not true

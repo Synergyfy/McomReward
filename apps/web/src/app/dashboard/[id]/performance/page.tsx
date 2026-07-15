@@ -49,12 +49,12 @@ if (campaign === null) {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 p-6"
+      className="min-h-screen bg-gray-50 p-4 md:p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
           {/* <Link href="/business/dashboard">
             <Button variant="outline" className="flex items-center gap-2">
               <ArrowLeft size={16} /> Back to Campaigns
@@ -66,7 +66,7 @@ if (campaign === null) {
         </div>
 
         {/* 🔹 Stats Summary */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4 bg-orange-500 hover:bg-orange-600 transition">
             <CardHeader className="flex items-center gap-2">
               <Users className="text-blue-500" />
@@ -144,6 +144,7 @@ if (campaign === null) {
             <CardTitle>Top Customers</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="border-b text-gray-500">
                 <tr>
@@ -164,6 +165,7 @@ if (campaign === null) {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
 
@@ -173,6 +175,7 @@ if (campaign === null) {
             <CardTitle>Rewards Performance</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="border-b text-gray-500">
                 <tr>
@@ -191,6 +194,7 @@ if (campaign === null) {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -31,9 +31,9 @@ export default function StaffDashboard() {
     const campaigns = data?.data || [];
 
     return (
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col space-y-6 p-4 md:p-6">
             <div className="flex flex-col space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Ongoing Campaigns</h1>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Ongoing Campaigns</h1>
                 <p className="text-gray-500">View details of all active campaigns for your business (Staff View).</p>
             </div>
 

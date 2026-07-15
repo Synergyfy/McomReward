@@ -20,7 +20,7 @@ export default function MarketingMaterialsPage() {
             <div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Download Center</h2>
                 <p className="text-gray-600 mb-6">Access pre-designed promotional materials to help you spread the word.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {marketingMaterialsData.downloadCenter.map((asset) => (
                         <div key={asset.id} className="bg-white p-4 rounded-lg shadow group text-center hover:shadow-lg transition-shadow">
                             <div className="bg-gray-100 rounded-md flex items-center justify-center h-32 mb-4">
@@ -68,7 +68,7 @@ export default function MarketingMaterialsPage() {
                     </div>
                     <div>
                         <h4 className="font-semibold text-gray-700 mb-4">Branded Previews</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="relative aspect-video rounded-lg bg-gray-200 flex items-center justify-center border">
                                 <p className="text-gray-500 text-sm">Flyer Preview</p>
                             </div>

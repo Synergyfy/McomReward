@@ -61,8 +61,17 @@ export const clearParticipantRequest = () => {
   delete api.defaults.headers.common['x-participant-id'];
 };
 
-// Request interceptor to ensure x-business-id or x-participant-id is attached to every request
+// Request interceptor to attach auth token and impersonation headers on every request
 api.interceptors.request.use((config) => {
+  // Read auth token from cookie fresh on every request
+  // This is robust against module re-evaluation (SSR, HMR, page navigation)
+  if (typeof window !== 'undefined') {
+    const token = Cookies.get('access');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   // If we have an active impersonation ID in memory, attach it.
   if (impersonationBusinessId) {
     config.headers['x-business-id'] = impersonationBusinessId;
@@ -99,12 +108,6 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-
-// Initialize the token from cookies when the application loads
-const initialToken = Cookies.get('access');
-if (initialToken) {
-  setBearerToken(initialToken);
-}
 
 // Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
@@ -160,8 +163,8 @@ api.interceptors.response.use(
 
       if (!refreshTokenValue) {
         // No refresh token, clear everything
-        Cookies.remove('access');
-        Cookies.remove('refresh');
+        Cookies.remove('access', { path: '/' });
+        Cookies.remove('refresh', { path: '/' });
         removeBearerToken();
         processQueue(error, null);
         isRefreshing = false;
@@ -195,8 +198,8 @@ api.interceptors.response.use(
         const refreshToken = response.data.refreshToken || response.data.refresh_token;
 
         // Update tokens in cookies
-        Cookies.set('access', accessToken);
-        Cookies.set('refresh', refreshToken);
+        Cookies.set('access', accessToken, { path: '/' });
+        Cookies.set('refresh', refreshToken, { path: '/' });
 
         // Update bearer token
         setBearerToken(accessToken);
@@ -212,8 +215,8 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear everything
-        Cookies.remove('access');
-        Cookies.remove('refresh');
+        Cookies.remove('access', { path: '/' });
+        Cookies.remove('refresh', { path: '/' });
         removeBearerToken();
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;

@@ -247,7 +247,7 @@ export default function SuperBusinessView() {
            </div>
 
            <Card>
-              <Table>
+               <div className="overflow-x-auto"><Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -286,8 +286,8 @@ export default function SuperBusinessView() {
                     ))
                   )}
                 </TableBody>
-              </Table>
-           </Card>
+               </Table></div>
+            </Card>
         </TabsContent>
 
       </Tabs>

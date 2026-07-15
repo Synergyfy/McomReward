@@ -100,13 +100,13 @@ export default function CreateCampaignPage() {
 
   return (
     <CampaignFormProvider>
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Campaign</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Create New Campaign</h1>
           <p className="text-gray-600 mb-8">Follow the steps to set up your loyalty campaign.</p>
 
           {isTrial && (
-            <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="text-sm text-indigo-800">
                 <span className="font-bold">Trial Mode:</span> You are creating a trial campaign.
                 Active campaigns: {currentActive} / {maxCampaigns}

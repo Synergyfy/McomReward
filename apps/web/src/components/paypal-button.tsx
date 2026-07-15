@@ -64,8 +64,8 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
       const Cookies = (await import('js-cookie')).default;
       const { setBearerToken } = await import('@/services/api');
 
-      Cookies.set('access', details.accessToken);
-      Cookies.set('refresh', details.refreshToken);
+      Cookies.set('access', details.accessToken, { path: '/' });
+      Cookies.set('refresh', details.refreshToken, { path: '/' });
       setBearerToken(details.accessToken);
 
       onPaymentSuccess(details, orderDetail.id);

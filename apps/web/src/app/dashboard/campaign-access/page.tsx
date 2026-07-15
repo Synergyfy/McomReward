@@ -29,6 +29,7 @@ export default function CampaignAccessPage() {
         <p>No campaign access data available.</p>
       ) : (
         <Card>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -49,6 +50,7 @@ export default function CampaignAccessPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
           <div className="flex justify-center items-center mt-4 space-x-4 p-4">
             <Button onClick={() => setPage(page - 1)} disabled={page === 1}>
               Previous

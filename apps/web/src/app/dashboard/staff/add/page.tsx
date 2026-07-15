@@ -133,7 +133,7 @@ const AddStaffPage = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
+    <div className="container mx-auto p-4 md:p-6 py-8 max-w-4xl">
       <TierLimitModal
         isOpen={isTierLimitModalOpen}
         onClose={() => setIsTierLimitModalOpen(false)}

@@ -108,7 +108,8 @@ export default function AnalyticsPage() {
             <CardTitle className="text-base sm:text-lg">Customer Growth Trend</CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
-            <ResponsiveContainer width="100%" height={280}>
+            <div className="h-[200px] sm:h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={MOCK_GROWTH}>
                 <XAxis dataKey="month" stroke="#888" tick={{ fontSize: 12 }} />
                 <YAxis stroke="#888" tick={{ fontSize: 12 }} />
@@ -126,6 +127,7 @@ export default function AnalyticsPage() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 

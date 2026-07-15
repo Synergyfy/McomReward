@@ -253,25 +253,25 @@ export default function FormContactsPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Form Contacts</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Form Contacts</h1>
               <p className="text-gray-500 mt-1">
                 Manage your network of contacts, partners, and relationships
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() => toast.info('CSV import coming soon')}
               >
-                <Upload className="h-4 w-4" />
-                Import CSV
+                <Upload className="h-4 w-4 shrink-0" />
+                <span>Import CSV</span>
               </Button>
               <Button
                 className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
@@ -280,8 +280,8 @@ export default function FormContactsPage() {
                   setIsAddModalOpen(true);
                 }}
               >
-                <Plus className="h-4 w-4" />
-                Add Contact
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>Add Contact</span>
               </Button>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function FormContactsPage() {
           {/* Referral Stats Progress Bar */}
           {referralStats && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-1">
                 <div>
                   <span className="text-sm font-medium text-orange-900 block">
                     Referral Capacity
@@ -330,8 +330,8 @@ export default function FormContactsPage() {
 
           {/* Search and Filters */}
           <div className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search by name, business, email..."
@@ -354,7 +354,7 @@ export default function FormContactsPage() {
                 )}
               </Button>
               <Select value={sortBy} onValueChange={(value: SortBy) => setSortBy(value)}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -369,7 +369,7 @@ export default function FormContactsPage() {
             {/* Filter Panel */}
             {showFilters && (
               <div className="bg-gray-50 rounded-lg p-4 space-y-4 border border-gray-200">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <h3 className="font-semibold text-gray-900">Filter Options</h3>
                   {activeFiltersCount > 0 && (
                     <Button
@@ -460,7 +460,7 @@ export default function FormContactsPage() {
         </div>
 
         {/* Contacts Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm">
           {isLoading ? (
             <div className="p-12 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
@@ -488,6 +488,7 @@ export default function FormContactsPage() {
             </div>
           ) : (
             <>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
@@ -655,10 +656,11 @@ export default function FormContactsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {/* Pagination */}
               {contactsData && contactsData.meta.lastPage > 1 && (
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div className="border-t border-gray-200 px-4 md:px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
                   <div className="text-sm text-gray-500">
                     Showing {(currentPage - 1) * 10 + 1} to{' '}
                     {Math.min(currentPage * 10, contactsData.meta.total)} of {contactsData.meta.total}{' '}
@@ -750,7 +752,7 @@ export default function FormContactsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Name Fields */}
               <div>
                 <div className="flex items-center gap-2 mb-2">

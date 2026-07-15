@@ -72,8 +72,8 @@ export const useStripeVerify = () => {
     mutationFn: verifyStripePayment,
     onSuccess: (data) => {
       // Update tokens in cookies after successful payment
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
     },
   });
@@ -101,8 +101,8 @@ export const usePayPalVerify = () => {
     mutationFn: verifyPayPalPayment,
     onSuccess: (data) => {
       // Update tokens in cookies after successful payment
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
     },
   });

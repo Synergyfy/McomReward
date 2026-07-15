@@ -49,7 +49,7 @@ export default function UnifiedViewCustomersModal({
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="bg-white dark:bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh]"
+                    className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh]"
                 >
                     {/* Header with Background Pattern - FIXED */}
                     <div className="relative p-8 overflow-hidden flex-shrink-0">
@@ -127,7 +127,7 @@ export default function UnifiedViewCustomersModal({
                             <div className="py-8 flex flex-col items-center text-center">
                                 <div className="relative mb-8 transform hover:scale-105 transition-transform duration-300">
                                     <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-2xl animate-pulse" />
-                                    <div className="relative w-32 h-32 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-xl flex items-center justify-center border border-gray-100 dark:border-gray-800">
+                                    <div className="relative w-32 h-32 bg-white dark:bg-gray-800 rounded-2xl md:rounded-[2.5rem] shadow-xl flex items-center justify-center border border-gray-100 dark:border-gray-800">
                                         <Sparkles className="h-12 w-12 text-orange-500" />
                                     </div>
                                     <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-indigo-600 rounded-2xl shadow-lg flex items-center justify-center transform rotate-12">
@@ -143,7 +143,7 @@ export default function UnifiedViewCustomersModal({
                                 </p>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                                    <Card className="border-none bg-orange-50/50 dark:bg-orange-900/10 rounded-[2rem] transition-colors hover:bg-orange-100/50 dark:hover:bg-orange-900/20">
+                                    <Card className="border-none bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl md:rounded-[2rem] transition-colors hover:bg-orange-100/50 dark:hover:bg-orange-900/20">
                                         <CardContent className="p-6">
                                             <div className="flex items-center gap-3 mb-3">
                                                 <div className="p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
@@ -156,7 +156,7 @@ export default function UnifiedViewCustomersModal({
                                             </p>
                                         </CardContent>
                                     </Card>
-                                    <Card className="border-none bg-indigo-50/50 dark:bg-indigo-900/10 rounded-[2rem] transition-colors hover:bg-indigo-100/50 dark:hover:bg-indigo-900/20">
+                                    <Card className="border-none bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl md:rounded-[2rem] transition-colors hover:bg-indigo-100/50 dark:hover:bg-indigo-900/20">
                                         <CardContent className="p-6">
                                             <div className="flex items-center gap-3 mb-3">
                                                 <div className="p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm">

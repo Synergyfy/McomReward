@@ -57,11 +57,11 @@ export default function CampaignDetailsPage() {
     return (
         <div className="space-y-6 pb-10">
             {/* Header & Back Button */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="text-2xl font-bold text-gray-900">{campaign.name}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">{campaign.name}</h1>
             </div>
 
             {/* Banner Section */}
@@ -181,7 +181,7 @@ export default function CampaignDetailsPage() {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase font-semibold">Reward Type</p>
                                     <p className="text-gray-800 capitalize">{campaign.rewardType?.replace('_', ' ') || 'N/A'}</p>
@@ -366,7 +366,7 @@ export default function CampaignDetailsPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                                     <p className="text-xs text-gray-500 mb-1">Points Earned</p>
                                     <p className="font-bold text-green-600">{(campaign.totalPointsEarned ?? 0).toLocaleString()}</p>

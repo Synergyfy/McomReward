@@ -40,17 +40,17 @@ export default function WishlistInsightsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">Wishlist Insights</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={loading || data.length === 0}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Wishlist Insights</h1>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} disabled={loading || data.length === 0} className="flex-1 sm:flex-none text-xs sm:text-sm">
             <Download className="mr-2 h-4 w-4" />
-            Export Report
+            Export
           </Button>
-          <Link href="/dashboard/campaigns/create?from=wishlist">
-            <Button>
+          <Link href="/dashboard/campaigns/create?from=wishlist" className="flex-1 sm:flex-none">
+            <Button className="w-full text-xs sm:text-sm">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Create Campaign from Wishlist
+              Create Campaign
             </Button>
           </Link>
         </div>

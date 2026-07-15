@@ -195,7 +195,7 @@ export default function BusinessMallRewardsPage() {
                   <User size={10} className="text-gray-400" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Customer</span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Customer</span>
                   <span className="text-[10px] font-bold text-gray-600 truncate max-w-[150px]">{item.participant.name}</span>
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default function BusinessMallRewardsPage() {
               {/* Security Strip Style Code */}
               <div className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-50 border border-dashed border-gray-200 group-hover:border-orange-200 group-hover:bg-orange-50/50 transition-all duration-300">
                 <div className="flex-1">
-                  <p className="text-[7.5px] font-black text-gray-400 uppercase tracking-[0.15em] mb-0.5">Redemption Code</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-0.5">Redemption Code</p>
                   <code className="text-xs font-mono font-black text-gray-600 group-hover:text-orange-900 transition-colors">
                     {redemptionCode || "N/A"}
                   </code>

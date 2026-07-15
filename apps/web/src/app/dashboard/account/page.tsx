@@ -22,8 +22,8 @@ export default function AccountPage() {
     // Clear any auth tokens/session data
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    Cookies.remove('access');
-    Cookies.remove('refresh');
+    Cookies.remove('access', { path: '/' });
+    Cookies.remove('refresh', { path: '/' });
     sessionStorage.clear();
 
     // Redirect to login page
@@ -40,7 +40,7 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-gray-800">Account Settings</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Account Settings</h1>
 
       {/* Account Information */}
       <Card>
@@ -67,14 +67,14 @@ export default function AccountPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex justify-between items-center p-4 border rounded-lg">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border rounded-lg">
             <div>
               <h3 className="font-semibold">Logout</h3>
               <p className="text-sm text-gray-600">You will be logged out of your account.</p>
             </div>
             <Button variant="outline" onClick={handleLogout}>Logout</Button>
           </div>
-          <div className="flex justify-between items-center p-4 border border-red-200 bg-red-50 rounded-lg">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border border-red-200 bg-red-50 rounded-lg">
             <div>
               <h3 className="font-semibold text-red-700">Deactivate Account</h3>
               <p className="text-sm text-red-600">Permanently delete your account and all associated data.</p>

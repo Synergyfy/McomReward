@@ -97,11 +97,11 @@ export default function StaffRedeemPage() {
     };
 
     return (
-        <div className="min-h-[88vh] bg-white py-10 px-5">
+        <div className="min-h-[88vh] bg-white p-4 md:p-6 py-10">
             <div className="max-w-3xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-semibold text-gray-800">
+                    <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
                         Scan a customer QR code or search manually to redeem rewards.
                     </h1>
                 </div>

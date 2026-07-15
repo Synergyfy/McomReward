@@ -76,7 +76,7 @@ export default function DealPerformancePage() {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Deal Performance</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Deal Performance</h1>
                         <p className="text-gray-500 mt-1">Analytics and insights for your deal</p>
                     </div>
                 </div>

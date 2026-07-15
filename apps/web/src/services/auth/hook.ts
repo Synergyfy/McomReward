@@ -5,8 +5,8 @@ import Cookies from 'js-cookie';
 
 // Helper to remove tokens
 const removeTokens = () => {
-  Cookies.remove('access');
-  Cookies.remove('refresh');
+  Cookies.remove('access', { path: '/' });
+  Cookies.remove('refresh', { path: '/' });
   localStorage.removeItem('authToken'); // Assuming this was also a token storage
   sessionStorage.clear(); // Clear any session storage
   removeBearerToken(); // Clear bearer token from API instance
@@ -22,8 +22,8 @@ export const useAdminSignIn = () => {
   return useMutation({
     mutationFn: adminSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
     },
   });
@@ -39,8 +39,8 @@ export const useParticipantLogin = () => {
   return useMutation({
     mutationFn: participantSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
     },
   });
@@ -66,8 +66,8 @@ export const useRefreshToken = () => {
       const accessToken = data.accessToken || data.access_token || '';
       const refreshTokenValue = data.refreshToken || data.refresh_token || '';
       // Update tokens in cookies
-      Cookies.set('access', accessToken);
-      Cookies.set('refresh', refreshTokenValue);
+      Cookies.set('access', accessToken, { path: '/' });
+      Cookies.set('refresh', refreshTokenValue, { path: '/' });
       // Update bearer token for subsequent requests
       setBearerToken(accessToken);
     },
@@ -114,8 +114,8 @@ export const useVerifyEmail = () => {
     mutationFn: verifyEmail,
     onSuccess: (data) => {
       // Update tokens in cookies
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       // Update bearer token for subsequent requests
       setBearerToken(data.accessToken);
     },
@@ -144,8 +144,8 @@ export const useSsoLogin = () => {
   return useMutation({
     mutationFn: ssoLogin,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken);
-      Cookies.set('refresh', data.refreshToken);
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
       setBearerToken(data.accessToken);
     },
   });

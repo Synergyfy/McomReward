@@ -70,7 +70,7 @@ export default function CustomerCampaignOverviewPage() {
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 pb-20">
             {/* Hero Section */}
-            <div className="relative h-[400px] w-full overflow-hidden group">
+            <div className="relative h-[250px] md:h-[400px] w-full overflow-hidden group">
                 <Image
                     src={bannerImage}
                     alt={campaignName || 'Campaign Banner'}
@@ -78,7 +78,7 @@ export default function CustomerCampaignOverviewPage() {
                     objectFit="cover"
                     className="brightness-50 transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end pb-12 px-6 md:px-16">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end pb-12 px-4 md:px-16">
                     <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-end md:items-center gap-8">
                         {/* Logo Overlay */}
                         <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shrink-0 bg-white">
@@ -107,7 +107,7 @@ export default function CustomerCampaignOverviewPage() {
                                     </Badge>
                                 )}
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-3 drop-shadow-xl">
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-3 drop-shadow-xl">
                                 {campaignName}
                             </h1>
                             <p className="text-lg text-gray-200 max-w-2xl line-clamp-2">
@@ -130,45 +130,45 @@ export default function CustomerCampaignOverviewPage() {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-10 space-y-8">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 -mt-8 relative z-10 space-y-8">
 
                 {/* Quick Stats / Info Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-white shadow-lg border-none">
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-orange-100 rounded-full text-orange-600">
+                        <CardContent className="p-4 md:p-6 flex items-center gap-4">
+                            <div className="p-3 bg-orange-100 rounded-full text-orange-600 shrink-0">
                                 <Calendar className="w-6 h-6" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Start Date</p>
                                 <p className="text-sm font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</p>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="bg-white shadow-lg border-none">
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-orange-100 rounded-full text-orange-600">
+                        <CardContent className="p-4 md:p-6 flex items-center gap-4">
+                            <div className="p-3 bg-orange-100 rounded-full text-orange-600 shrink-0">
                                 <Calendar className="w-6 h-6" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">End Date</p>
                                 <p className="text-sm font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</p>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="bg-white shadow-lg border-none">
-                        <CardContent className="p-6 flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-full text-purple-600">
+                        <CardContent className="p-4 md:p-6 flex items-center gap-4">
+                            <div className="p-3 bg-purple-100 rounded-full text-purple-600 shrink-0">
                                 <Users className="w-6 h-6" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Audience</p>
                                 <p className="text-sm font-semibold text-gray-900 capitalize">{audienceType}</p>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="bg-white shadow-lg border-none">
-                        <CardContent className="p-6 flex items-center gap-4">
+                        <CardContent className="p-4 md:p-6 flex items-center gap-4">
                             <div className="p-3 bg-green-100 rounded-full text-green-600">
                                 <Gift className="w-6 h-6" />
                             </div>
@@ -193,7 +193,7 @@ export default function CustomerCampaignOverviewPage() {
                                     <CardTitle className="text-lg font-bold text-gray-800">Points Configuration</CardTitle>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CardContent className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Reward Type</p>
                                     <p className="font-medium text-gray-900 capitalize">{rewardType}</p>
@@ -228,13 +228,13 @@ export default function CustomerCampaignOverviewPage() {
                             </CardHeader>
                             <CardContent className="p-0 divide-y divide-gray-100">
                                 {/* Earn Points Page */}
-                                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="p-4 md:p-6 hover:bg-gray-50/50 transition-colors">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 mb-3">
                                         <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                                             <Trophy className="w-4 h-4 text-yellow-500" /> Earn Points Page
                                         </h4>
-                                        <Link href={`/dashboard/campaigns/${campaignId}/earn-points`}>
-                                            <Button variant="outline" size="sm" className="text-xs h-8">
+                                        <Link href={`/dashboard/campaigns/${campaignId}/earn-points`} className="w-full md:w-auto">
+                                            <Button variant="outline" size="sm" className="text-xs h-8 w-full md:w-auto">
                                                 View Page
                                             </Button>
                                         </Link>
@@ -252,13 +252,13 @@ export default function CustomerCampaignOverviewPage() {
                                 </div>
 
                                 {/* Redeem Rewards Page */}
-                                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="p-4 md:p-6 hover:bg-gray-50/50 transition-colors">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 mb-3">
                                         <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                                             <Gift className="w-4 h-4 text-pink-500" /> Redeem Rewards Page
                                         </h4>
-                                        <Link href={`/dashboard/campaigns/${campaignId}/redeem-points`}>
-                                            <Button variant="outline" size="sm" className="text-xs h-8">
+                                        <Link href={`/dashboard/campaigns/${campaignId}/redeem-points`} className="w-full md:w-auto">
+                                            <Button variant="outline" size="sm" className="text-xs h-8 w-full md:w-auto">
                                                 View Page
                                             </Button>
                                         </Link>
@@ -276,13 +276,13 @@ export default function CustomerCampaignOverviewPage() {
                                 </div>
 
                                 {/* Contact Us Page */}
-                                <div className="p-6 hover:bg-gray-50/50 transition-colors">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="p-4 md:p-6 hover:bg-gray-50/50 transition-colors">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 mb-3">
                                         <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                                             <Phone className="w-4 h-4 text-green-500" /> Contact Us Page
                                         </h4>
-                                        <Link href={`/dashboard/campaigns/${campaignId}/contact-us`}>
-                                            <Button variant="outline" size="sm" className="text-xs h-8">
+                                        <Link href={`/dashboard/campaigns/${campaignId}/contact-us`} className="w-full md:w-auto">
+                                            <Button variant="outline" size="sm" className="text-xs h-8 w-full md:w-auto">
                                                 View Page
                                             </Button>
                                         </Link>
@@ -323,7 +323,7 @@ export default function CustomerCampaignOverviewPage() {
                                     <CardTitle className="text-lg font-bold text-gray-800">Theme Settings</CardTitle>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-6 space-y-4">
+                            <CardContent className="p-4 md:p-6 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Background Color</span>
                                     <div className="flex items-center gap-2">
@@ -354,8 +354,8 @@ export default function CustomerCampaignOverviewPage() {
                                 <div className="space-y-4">
                                     {rewardsList.map((reward, index) => (
                                         <Card key={index} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
-                                            <div className="flex h-24">
-                                                <div className="w-24 relative shrink-0 bg-gray-100">
+                                            <div className="flex h-20 md:h-24">
+                                                <div className="w-20 md:w-24 relative shrink-0 bg-gray-100">
                                                     <Image
                                                         src={reward.image}
                                                         alt={reward.title}

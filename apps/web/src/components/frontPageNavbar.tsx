@@ -54,8 +54,8 @@ const FrontPageNavbar = () => {
       },
       onError: () => {
         // Fallback to client-side cleanup
-        Cookies.remove('access');
-        Cookies.remove('refresh');
+        Cookies.remove('access', { path: '/' });
+        Cookies.remove('refresh', { path: '/' });
         localStorage.removeItem('userRole');
         localStorage.removeItem('userName');
         router.push('/login');

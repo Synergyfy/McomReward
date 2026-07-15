@@ -39,9 +39,9 @@ export default function CustomersPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
         >
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Search Participant</h2>
-                <form onSubmit={handleSearch} className="flex gap-4">
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                         <Input
                             placeholder="Enter participant email or unique code..."
@@ -50,7 +50,7 @@ export default function CustomersPage() {
                             className="w-full"
                         />
                     </div>
-                    <Button type="submit" disabled={isPending || !searchQuery.trim()} className="bg-orange-600 hover:bg-orange-700 text-white">
+                    <Button type="submit" disabled={isPending || !searchQuery.trim()} className="bg-orange-600 hover:bg-orange-700 text-white w-full sm:w-auto">
                         {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
                         Search
                     </Button>

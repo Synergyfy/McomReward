@@ -44,7 +44,7 @@ export default function EarnPointsPagePreview({ campaign }: EarnPointsPagePrevie
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
             {campaign.earnPointPageTitle || 'Earn Points'}
           </h1>
           <p
@@ -58,7 +58,7 @@ export default function EarnPointsPagePreview({ campaign }: EarnPointsPagePrevie
           {earnMethods.map((method, index) => (
             <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader className="bg-gray-100 p-6">
-                <div className="flex items-center space-x-4">
+                  <div className="flex flex-col md:flex-row items-center gap-4">
                   <div className="bg-orange-600 text-white p-3 rounded-full">
                     <method.icon className="h-6 w-6" />
                   </div>
@@ -66,7 +66,7 @@ export default function EarnPointsPagePreview({ campaign }: EarnPointsPagePrevie
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <CardDescription className="text-lg text-gray-700 mb-6 h-20 line-clamp-3">
+                  <CardDescription className="text-lg text-gray-700 mb-6 line-clamp-3">
                   {method.description}
                 </CardDescription>
                 <Button

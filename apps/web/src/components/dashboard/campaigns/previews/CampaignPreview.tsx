@@ -69,7 +69,7 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
   return (
     <div className="bg-gray-50 min-h-screen text-gray-900 pb-20">
       {/* Hero Section */}
-      <div className="relative h-80 w-full overflow-hidden">
+      <div className="relative h-48 md:h-80 w-full overflow-hidden">
         <Image
           src={campaign.bannerUrl || 'https://via.placeholder.com/1920x700?text=Campaign+Hero'}
           alt={campaign.name || 'Campaign Hero'}
@@ -78,7 +78,7 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
           className="brightness-50"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end pb-10 px-6 md:px-12">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end pb-10 px-4 md:px-12">
           <div className="max-w-5xl mx-auto w-full text-white">
             <div className="flex items-center gap-3 mb-4">
               <Badge className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 text-sm uppercase tracking-wide">
@@ -90,10 +90,10 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
                 </Badge>
               )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-xl">
+            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-xl">
               {campaign.name || '[Campaign Name]'}
             </h1>
-            <div className="flex items-center gap-6 text-gray-200 text-sm md:text-base font-medium">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 text-gray-200 text-sm md:text-base font-medium">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-orange-400" />
                 <span>
@@ -105,7 +105,7 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 -mt-10 relative z-10 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-10 relative z-10 space-y-8">
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -148,7 +148,7 @@ export default function CampaignPreview({ campaign, isClaimable = false }: Campa
           {/* Left Column: Description & Rewards */}
           <div className="lg:col-span-2 space-y-8">
             {/* About Section */}
-            <section className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <section className="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
                 <Info className="w-6 h-6 text-orange-600" />
                 <h2 className="text-2xl font-bold text-gray-800">About This Campaign</h2>

@@ -279,7 +279,7 @@ export default function CustomerContactPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Premium Header Section */}
                 <motion.div
@@ -294,30 +294,30 @@ export default function CustomerContactPage() {
                     <div className="relative z-10">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
-                                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
                                     Customer Contact
                                 </h1>
                                 <p className="text-orange-100 mt-2 text-lg">
                                     Manage your customer relationships and grow your network
                                 </p>
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex flex-row gap-3 w-full sm:w-auto">
                                 <Button
                                     variant="outline"
-                                    className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+                                    className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm flex-1 sm:flex-initial"
                                     onClick={() => setIsImportModalOpen(true)}
                                 >
-                                    <Upload className="h-4 w-4 mr-2" />
+                                    <Upload className="h-4 w-4 mr-2 shrink-0" />
                                     Import CSV
                                 </Button>
                                 <Button
-                                    className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg hover:shadow-xl transition-all"
+                                    className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg hover:shadow-xl transition-all flex-1 sm:flex-initial"
                                     onClick={() => {
                                         resetForm();
                                         setIsAddModalOpen(true);
                                     }}
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="h-4 w-4 mr-2 shrink-0" />
                                     Add Customer
                                 </Button>
                             </div>
@@ -388,35 +388,35 @@ export default function CustomerContactPage() {
                                 className="pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                             />
                         </div>
-                        <div className="flex gap-3">
-                            <Select
-                                value={statusFilter}
-                                onValueChange={(value: CustomerStatus | 'all') => setStatusFilter(value)}
-                            >
-                                <SelectTrigger className="w-[160px] h-11">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="accepted">Accepted</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select
-                                value={sortBy}
-                                onValueChange={(value: SortOption) => setSortBy(value)}
-                            >
-                                <SelectTrigger className="w-[160px] h-11">
-                                    <SelectValue placeholder="Sort by" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="newest">Newest First</SelectItem>
-                                    <SelectItem value="oldest">Oldest First</SelectItem>
-                                    <SelectItem value="name">Name A-Z</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                <Select
+                                    value={statusFilter}
+                                    onValueChange={(value: CustomerStatus | 'all') => setStatusFilter(value)}
+                                >
+                                    <SelectTrigger className="w-full sm:w-[160px] h-11">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="accepted">Accepted</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={sortBy}
+                                    onValueChange={(value: SortOption) => setSortBy(value)}
+                                >
+                                    <SelectTrigger className="w-full sm:w-[160px] h-11">
+                                        <SelectValue placeholder="Sort by" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="newest">Newest First</SelectItem>
+                                        <SelectItem value="oldest">Oldest First</SelectItem>
+                                        <SelectItem value="name">Name A-Z</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                     </div>
                 </motion.div>
 
@@ -425,7 +425,7 @@ export default function CustomerContactPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                    className="bg-white rounded-xl shadow-sm border border-gray-100"
                 >
                     {isLoading ? (
                         <div className="p-16 text-center">
@@ -441,7 +441,7 @@ export default function CustomerContactPage() {
                             <p className="text-gray-500 mb-6 max-w-md mx-auto">
                                 Start building your customer network by adding your first customer or importing from a CSV file.
                             </p>
-                            <div className="flex gap-3 justify-center">
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <Button
                                     variant="outline"
                                     onClick={() => setIsImportModalOpen(true)}
@@ -463,6 +463,7 @@ export default function CustomerContactPage() {
                         </div>
                     ) : (
                         <>
+                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
@@ -548,10 +549,11 @@ export default function CustomerContactPage() {
                                     </AnimatePresence>
                                 </TableBody>
                             </Table>
+                            </div>
 
                             {/* Pagination */}
                             {customersData && customersData.meta.lastPage > 1 && (
-                                <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between bg-gray-50/50">
+                                <div className="border-t border-gray-100 px-4 md:px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/50">
                                     <p className="text-sm text-gray-500">
                                         Page {currentPage} of {customersData.meta.lastPage} • {customersData.meta.total} customers
                                     </p>
@@ -590,8 +592,8 @@ export default function CustomerContactPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="col-span-1 sm:col-span-2">
                                 <div className="flex items-center gap-2 mb-1.5">
                                     <Label htmlFor="fullName">
                                         Full Name <span className="text-red-500">*</span>
@@ -614,7 +616,7 @@ export default function CustomerContactPage() {
                                     placeholder="John Doe"
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <div className="flex items-center gap-2 mb-1.5">
                                     <Label htmlFor="businessName">Business Name</Label>
                                     <TooltipProvider>
@@ -863,6 +865,7 @@ export default function CustomerContactPage() {
                                 <div className="bg-gray-50 px-4 py-2 border-b">
                                     <p className="font-medium text-sm text-gray-700">Preview (first 5 rows)</p>
                                 </div>
+                                <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -883,6 +886,7 @@ export default function CustomerContactPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
+                                </div>
                                 {parsedData.length > 5 && (
                                     <div className="px-4 py-2 bg-gray-50 border-t text-sm text-gray-500">
                                         ...and {parsedData.length - 5} more

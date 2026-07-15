@@ -30,7 +30,7 @@ export default function ContactUsPagePreview({ campaign }: ContactUsPagePreviewP
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
             {campaign.contactUsPageTitle || 'Contact Us'}
           </h1>
           <p className="mt-4 text-xl text-gray-600" dangerouslySetInnerHTML={{ __html: campaign.contactUsPageDescription || 'We\'re here to help. Reach out to us with any questions.' }} />
@@ -42,7 +42,7 @@ export default function ContactUsPagePreview({ campaign }: ContactUsPagePreviewP
             <div key={index} className="block group"> {/* Changed <a> to <div> and disabled interaction */}
               <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardContent className="p-6 flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
+                  <div className="flex flex-col md:flex-row items-center gap-4">
                     <div className="bg-orange-600 text-white p-4 rounded-full">
                       <method.icon className="h-8 w-8" />
                     </div>

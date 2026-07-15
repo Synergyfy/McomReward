@@ -39,7 +39,7 @@ export default function MatchingPointsHistoryTable({ history }: MatchingPointsHi
         <CardTitle>Matching Points Activity Log</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
+        <div className="overflow-x-auto"><Table>
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
@@ -81,7 +81,7 @@ export default function MatchingPointsHistoryTable({ history }: MatchingPointsHi
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </Table></div>
       </CardContent>
     </Card>
   );

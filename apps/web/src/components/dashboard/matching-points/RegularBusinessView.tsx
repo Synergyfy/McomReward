@@ -142,7 +142,7 @@ export default function RegularBusinessView() {
                 </TabsContent>
                 <TabsContent value="redemptions" className="mt-4">
                     <Card>
-                        <Table>
+                        <div className="overflow-x-auto"><Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
@@ -172,7 +172,7 @@ export default function RegularBusinessView() {
                                     </TableRow>
                                 )}
                             </TableBody>
-                        </Table>
+                        </Table></div>
                     </Card>
                 </TabsContent>
             </Tabs>

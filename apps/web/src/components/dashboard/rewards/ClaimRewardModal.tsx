@@ -87,21 +87,21 @@ export default function ClaimRewardModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-4xl max-h-[90vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Add a New Reward</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg md:text-xl">Add a New Reward</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
               Choose a pre-made template to get started quickly, or create a new reward from scratch.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-4 items-center justify-between">
+          <div className="flex flex-col gap-3 mb-4">
             {/* Filter Buttons */}
-            <div className="flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg self-start">
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <button
                 onClick={() => setActiveFilter('all')}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  "px-2.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
                   activeFilter === 'all'
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
@@ -112,43 +112,43 @@ export default function ClaimRewardModal({
               <button
                 onClick={() => setActiveFilter('point')}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  "px-2.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
                   activeFilter === 'point'
                     ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                 )}
               >
-                <Gift className="h-3.5 w-3.5" />
-                Point Rewards
+                <Gift className="h-3 w-3" />
+                Points
               </button>
               <button
                 onClick={() => setActiveFilter('stamp')}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  "px-2.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
                   activeFilter === 'stamp'
                     ? "bg-white dark:bg-gray-700 text-orange-600 dark:text-orange-400 shadow-sm"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                 )}
               >
-                <Stamp className="h-3.5 w-3.5" />
-                Stamp Rewards
+                <Stamp className="h-3 w-3" />
+                Stamps
               </button>
               <button
                 onClick={() => setActiveFilter('hybrid')}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  "px-2.5 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
                   activeFilter === 'hybrid'
                     ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                 )}
               >
-                <Filter className="h-3.5 w-3.5" />
-                Hybrid Rewards
+                <Filter className="h-3 w-3" />
+                Hybrid
               </button>
             </div>
 
             {/* Search */}
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search rewards..."
@@ -159,7 +159,7 @@ export default function ClaimRewardModal({
             </div>
           </div>
 
-          <div className="flex-grow overflow-y-auto p-1 min-h-[300px]">
+          <div className="flex-grow overflow-y-auto p-1 min-h-[200px] md:min-h-[300px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-48">
                 <LoadingSpinner />
@@ -239,9 +239,9 @@ export default function ClaimRewardModal({
             )}
           </div>
 
-          <div className="mt-4 pt-4 border-t text-center">
-            <p className="text-sm text-gray-500 mb-2">Want full control?</p>
-            <Button variant="outline" onClick={onCreateFromScratch}>
+          <div className="mt-2 md:mt-4 pt-3 md:pt-4 border-t text-center">
+            <p className="text-xs md:text-sm text-gray-500 mb-1.5 md:mb-2">Want full control?</p>
+            <Button variant="outline" onClick={onCreateFromScratch} className="w-full sm:w-auto text-xs md:text-sm h-9 md:h-10">
               Create a Reward from Scratch
             </Button>
           </div>

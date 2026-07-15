@@ -129,7 +129,7 @@ export default function MerchantCreditsDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[350px] w-full mt-6">
+              <div className="h-[200px] md:h-[350px] w-full mt-6">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>

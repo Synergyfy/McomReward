@@ -28,7 +28,7 @@ export default function CustomerEarnPointsPage() {
     const earnPointPageDescription = isBusinessCampaign(campaign) ? campaign.earn_point_page_description : campaign.earnPointPageDescription;
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-4 md:p-6">
             <Card className="border-none shadow-lg">
                 <CardHeader className="bg-yellow-50 border-b border-yellow-100">
                     <div className="flex items-center gap-3">
@@ -40,7 +40,7 @@ export default function CustomerEarnPointsPage() {
                         </CardTitle>
                     </div>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4 md:p-8">
                     <div
                         className="prose prose-lg max-w-none text-gray-600"
                         dangerouslySetInnerHTML={{ __html: earnPointPageDescription || '<p>No description available.</p>' }}

@@ -64,10 +64,10 @@ export default function CustomerActivitiesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Customer Activities</h1>
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Customer Activities</h1>
         </div>
 
         <Card>
@@ -81,6 +81,7 @@ export default function CustomerActivitiesPage() {
               </div>
             ) : (
               <>
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -128,10 +129,11 @@ export default function CustomerActivitiesPage() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
 
                 {/* Pagination */}
                 {data && data.total > 0 && (
-                  <div className="flex justify-center items-center space-x-4 mt-4">
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
                     <Button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1}
@@ -218,7 +220,7 @@ function ParticipantTimeline({ participantId }: { participantId: string }) {
 
       {/* Pagination for Sheet */}
       {data && data.total > 0 && (
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
           <Button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}

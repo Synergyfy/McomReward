@@ -224,7 +224,7 @@ export default function CreatePlaquePage() {
                         </Button>
                     </div>
 
-                    <div className="border rounded-lg p-8 bg-gray-50 flex items-center justify-center min-h-[500px]">
+                    <div className="border rounded-lg p-4 md:p-8 bg-gray-50 flex items-center justify-center min-h-[300px] md:min-h-[500px]">
                         <div id="plaque-preview-container">
                             <PlaquePreview
                                 title={name}

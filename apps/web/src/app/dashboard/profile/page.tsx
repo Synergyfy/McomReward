@@ -203,7 +203,7 @@ export default function BusinessProfilePage() {
   const tierName = subscription?.tier?.name as TierName | undefined;
 
   return (
-    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm mt-8 p-8">
+    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm mt-8 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between border-b border-gray-100 pb-6 mb-8">
         <div className="flex items-center gap-6">

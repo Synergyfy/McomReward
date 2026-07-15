@@ -48,7 +48,7 @@ export default function RevenueAnalyticsPage() {
     return (
         <div className="space-y-8">
             {/* Earnings Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Plaque Sales" value={`£${revenueData.overview.plaqueSales.toLocaleString()}`} icon={PoundSterling} />
                 <StatCard title="Offer Redemptions" value={`£${revenueData.overview.offerRedemptions.toLocaleString()}`} icon={CircleDollarSign} />
                 <StatCard title="Commissions Earned" value={`£${revenueData.overview.commissions.toLocaleString()}`} icon={Users} />
@@ -80,6 +80,7 @@ export default function RevenueAnalyticsPage() {
             {/* Transaction List */}
             <div className="bg-white p-4 rounded-lg shadow">
                 <h3 className="text-lg font-semibold p-4">Transaction History</h3>
+                <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="text-left text-sm font-semibold text-gray-600 border-b">
                         <tr>
@@ -110,6 +111,7 @@ export default function RevenueAnalyticsPage() {
                         ))}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     );

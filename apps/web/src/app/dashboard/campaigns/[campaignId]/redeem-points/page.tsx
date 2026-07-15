@@ -28,7 +28,7 @@ export default function CustomerRedeemPointsPage() {
     const redeemRewardPageDescription = isBusinessCampaign(campaign) ? campaign.redeem_reward_page_description : campaign.redeemRewardPageDescription;
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-4 md:p-6">
             <Card className="border-none shadow-lg">
                 <CardHeader className="bg-pink-50 border-b border-pink-100">
                     <div className="flex items-center gap-3">
@@ -40,7 +40,7 @@ export default function CustomerRedeemPointsPage() {
                         </CardTitle>
                     </div>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4 md:p-8">
                     <div
                         className="prose prose-lg max-w-none text-gray-600"
                         dangerouslySetInnerHTML={{ __html: redeemRewardPageDescription || '<p>No description available.</p>' }}

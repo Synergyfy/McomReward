@@ -73,6 +73,7 @@ export interface SeasonalTierConfig {
 }
 
 export interface TrialTierConfig {
+  trialDuration?: number;
   quotas?: Partial<TierQuotas>;
   featureFlags?: Partial<TierFeatureFlags>;
   progressBonuses?: {

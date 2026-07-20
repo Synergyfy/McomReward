@@ -78,7 +78,7 @@ export default function StepReviewAndCreate({ onBack, campaignId, isClaimed = fa
     const toISOString = (date?: Date) => date ? date.toISOString() : '';
 
     return {
-      id: campaignId || 'preview-campaign-id', // Use real ID if editing, else mock
+      id: campaignId || '',
       name: formData.campaignName,
       campaignType: formData.campaignType,
       campaignMessage: formData.campaignMessage,

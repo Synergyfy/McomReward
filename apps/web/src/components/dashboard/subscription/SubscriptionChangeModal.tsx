@@ -8,8 +8,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Plan } from '@/lib/mock-data/subscription';
 import { ArrowRight } from 'lucide-react';
+
+interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  features: string[];
+  isCurrent: boolean;
+}
 
 interface SubscriptionChangeModalProps {
   isOpen: boolean;

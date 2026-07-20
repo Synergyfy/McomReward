@@ -9,7 +9,7 @@ const isTest = process.env.NODE_ENV === "test";
 
 const dataSource = new DataSource({
   type: "postgres",
-  port: +process.env.POSTGRES_PORT,
+  port: +(process.env.POSTGRES_PORT || 5432),
   username: process.env.POSTGRES_USERNAME || "user",
   password: process.env.POSTGRES_PASSWORD || "password",
   database: process.env.POSTGRES_NAME || "dbname",

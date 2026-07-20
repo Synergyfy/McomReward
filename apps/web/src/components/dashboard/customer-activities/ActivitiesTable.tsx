@@ -11,7 +11,13 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CustomerActivity } from '@/lib/mock-data/activities';
+interface CustomerActivity {
+  id: string;
+  customer: { name: string; avatarUrl: string };
+  activityType: 'Redemption' | 'Referral' | 'Wishlist';
+  details: string;
+  date: string;
+}
 
 interface ActivitiesTableProps {
   activities: CustomerActivity[];

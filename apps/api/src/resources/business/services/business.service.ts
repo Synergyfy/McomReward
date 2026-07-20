@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Between, MoreThanOrEqual } from "typeorm";
@@ -48,9 +49,12 @@ import { StampPackageService } from "../../stamp/services/stamp-package.service"
 import { ProvisionService } from "../../provision/provision.service";
 import { ProvisionType } from "../../provision/entities/provision.entity";
 import { MembershipService } from "../../membership/membership.service";
+import { McomCentralService } from "../../sso/mcom-central.service";
 
 @Injectable()
 export class BusinessService {
+  private readonly logger = new Logger(BusinessService.name);
+
   constructor(
     @InjectRepository(Business)
     private readonly businessRepository: Repository<Business>,
@@ -81,6 +85,7 @@ export class BusinessService {
     private readonly stampPackageService: StampPackageService,
     private readonly provisionService: ProvisionService,
     private readonly membershipService: MembershipService,
+    private readonly mcomCentralService: McomCentralService,
   ) { }
 
   private async generateAffiliateCode(): Promise<string> {
@@ -490,11 +495,33 @@ export class BusinessService {
     };
   }
 
-  async getSubscriptionLevel(id: string): Promise<any> {
-    const payments = await this.paymentHistoryService.findByBusiness(id);
-    const latestPayment = payments[0];
+  private async getCentralPackage(businessId: string): Promise<any> {
+    try {
+      const business = await this.findById(businessId);
+      if (!business || !business.email) {
+        return null;
+      }
+      const centralUser = await this.mcomCentralService.getUserMembership({ email: business.email });
+      if (!centralUser?.success || !centralUser?.data?.packages) {
+        return null;
+      }
+      return centralUser.data.packages.find(
+        (p: any) =>
+          (p.platformName === "MCOM Rewards" || p.platform === "MCOM Rewards") &&
+          p.status === "active"
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch subscription from MCOM Central for business ${businessId}: ${error?.message}`
+      );
+      return null;
+    }
+  }
 
-    if (!latestPayment || !latestPayment.membership) {
+  async getSubscriptionLevel(id: string): Promise<any> {
+    const rewardsPackage = await this.getCentralPackage(id);
+
+    if (!rewardsPackage) {
       return {
         tier: "Free",
         status: "active",
@@ -503,10 +530,10 @@ export class BusinessService {
     }
 
     return {
-      tier: latestPayment.membership.tier?.name || "Unknown",
-      status: latestPayment.membership.status,
-      expiresAt: latestPayment.membership.expires_at,
-      planType: latestPayment.membership.plan_type,
+      tier: rewardsPackage.packageName || "Unknown",
+      status: rewardsPackage.status || "active",
+      expiresAt: rewardsPackage.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      planType: rewardsPackage.packageName?.toLowerCase().includes("annual") ? "annual" : "monthly",
     };
   }
 
@@ -516,11 +543,9 @@ export class BusinessService {
 
   async getMonthlyPointBalance(businessId: string) {
     const business = await this.findById(businessId);
-    const payments =
-      await this.paymentHistoryService.findByBusiness(businessId);
-    const latestPayment = payments[0];
+    const rewardsPackage = await this.getCentralPackage(businessId);
 
-    if (!latestPayment || !latestPayment.membership) {
+    if (!rewardsPackage) {
       return {
         monthlyLimit: 0,
         used: 0,
@@ -530,9 +555,8 @@ export class BusinessService {
       };
     }
 
-    const membership = latestPayment.membership;
-    const tierConfig = membership.tier.configuration;
-    const monthlyAllowance = tierConfig?.quotas?.monthlyPointsAllowance || 0;
+    const tier = await this.membershipService.findTierByName(rewardsPackage.packageName);
+    const monthlyAllowance = tier?.configuration?.quotas?.monthlyPointsAllowance || 0;
 
     // Calculate start of current month
     const now = new Date();
@@ -560,16 +584,13 @@ export class BusinessService {
   }
 
   async getMonthlyStampBalance(businessId: string) {
-    const payments =
-      await this.paymentHistoryService.findByBusiness(businessId);
-    const latestPayment = payments[0];
+    const rewardsPackage = await this.getCentralPackage(businessId);
 
     // Default to 0 allowance if no active membership
     let monthlyAllowance = 0;
-    if (latestPayment && latestPayment.membership) {
-      const membership = latestPayment.membership;
-      const tierConfig = membership.tier.configuration;
-      monthlyAllowance = tierConfig?.quotas?.monthlyStampsAllowance || 0;
+    if (rewardsPackage) {
+      const tier = await this.membershipService.findTierByName(rewardsPackage.packageName);
+      monthlyAllowance = tier?.configuration?.quotas?.monthlyStampsAllowance || 0;
     }
 
     const packageBalance =
@@ -613,11 +634,9 @@ export class BusinessService {
   }
 
   async getTotalSubscriptionPointBalance(businessId: string) {
-    const payments =
-      await this.paymentHistoryService.findByBusiness(businessId);
-    const latestPayment = payments[0];
+    const rewardsPackage = await this.getCentralPackage(businessId);
 
-    if (!latestPayment || !latestPayment.membership) {
+    if (!rewardsPackage) {
       return {
         totalAllowance: 0,
         totalUsed: 0,
@@ -625,17 +644,14 @@ export class BusinessService {
       };
     }
 
-    const membership = latestPayment.membership;
-    const tierConfig = membership.tier.configuration;
-    const monthlyAllowance = tierConfig?.quotas?.monthlyPointsAllowance || 0;
+    const tier = await this.membershipService.findTierByName(rewardsPackage.packageName);
+    const monthlyAllowance = tier?.configuration?.quotas?.monthlyPointsAllowance || 0;
 
-    const startDate = new Date(membership.starts_at);
-    const endDate = new Date(membership.expires_at);
+    const startDate = rewardsPackage.createdAt ? new Date(rewardsPackage.createdAt) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endDate = rewardsPackage.expiresAt ? new Date(rewardsPackage.expiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    let durationMonths = 1;
-    if (membership.plan_type === "annual") durationMonths = 12;
-    else if (membership.plan_type === "quarterly") durationMonths = 3;
-    else durationMonths = 1; // monthly
+    const isAnnual = rewardsPackage.packageName?.toLowerCase().includes("annual");
+    const durationMonths = isAnnual ? 12 : 1;
 
     const totalAllowance = monthlyAllowance * durationMonths;
 

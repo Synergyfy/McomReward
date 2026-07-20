@@ -13,13 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-
-// Mock data for available campaigns/offers
-const mockOffers = [
-  { id: 'offer-1', name: 'Summer Voucher ($50)' },
-  { id: 'offer-2', name: 'Discount Coupon (20% off)' },
-  { id: 'offer-3', name: 'Free Coffee Reward' },
-];
+import { useGetBusinessRewards } from '@/services/business-reward/hooks';
 
 interface ConfigurePlaqueModalProps {
   isOpen: boolean;
@@ -29,8 +23,13 @@ interface ConfigurePlaqueModalProps {
 }
 
 export default function ConfigurePlaqueModal({ isOpen, onClose, onSave, plaque }: ConfigurePlaqueModalProps) {
-  const [linkedOffer, setLinkedOffer] = useState('');
-  const [partnerCanLink, setPartnerCanLink] = useState(false);
+    const { data: rewardsData } = useGetBusinessRewards(1, 100);
+    const offers = (rewardsData?.data || []).map((r: any) => ({
+        id: r.id,
+        name: r.title || r.name,
+    }));
+    const [linkedOffer, setLinkedOffer] = useState(plaque?.linkedOffer || '');
+    const [partnerCanLink, setPartnerCanLink] = useState(false);
 
   useEffect(() => {
     if (plaque) {
@@ -62,7 +61,7 @@ export default function ConfigurePlaqueModal({ isOpen, onClose, onSave, plaque }
               </SelectTrigger>
               <SelectContent className="z-[10000]">
                 <SelectItem value="none">None</SelectItem>
-                {mockOffers.map(offer => (
+                {offers.map(offer => (
                   <SelectItem key={offer.id} value={offer.name}>{offer.name}</SelectItem>
                 ))}
               </SelectContent>

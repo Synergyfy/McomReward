@@ -10,31 +10,55 @@ function SsoLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const error = searchParams.get("error");
   const { mutateAsync: ssoLogin } = useSsoLogin();
   const attempted = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (token && !attempted.current) {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (attempted.current) return;
+
+    if (error) {
       attempted.current = true;
-      ssoLogin(token)
-        .then((data) => {
-          toast.success("Welcome back!");
-          // Redirect based on role
-          if (data.user.role === "Business") {
-            router.push("/loyalty-setup");
-          } else {
-            router.push("/participant"); // Or wherever participants go
-          }
-        })
-        .catch((error) => {
-          console.error("SSO Login Error:", error);
-          toast.error("SSO Login failed");
-          router.push("/login");
-        });
-    } else if (!token && !attempted.current) {
+      toast.error("SSO authentication failed. Please try again.");
       router.push("/login");
+      return;
     }
-  }, [token, ssoLogin, router]);
+
+    if (!token) {
+      attempted.current = true;
+      router.push("/login");
+      return;
+    }
+
+    attempted.current = true;
+
+    ssoLogin(token)
+      .then((data) => {
+        if (!mountedRef.current) return;
+
+        toast.success("Welcome back!");
+        if (data.user.role === "Business" || data.user.role === "business") {
+          router.push("/loyalty-setup");
+        } else {
+          router.push("/participant");
+        }
+      })
+      .catch((err) => {
+        if (!mountedRef.current) return;
+
+        console.error("SSO Login Error:", err);
+        toast.error("SSO Login failed");
+        router.push("/login");
+      });
+  }, [token, error, ssoLogin, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">

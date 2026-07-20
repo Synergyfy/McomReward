@@ -10,7 +10,14 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { WishlistItem } from '@/lib/mock-data/wishlist';
+interface WishlistItem {
+  id: string;
+  itemName: string;
+  category: string;
+  occasion: string;
+  count: number;
+  targetDate: string;
+}
 
 interface WishlistTableProps {
   wishlistItems: WishlistItem[];

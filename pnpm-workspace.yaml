@@ -1,8 +1,11 @@
 packages:
   - "apps/*"
 allowBuilds:
+  '@scarf/scarf': true
   bcrypt: true
+  core-js: true
   sharp: true
+  unrs-resolver: true
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.10.5'
   - '@turbo/darwin-arm64@2.10.5'

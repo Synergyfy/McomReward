@@ -18,7 +18,7 @@ interface FullCampaignPreviewProps {
 }
 
 export default function FullCampaignPreview({ formData, isMobile = false }: FullCampaignPreviewProps) {
-  // Mock member status for preview
+  // In preview mode, member is false
   const isMember = false;
 
   const isValidSrc = (src: string) => {
@@ -34,8 +34,7 @@ export default function FullCampaignPreview({ formData, isMobile = false }: Full
   }, [rewardsData, formData.rewardIds]);
 
   // Fallback image
-  const rawBannerImage = formData.imageUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
-  const bannerImage = isValidSrc(rawBannerImage) ? rawBannerImage : 'https://placehold.co/1920x600?text=Campaign+Banner';
+  const bannerImage = isValidSrc(formData.imageUrl) ? formData.imageUrl : '';
 
   // Format dates
   const startDate = formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'TBD';

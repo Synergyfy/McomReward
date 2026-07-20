@@ -1,95 +1,40 @@
 "use client";
 
 import React, { Suspense, useState } from "react";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
-import { useAuth } from "@/services/business/hook";
-import { useParticipantLogin } from "@/services/auth/hook";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useJoinCampaign } from "@/services/customer-campaigns/hook";
-import { useQueryClient } from "@tanstack/react-query";
-
-type LoginFormData = {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-};
+import { useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 function LoginForm() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    defaultValues: { rememberMe: false },
-  });
-
-  const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaignId");
-  const redirectUrl = searchParams.get("redirect");
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { mutateAsync: login } = useAuth();
-  const { mutateAsync: participantLogin } = useParticipantLogin();
-  const { mutateAsync: joinCampaign } = useJoinCampaign();
-  const [showPassword, setShowPassword] = useState(false);
-
-  const onSubmit = async (data: LoginFormData) => {
+  const handleSsoLogin = async () => {
+    setIsLoading(true);
     try {
-      const { rememberMe, ...loginData } = data;
+      const state = crypto.randomUUID();
+      const isSecure = window.location.protocol === "https:";
+      document.cookie = `sso_state=${state}; path=/; maxAge=600; SameSite=Lax${isSecure ? "; Secure" : ""}`;
 
-      if (campaignId) {
-        // Participant Login with Auto-Join
-        await participantLogin({ ...loginData, campaignId })
-          .then(async (response) => {
-            // Store user name for CampaignMembershipContext
-            if (response?.user?.name) {
-              localStorage.setItem('campaignMemberName', response.user.name);
-            }
+      const centralApi = process.env.NEXT_PUBLIC_MCOM_CENTRAL_API || "http://localhost:3010/api/v1";
+      const clientId = process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-loyalty";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3005";
+      const redirectUri = `${appUrl}/auth/callback`;
 
-            if (campaignId) {
-              try {
-                await joinCampaign(campaignId);
-              } catch (joinError) {
-                console.error("Failed to auto-join campaign:", joinError);
-              }
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: "code",
+        state,
+        scope: "profile email",
+      });
 
-              await queryClient.invalidateQueries({ queryKey: ['isJoined', campaignId] });
-              await queryClient.invalidateQueries({ queryKey: ['publicCampaigns', campaignId] });
-            }
-
-            toast.success("Login successful! Joining campaign...");
-            if (redirectUrl) {
-              router.push(redirectUrl);
-            } else {
-              router.push(`/campaigns/${campaignId}`);
-            }
-          });
-      } else {
-        // General Login
-        await login(loginData)
-          .then((response) => {
-            toast.success("Login successful! Redirecting...");
-          });
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      const errorMessage = error?.response?.data?.message || "Login failed. Please check your credentials.";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      toast.info("Redirecting to Google...");
-    } catch {
-      toast.error("Failed to sign in with Google.");
+      window.location.href = `${centralApi}/auth/sso/authorize?${params.toString()}`;
+    } catch (error) {
+      toast.error("Failed to initiate SSO login. Please try again.");
+      setIsLoading(false);
     }
   };
 
@@ -105,98 +50,23 @@ function LoginForm() {
 
         <Button
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={handleSsoLogin}
           variant="outline"
           className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800"
+          disabled={isLoading}
         >
-          <FcGoogle className="w-5 h-5" />
-          Continue with Google
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="currentColor"/>
+            </svg>
+          )}
+          {isLoading ? "Redirecting..." : "Login with MCOM Solutions"}
         </Button>
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-px bg-slate-200/60" />
-          <span className="text-slate-400 text-sm">or</span>
-          <div className="flex-1 h-px bg-slate-200/60" />
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div>
-            <Label htmlFor="email" className="text-slate-700">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Invalid email address"
-                }
-              })}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="password" className="text-slate-700">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters"
-                  }
-                })}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-3 text-sm text-slate-500 hover:text-orange-500"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Switch id="rememberMe" {...register("rememberMe")} />
-              <Label htmlFor="rememberMe" className="text-slate-700">Remember me</Label>
-            </div>
-            <a
-              href="/forgot-password"
-              className="text-slate-500 hover:text-orange-500 hover:underline text-sm"
-            >
-              Forgot password?
-            </a>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Signing in..." : "Log In"}
-          </Button>
-        </form>
-
         <p className="text-center text-sm text-slate-500">
-          Don’t have an account?{" "}
+          Don&apos;t have an account?{" "}
           <a href={campaignId ? `/signup?campaignId=${campaignId}&type=customer` : "/signup"} className="text-orange-500 hover:underline font-medium">
             Sign up
           </a>

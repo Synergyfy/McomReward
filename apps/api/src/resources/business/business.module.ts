@@ -26,6 +26,7 @@ import { StampModule } from "../stamp/stamp.module";
 import { ProvisionModule } from "../provision/provision.module";
 import { MembershipModule } from "../membership/membership.module";
 import { MatchingPointModule } from "../matching-point/matching-point.module";
+import { McomCentralService } from "../sso/mcom-central.service";
 
 @Module({
   imports: [
@@ -55,7 +56,7 @@ import { MatchingPointModule } from "../matching-point/matching-point.module";
     MembershipModule,
     MatchingPointModule
   ],
-  providers: [BusinessService],
+  providers: [BusinessService, McomCentralService],
   controllers: [BusinessController, AffiliateController],
   exports: [BusinessService],
 })

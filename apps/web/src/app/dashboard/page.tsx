@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { useGetMatchingPointBalance } from "@/services/matching-points/hook";
 import Loader from "@/components/ui/loader";
 import type { ChartQueryDto } from "@/services/business-dashboard/types";
 
@@ -25,54 +26,6 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
   { value: "1y", label: "Last Year" },
 ];
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────
-
-const MOCK_ANALYTICS = {
-  totalCustomers: 247,
-  totalCampaigns: 3,
-  totalActiveCampaigns: 3,
-  totalRewardsRedeemed: 89,
-  totalPointsEarned: 15240,
-  totalPointsRedeemed: 4730,
-  activeCampaigns: [
-    { name: "New Customer Campaign", customerCount: 86 },
-    { name: "Summer Dining Campaign", customerCount: 54 },
-    { name: "Birthday Campaign", customerCount: 23 },
-  ],
-  lastTenActivities: [
-    { id: "1", createdAt: "2026-07-08T14:30:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 50, redemptionCode: null, description: "Purchase at restaurant", participant: { id: "p1", name: "Sarah Johnson", email: "sarah@email.com" }, campaign: { id: "c1", name: "Summer Dining" } },
-    { id: "2", createdAt: "2026-07-08T12:15:00Z", updatedAt: "", deletedAt: null, type: "REDEEM" as const, points: 200, redemptionCode: "RDM-001", description: "Free dessert voucher", participant: { id: "p2", name: "Mike Peters", email: "mike@email.com" }, campaign: { id: "c2", name: "Birthday Campaign" } },
-    { id: "3", createdAt: "2026-07-07T18:45:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 100, redemptionCode: null, description: "Referral bonus", participant: { id: "p3", name: "Emma Wilson", email: "emma@email.com" }, campaign: { id: "c1", name: "Summer Dining" } },
-    { id: "4", createdAt: "2026-07-07T09:30:00Z", updatedAt: "", deletedAt: null, type: "EARN" as const, points: 30, redemptionCode: null, description: "Coffee purchase", participant: { id: "p4", name: "James Brown", email: "james@email.com" }, campaign: { id: "c3", name: "New Customer" } },
-    { id: "5", createdAt: "2026-07-06T16:00:00Z", updatedAt: "", deletedAt: null, type: "REDEEM" as const, points: 150, redemptionCode: "RDM-002", description: "Birthday reward", participant: { id: "p5", name: "Lisa Chen", email: "lisa@email.com" }, campaign: { id: "c2", name: "Birthday Campaign" } },
-  ],
-};
-
-const MOCK_CHART_DATA = {
-  data: [
-    { date: "Jul 1", pointsEarned: 520, pointsRedeemed: 180 },
-    { date: "Jul 2", pointsEarned: 480, pointsRedeemed: 120 },
-    { date: "Jul 3", pointsEarned: 610, pointsRedeemed: 250 },
-    { date: "Jul 4", pointsEarned: 390, pointsRedeemed: 90 },
-    { date: "Jul 5", pointsEarned: 720, pointsRedeemed: 310 },
-    { date: "Jul 6", pointsEarned: 550, pointsRedeemed: 200 },
-    { date: "Jul 7", pointsEarned: 680, pointsRedeemed: 280 },
-  ],
-};
-
-const MOCK_METRICS = {
-  totalMembers: 247,
-  totalPointsIssued: 15240,
-  totalPointsRedeemed: 4730,
-  activeCampaigns: 3,
-  giftCardsIssued: 42,
-  giftCardsRedeemed: 18,
-  repeatCustomerRate: 68,
-  revenueGenerated: 28500,
-};
-
-// ─── CUSTOMER WALLET PREVIEW ──────────────────────────────────────────────
-
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────
 
 export default function BusinessDashboard() {
@@ -83,21 +36,34 @@ export default function BusinessDashboard() {
   const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
   const { data: subscription, isLoading: isLoadingSubscription } = useGetMySubscription();
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
+  const { data: matchingBalanceData } = useGetMatchingPointBalance();
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
-  // Use real data if available, otherwise fall back to mock
-  const displayData = useMemo(() => {
-    if (analyticsData && !isAnalyticsError) return analyticsData;
-    return MOCK_ANALYTICS;
-  }, [analyticsData, isAnalyticsError]);
+  const displayData = analyticsData;
+  const displayChart = chartData;
 
-  const displayChart = useMemo(() => {
-    if (chartData && !isChartError) return chartData;
-    return MOCK_CHART_DATA;
-  }, [chartData, isChartError]);
+  const dm = displayData || {
+    totalMembers: 0,
+    totalPointsIssued: 0,
+    totalPointsRedeemed: 0,
+    activeCampaigns: [] as { name: string; customerCount: number }[],
+    giftCardsIssued: 0,
+    giftCardsRedeemed: 0,
+    repeatCustomerRate: 0,
+    revenueGenerated: 0,
+  };
 
-  const displayMetrics = useMemo(() => MOCK_METRICS, []);
+  const displayMetrics = {
+    totalMembers: dm.totalMembers ?? 0,
+    totalPointsIssued: dm.totalPointsIssued ?? 0,
+    totalPointsRedeemed: dm.totalPointsRedeemed ?? 0,
+    activeCampaigns: Array.isArray(dm.activeCampaigns) ? dm.activeCampaigns.length : (dm.activeCampaigns ?? 0),
+    giftCardsIssued: dm.giftCardsIssued ?? 0,
+    giftCardsRedeemed: dm.giftCardsRedeemed ?? 0,
+    repeatCustomerRate: dm.repeatCustomerRate ?? 0,
+    revenueGenerated: dm.revenueGenerated ?? 0,
+  };
 
   const isSuperBusiness = profile?.isSuperBusiness;
   const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'Starter');
@@ -193,7 +159,7 @@ export default function BusinessDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} />
         <PointsSummary
-          summary={{ earned: displayData.totalPointsEarned, spent: displayData.totalPointsRedeemed, matchingAvailable: 5000 }}
+          summary={{ earned: displayData?.totalPointsEarned || 0, spent: displayData?.totalPointsRedeemed || 0, matchingAvailable: matchingBalanceData?.matching_points || 0 }}
           isTrial={subscription?.isTrial}
           trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
         />
@@ -216,7 +182,7 @@ export default function BusinessDashboard() {
         </CardHeader>
         <CardContent className="p-3 sm:p-6">
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={displayChart.data}>
+            <BarChart data={displayChart?.data || []}>
               <XAxis dataKey="date" stroke="#888" tick={{ fontSize: 11 }} />
               <YAxis stroke="#888" tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #f97316" }} cursor={{ fill: "#fff7ed" }} />
@@ -234,9 +200,9 @@ export default function BusinessDashboard() {
           <CardTitle className="text-base sm:text-lg">Active Campaigns</CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
-          {displayData.activeCampaigns && displayData.activeCampaigns.length > 0 ? (
+          {analyticsData?.activeCampaigns && analyticsData.activeCampaigns.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
-              {displayData.activeCampaigns.map((c, i) => (
+              {analyticsData.activeCampaigns.map((c: { name: string; customerCount: number }, i: number) => (
                 <div key={i} className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-orange-50/50 border border-orange-100">
                   <span className="font-medium text-gray-800 text-xs sm:text-sm truncate mr-2">{c.name}</span>
                   <Badge variant="outline" className="text-orange-600 border-orange-300 bg-white text-[10px] sm:text-xs flex-shrink-0">{c.customerCount} customers</Badge>
@@ -255,7 +221,7 @@ export default function BusinessDashboard() {
           <CardTitle className="text-base sm:text-lg">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0 sm:pt-6">
-          {displayData.lastTenActivities && displayData.lastTenActivities.length > 0 ? (
+          {displayData?.lastTenActivities && displayData.lastTenActivities.length > 0 ? (
             <ul className="space-y-2.5 sm:space-y-4">
               {displayData.lastTenActivities.map((a) => (
                 <li key={a.id} className="flex justify-between items-center border-b border-gray-100 pb-2.5 sm:pb-3 last:border-0 last:pb-0">

@@ -95,3 +95,21 @@ export interface BusinessSubscriptionResponse {
     status: string;
     features: string[];
 }
+
+export interface CentralPackage {
+    platform: string;
+    packageName: string;
+    planName: string;
+    status: "active" | "inactive" | "expired";
+    limits: Record<string, number>;
+    expiresAt: string;
+    provider: string;
+    providerSubscriptionId: string;
+}
+
+export interface CentralUserInfo {
+    sub: string;
+    email: string;
+    name: string;
+    packages: CentralPackage[];
+}

@@ -30,7 +30,10 @@ export class MembershipController {
     type: Membership,
   })
   @ApiResponse({ status: 404, description: "Membership not found." })
-  getMyMembership(@CurrentUser() user) {
+  async getMyMembership(@CurrentUser() user) {
+    if (user.email) {
+      await this.membershipService.syncFromCentralProfile(user.id, user.email);
+    }
     return this.membershipService.getMyMembership(user);
   }
 

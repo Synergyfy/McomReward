@@ -22,72 +22,7 @@ interface JoinCircleDialogProps {
     onJoined?: (circle: any) => void;
 }
 
-const MOCK_DISCOVERABLE_CIRCLES = [
-    {
-        id: "disc-1",
-        name: "London Tech Growth",
-        ownerName: "Innovate UK",
-        type: "MARKETING",
-        memberCount: 42,
-        contributionAmount: 0,
-        description: "A circle focused on scaling tech businesses in the London area through collaborative marketing.",
-        season: "Annual",
-        tags: ["Tech", "Scaling", "London"],
-        terms: [
-            "Active participation in monthly campaigns is expected.",
-            "Must share at least one offer per quarter.",
-            "Respect and professional conduct within the group chat."
-        ]
-    },
-    {
-        id: "disc-2",
-        name: "Eco-Friendly Retailers",
-        ownerName: "Green Earth Ltd",
-        type: "ADVERTISING",
-        memberCount: 18,
-        contributionAmount: 0,
-        description: "Connecting sustainable retailers for cross-promotional advertising and shared customer bases.",
-        season: "Summer",
-        tags: ["Eco-friendly", "Retail", "Sustainability"],
-        terms: [
-            "Proof of sustainable practices required.",
-            "Shared advertising costs for group campaigns.",
-            "Mutual promotion on social media channels."
-        ]
-    },
-    {
-        id: "disc-3",
-        name: "SME Finance Support",
-        ownerName: "Capital Trust",
-        type: "SMART_MONEY",
-        memberCount: 12,
-        contributionAmount: 250,
-        description: "A Smart Money circle for small businesses to provide interest-free capital support to each other.",
-        season: "Winter",
-        tags: ["Finance", "SME", "Collaborative Capital"],
-        terms: [
-            "Mandatory £250 monthly contribution.",
-            "Draw order is decided by randomized ballot.",
-            "Default on contribution leads to immediate expulsion."
-        ]
-    },
-    {
-        id: "disc-4",
-        name: "West End Hospitality",
-        ownerName: "Soho Social Club",
-        type: "NEARBY",
-        memberCount: 29,
-        contributionAmount: 0,
-        description: "Hyperlocal collaboration for restaurants and bars in the West End to drive footfall.",
-        season: "Spring",
-        tags: ["Hospitality", "Nearby", "Footfall"],
-        terms: [
-            "Exclusive to businesses within 2 miles of Soho.",
-            "Joint weekend promotions participation.",
-            "Staff discounts for member businesses."
-        ]
-    }
-];
+
 
 export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoined }: JoinCircleDialogProps) {
     const [search, setSearch] = useState("");
@@ -134,7 +69,7 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
         }, 300);
     };
 
-    const filteredCircles = (discoverableData?.data.length ? discoverableData.data : MOCK_DISCOVERABLE_CIRCLES).filter(c =>
+    const filteredCircles = (discoverableData?.data ?? []).filter((c: any) =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.ownerName.toLowerCase().includes(search.toLowerCase())
     );

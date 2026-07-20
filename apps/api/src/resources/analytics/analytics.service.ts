@@ -8,6 +8,7 @@ import {
   PointHistoryType,
 } from "../participant-campaign-balance/entities/point-history.entity";
 import { Participant } from "../participant/entities/participant.entity";
+import { BusinessReward } from "../rewards/entities/business-reward.entity";
 import { GeneralAnalyticsDto } from "./dto/general-analytics.dto";
 import { User } from "src/common/interfaces/user.interface";
 import { ChartResponseDto, ChartData } from "./dto/chart-analytics.dto";
@@ -23,6 +24,8 @@ export class AnalyticsService {
     private readonly participantRepository: Repository<Participant>,
     @InjectRepository(BusinessCampaign)
     private readonly businessCampaignRepository: Repository<BusinessCampaign>,
+    @InjectRepository(BusinessReward)
+    private readonly businessRewardRepository: Repository<BusinessReward>,
   ) {}
 
   async getGeneralAnalytics(user: User): Promise<GeneralAnalyticsDto> {
@@ -122,13 +125,86 @@ export class AnalyticsService {
           })
         : [];
 
+    const totalMembers = totalCustomers;
+    const totalPointsIssued = totalPointsEarned;
+
+    let giftCardsIssued = 0;
+    let giftCardsRedeemed = 0;
+    let repeatCustomerRate = 0;
+    let redemptionRate = 0;
+    let averageSpend = 0;
+    let customerLtv = 0;
+    let revenueGenerated = 0;
+
+    if (businessCampaignIds.length > 0) {
+      const businessRewards = await this.businessRewardRepository.find({
+        where: {
+          business: { id: businessId },
+          mall_reward_type: "GIFT_CARD",
+        },
+      });
+      const businessRewardIds = businessRewards.map((r) => r.id);
+
+      if (businessRewardIds.length > 0) {
+        giftCardsIssued = await this.pointHistoryRepository.count({
+          where: {
+            business: { id: businessId },
+            businessReward: { id: In(businessRewardIds) },
+            type: PointHistoryType.REDEEM,
+          },
+        });
+        giftCardsRedeemed = await this.pointHistoryRepository.count({
+          where: {
+            business: { id: businessId },
+            businessReward: { id: In(businessRewardIds) },
+            type: PointHistoryType.EARN,
+          },
+        });
+      }
+
+      const participantsWithMultipleTx = await this.pointHistoryRepository
+        .createQueryBuilder("ph")
+        .select("ph.participant_id")
+        .where("ph.business_id = :businessId", { businessId })
+        .groupBy("ph.participant_id")
+        .having("COUNT(ph.id) > 1")
+        .getRawMany();
+
+      if (totalCustomers > 0) {
+        repeatCustomerRate = Math.round(
+          (participantsWithMultipleTx.length / totalCustomers) * 100,
+        );
+      }
+    }
+
+    if (totalPointsEarned > 0) {
+      redemptionRate = Math.round(
+        (totalPointsRedeemed / totalPointsEarned) * 100 * 10,
+      ) / 10;
+    }
+    if (totalCustomers > 0 && totalPointsEarned > 0) {
+      averageSpend = Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
+    }
+    if (totalCustomers > 0 && totalPointsEarned > 0 && totalRewardsRedeemed > 0) {
+      customerLtv = Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
+    }
+
     return {
       totalCustomers,
+      totalMembers,
       totalCampaigns,
       totalActiveCampaigns,
       totalRewardsRedeemed,
       totalPointsEarned,
+      totalPointsIssued,
       totalPointsRedeemed,
+      giftCardsIssued,
+      giftCardsRedeemed,
+      repeatCustomerRate,
+      redemptionRate,
+      averageSpend,
+      customerLtv,
+      revenueGenerated,
       activeCampaigns: activeCampaignsWithCustomerCounts,
       lastTenActivities,
     };

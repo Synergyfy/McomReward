@@ -6,7 +6,10 @@ import { Loader2 } from 'lucide-react';
 export default function SubscriptionPage() {
   useEffect(() => {
     const solutionsUrl = process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || 'https://mcomsolutions.vercel.app';
-    window.location.replace(`${solutionsUrl}/pricing`);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const callbackUrl = encodeURIComponent(`${appUrl}/dashboard`);
+
+    window.location.replace(`${solutionsUrl}/getstarted/business?source=mcomloyalty&redirect=${callbackUrl}`);
   }, []);
 
   return (

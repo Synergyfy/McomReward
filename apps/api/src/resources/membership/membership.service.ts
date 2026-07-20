@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, Like } from "typeorm";
 import { Membership } from "./entities/membership.entity";
 import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
 import { Tier } from "../tier/entities/tier.entity";
@@ -12,9 +12,11 @@ import { PaymentService } from "../payment/payment.service";
 import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
 import { TierType } from "../tier/entities/tier-type.enum";
 import { MoreThan, LessThanOrEqual, MoreThanOrEqual, LessThan } from "typeorm";
+import { CentralPackage, McomCentralService } from "../sso/mcom-central.service";
 
 @Injectable()
 export class MembershipService {
+  private readonly logger = new Logger(MembershipService.name);
   constructor(
     @InjectRepository(Membership)
     private readonly membershipRepository: Repository<Membership>,
@@ -23,6 +25,7 @@ export class MembershipService {
     @InjectRepository(Tier)
     private readonly tierRepository: Repository<Tier>,
     private readonly paymentService: PaymentService,
+    private readonly mcomCentralService: McomCentralService,
   ) {}
 
   async findOneByBusinessId(businessId: string) {
@@ -231,5 +234,141 @@ export class MembershipService {
       });
   
       return this.membershipRepository.save(membership);
+  }
+
+  async syncFromCentralPackage(
+    businessId: string,
+    centralPackage: CentralPackage
+  ): Promise<Membership | null> {
+    const tier = await this.tierRepository.findOne({
+      where: { name: centralPackage.packageName },
+    });
+
+    if (!tier) {
+      this.logger.warn(
+        `No tier found for MCOM Central package: ${centralPackage.packageName}`
+      );
+      return null;
+    }
+
+    const expiresAt = new Date(centralPackage.expiresAt);
+    const isExpired = expiresAt <= new Date();
+
+    // Check for existing membership synced from this central subscription
+    let membership = await this.membershipRepository.findOne({
+      where: {
+        business: { id: businessId },
+        transaction_id: Like(`CENTRAL-%`),
+      },
+      relations: ["tier"],
+    });
+
+    if (membership) {
+      // Update existing membership
+      membership.tier = tier;
+      membership.status = isExpired
+        ? MembershipStatus.EXPIRED
+        : MembershipStatus.ACTIVE;
+      membership.expires_at = expiresAt;
+      membership.is_trial = false;
+    } else {
+      // Create new membership from central package
+      membership = this.membershipRepository.create({
+        business: { id: businessId } as Business,
+        tier,
+        plan_type: this.mapPlanType(centralPackage.planName),
+        starts_at: new Date(),
+        expires_at: expiresAt,
+        status: isExpired ? MembershipStatus.EXPIRED : MembershipStatus.ACTIVE,
+        is_trial: false,
+        transaction_id: `CENTRAL-${centralPackage.providerSubscriptionId}`,
+        payment_provider:
+          centralPackage.provider === "stripe"
+            ? PaymentProvider.STRIPE
+            : PaymentProvider.PAYPAL,
+      });
+    }
+
+    this.logger.log(
+      `Synced MCOM Central package "${centralPackage.packageName}" (status: ${membership.status}) for business ${businessId}`
+    );
+
+    return this.membershipRepository.save(membership);
+  }
+
+  private mapPlanType(planName: string): PlanType {
+    const name = planName?.toLowerCase() || "";
+    if (name.includes("annual") || name.includes("yearly")) {
+      return PlanType.ANNUAL;
+    }
+    if (name.includes("quarterly")) {
+      return PlanType.QUARTERLY;
+    }
+    return PlanType.MONTHLY;
+  }
+
+  async syncFromCentralProfile(
+    businessId: string,
+    email: string
+  ): Promise<void> {
+    try {
+      const centralUser = await this.mcomCentralService.getUserMembership({ email });
+
+      if (!centralUser?.success || !centralUser?.data?.packages) {
+        this.logger.log(
+          `No packages or user profile found in MCOM Central for email ${email}`
+        );
+        return;
+      }
+
+      const rewardsPackage = centralUser.data.packages.find(
+        (p: any) =>
+          (p.platformName === "MCOM Rewards" || p.platform === "MCOM Rewards") &&
+          p.status === "active"
+      );
+
+      if (rewardsPackage) {
+        // Sync package to local membership
+        const mappedPackage: CentralPackage = {
+          platform: rewardsPackage.platformName || rewardsPackage.platform || "MCOM Rewards",
+          packageName: rewardsPackage.packageName,
+          planName: rewardsPackage.packageName, // Assume planName is same as packageName
+          status: rewardsPackage.status === "active" ? "active" : "inactive",
+          limits: {},
+          expiresAt: rewardsPackage.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          provider: rewardsPackage.provider || "stripe",
+          providerSubscriptionId: rewardsPackage.providerSubscriptionId || "CENTRAL-PROFILE",
+        };
+
+        await this.syncFromCentralPackage(businessId, mappedPackage);
+      } else {
+        this.logger.log(
+          `No active MCOM Rewards package found for business email ${email}`
+        );
+        // Revoke active central memberships if they exist but are no longer active in Central
+        let existingMembership = await this.membershipRepository.findOne({
+          where: {
+            business: { id: businessId },
+            transaction_id: Like(`CENTRAL-%`),
+          },
+        });
+        if (existingMembership && existingMembership.status === MembershipStatus.ACTIVE) {
+          existingMembership.status = MembershipStatus.EXPIRED;
+          await this.membershipRepository.save(existingMembership);
+          this.logger.log(
+            `Revoked expired/inactive MCOM Central package for business ${businessId}`
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync subscription from MCOM Central profile for email ${email}: ${error?.message}`,
+        error?.stack
+      );
+    }
+  }
+
+  async findTierByName(name: string): Promise<Tier | null> {
+    return this.tierRepository.findOne({ where: { name } });
   }
 }

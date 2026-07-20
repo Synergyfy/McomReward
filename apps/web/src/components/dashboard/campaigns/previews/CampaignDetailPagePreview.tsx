@@ -8,48 +8,26 @@ import { Calendar, Info, Gift, CheckCircle, Users } from "lucide-react";
 import { CampaignFormData } from "@/context/CampaignFormContext";
 import { Badge } from "@/components/ui/badge";
 import DOMPurify from 'dompurify';
+import { useGetBusinessRewards } from '@/services/business-reward/hooks';
 
 interface CampaignDetailPagePreviewProps {
   campaignData: CampaignFormData;
 }
 
-// Mock rewards for preview since we only have IDs in formData
-const mockAllRewards = [
-  {
-    id: '1',
-    title: 'Summer Voucher ($50)',
-    description: 'Get a $50 voucher for your summer shopping.',
-    points: 50,
-    imageUrl: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-  {
-    id: '2',
-    title: 'Gift Card ($100)',
-    description: 'A $100 gift card to use on any purchase.',
-    points: 100,
-    imageUrl: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-  {
-    id: '3',
-    title: 'Discount Coupon (20% off)',
-    description: 'Enjoy 20% off your next order.',
-    points: 20,
-    imageUrl: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-];
-
 export default function CampaignDetailPagePreview({ campaignData }: CampaignDetailPagePreviewProps) {
   const campaign = campaignData;
-  const isMember = false; // Preview always shows non-member view initially or we could toggle?
+  const isMember = false;
   const isJoining = false;
 
-  // Fallback image if bannerUrl is missing
-  const bannerImage = campaign.imageUrl || 'https://placehold.co/1920x600?text=Campaign+Banner';
+  const { data: rewardsData } = useGetBusinessRewards(1, 100);
 
-  // Mock rewards logic
-  const selectedRewards = mockAllRewards.filter(r => campaign.rewardIds.includes(r.id));
-  // If no rewards match (e.g. real IDs vs mock IDs), just show some mocks for preview effect if IDs exist
-  const displayRewards = selectedRewards.length > 0 ? selectedRewards : (campaign.rewardIds.length > 0 ? mockAllRewards.slice(0, campaign.rewardIds.length) : []);
+  // Fallback image if bannerUrl is missing
+  const bannerImage = campaign.imageUrl || '';
+
+  // Use real rewards when available
+  const allRewards = rewardsData?.data || [];
+  const selectedRewards = allRewards.filter((r: any) => campaign.rewardIds.includes(r.id));
+  const displayRewards = selectedRewards.length > 0 ? selectedRewards : [];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-24">
@@ -236,23 +214,23 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
 
             {displayRewards.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayRewards.map((reward, index) => (
+                {displayRewards.map((reward: any, index: number) => (
                   <div key={index} className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
                     <div className="relative h-48 w-full overflow-hidden">
                       <Image
-                        src={reward.imageUrl || 'https://via.placeholder.com/400x300'}
+                        src={reward.image || reward.imageUrl || ''}
                         alt={reward.title}
                         layout="fill"
                         objectFit="cover"
                         className="group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
-                        {reward.points} Points
+                        {reward.points || reward.points_required || reward.max_points || 0} Points
                       </div>
                     </div>
                     <div className="p-5 flex flex-col flex-grow">
                         <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">{reward.title}</h3>
-                        <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">{reward.description}</p>
+                        <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-grow">{reward.description || reward.description}</p>
                         <Button className="w-full bg-gray-900 text-white hover:bg-orange-600 transition-colors rounded-xl">
                             View Details
                         </Button>

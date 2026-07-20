@@ -20,11 +20,20 @@ export interface Activity {
 
 export interface GeneralAnalyticsDto {
   totalCustomers: number;
+  totalMembers: number;
   totalCampaigns: number;
   totalActiveCampaigns: number;
   totalRewardsRedeemed: number;
   totalPointsEarned: number;
+  totalPointsIssued: number;
   totalPointsRedeemed: number;
+  giftCardsIssued: number;
+  giftCardsRedeemed: number;
+  repeatCustomerRate: number;
+  redemptionRate: number;
+  averageSpend: number;
+  customerLtv: number;
+  revenueGenerated: number;
   activeCampaigns: {
     name: string;
     customerCount: number;

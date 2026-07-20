@@ -28,44 +28,31 @@ interface CircleCollaborationProps {
     myMemberId: string | null;
 }
 
-// Mock data for shared campaigns in this circle
-const MOCK_SHARED_CAMPAIGNS = [
-    {
-        id: "shared-1",
-        ownerId: "owner-1",
-        businessName: "The Coffee Spot",
-        campaignName: "Morning Perks Collaboration",
-        description: "Join our morning campaign! Share our 'Buy 5 Get 1 Free' reward with your customers.",
-        bannerUrl: "https://placehold.co/600x200?text=Morning+Perks",
-        rewards: ["Free Latte", "10% Discount"],
-        status: "ACTIVE",
-        participants: 12,
-        endsAt: "2026-03-15T00:00:00Z"
-    },
-    {
-        id: "shared-2",
-        ownerId: "owner-2",
-        businessName: "Local Threads",
-        campaignName: "Spring Fashion Week",
-        description: "Promote our new collection and earn matching points for every customer referral.",
-        bannerUrl: "https://placehold.co/600x200?text=Spring+Fashion",
-        rewards: ["£10 Voucher", "Loyalty Badge"],
-        status: "ACTIVE",
-        participants: 8,
-        endsAt: "2026-04-01T00:00:00Z"
-    }
-];
+
 
 export function CircleCollaboration({ circleId, circleName, members, myMemberId }: CircleCollaborationProps) {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isAdoptModalOpen, setIsAdoptModalOpen] = useState(false);
-    const [selectedCampaignToAdopt, setSelectedCampaignToAdopt] = useState<any>(null);
+    const [selectedCampaignToAdopt, setSelectedCampaignToAdopt] = useState<SharedCampaign | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [shareTab, setShareTab] = useState<"campaigns" | "deals">("campaigns");
     const { data: myCampaigns, isLoading: isLoadingMyCampaigns } = useGetMyCreatedCampaigns(1, 20);
     const { data: myDeals, isLoading: isLoadingMyDeals } = useGetMyDeals({ page: 1, limit: 20 });
 
-    const handleAdoptClick = (campaign: any) => {
+    interface SharedCampaign {
+        id: string;
+        campaignName: string;
+        businessName: string;
+        description: string;
+        bannerUrl: string;
+        rewards: string[];
+        participants: number;
+        endsAt: string;
+    }
+
+    const sharedCampaigns: SharedCampaign[] = [];
+
+    const handleAdoptClick = (campaign: SharedCampaign) => {
         setSelectedCampaignToAdopt(campaign);
         setIsAdoptModalOpen(true);
     };
@@ -182,10 +169,10 @@ export function CircleCollaboration({ circleId, circleName, members, myMemberId 
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                {MOCK_SHARED_CAMPAIGNS.filter(campaign =>
-                    campaign.campaignName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    campaign.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    campaign.description.toLowerCase().includes(searchQuery.toLowerCase())
+                {sharedCampaigns.filter((campaign) =>
+                    campaign.campaignName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    campaign.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    campaign.description?.toLowerCase().includes(searchQuery.toLowerCase())
                 ).map((campaign) => (
                     <Card key={campaign.id} className="overflow-hidden border-zinc-200/60 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-[2rem] hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 group flex flex-col">
                         <div className="relative h-44 w-full overflow-hidden">

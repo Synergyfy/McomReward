@@ -58,6 +58,8 @@ import { WalletModule } from "./resources/wallet/wallet.module";
 import { TrainingSupportModule } from "./resources/training-support/training-support.module";
 import { ProvisionModule } from "./resources/provision/provision.module";
 import { HelpRequestsModule } from "./resources/help-requests/help-requests.module";
+import { SsoModule } from "./resources/sso/sso.module";
+import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
 
 @Module({
   imports: [
@@ -120,6 +122,8 @@ import { HelpRequestsModule } from "./resources/help-requests/help-requests.modu
       },
     ]),
     TrainingSupportModule,
+    SsoModule,
+    SystemPlansModule,
   ],
   controllers: [AppController],
   providers: [

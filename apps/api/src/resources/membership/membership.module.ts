@@ -8,6 +8,7 @@ import { PaymentHistory } from "../payment-history/entities/payment-history.enti
 import { Tier } from "../tier/entities/tier.entity";
 
 import { PaymentModule } from "../payment/payment.module";
+import { McomCentralService } from "../sso/mcom-central.service";
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { PaymentModule } from "../payment/payment.module";
     PaymentModule,
   ],
   controllers: [MembershipController],
-  providers: [MembershipService],
+  providers: [MembershipService, McomCentralService],
   exports: [MembershipService],
 })
 export class MembershipModule {}

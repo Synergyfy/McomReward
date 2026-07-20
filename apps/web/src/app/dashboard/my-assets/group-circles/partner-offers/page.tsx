@@ -24,55 +24,23 @@ import { cn } from "@/lib/utils";
 import { DistributeOfferDialog } from "./components/DistributeOfferDialog";
 import { toast } from "sonner";
 
-// Mock Marketplace Data
-const MOCK_MARKETPLACE_OFFERS = [
-    {
-        id: "mkt-1",
-        businessName: "Gourmet Garden",
-        campaignName: "Farm to Table Series",
-        description: "Promote our organic seasonal menu. Earn 50 matching points per new customer referral.",
-        bannerUrl: "https://placehold.co/600x200?text=Gourmet+Garden",
-        rewards: ["15% Off Total Bill", "Free Dessert"],
-        participants: 15,
-        endsAt: "2026-05-20T00:00:00Z"
-    },
-    {
-        id: "mkt-2",
-        businessName: "Tech Hub",
-        campaignName: "Gadget Launch Collaboration",
-        description: "Be the first to share our new gadget launch. Exclusive rewards for your top tier customers.",
-        bannerUrl: "https://placehold.co/600x200?text=Tech+Hub",
-        rewards: ["£50 Tech Voucher", "Free Repairs"],
-        participants: 22,
-        endsAt: "2026-06-10T00:00:00Z"
-    },
-    {
-        id: "mkt-3",
-        businessName: "Wellness Way",
-        campaignName: "Mindful May Partnerships",
-        description: "A month of wellness! Share our yoga and meditation classes with your community.",
-        bannerUrl: "https://placehold.co/600x200?text=Wellness+Way",
-        rewards: ["Free Yoga Session", "Health Pack"],
-        participants: 31,
-        endsAt: "2026-05-31T00:00:00Z"
-    },
-    {
-        id: "mkt-4",
-        businessName: "Urban Style",
-        campaignName: "Streetwear Pop-up Share",
-        description: "Promote our limited edition pop-up. High conversion rewards for fashion enthusiasts.",
-        bannerUrl: "https://placehold.co/600x200?text=Urban+Style",
-        rewards: ["Exclusive T-Shirt", "20% Discount"],
-        participants: 12,
-        endsAt: "2026-04-15T00:00:00Z"
-    }
-];
+type MarketplaceOffer = {
+    id: string;
+    businessName: string;
+    campaignName: string;
+    description: string;
+    bannerUrl: string;
+    rewards: string[];
+    participants: number;
+    endsAt: string;
+};
 
 function PartnerOffersContent() {
     const searchParams = useSearchParams();
     const circleName = searchParams.get('circleName');
     const circleId = searchParams.get('circleId');
 
+    const [marketplaceOffers, setMarketplaceOffers] = useState<MarketplaceOffer[]>([]);
     const [adoptedCampaigns, setAdoptedCampaigns] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -298,7 +266,7 @@ function PartnerOffersContent() {
                         "grid gap-6",
                         viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
                     )}>
-                        {MOCK_MARKETPLACE_OFFERS.map((campaign, idx) => {
+                        {(marketplaceOffers as MarketplaceOffer[]).map((campaign, idx) => {
                             const isAdopted = adoptedCampaigns.some(c => c.id === campaign.id);
                             return (
                                 <motion.div

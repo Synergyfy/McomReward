@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useGetMatchingPointBalance, useGetMatchingPointsHistory, useGetPublicMatchingRewards, useGetRedeemedMatchingRewards } from '@/services/matching-points/hook';
 import MatchingPointsOverview from '@/components/dashboard/matching-points/MatchingPointsOverview';
 import MatchingPointsHistoryTable from '@/components/dashboard/matching-points/MatchingPointsHistoryTable';
-import { matchingPointsOverview as mockOverview } from '@/lib/mock-data/matchingPoints';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Gift } from 'lucide-react';
 import { MatchingPointReward } from '@/services/matching-points/types';
@@ -46,8 +46,11 @@ export default function RegularBusinessView() {
   const currentBalance = balanceData?.matching_points ?? 0;
 
   const overview = {
-    ...mockOverview,
     totalMatchingPoints: currentBalance,
+    totalRegularPoints: 0,
+    earningRules: [],
+    redemptionRules: [],
+    adminNotices: [] as string[],
   };
 
   const handleRewardClick = (reward: MatchingPointReward) => {
@@ -123,7 +126,7 @@ export default function RegularBusinessView() {
             </CardHeader>
             <CardContent>
             <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                {mockOverview.adminNotices.map((notice, index) => (
+                {(overview.adminNotices ?? []).map((notice, index) => (
                 <li key={index}>{notice}</li>
                 ))}
             </ul>

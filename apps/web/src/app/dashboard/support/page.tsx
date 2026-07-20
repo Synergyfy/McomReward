@@ -4,7 +4,6 @@ import React from 'react';
 import FaqAccordion from '@/components/dashboard/support/FaqAccordion';
 import TrainingVideoCard from '@/components/dashboard/support/TrainingVideoCard';
 import SupportTicketForm from '@/components/dashboard/support/SupportTicketForm';
-import { faqData } from '@/lib/mock-data/support';
 import { useGetTrainingVideos } from '@/services/training-videos/hook';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,7 +21,7 @@ export default function SupportPage() {
       {/* FAQs Section */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
-        <FaqAccordion faqs={faqData} />
+        <FaqAccordion faqs={[]} />
       </div>
 
       {/* Training Videos Section */}

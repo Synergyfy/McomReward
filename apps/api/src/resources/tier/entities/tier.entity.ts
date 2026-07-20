@@ -13,6 +13,14 @@ export class Tier extends AbstractBaseEntity {
   @Column({ unique: true })
   name: string;
 
+  @ApiProperty({ description: "Description of the tier", required: false })
+  @Column({ nullable: true })
+  description: string;
+
+  @ApiProperty({ description: "Whether this is the default plan", default: false })
+  @Column({ type: "boolean", default: false })
+  is_default: boolean;
+
   @ApiProperty({
     description: "The type of tier",
     enum: TierType,

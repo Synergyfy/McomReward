@@ -1,11 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Trophy, BarChart3, Percent, Loader2 } from "lucide-react";
+import { Users, Trophy, BarChart3, Percent, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,28 +13,13 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import Link from "next/link";
-import { mockCampaignDetails, CampaignPerformance } from "@/lib/mock-data/campaign-performance";
-
+import { useGetDetailedCampaignAnalytics } from "@/services/campaigns/hook";
 
 export default function CampaignPerformancePage() {
   const { id } = useParams();
-  const [campaign, setCampaign] = useState<CampaignPerformance | null>(null);
+  const { data: analytics, isLoading } = useGetDetailedCampaignAnalytics(id as string);
 
-  useEffect(() => {
-    const campaignData = mockCampaignDetails[id as string];
-    if (campaignData) setCampaign(campaignData);
-}, [id]);
-
-if (campaign === null) {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-     <h3 className="text-gray-600">Campaign not found.</h3>
-    </div>
-  );
-}
-
-  if (!campaign) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
@@ -44,8 +27,27 @@ if (campaign === null) {
     );
   }
 
+  if (!analytics) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h3 className="text-gray-600">Campaign not found.</h3>
+      </div>
+    );
+  }
 
-  const { stats, trend, topCustomers, rewardsPerformance } = campaign;
+  const stats = [
+    { title: "Total Customers", value: Number(analytics.totalParticipants).toLocaleString(), icon: Users, color: "text-blue-500" },
+    { title: "Total Points Awarded", value: analytics.totalPointsAwarded ? Number(analytics.totalPointsAwarded).toLocaleString() : '0', icon: BarChart3, color: "text-black" },
+    { title: "Rewards Redeemed", value: Number(analytics.totalRewardsRedeemed).toLocaleString(), icon: Trophy, color: "text-green-500" },
+    { title: "Redemption Rate", value: `${analytics.redemptionRate}%`, icon: Percent, color: "text-purple-500" },
+  ];
+
+  const trend = analytics.weeklyChartData.map((d) => ({
+    date: d.date,
+    signups: Number(d.newParticipants),
+    redemptions: Number(d.rewardsRedeemed),
+    pointsAwarded: Number(d.pointsAwarded),
+  }));
 
   return (
     <motion.div
@@ -54,61 +56,24 @@ if (campaign === null) {
       animate={{ opacity: 1 }}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-          {/* <Link href="/business/dashboard">
-            <Button variant="outline" className="flex items-center gap-2">
-              <ArrowLeft size={16} /> Back to Campaigns
-            </Button>
-          </Link> */}
-          <h1 className="text-2xl font-bold text-gray-800 text-center">
-            {campaign.name} – Performance Overview
-          </h1>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
+          Campaign Performance Overview
+        </h1>
 
-        {/* 🔹 Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="p-4 bg-orange-500 hover:bg-orange-600 transition">
-            <CardHeader className="flex items-center gap-2">
-              <Users className="text-blue-500" />
-              <CardTitle>Total Customers</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold text-gray-800">
-              {stats.totalCustomers}
-            </CardContent>
-          </Card>
-
-          <Card className="p-4 bg-orange-500 hover:bg-orange-600 transition">
-            <CardHeader className="flex items-center gap-2">
-              <BarChart3 className="text-black" />
-              <CardTitle>Total Points Awarded</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold text-gray-800">
-              {stats.totalPointsAwarded.toLocaleString()}
-            </CardContent>
-          </Card>
-
-          <Card className="p-4 bg-orange-500 hover:bg-orange-600 transition">
-            <CardHeader className="flex items-center gap-2">
-              <Trophy className="text-green-500" />
-              <CardTitle>Rewards Redeemed</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold text-gray-800">
-              {stats.totalRewardsRedeemed}
-            </CardContent>
-          </Card>
-
-          <Card className="p-4 bg-orange-500 hover:bg-orange-600 transition">
-            <CardHeader className="flex items-center gap-2">
-              <Percent className="text-purple-500" />
-              <CardTitle>Redemption Rate</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold text-gray-800">
-              {stats.redemptionRate}%
-            </CardContent>
-          </Card>
+          {stats.map((s) => (
+            <Card key={s.title} className="p-4 bg-orange-500 hover:bg-orange-600 transition">
+              <CardHeader className="flex items-center gap-2">
+                <s.icon className={s.color} />
+                <CardTitle>{s.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-2xl font-semibold text-gray-800">
+                {s.value}
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* 🔹 Trend Chart */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Weekly Performance Trends</CardTitle>
@@ -121,79 +86,63 @@ if (campaign === null) {
                 <Tooltip />
                 <Legend />
                 <Line type="monotone" dataKey="signups" stroke="#f97316" name="Signups" />
-                <Line
-                  type="monotone"
-                  dataKey="redemptions"
-                  stroke="#22c55e"
-                  name="Redemptions"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="pointsAwarded"
-                  stroke="#3b82f6"
-                  name="Points Awarded"
-                />
+                <Line type="monotone" dataKey="redemptions" stroke="#22c55e" name="Redemptions" />
+                <Line type="monotone" dataKey="pointsAwarded" stroke="#3b82f6" name="Points Awarded" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* 🔹 Top Customers */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Top Customers</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="border-b text-gray-500">
-                <tr>
-                  <th className="py-2">Name</th>
-                  <th>Email</th>
-                  <th>Points</th>
-                  <th>Redemptions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topCustomers.map((cust, idx) => (
-                  <tr key={idx} className="border-b  hover:bg-orange-200">
-                    <td className="py-2 font-medium">{cust.name}</td>
-                    <td>{cust.email}</td>
-                    <td>{cust.points}</td>
-                    <td>{cust.redemptions}</td>
+              <table className="w-full text-sm text-left text-gray-700">
+                <thead className="border-b text-gray-500">
+                  <tr>
+                    <th className="py-2">Name</th>
+                    <th>Points</th>
+                    <th>Redemptions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {analytics.rankedParticipants.map((p, idx) => (
+                    <tr key={idx} className="border-b hover:bg-orange-200">
+                      <td className="py-2 font-medium">{p.pName || p.id}</td>
+                      <td>{Number(p.totalPointsEarned).toLocaleString()}</td>
+                      <td>{Number(p.totalRedemptions).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
 
-        {/* 🔹 Rewards Performance */}
         <Card>
           <CardHeader>
-            <CardTitle>Rewards Performance</CardTitle>
+            <CardTitle>Top Rewards</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="border-b text-gray-500">
-                <tr>
-                  <th className="py-2">Reward</th>
-                  <th>Points Required</th>
-                  <th>Redeemed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rewardsPerformance.map((reward) => (
-                  <tr key={reward.rewardId} className="border-b hover:bg-orange-200">
-                    <td className="py-2 font-medium">{reward.title}</td>
-                    <td>{reward.pointsRequired}</td>
-                    <td>{reward.redeemed}</td>
+              <table className="w-full text-sm text-left text-gray-700">
+                <thead className="border-b text-gray-500">
+                  <tr>
+                    <th className="py-2">Reward</th>
+                    <th>Redeemed</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {analytics.topRewards.map((r) => (
+                    <tr key={r.id} className="border-b hover:bg-orange-200">
+                      <td className="py-2 font-medium">{r.rTitle}</td>
+                      <td>{Number(r.totalRedemptions).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>

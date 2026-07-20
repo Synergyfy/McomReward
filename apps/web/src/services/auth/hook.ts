@@ -134,15 +134,32 @@ export const useResendOtp = () => {
   });
 };
 
-// SSO Login
+// SSO Login (shared-secret token flow)
 const ssoLogin = async (token: string): Promise<any> => {
-  const { data } = await api.post('/auth/sso', { token });
+  const { data } = await api.post('/sso/login', { token });
   return data;
 };
 
 export const useSsoLogin = () => {
   return useMutation({
     mutationFn: ssoLogin,
+    onSuccess: (data) => {
+      Cookies.set('access', data.accessToken, { path: '/' });
+      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setBearerToken(data.accessToken);
+    },
+  });
+};
+
+// SSO Exchange (OAuth2 code flow)
+const ssoExchange = async (code: string): Promise<any> => {
+  const { data } = await api.post('/sso/exchange', { code });
+  return data;
+};
+
+export const useSsoExchange = () => {
+  return useMutation({
+    mutationFn: ssoExchange,
     onSuccess: (data) => {
       Cookies.set('access', data.accessToken, { path: '/' });
       Cookies.set('refresh', data.refreshToken, { path: '/' });

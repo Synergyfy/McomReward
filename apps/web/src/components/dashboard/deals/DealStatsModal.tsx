@@ -4,8 +4,37 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer} from 'recharts';
-import { Deal } from '@/lib/mock-data/deals';
 import { Eye, CheckCircle, Percent } from 'lucide-react';
+
+interface DealStats {
+  views: number;
+  claims: number;
+  conversionRate: number;
+  dailyClaims?: { day: string; claims: number }[];
+}
+
+interface Deal {
+  id: string;
+  title: string;
+  description: string;
+  status: 'draft' | 'pending_approval' | 'active' | 'rejected';
+  price: number;
+  sectorId: string;
+  groupIds?: string[];
+  visibilityRules?: string;
+  isFeatured: boolean;
+  submittedByBusinessId?: string;
+  businessName: string;
+  value: string;
+  startDate: Date;
+  endDate: Date;
+  terms: string;
+  category: string;
+  imageUrl?: string;
+  stats?: DealStats;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface DealStatsModalProps {
   isOpen: boolean;

@@ -6,7 +6,7 @@ import StatsSummary from '@/components/dashboard/affiliate/StatsSummary';
 import ReferralsHistoryTable from '@/components/dashboard/affiliate/ReferralsHistoryTable';
 // import RewardsLadder from '@/components/dashboard/affiliate/RewardsLadder';
 import { useAffiliateCode, useAffiliateStats } from '@/services/affiliate/hook';
-import { affiliateData } from '@/lib/mock-data/affiliate';
+
 
 export default function AffiliatePage() {
   const { data: affiliateCodeData, isLoading: isLoadingCode, isError: isErrorCode } = useAffiliateCode();
@@ -14,7 +14,7 @@ export default function AffiliatePage() {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://mcom.loyal';
   const referralLink = `${baseUrl}/signup?ref=${affiliateCodeData?.code || ''}`;
-  const qrCodeUrl = '/placeholder-qr.svg';
+  const qrCodeUrl = '';
 
 
   return (
@@ -40,7 +40,7 @@ export default function AffiliatePage() {
           {isLoadingStats && <p>Loading stats...</p>}
           {isErrorStats && <p>Error loading stats.</p>}
           {statsData && <StatsSummary stats={statsData} />}
-          {/* <RewardsLadder tiers={affiliateData.rewardsLadder} /> */}
+          {/* <RewardsLadder tiers={[]} /> */}
         </div>
       </div>
     </div>

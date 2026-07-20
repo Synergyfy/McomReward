@@ -28,12 +28,16 @@ import { RolesGuard } from "../../../common/guards/roles.guard";
 import { SkipMembershipCheck } from "../../../common/decorators/skip-membership-check.decorator";
 import { PointPurchaseConfigDto } from "../dto/point-purchase-config.dto";
 import { ReferralStatsResponseDto } from "../dto/referral-stats-response.dto";
+import { MembershipService } from "../../membership/membership.service";
 
 @ApiTags("Business Lifecycle")
 @Controller("business")
 @ApiBearerAuth()
 export class BusinessController {
-  constructor(private readonly businessService: BusinessService) {}
+  constructor(
+    private readonly businessService: BusinessService,
+    private readonly membershipService: MembershipService,
+  ) {}
 
   @Public()
   @Post("signup")
@@ -107,6 +111,9 @@ export class BusinessController {
     description: "Return business subscription details.",
   })
   async getSubscription(@Request() req) {
+    if (req.user?.email) {
+      await this.membershipService.syncFromCentralProfile(req.user.id, req.user.email);
+    }
     return this.businessService.getSubscriptionLevel(req.user.id);
   }
 

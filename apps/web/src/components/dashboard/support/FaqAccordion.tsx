@@ -5,7 +5,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FaqItem } from '@/lib/mock-data/support';
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
 
 interface FaqAccordionProps {
   faqs: FaqItem[];

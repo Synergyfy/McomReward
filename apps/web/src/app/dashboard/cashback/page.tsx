@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useGetCreditsRules, useGetCreditsHistory } from '@/services/cashback/hook';
+import { useGetCreditsRules, useGetCreditsHistory, useGetCreditsBalance } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   AreaChart,
@@ -27,19 +27,22 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { mockMerchantAnalytics } from '@/lib/mock-data/cashback';
+
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 
 export default function MerchantCreditsDashboard() {
   const { data: rulesData } = useGetCreditsRules();
+  const { data: balanceData } = useGetCreditsBalance();
   const { data: historyData } = useGetCreditsHistory(1, 4);
 
-  const chartData = mockMerchantAnalytics.monthlyIssuance.map((item, index) => ({
-    month: item.month,
-    issued: item.amount,
-    redeemed: mockMerchantAnalytics.monthlyRedemption[index].amount
-  }));
+  const chartData = [
+    { month: 'Feb', issued: 0, redeemed: 0 },
+    { month: 'Mar', issued: 0, redeemed: 0 },
+    { month: 'Apr', issued: 0, redeemed: 0 },
+    { month: 'May', issued: 0, redeemed: 0 },
+    { month: 'Jun', issued: 0, redeemed: 0 },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50/30 p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
@@ -77,32 +80,32 @@ export default function MerchantCreditsDashboard() {
       {/* High Level Metrics */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Credits Issued"
-          value={`${mockMerchantAnalytics.totalIssued.toLocaleString()} CR`}
-          subtext="Internal Platform Value"
+          title="Credits Balance"
+          value={`${balanceData?.credits?.toLocaleString() ?? 0} CR`}
+          subtext="Current Balance"
           icon={<Gift className="w-5 h-5 text-orange-600" />}
           color="orange"
           delay={0.1}
         />
         <StatCard
-          title="Conversion Rate"
-          value={`${mockMerchantAnalytics.redemptionRate}%`}
-          subtext="Matching Contributions"
+          title="Available Cashback"
+          value={`£${balanceData?.availableCashback?.toFixed(2) ?? '0.00'}`}
+          subtext="Claimable Amount"
           icon={<Activity className="w-5 h-5 text-emerald-600" />}
           color="emerald"
           delay={0.2}
         />
         <StatCard
-          title="Loyalty Uplift"
-          value={`+${mockMerchantAnalytics.conversionUplift}%`}
-          subtext="Active participation"
+          title="Pending Amount"
+          value={`£${balanceData?.pendingAmount?.toFixed(2) ?? '0.00'}`}
+          subtext="Awaiting settlement"
           icon={<Zap className="w-5 h-5 text-amber-500 fill-amber-500" />}
           color="amber"
           delay={0.3}
         />
         <StatCard
-          title="Credit Earners"
-          value="842"
+          title="Expiring Soon"
+          value={`£${balanceData?.expiringSoon?.toFixed(2) ?? '0.00'}`}
           subtext="Reward participants"
           icon={<Users className="w-5 h-5 text-orange-600" />}
           color="orange"

@@ -30,6 +30,6 @@ export class TierHistory extends AbstractBaseEntity {
   @ManyToOne(() => Tier, { nullable: false })
   tier: Tier;
 
-  @ManyToOne(() => Admin, { nullable: false })
+  @ManyToOne(() => Admin, { nullable: true })
   admin: Admin;
 }

@@ -43,7 +43,6 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
     const [isFetching, setIsFetching] = useState(false);
     const [contactPostalCode, setContactPostalCode] = useState<string | null>(null);
     const [distance, setDistance] = useState<number | null>(null);
-    const [userPostalCode] = useState('SW1A 1AA'); // Mock current user's postal code
 
     const [formData, setFormData] = useState<CreateContactDto>({
         firstName: initialData?.firstName || '',
@@ -57,56 +56,22 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
     });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Mock function to determine location tag based on distance
-    const determineLocationTag = (miles: number): LocationTag => {
-        if (miles < 3) return 'hyperlocal';
-        if (miles < 8) return 'nearby';
-        return 'national';
-    };
-
-    // Simulated fetch logic
     const handleIdentifierBlur = async () => {
         if (!isExistingUser || !formData.email || formData.email.length < 3) return;
 
         setIsFetching(true);
         setErrorMessage(null);
 
-        // Simulate API delay
+        // TODO: Fetch postal code and distance from backend API
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Mock response data based on input
-        let mockPC = 'E1 6AN';
-        let mockMiles = 12.4;
-
-        if (formData.email.includes('hyper')) {
-            mockPC = 'SW1A 2BB';
-            mockMiles = 1.2;
-        } else if (formData.email.includes('near')) {
-            mockPC = 'SW1P 3BB';
-            mockMiles = 5.7;
-        }
-
-        const suggestedTag = determineLocationTag(mockMiles);
-
-        setContactPostalCode(mockPC);
-        setDistance(mockMiles);
-        setFormData(prev => ({ ...prev, locationTag: suggestedTag }));
         setIsFetching(false);
     };
 
     const handleAddContact = async () => {
         setErrorMessage(null);
         try {
-            // In a real scenario, if isExistingUser is true, we might call a different endpoint 
-            // or send only identifying info. For this mock flow, we proceed with current DTO.
             const dataToSubmit = { ...formData };
-
-            // Mock logic: if existing user, we might not have firstName/lastName/phone from input
-            if (isExistingUser) {
-                if (!dataToSubmit.firstName) dataToSubmit.firstName = 'Existing';
-                if (!dataToSubmit.lastName) dataToSubmit.lastName = 'User';
-                if (!dataToSubmit.phone) dataToSubmit.phone = '0000000000';
-            }
 
             const newContact = await createContact.mutateAsync(dataToSubmit);
             if (onSuccess) {

@@ -4,8 +4,15 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { Plan } from '@/lib/mock-data/subscription';
 import { useRouter } from 'next/navigation';
+
+interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  features: string[];
+  isCurrent: boolean;
+}
 
 interface PlanComparisonCardProps {
   plan: Plan;

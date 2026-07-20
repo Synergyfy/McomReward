@@ -1,7 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RewardTier } from '@/lib/mock-data/affiliate';
 import { Trophy } from 'lucide-react';
+
+interface RewardTier {
+  level: number;
+  referralsNeeded: number;
+  description: string;
+  reward: string;
+}
 
 interface RewardsLadderProps {
   tiers: RewardTier[];

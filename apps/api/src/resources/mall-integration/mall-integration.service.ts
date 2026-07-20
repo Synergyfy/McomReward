@@ -84,6 +84,26 @@ export class MallIntegrationService {
     return this.postToSystem("/system/coupons/create", payload);
   }
 
+  async getMallPlans(): Promise<any[]> {
+    try {
+      const response = await lastValueFrom(
+        this.httpService.get(`${this.mallApiUrl}/tiers`, {
+          headers: {
+            "x-system-api-key": this.apiKey,
+          },
+          timeout: 10000,
+        }),
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching Mall plans:",
+        error.response?.data || error.message,
+      );
+      return [];
+    }
+  }
+
   private async postToSystem(endpoint: string, payload: any) {
     try {
       const response = await lastValueFrom(

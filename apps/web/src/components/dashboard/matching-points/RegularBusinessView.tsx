@@ -50,6 +50,7 @@ export default function RegularBusinessView() {
     totalRegularPoints: 0,
     earningRules: [],
     redemptionRules: [],
+    adminNotices: [] as string[],
   };
 
   const handleRewardClick = (reward: MatchingPointReward) => {

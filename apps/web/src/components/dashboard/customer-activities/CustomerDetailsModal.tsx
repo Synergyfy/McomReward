@@ -60,9 +60,9 @@ export default function CustomerDetailsModal({ isOpen, onClose, activity }: Cust
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="font-medium">{activity.type}</p>
-                  <p className="text-sm text-gray-600">{activity.description}</p>
-                  <p className="text-xs text-gray-400">{new Date(activity.createdAt).toLocaleDateString()}</p>
+                  <p className="font-medium">{activity.activityType}</p>
+                  <p className="text-sm text-gray-600">{activity.details}</p>
+                  <p className="text-xs text-gray-400">{new Date(activity.date).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>

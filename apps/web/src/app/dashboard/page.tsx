@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { useGetMatchingPointBalance } from "@/services/matching-points/hook";
 import Loader from "@/components/ui/loader";
 import type { ChartQueryDto } from "@/services/business-dashboard/types";
 
@@ -35,6 +36,7 @@ export default function BusinessDashboard() {
   const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
   const { data: subscription, isLoading: isLoadingSubscription } = useGetMySubscription();
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
+  const { data: matchingBalanceData } = useGetMatchingPointBalance();
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
@@ -157,7 +159,7 @@ export default function BusinessDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} />
         <PointsSummary
-          summary={{ earned: displayData?.totalPointsEarned || 0, spent: displayData?.totalPointsRedeemed || 0, matchingAvailable: profile?.matching_points || 0 }}
+          summary={{ earned: displayData?.totalPointsEarned || 0, spent: displayData?.totalPointsRedeemed || 0, matchingAvailable: matchingBalanceData?.matching_points || 0 }}
           isTrial={subscription?.isTrial}
           trialQuota={subscription?.tier?.configuration?.quotas?.monthlyPointsAllowance}
         />

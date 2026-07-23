@@ -1,11 +1,10 @@
 import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
-import { APP_INTERCEPTOR, APP_GUARD } from "@nestjs/core";
+import { APP_GUARD } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 
 import dataSource from "./database/data-source";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { LoggingInterceptor } from "./interceptors/logging.interceptor";
 import { LoggingMiddleware } from "./middleware/logging.middleware";
 import { ConfigModule } from "@nestjs/config";
 import commissionConfig from "./config/commission.config";
@@ -128,10 +127,6 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
-    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

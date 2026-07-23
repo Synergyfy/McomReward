@@ -18,8 +18,8 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Public } from "src/common/decorators/public.decorator";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { Public } from "../../common/decorators/public.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Participant } from "./entities/participant.entity";
 import { RewardsService } from "../rewards/services/rewards.service";
 

@@ -6,7 +6,7 @@ import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { SectorService } from "../sector/services/sector.service";
 import { SubCategory } from "../subcategory/entities/subcategory.entity";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class CategoryService {

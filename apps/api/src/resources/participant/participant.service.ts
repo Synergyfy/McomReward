@@ -15,7 +15,7 @@ import { Participant } from "./entities/participant.entity";
 import { Campaign } from "../campaign/entities/campaign.entity";
 import { BusinessCampaign } from "../campaign/entities/business-campaign.entity";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
-import { AuthService } from "src/auth/auth.service";
+import { AuthService } from "../../auth/auth.service";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 import { PointHistoryType } from "../participant-campaign-balance/entities/point-history.entity";
 import { MailService } from "../../mail/mail.service";

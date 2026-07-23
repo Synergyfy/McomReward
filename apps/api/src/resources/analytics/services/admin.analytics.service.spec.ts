@@ -12,7 +12,7 @@ import { Business } from "../../business/entities/business.entity";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
 import { ParticipantCampaignBalance } from "../../participant-campaign-balance/entities/participant-campaign-balance.entity";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 import { PointLogFilterDto } from "../dto/point-log-filter.dto";
 
 describe("AdminAnalyticsService", () => {

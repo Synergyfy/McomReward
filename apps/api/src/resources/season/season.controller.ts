@@ -22,7 +22,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Season } from "./entities/season.entity";
-import { Public } from "src/common/decorators/public.decorator";
+import { Public } from "../../common/decorators/public.decorator";
 
 @ApiTags("Season")
 @Controller("season")

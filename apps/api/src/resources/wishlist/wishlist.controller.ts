@@ -17,11 +17,11 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from "@nestjs/swagger";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Participant } from "../participant/entities/participant.entity";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 
-import { Role } from "src/common/role.enum";
+import { Role } from "../../common/role.enum";
 
 @ApiTags("wishlist")
 @Controller("wishlist")

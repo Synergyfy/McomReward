@@ -31,8 +31,8 @@ import { Role } from "../../common/role.enum";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { ParticipantCampaignBalance } from "./entities/participant-campaign-balance.entity";
 import { ParticipantCampaignBalanceService } from "./services/participant-campaign-balance.service";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { User } from "src/common/interfaces/user.interface";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { User } from "../../common/interfaces/user.interface";
 import { GetParticipantBalanceDto } from "./dto/get-participant-balance.dto";
 import { GetParticipantBalanceForCampaignDto } from "./dto/get-participant-balance-for-campaign.dto";
 import {

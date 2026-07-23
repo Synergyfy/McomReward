@@ -3,7 +3,7 @@ import { ParticipantService } from "./participant.service";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Participant } from "./entities/participant.entity";
 import { Campaign } from "../campaign/entities/campaign.entity";
-import { AuthService } from "src/auth/auth.service";
+import { AuthService } from "../../auth/auth.service";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
 

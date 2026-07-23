@@ -10,7 +10,7 @@ import {
 import { Participant } from "../participant/entities/participant.entity";
 import { BusinessReward } from "../rewards/entities/business-reward.entity";
 import { GeneralAnalyticsDto } from "./dto/general-analytics.dto";
-import { User } from "src/common/interfaces/user.interface";
+import { User } from "../../common/interfaces/user.interface";
 import { ChartResponseDto, ChartData } from "./dto/chart-analytics.dto";
 
 @Injectable()

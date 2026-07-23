@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AdminAnalyticsController } from "./admin.analytics.controller";
 import { AdminAnalyticsService } from "../services/admin.analytics.service";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 import { PointLogResponseDto } from "../dto/point-log.dto";
 
 describe("AdminAnalyticsController", () => {

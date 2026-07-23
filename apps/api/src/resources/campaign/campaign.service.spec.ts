@@ -11,14 +11,14 @@ import { BusinessReward } from "../rewards/entities/business-reward.entity";
 import { BusinessCampaign } from "./entities/business-campaign.entity";
 import { Role } from "../../common/role.enum";
 import { Admin } from "../admin/entities/admin.entity";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
 import { Participant } from "../participant/entities/participant.entity";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 import { Staff } from "../staff/entities/staff.entity";
 import { WishlistAggregate } from "../wishlist/entities/wishlist-aggregate.entity";
 import { WishlistItem } from "../wishlist/entities/wishlist-item.entity";
-import { MailService } from "src/mail/mail.service";
+import { MailService } from "../../mail/mail.service";
 import {
   Membership,
   MembershipStatus,

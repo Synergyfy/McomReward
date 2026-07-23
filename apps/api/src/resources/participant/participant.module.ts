@@ -6,7 +6,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Participant } from "./entities/participant.entity";
 import { Campaign } from "../campaign/entities/campaign.entity";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
-import { AuthModule } from "src/auth/auth.module";
+import { AuthModule } from "../../auth/auth.module";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 import { BusinessCampaign } from "../campaign/entities/business-campaign.entity";
 import { MailModule } from "../../mail/mail.module";

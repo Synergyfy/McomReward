@@ -24,7 +24,7 @@ import {
 } from "../dto/growth-activity-chart.dto";
 import { PointLogResponseDto, PointLogItemDto } from "../dto/point-log.dto";
 import { PointLogFilterDto } from "../dto/point-log-filter.dto";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 
 @Injectable()
 export class AdminAnalyticsService {

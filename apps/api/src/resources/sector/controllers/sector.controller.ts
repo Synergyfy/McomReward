@@ -11,7 +11,7 @@ import {
   Query,
 } from "@nestjs/common";
 import { SectorService } from "../services/sector.service";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 import { CreateSectorDto } from "../dto/create-sector.dto";
 import { UpdateSectorDto } from "../dto/update-sector.dto";
 import {
@@ -24,7 +24,7 @@ import {
 } from "@nestjs/swagger";
 import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
-import { Role } from "src/common/role.enum";
+import { Role } from "../../../common/role.enum";
 
 @ApiTags("Sector Management")
 @Controller("sectors")

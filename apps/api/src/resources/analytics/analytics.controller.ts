@@ -7,13 +7,13 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { Roles } from "src/common/decorators/roles.decorator";
-import { Role } from "src/common/role.enum";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { User } from "src/common/interfaces/user.interface";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { Role } from "../../common/role.enum";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { User } from "../../common/interfaces/user.interface";
 import { GeneralAnalyticsDto } from "./dto/general-analytics.dto";
 import { AuthGuard } from "@nestjs/passport";
-import { RolesGuard } from "src/common/guards/roles.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
 
 @ApiTags("Analytics")
 @Controller("analytics")

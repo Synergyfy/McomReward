@@ -25,7 +25,7 @@ import { Business } from "../resources/business/entities/business.entity";
 import { Staff } from "../resources/staff/entities/staff.entity";
 import { Partner } from "../resources/partner/entities/partner.entity";
 import { Participant } from "../resources/participant/entities/participant.entity";
-import { User } from "src/common/interfaces/user.interface";
+import { User } from "../common/interfaces/user.interface";
 import { Network } from "../resources/network/entities/network.entity";
 
 import { ParticipantProgressionService } from "../resources/participant-progression/participant-progression.service";

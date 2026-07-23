@@ -10,12 +10,12 @@ import {
   ParseUUIDPipe,
 } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
-import { Roles } from "src/common/decorators/roles.decorator";
-import { Role } from "src/common/role.enum";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { Role } from "../../common/role.enum";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Business } from "../business/entities/business.entity";
 import { CampaignService } from "./campaign.service";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 import { PaginatedCustomerActivityResponseDto } from "./dto/customer-activity-response.dto";
 import {
   CapabilityService,

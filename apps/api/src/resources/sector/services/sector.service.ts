@@ -4,8 +4,8 @@ import { Repository } from "typeorm";
 import { Sector } from "../entities/sector.entity";
 import { CreateSectorDto } from "../dto/create-sector.dto";
 import { UpdateSectorDto } from "../dto/update-sector.dto";
-import { Category } from "src/resources/category/entities/category.entity";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { Category } from "../../category/entities/category.entity";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 
 @Injectable()
 export class SectorService {

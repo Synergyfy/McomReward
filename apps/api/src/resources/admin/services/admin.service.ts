@@ -14,7 +14,7 @@ import { Membership } from "../../membership/entities/membership.entity";
 import { CreateAdminDto } from "../dto/create-admin.dto";
 import { CreateSuperBusinessDto } from "../dto/create-super-business.dto";
 import { HashService } from "../../../common/hash/hash.service";
-import { Campaign } from "src/resources/campaign/entities/campaign.entity";
+import { Campaign } from "../../campaign/entities/campaign.entity";
 import { CampaignService } from "../../campaign/campaign.service";
 import { ParticipantService } from "../../participant/participant.service";
 import { UpdateBusinessDto } from "../../business/dto/update-business.dto";

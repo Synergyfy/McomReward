@@ -8,8 +8,8 @@ import { Campaign } from "../../campaign/entities/campaign.entity";
 import { PointHistory } from "../entities/point-history.entity";
 import { DataSource } from "typeorm";
 import { BadRequestException } from "@nestjs/common";
-import { Business } from "src/resources/business/entities/business.entity";
-import { BusinessCampaign } from "src/resources/campaign/entities/business-campaign.entity";
+import { Business } from "../../business/entities/business.entity";
+import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
 import {
   CapabilityService,
   ActionType,

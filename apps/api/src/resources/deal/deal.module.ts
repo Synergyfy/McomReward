@@ -14,7 +14,7 @@ import { DealReview } from "./entities/deal-review.entity";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 import { Participant } from "../participant/entities/participant.entity";
-import { AuthModule } from "src/auth/auth.module";
+import { AuthModule } from "../../auth/auth.module";
 import { ParticipantProgressionModule } from "../participant-progression/participant-progression.module";
 import { DealAnalytics } from "./entities/deal-analytics.entity";
 

@@ -20,7 +20,7 @@ import { BusinessController } from "./controllers/business.controller";
 import { AffiliateController } from "./controllers/affiliate.controller";
 import { PaymentModule } from "../payment/payment.module";
 import { OtpModule } from "../otp/otp.module";
-import { MailModule } from "src/mail/mail.module";
+import { MailModule } from "../../mail/mail.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { StampModule } from "../stamp/stamp.module";
 import { ProvisionModule } from "../provision/provision.module";

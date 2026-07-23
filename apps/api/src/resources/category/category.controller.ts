@@ -10,7 +10,7 @@ import {
   ValidationPipe,
   Query,
 } from "@nestjs/common";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 import { CategoryService } from "./category.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
@@ -24,7 +24,7 @@ import {
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
-import { Role } from "src/common/role.enum";
+import { Role } from "../../common/role.enum";
 
 @ApiTags("Category Management")
 @Controller("categories")

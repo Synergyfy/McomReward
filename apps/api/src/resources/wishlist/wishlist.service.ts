@@ -9,7 +9,7 @@ import { Category } from "../category/entities/category.entity";
 import { Business } from "../business/entities/business.entity";
 import { Participant } from "../participant/entities/participant.entity";
 import { Role } from "../../common/role.enum";
-import { PaginationDto } from "src/common/dto/pagination.dto";
+import { PaginationDto } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class WishlistService {

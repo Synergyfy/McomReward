@@ -15,7 +15,7 @@ import { WishlistAggregate } from "../wishlist/entities/wishlist-aggregate.entit
 import { WishlistItem } from "../wishlist/entities/wishlist-item.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
-import { MailModule } from "src/mail/mail.module";
+import { MailModule } from "../../mail/mail.module";
 import { CapabilityModule } from "../capability/capability.module";
 import { forwardRef } from "@nestjs/common";
 import { TierProgressionModule } from "../tier-progression/tier-progression.module";

@@ -27,7 +27,7 @@ import {
 import { Tier } from "./entities/tier.entity";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Admin } from "../admin/entities/admin.entity";
-import { Public } from "src/common/decorators/public.decorator";
+import { Public } from "../../common/decorators/public.decorator";
 import { TierBreakdownDto } from "./dto/tier-breakdown.dto";
 import { TierType } from "./entities/tier-type.enum";
 

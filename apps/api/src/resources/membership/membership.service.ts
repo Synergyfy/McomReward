@@ -85,6 +85,21 @@ export class MembershipService {
     });
   }
 
+  async hasActiveSubscription(businessId: string): Promise<boolean> {
+    const membership = await this.membershipRepository.findOne({
+      where: { business: { id: businessId } },
+      order: { created_at: "DESC" },
+    });
+
+    if (!membership) return false;
+
+    const isTrialValid =
+      membership.is_trial && new Date(membership.expires_at) > new Date();
+    const isActive = membership.status === MembershipStatus.ACTIVE;
+
+    return isActive || isTrialValid;
+  }
+
   async getMyPaymentHistory(user: any) {
     return await this.paymentHistoryRepository.find({
       where: { user: { id: user.id } },

@@ -20,7 +20,7 @@ function LoginForm() {
 
       const centralApi = process.env.NEXT_PUBLIC_MCOM_CENTRAL_API || "http://localhost:3010/api/v1";
       const clientId = process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-loyalty";
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3005";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
       const redirectUri = `${appUrl}/auth/callback`;
 
       const params = new URLSearchParams({

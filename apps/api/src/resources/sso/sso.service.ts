@@ -77,20 +77,27 @@ export class SsoService {
     const user = await this.jitProvisionUser(centralUser);
 
     let rewardsPackage: CentralPackage | null = null;
-    if (tokenResponse?.access_token && user.role === Role.Business) {
-      rewardsPackage = await this.syncSubscriptionFromCentral(
-        user.id,
-        tokenResponse.access_token
-      );
+    if (user.role === Role.Business) {
+      if (tokenResponse?.access_token) {
+        rewardsPackage = await this.syncSubscriptionFromCentral(
+          user.id,
+          tokenResponse.access_token
+        );
+      }
+      await this.membershipService.syncFromCentralProfile(user.id, user.email);
     }
+
+    const hasActiveSubscription =
+      user.role === Role.Business
+        ? await this.membershipService.hasActiveSubscription(user.id)
+        : true;
 
     const payload = {
       username: user.email,
       sub: user.id,
       role: user.role,
       isEmailVerified: true,
-      hasActiveSubscription: rewardsPackage?.status === "active"
-        && new Date(rewardsPackage.expiresAt) > new Date(),
+      hasActiveSubscription,
     };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: "1h" });
@@ -259,15 +266,21 @@ export class SsoService {
           );
         }
       }
+
+      await this.membershipService.syncFromCentralProfile(user.id, user.email);
     }
+
+    const hasActiveSubscription =
+      user.role === Role.Business
+        ? await this.membershipService.hasActiveSubscription(user.id)
+        : true;
 
     const jwtPayload = {
       username: user.email,
       sub: user.id,
       role: user.role,
       isEmailVerified: true,
-      hasActiveSubscription: rewardsPackage?.status === "active"
-        && new Date(rewardsPackage.expiresAt) > new Date(),
+      hasActiveSubscription,
     };
 
     return {

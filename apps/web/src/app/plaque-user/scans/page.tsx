@@ -25,9 +25,19 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Download, Filter, Search, Smartphone, Gift, DollarSign, Flag } from 'lucide-react';
-import { recentActivity } from '@/lib/mock-data/plaque-dashboard';
+import { useGetPlaqueUserActivities } from '@/services/plaque-user/hook';
 
 export default function ScansPage() {
+    const { data: activities = [] } = useGetPlaqueUserActivities();
+
+    const recentActivity = activities.map((activity) => ({
+        id: activity.id,
+        time: new Date(activity.scannedAt).toLocaleString(),
+        description: activity.description,
+        type: activity.type,
+        source: activity.source,
+    }));
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -103,27 +113,13 @@ export default function ScansPage() {
                                         {activity.description}
                                     </TableCell>
                                     <TableCell>
-                                        {activity.type === 'scan' ? 'QR Code' : '-'}
+                                        {activity.source || (activity.type === 'scan' ? 'QR Code' : '-')}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="sm">Details</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {/* Add more rows to simulate a full table */}
-                            <TableRow>
-                                <TableCell className="whitespace-nowrap text-muted-foreground">Yesterday</TableCell>
-                                <TableCell>
-                                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Scan
-                                    </div>
-                                </TableCell>
-                                <TableCell className="font-medium">Person scanned Plaque #PLQ-001</TableCell>
-                                <TableCell>NFC</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Details</Button>
-                                </TableCell>
-                            </TableRow>
                         </TableBody>
                     </Table>
                 </CardContent>

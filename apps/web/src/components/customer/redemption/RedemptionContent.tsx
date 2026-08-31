@@ -160,7 +160,7 @@ export default function RedemptionContent({ participantId, isAdmin = false }: Re
                   onApply={(amt: number) => console.log('Applied:', amt)}
                 />
                 <p className="text-[10px] text-gray-400 mt-6 text-center font-medium italic italic">
-                  Note: This demonstration applies to a mock £100.00 service.
+                  Note: This example applies to a £100.00 service.
                 </p>
               </div>
             )}

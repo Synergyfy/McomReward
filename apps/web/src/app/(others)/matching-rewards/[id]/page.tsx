@@ -1,22 +1,16 @@
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRedeemMatchingReward } from '@/services/matching-points/hook';
+import Cookies from 'js-cookie';
+import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Share2, Heart, ShieldCheck, Clock, Box, Info, Lock } from "lucide-react";
 import LoadingSpinner from '@/components/ui/Loading';
 import { cn } from "@/lib/utils";
-
-// Mock Authentication Hook for demonstration
-const useMockAuth = () => {
-    // Toggle this to true to test the "Logged In" state
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    return { isLoggedIn, login: () => setIsLoggedIn(true) };
-};
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -25,12 +19,9 @@ interface PageProps {
 export default function MatchingRewardDetailPage({ params }: PageProps) {
     const { id } = use(params);
     const router = useRouter();
-    const { isLoggedIn, login } = useMockAuth();
+    const isLoggedIn = !!Cookies.get('access');
 
-    // const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
-    const reward: any = null;
-    const isLoading = false;
-    const error = null;
+    const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
     const redeemMutation = useRedeemMatchingReward();
 
     if (isLoading) return <LoadingSpinner />;
@@ -51,19 +42,13 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
 
     const handleClaim = () => {
         if (!isLoggedIn) {
-            const confirmLogin = window.confirm("You must be logged in to claim this reward. Go to login page?");
-            if (confirmLogin) {
-                // login(); // Mock login
-                // Ideally redirect to actual login
-                router.push('/login');
-            }
+            router.push('/login');
             return;
         }
 
         redeemMutation.mutate(id, {
             onSuccess: () => {
-                // Success is handled by toast in hook, but we could add more here if needed
-                // router.push('/dashboard/matching-points'); 
+                // Success is handled by toast in hook
             }
         });
     };
@@ -181,7 +166,7 @@ export default function MatchingRewardDetailPage({ params }: PageProps) {
                                 <Clock className="w-6 h-6 text-purple-600 mt-1" />
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-sm">Limited Time</h4>
-                                    <p className="text-xs text-gray-500 mt-1">Expires {new Date(reward.endDatetime).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Expires {reward.endDatetime ? new Date(reward.endDatetime).toLocaleDateString() : 'Soon'}</p>
                                 </div>
                             </div>
                         </div>

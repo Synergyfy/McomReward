@@ -163,6 +163,8 @@ export interface ParticipantProfileResponse {
   email: string;
   role: string;
   uniqueCode: string;
+  customerBadge?: string;
+  customer_badge?: string;
   globalTotalPoints: number;
   global_total_points?: number;
   matchingPoints: number;
@@ -207,6 +209,11 @@ export interface RedeemRewardPayload {
   participantId: string;
   rewardId: string;
   redemptionCode: string;
+}
+
+export interface RedeemRewardSelfPayload {
+  rewardId: string;
+  campaignId: string;
 }
 
 export interface RedeemRewardResponse {

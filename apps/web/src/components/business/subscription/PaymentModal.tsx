@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CreditCard, Calendar, Lock, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { X, Loader2, CheckCircle2 } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { stripePromise } from '@/components/stripe-provider';
+import StripePaymentForm from '@/components/stripe-payment-form';
+import { useStripeInitiate } from '@/services/payment/hook';
 import { Plan } from '@/types';
 
 interface PaymentModalProps {
@@ -16,15 +17,22 @@ interface PaymentModalProps {
 }
 
 export default function PaymentModal({ isOpen, onClose, plan, onConfirm }: PaymentModalProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const { mutate: initiateStripe, isPending } = useStripeInitiate();
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsProcessing(false);
-    onConfirm();
-  };
+  React.useEffect(() => {
+    if (isOpen && plan) {
+      setClientSecret(null);
+      initiateStripe(
+        { tier_id: plan.id, plan_type: 'monthly' },
+        {
+          onSuccess: (data) => setClientSecret(data.clientSecret),
+          onError: () => setClientSecret(null),
+        }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, plan?.id]);
 
   return (
     <AnimatePresence>
@@ -53,36 +61,30 @@ export default function PaymentModal({ isOpen, onClose, plan, onConfirm }: Payme
               </button>
             </div>
             <div className="p-6 space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <div className="relative">
-                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <Input id="cardNumber" placeholder="0000 0000 0000 0000" className="pl-10" />
+              {!stripePromise ? (
+                <div className="text-center py-8 text-red-500">
+                  Stripe is not configured. Please check the NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable.
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <Input id="expiryDate" placeholder="MM / YY" className="pl-10" />
+              ) : isPending ? (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+                  <Loader2 className="h-8 w-8 animate-spin mb-3" />
+                  <span>Preparing secure checkout...</span>
+                </div>
+              ) : clientSecret ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span>{plan?.name}: {plan?.price}</span>
                   </div>
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <StripePaymentForm onSuccess={onConfirm} />
+                  </Elements>
+                </>
+              ) : (
+                <div className="text-center py-8 text-red-500">
+                  Failed to prepare payment. Please try again.
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvc">CVC</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <Input id="cvc" placeholder="123" className="pl-10" />
-                  </div>
-                </div>
-              </div>
-              <Button onClick={handlePayment} disabled={isProcessing} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg text-base">
-                {isProcessing ? (
-                  <Loader2 className="animate-spin mr-2" />
-                ) : (
-                  `Pay ${plan?.price}`
-                )}
-              </Button>
+              )}
             </div>
           </motion.div>
         </motion.div>

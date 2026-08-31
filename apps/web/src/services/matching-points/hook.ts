@@ -17,10 +17,35 @@ import {
   PaginatedRewardsResponse,
   CreateMatchingRewardDto,
   MatchingPointReward,
-  PaginatedRedemptionsResponse
+  PaginatedRedemptionsResponse,
+  MatchingPointConfig,
+  UpdateMatchingPointConfigDto,
 } from './types';
 
 // --- Matching Points Management ---
+
+export const useGetMatchingPointsConfig = () => {
+  return useQuery({
+    queryKey: ['matchingPointsConfig'],
+    queryFn: async () => {
+      const { data } = await api.get<MatchingPointConfig[]>('/matching-points/config');
+      return data;
+    },
+  });
+};
+
+export const useUpdateMatchingPointConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: UpdateMatchingPointConfigDto) => {
+      const response = await api.put<MatchingPointConfig>('/matching-points/config', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matchingPointsConfig'] });
+    },
+  });
+};
 
 export const useAwardMatchingPoints = () => {
     const queryClient = useQueryClient();
@@ -234,6 +259,17 @@ export const useGetPublicMatchingRewards = (params: { target_audience?: string, 
       const { data } = await api.get<PaginatedRewardsResponse>('/matching-points/rewards/public', { params });
       return data;
     }
+  });
+};
+
+export const useGetPublicMatchingRewardById = (id: string) => {
+  return useQuery({
+    queryKey: ['matchingPointRewards', 'public', id],
+    queryFn: async () => {
+      const { data } = await api.get<MatchingPointReward>(`/matching-points/rewards/${id}`);
+      return data;
+    },
+    enabled: !!id,
   });
 };
 

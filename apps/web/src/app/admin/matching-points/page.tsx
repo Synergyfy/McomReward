@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockMatchingPointsSettings, MatchingPointsSettings } from '@/lib/mock-data/matching-points';
 
 import { AdjustMatchingPointsModal } from '@/components/admin/matching-points/AdjustMatchingPointsModal';
+import { GlobalConfigManager } from '@/components/admin/matching-points/GlobalConfigManager';
 import { EarningActionsManager } from '@/components/admin/matching-points/EarningActionsManager';
 import { ParticipantBadgesManager } from '@/components/admin/matching-points/ParticipantBadgesManager';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
@@ -18,7 +18,6 @@ import { useAwardMatchingPoints, useToggleMatchingPoints } from '@/services/matc
 import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
 
 export default function MatchingPointsSettingsPage() {
-  const [settings, setSettings] = useState<MatchingPointsSettings>(mockMatchingPointsSettings);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const { mutate: awardPoints } = useAwardMatchingPoints();
   const { mutate: toggleMatchingPoints } = useToggleMatchingPoints();
@@ -43,45 +42,6 @@ export default function MatchingPointsSettingsPage() {
     setShowFeedbackDialog(true);
   };
 
-  const validateSettings = (currentSettings: MatchingPointsSettings) => {
-    const errors: string[] = [];
-
-    if (currentSettings.baseRatio <= 0) {
-      errors.push('Base Matching Point Ratio must be a positive number.');
-    }
-    if (currentSettings.defaultMinPoints < 0 || !Number.isInteger(currentSettings.defaultMinPoints)) {
-      errors.push('Default Minimum Points must be a non-negative integer.');
-    }
-    if (currentSettings.defaultMaxPoints < 0 || !Number.isInteger(currentSettings.defaultMaxPoints)) {
-      errors.push('Default Maximum Points must be a non-negative integer.');
-    }
-    if (currentSettings.defaultMinPoints > currentSettings.defaultMaxPoints) {
-      errors.push('Default Minimum Points cannot be greater than Default Maximum Points.');
-    }
-
-
-
-    return errors;
-  };
-
-  const handleSaveSettings = () => {
-    const errors = validateSettings(settings);
-    if (errors.length > 0) {
-      handleShowFeedback(
-        "Validation Error",
-        <ul className="list-disc pl-5">
-          {errors.map((error, index) => (
-            <li key={index}>{error}</li>
-          ))}
-        </ul>
-      );
-      return;
-    }
-
-    console.log('Saving Matching Points Settings:', settings);
-    handleShowFeedback("Settings Saved!", "Matching points settings have been updated.");
-  };
-
   const handleAdjustMatchingPoints = (userId: string, amount: number, reason: string) => {
     awardPoints({
       email: userId,
@@ -104,13 +64,13 @@ export default function MatchingPointsSettingsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Matching Points Control Panel</h1>
           <p className="text-muted-foreground">Manage global matching point settings and apply logic across campaigns.</p>
         </div>
-        <Button onClick={handleSaveSettings} size="lg">Save All Settings</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-8">
 
+          <GlobalConfigManager />
 
           <Card>
             <CardHeader>

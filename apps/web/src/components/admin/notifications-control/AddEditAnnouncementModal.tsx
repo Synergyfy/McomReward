@@ -14,14 +14,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Announcement } from '@/lib/mock-data/notifications';
+import { Announcement, CreateAnnouncementDto } from '@/services/notifications/admin-types';
 import DateTimePicker from '@/components/dashboard/campaigns/datePicker';
 
 interface AddEditAnnouncementModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Announcement; // Optional data for editing
-  onSave: (announcement: Announcement) => void;
+  onSave: (announcement: CreateAnnouncementDto) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
 }
 
@@ -92,16 +92,13 @@ export function AddEditAnnouncementModal({
       return;
     }
 
-    const announcementToSave: Announcement = {
-      id: initialData?.id || `new-ann-${Date.now()}`,
+    const announcementToSave: CreateAnnouncementDto = {
       title,
       content,
       targetAudience,
-      startDate: startDate!,
-      endDate: endDate!,
+      startDate: startDate!.toISOString(),
+      endDate: endDate!.toISOString(),
       status,
-      createdAt: initialData?.createdAt || new Date(),
-      updatedAt: new Date(),
     };
 
     onSave(announcementToSave);

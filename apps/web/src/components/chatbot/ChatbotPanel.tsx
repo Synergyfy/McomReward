@@ -40,7 +40,7 @@ export default function ChatbotPanel({ isOpen, onClose }: ChatbotPanelProps) {
     // Simulate bot response
     setTimeout(() => {
       const botResponse: Message = {
-        text: `You said: "${newUserMessage.text}". I'm a mock chatbot and can't actually help yet!`,
+        text: `Thanks for your message about "${newUserMessage.text}". Our support team will get back to you shortly.`,
         sender: "bot",
       }
       setMessages((prevMessages) => [...prevMessages, botResponse])

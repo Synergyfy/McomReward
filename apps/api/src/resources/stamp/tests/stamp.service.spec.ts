@@ -10,14 +10,10 @@ import { Business } from "../../business/entities/business.entity";
 import { Staff } from "../../staff/entities/staff.entity";
 import { DataSource, Repository } from "typeorm";
 import { StampTriggerMethod } from "../enums/stamp-trigger-method.enum";
-import { StampCardStatus } from "../enums/stamp-card-status.enum";
 
 describe("StampService", () => {
   let service: StampService;
-  let stampCardRepo: Repository<StampCard>;
-  let businessRewardRepo: Repository<BusinessStampReward>;
   let participantRepo: Repository<Participant>;
-  let dataSource: DataSource;
 
   const mockRepo = {
     find: jest.fn(),
@@ -58,10 +54,7 @@ describe("StampService", () => {
     }).compile();
 
     service = module.get<StampService>(StampService);
-    stampCardRepo = module.get(getRepositoryToken(StampCard));
-    businessRewardRepo = module.get(getRepositoryToken(BusinessStampReward));
     participantRepo = module.get(getRepositoryToken(Participant));
-    dataSource = module.get(DataSource);
   });
 
   it("should be defined", () => {
@@ -74,18 +67,45 @@ describe("StampService", () => {
       const reward = {
         id: "r1",
         is_active: true,
+        business: { id: "b1", name: "Test Business" },
         template: {
-          trigger_method: StampTriggerMethod.PURCHASE,
+          id: "t1",
+          created_at: new Date(),
+          updated_at: new Date(),
+          title: "Test Reward",
+          description: "Test",
           required_stamps: 5,
+          reward_benefit: "FREE_ITEM",
+          trigger_method: StampTriggerMethod.PURCHASE,
           is_hybrid: false,
+          hybrid_points_per_stamp: 0,
+          hybrid_completion_bonus_points: 0,
+          is_published: true,
+          is_archived: false,
         },
       };
 
       participantRepo.findOne = jest.fn().mockResolvedValue(participant);
-      businessRewardRepo.find = jest.fn().mockResolvedValue([reward]);
+
+      const fullCard = {
+        id: "card-1",
+        created_at: new Date(),
+        updated_at: new Date(),
+        completed_at: null,
+        redeemed_at: null,
+        current_stamps: 1,
+        status: "IN_PROGRESS",
+        participant,
+        businessStampReward: reward,
+      };
+      mockRepo.findOne = jest.fn().mockResolvedValue(fullCard);
 
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue(null), // No existing card
+        findOne: jest.fn().mockImplementation((entity) => {
+          if (entity === Participant) return participant;
+          if (entity === BusinessStampReward) return reward;
+          return null; // No existing stamp card
+        }),
         create: jest.fn().mockImplementation((entity, dto) => dto),
         save: jest
           .fn()

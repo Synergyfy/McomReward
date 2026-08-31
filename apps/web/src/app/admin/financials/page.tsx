@@ -6,13 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, CheckCircle, Landmark, TrendingUp, ChevronLeft, ChevronRight, Search, Filter, RefreshCw, User } from 'lucide-react';
-import {
-  mockEscrows,
-  mockPayoutRequests,
-  mockFinancialAnalytics,
-  Escrow,
-  PayoutRequest,
-} from '@/lib/mock-data/financials';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditPlanModal } from '@/components/admin/financials/AddEditPlanModal';
@@ -29,6 +22,13 @@ import { SeasonManagement } from '@/components/admin/financials/SeasonManagement
 import { PaymentHistorySearchParams } from '@/services/financials/types';
 import { ManualOverrideModal } from '@/components/admin/tier-badge-control/ManualOverrideModal';
 import { useOverrideBusinessTier, useOverrideCustomerBadge } from '@/services/progression/hook';
+import {
+  useGetEscrows,
+  useUpdateEscrowStatus,
+  useGetPayoutRequests,
+  useUpdatePayoutStatus,
+  useGetFinancialAnalytics,
+} from '@/services/financials/admin-hook';
 
 export default function FinancialsPage() {
   const [paymentFilters, setPaymentFilters] = useState<PaymentHistorySearchParams>({
@@ -61,8 +61,16 @@ export default function FinancialsPage() {
   const paymentHistory = paymentHistoryData?.data || [];
   const totalPaymentPages = paymentHistoryData?.totalPages || 1;
 
-  const [escrows, setEscrows] = useState<Escrow[]>(mockEscrows);
-  const [payouts, setPayouts] = useState<PayoutRequest[]>(mockPayoutRequests);
+  const { data: escrowsData } = useGetEscrows({ page: 1, limit: 100 });
+  const { data: payoutsData } = useGetPayoutRequests({ page: 1, limit: 100 });
+  const { data: analyticsData } = useGetFinancialAnalytics();
+  const updateEscrowMutation = useUpdateEscrowStatus();
+  const updatePayoutMutation = useUpdatePayoutStatus();
+
+  const escrows = escrowsData?.data ?? [];
+  const payouts = payoutsData?.data ?? [];
+  const revenueOverTime = analyticsData?.revenueOverTime ?? [];
+  const payoutsVsSubscriptions = analyticsData?.payoutsVsSubscriptions ?? [];
 
   const { data: plans, isLoading: isLoadingPlans, error: plansError } = useGetTiers();
   const deleteTierMutation = useDeleteTier();
@@ -187,26 +195,42 @@ export default function FinancialsPage() {
     }
   };
 
-  const handleEscrowAction = (escrowId: string, action: 'released' | 'refunded') => {
-    setEscrows(prev => prev.map(escrow => (escrow.id === escrowId ? { ...escrow, status: action, releasedAt: new Date() } : escrow)));
-    handleShowFeedback("Escrow Updated", `Escrow ${escrowId} has been ${action}.`);
+  const handleEscrowAction = (escrowId: string, action: 'release' | 'refund') => {
+    updateEscrowMutation.mutate(
+      { id: escrowId, action },
+      {
+        onSuccess: () => {
+          handleShowFeedback("Escrow Updated", `Escrow ${escrowId} has been ${action}d.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || `Failed to ${action} escrow.`);
+        },
+      }
+    );
   };
 
-  const handlePayoutAction = (payoutId: string, action: 'approved' | 'rejected') => {
-    setPayouts(prev => prev.map(payout => (payout.id === payoutId ? { ...payout, status: action, processedAt: new Date() } : payout)));
-    handleShowFeedback("Payout Request Updated", `Payout request ${payoutId} has been ${action}.`);
+  const handlePayoutAction = (payoutId: string, action: 'approve' | 'reject') => {
+    updatePayoutMutation.mutate(
+      { id: payoutId, action },
+      {
+        onSuccess: () => {
+          handleShowFeedback("Payout Request Updated", `Payout request ${payoutId} has been ${action}d.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || `Failed to ${action} payout request.`);
+        },
+      }
+    );
   };
 
   const handleManualOverride = (userId: string, newLevelId: string, type: 'tier' | 'badge') => {
-    const adminId = "current-admin-id";
-
     if (type === 'tier') {
-      overrideTier({ businessId: userId, levelId: newLevelId, adminId }, {
+      overrideTier({ businessId: userId, tierId: newLevelId }, {
         onSuccess: () => handleShowFeedback("Override Applied", `Business Tier updated for ${userId}.`),
         onError: () => handleShowFeedback("Error", "Failed to override tier.")
       });
     } else {
-      overrideBadge({ participantId: userId, badgeId: newLevelId, adminId }, {
+      overrideBadge({ participantId: userId, badgeId: newLevelId }, {
         onSuccess: () => handleShowFeedback("Override Applied", `Customer Badge updated for ${userId}.`),
         onError: () => handleShowFeedback("Error", "Failed to override badge.")
       });
@@ -253,7 +277,7 @@ export default function FinancialsPage() {
           <div>
             <h3 className="text-lg font-semibold mb-2">Revenue Over Time</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockFinancialAnalytics.revenueOverTime}>
+              <LineChart data={revenueOverTime}>
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
@@ -265,7 +289,7 @@ export default function FinancialsPage() {
           <div>
             <h3 className="text-lg font-semibold mb-2">Payouts vs. Subscriptions</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={mockFinancialAnalytics.payoutsVsSubscriptions}>
+              <BarChart data={payoutsVsSubscriptions}>
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -511,8 +535,8 @@ export default function FinancialsPage() {
                       <TableCell className="text-right">
                         {escrow.status === 'held' && (
                           <div className="flex justify-end gap-2">
-                            <Button size="sm" onClick={() => handleEscrowAction(escrow.id, 'released')}>Release</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleEscrowAction(escrow.id, 'refunded')}>Refund</Button>
+                            <Button size="sm" onClick={() => handleEscrowAction(escrow.id, 'release')}>Release</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleEscrowAction(escrow.id, 'refund')}>Refund</Button>
                           </div>
                         )}
                       </TableCell>
@@ -621,8 +645,8 @@ export default function FinancialsPage() {
                       <TableCell className="text-right">
                         {payout.status === 'pending' && (
                           <div className="flex justify-end gap-2">
-                            <Button size="sm" onClick={() => handlePayoutAction(payout.id, 'approved')}>Approve</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handlePayoutAction(payout.id, 'rejected')}>Reject</Button>
+                            <Button size="sm" onClick={() => handlePayoutAction(payout.id, 'approve')}>Approve</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handlePayoutAction(payout.id, 'reject')}>Reject</Button>
                           </div>
                         )}
                       </TableCell>

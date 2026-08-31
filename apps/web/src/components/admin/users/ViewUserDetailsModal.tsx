@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import { BusinessUser, ConsumerUser } from '@/services/admin/types';
 import { Building, User, Mail, MapPin, Award, Briefcase, Activity, Calendar, DollarSign, Star, Megaphone, Tag, Users } from 'lucide-react';
 
 interface ViewUserDetailsModalProps {

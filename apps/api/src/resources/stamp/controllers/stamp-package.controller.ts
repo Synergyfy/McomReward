@@ -10,12 +10,7 @@ import {
   Query,
   ParseUUIDPipe,
 } from "@nestjs/common";
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-} from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { StampPackageService } from "../services/stamp-package.service";
 import { CreateStampPackageDto } from "../dto/create-stamp-package.dto";
 import { UpdateStampPackageDto } from "../dto/update-stamp-package.dto";

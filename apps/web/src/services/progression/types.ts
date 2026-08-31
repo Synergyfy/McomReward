@@ -21,6 +21,8 @@ export interface CustomerBadge {
     maxCampaignsJoined: number | null;
     privileges: string[];
     description: string;
+    priority: number;
+    color?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -126,18 +128,18 @@ export interface CreateCustomerBadgePayload {
     maxCampaignsJoined?: number;
     privileges?: string[];
     description?: string;
+    color?: string;
+    priority?: number;
 }
 
 export type UpdateCustomerBadgePayload = Partial<CreateCustomerBadgePayload>;
 
 export interface OverrideBusinessTierPayload {
     businessId: string;
-    levelId: string;
-    adminId: string;
+    tierId: string;
 }
 
 export interface OverrideCustomerBadgePayload {
     participantId: string;
     badgeId: string;
-    adminId: string;
 }

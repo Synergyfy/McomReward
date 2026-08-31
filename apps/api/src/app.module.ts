@@ -57,6 +57,12 @@ import { WalletModule } from "./resources/wallet/wallet.module";
 import { TrainingSupportModule } from "./resources/training-support/training-support.module";
 import { ProvisionModule } from "./resources/provision/provision.module";
 import { HelpRequestsModule } from "./resources/help-requests/help-requests.module";
+import { PlaqueSalesModule } from "./resources/plaque-sales/plaque-sales.module";
+import { SecurityModule } from "./resources/security/security.module";
+import { FinancialsModule } from "./resources/financials/financials.module";
+import { PlaqueUserModule } from "./resources/plaque-user/plaque-user.module";
+import { CreditsModule } from "./resources/credits/credits.module";
+import { LoyaltySetupModule } from "./resources/loyalty-setup/loyalty-setup.module";
 import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
 
@@ -123,6 +129,12 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
     TrainingSupportModule,
     SsoModule,
     SystemPlansModule,
+    PlaqueSalesModule,
+    SecurityModule,
+    FinancialsModule,
+    PlaqueUserModule,
+    CreditsModule,
+    LoyaltySetupModule,
   ],
   controllers: [AppController],
   providers: [

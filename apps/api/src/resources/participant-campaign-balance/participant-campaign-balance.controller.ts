@@ -35,12 +35,10 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../common/interfaces/user.interface";
 import { GetParticipantBalanceDto } from "./dto/get-participant-balance.dto";
 import { GetParticipantBalanceForCampaignDto } from "./dto/get-participant-balance-for-campaign.dto";
-import {
-  TransactionCode,
-  TransactionType,
-} from "./entities/transaction-code.entity";
+import { TransactionType } from "./entities/transaction-code.entity";
 import { PaginationDto } from "../../common/dto/pagination.dto";
 import { GetHistoryQueryDto } from "./dto/get-history-query.dto";
+import { StampService } from "../stamp/services/stamp.service";
 
 @ApiTags("Participant Campaign Balance")
 @ApiBearerAuth()
@@ -51,6 +49,7 @@ export class ParticipantCampaignBalanceController {
     private readonly pointEarningService: PointEarningService,
     private readonly participantCampaignBalanceService: ParticipantCampaignBalanceService,
     private readonly transactionCodeService: TransactionCodeService,
+    private readonly stampService: StampService,
   ) {}
 
   @Get("my-balance")
@@ -211,6 +210,21 @@ export class ParticipantCampaignBalanceController {
   @ApiResponse({ status: 404, description: "Not Found." })
   @Roles(Role.Admin, Role.Business, Role.Staff)
   awardStamps(@Body() awardStampsDto: AwardStampsDto) {
+    if (
+      awardStampsDto.participantUniqueCode ||
+      awardStampsDto.stampCardId ||
+      awardStampsDto.businessStampRewardId
+    ) {
+      return this.stampService.awardStamp({
+        staffId: awardStampsDto.staffId,
+        participantId: awardStampsDto.participantId,
+        participantUniqueCode: awardStampsDto.participantUniqueCode,
+        stampCardId: awardStampsDto.stampCardId,
+        businessStampRewardId: awardStampsDto.businessStampRewardId,
+        triggerMethod: awardStampsDto.triggerMethod,
+      });
+    }
+
     return this.pointEarningService.awardStamps(
       awardStampsDto.staffId,
       "Staff",

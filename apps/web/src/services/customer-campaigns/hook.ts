@@ -9,6 +9,7 @@ import {
   ClaimCodePayload,
   ClaimCodeResponse,
   RedeemRewardPayload,
+  RedeemRewardSelfPayload,
   RedeemRewardResponse,
   ScanParticipantPayload,
   ScanParticipantResponse,
@@ -193,6 +194,22 @@ export const useRedeemReward = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: redeemReward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [PARTICIPANT_BALANCE_QUERY_KEY] });
+    },
+  });
+};
+
+// Redeem Reward (Self) - Participant redeems a reward for themselves
+const redeemRewardSelf = async (payload: RedeemRewardSelfPayload): Promise<RedeemRewardResponse> => {
+  const { data } = await api.post<RedeemRewardResponse>('/participant-campaign-balance/redeem-self', payload);
+  return data;
+};
+
+export const useRedeemRewardSelf = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: redeemRewardSelf,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PARTICIPANT_BALANCE_QUERY_KEY] });
     },

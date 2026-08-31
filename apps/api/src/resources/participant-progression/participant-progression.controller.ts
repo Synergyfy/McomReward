@@ -7,6 +7,7 @@ import {
   Patch,
   Param,
   Req,
+  Delete,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -62,6 +63,14 @@ export class ParticipantProgressionController {
     @Body() dto: Partial<CreateParticipantBadgeDto>,
   ) {
     return this.progressionService.updateBadge(id, dto);
+  }
+
+  @Delete("badges/:id")
+  @Roles(Role.Admin)
+  @ApiOperation({ summary: "Delete a badge level (Admin only)" })
+  @ApiResponse({ status: 200, description: "Badge level deleted." })
+  async deleteBadge(@Param("id") id: string) {
+    return this.progressionService.deleteBadge(id);
   }
 
   // --- Earning Actions ---

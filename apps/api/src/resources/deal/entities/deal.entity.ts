@@ -122,6 +122,14 @@ export class Deal extends AbstractBaseEntity {
   @Column({ nullable: true })
   location: string;
 
+  @ApiProperty({ description: "Latitude for map display", required: false })
+  @Column({ type: "float", nullable: true })
+  latitude: number;
+
+  @ApiProperty({ description: "Longitude for map display", required: false })
+  @Column({ type: "float", nullable: true })
+  longitude: number;
+
   @ApiProperty({ description: "Whether the deal is featured" })
   @Column({ default: false })
   isFeatured: boolean;

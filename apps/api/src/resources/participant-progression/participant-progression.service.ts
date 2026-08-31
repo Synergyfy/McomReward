@@ -252,6 +252,14 @@ export class ParticipantProgressionService {
     return this.badgeRepository.find({ order: { priority: "ASC" } });
   }
 
+  async deleteBadge(id: string) {
+    const result = await this.badgeRepository.softDelete(id);
+    if (!result.affected) {
+      throw new NotFoundException("Badge level not found");
+    }
+    return { deleted: true };
+  }
+
   // --- Action CRUD ---
   async createAction(dto: CreateEarningActionDto) {
     const action = this.earningActionRepository.create(dto);

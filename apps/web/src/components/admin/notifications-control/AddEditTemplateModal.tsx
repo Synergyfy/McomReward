@@ -14,13 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NotificationTemplate } from '@/lib/mock-data/notifications';
+import { NotificationTemplate, CreateNotificationTemplateDto } from '@/services/notifications/admin-types';
 
 interface AddEditTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: NotificationTemplate; // Optional data for editing
-  onSave: (template: NotificationTemplate) => void;
+  onSave: (template: CreateNotificationTemplateDto) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
 }
 
@@ -85,16 +85,13 @@ export function AddEditTemplateModal({
       return;
     }
 
-    const templateToSave: NotificationTemplate = {
-      id: initialData?.id || `new-temp-${Date.now()}`,
+    const templateToSave: CreateNotificationTemplateDto = {
       name,
       type,
       subject,
       body,
       targetAudience,
       status,
-      createdAt: initialData?.createdAt || new Date(),
-      updatedAt: new Date(),
     };
 
     onSave(templateToSave);

@@ -14,21 +14,33 @@ import {
   Shield,
   ArrowRight,
 } from 'lucide-react';
-import { initialSectors } from '@/lib/mock-data/sectors';
-import { mockBusinessUsers, mockConsumerUsers } from '@/lib/mock-data/users';
-import { mockPartners } from '@/lib/mock-data/partners';
-import { mockDeals } from '@/lib/mock-data/deals';
-import { mockAnnouncements, mockNotificationTemplates } from '@/lib/mock-data/notifications';
-import { mockCampaigns } from '@/lib/mock-data/campaigns';
+import { useSystemOverview } from '@/services/analytics/hook';
+import { useGetSectors } from '@/services/sectors/hook';
+import { useGetAdminDeals } from '@/services/deals/hook';
+import { useGetAdminPartners } from '@/services/partners/hook';
+import { useGetAdminAnnouncements, useGetAdminNotificationTemplates } from '@/services/notifications/admin-hook';
 
 export default function AdminControlSummaryPage() {
+  const { data: systemOverview } = useSystemOverview();
+  const { data: sectors = [] } = useGetSectors();
+  const { data: dealsData } = useGetAdminDeals({ page: 1, limit: 1 } as any);
+  const { data: partnersData } = useGetAdminPartners({ page: 1, limit: 1 });
+  const { data: announcementsData } = useGetAdminAnnouncements({ page: 1, limit: 1 });
+  const { data: templatesData } = useGetAdminNotificationTemplates({ page: 1, limit: 1 });
+
+  const totalUsers =
+    (systemOverview?.totalParticipants ?? 0) + (systemOverview?.totalBusiness ?? 0);
+  const partnerCount = partnersData?.total ?? 0;
+  const notificationCount =
+    (announcementsData?.total ?? 0) + (templatesData?.total ?? 0);
+
   const summaryData = {
-    sectors: initialSectors.length,
-    users: mockBusinessUsers.length + mockConsumerUsers.length,
-    partners: mockPartners.length,
-    deals: mockDeals.length,
-    notifications: mockAnnouncements.length + mockNotificationTemplates.length,
-    campaigns: mockCampaigns.length,
+    sectors: sectors.length,
+    users: totalUsers,
+    partners: partnerCount,
+    deals: dealsData?.total ?? 0,
+    notifications: notificationCount,
+    campaigns: systemOverview?.totalCampaigns ?? 0,
   };
 
   const controlAreas = [

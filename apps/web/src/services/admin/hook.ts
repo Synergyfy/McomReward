@@ -5,6 +5,8 @@ import type { ParticipantHistoryItem, MyCampaign } from '../customer-campaigns/t
 import { GetMallRewardHistoryResponse } from '../business-reward/types';
 import { WishlistItem } from '../wishlist/types';
 import { ConsumerStampCard, DiscoverableStampReward, StampStats } from '../consumer-stamp-rewards/types';
+import { mapDtoToConsumerCard, mapDtoToDiscoverableReward } from '../consumer-stamp-rewards';
+import { StampCardDto } from '../business-stamp-rewards/types';
 
 // Admin Participants
 const getAdminParticipants = async (page = 1, limit = 10, search = ''): Promise<PaginatedResponse<AdminParticipant>> => {
@@ -111,10 +113,13 @@ export const useAdminParticipantWishlist = (id: string, page = 1, limit = 10) =>
 
 // Stamp Cards
 const getAdminParticipantStampCards = async (id: string, status?: 'in_progress' | 'completed' | 'redeemed' | 'all', page = 1, limit = 10): Promise<PaginatedResponse<ConsumerStampCard>> => {
-    const { data } = await api.get<PaginatedResponse<ConsumerStampCard>>(`/admin/participants/${id}/stamp-cards`, {
+    const { data } = await api.get<PaginatedResponse<StampCardDto>>(`/admin/participants/${id}/stamp-cards`, {
         params: { status, page, limit }
     });
-    return data;
+    return {
+        ...data,
+        data: data.data.map(mapDtoToConsumerCard),
+    };
 };
 
 export const useAdminParticipantStampCards = (id: string, status?: 'in_progress' | 'completed' | 'redeemed' | 'all', page = 1, limit = 10) => {
@@ -140,13 +145,10 @@ export const useAdminParticipantStampStats = (id: string) => {
     });
 };
 
-// Discoverable Rewards (Assuming this is global, but maybe context aware)
-// For now we will use the same endpoint as customer but mocked if needed, or if admin has a specific one.
-// Let's assume Admin just sees what's available globally or if there is an admin endpoint.
-// Given strict patterns, let's try `/admin/participants/${id}/discoverable-stamp-rewards`
+// Discoverable Rewards
 const getAdminDiscoverableStampRewards = async (id: string): Promise<DiscoverableStampReward[]> => {
-    const { data } = await api.get<DiscoverableStampReward[]>(`/admin/participants/${id}/discoverable-stamp-rewards`);
-    return data;
+    const { data } = await api.get<StampCardDto[]>(`/admin/participants/${id}/discoverable-stamp-rewards`);
+    return data.map((item: any) => mapDtoToDiscoverableReward(item));
 };
 
 export const useAdminDiscoverableStampRewards = (id: string) => {

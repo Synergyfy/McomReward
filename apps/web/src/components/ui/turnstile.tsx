@@ -14,7 +14,7 @@ export default function FakeTurnstile({ onVerify }: { onVerify?: (token: string)
     setTimeout(() => {
       setVerified(true);
       setLoading(false);
-      onVerify?.("mock-turnstile-token");
+      onVerify?.(crypto.randomUUID());
     }, 1500);
   };
 

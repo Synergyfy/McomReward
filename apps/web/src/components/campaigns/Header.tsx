@@ -10,17 +10,17 @@ import { Menu, X, User, Settings, LogOut } from "lucide-react";
 import { useCampaignMembership } from '@/context/CampaignMembershipContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-const mockBusiness = {
-  name: 'Mcom Loyalty',
-  logoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2564&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0wby1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-};
+import { useGetPublicCampaignDetails } from '@/services/customer-campaigns/hook';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isMember, memberName } = useCampaignMembership();
   const params = useParams();
   const campaignId = params?.campaignId as string;
+  const { data: campaign } = useGetPublicCampaignDetails(campaignId);
+
+  const businessName = campaign?.business?.name ?? campaign?.name ?? 'Mcom Loyalty';
+  const logoUrl = campaign?.business?.profileImage ?? campaign?.logoUrl;
 
   const navLinks = [
     { href: `/campaigns/${campaignId}/earn-points`, label: 'EARN POINTS' },
@@ -34,14 +34,20 @@ export default function Header() {
       <div className="container mx-auto flex justify-between items-center p-4">
         {/* Logo Section */}
         <Link href="/" className="flex items-center space-x-3">
-          <Image
-            src={mockBusiness.logoUrl}
-            alt={mockBusiness.name + ' Logo'}
-            width={50}
-            height={50}
-            className="rounded-full border-2 border-gray-200 shadow-sm"
-          />
-          <span className="text-xl font-bold text-gray-800">{mockBusiness.name}</span>
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt={businessName + ' Logo'}
+              width={50}
+              height={50}
+              className="rounded-full border-2 border-gray-200 shadow-sm"
+            />
+          ) : (
+            <div className="w-[50px] h-[50px] rounded-full border-2 border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center font-bold text-gray-500">
+              {businessName.charAt(0)}
+            </div>
+          )}
+          <span className="text-xl font-bold text-gray-800">{businessName}</span>
         </Link>
 
         {/* Desktop Menu */}

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BusinessUser } from '@/lib/mock-data/users';
+import { BusinessUser } from '@/services/admin/types';
 
 interface EditBusinessUserModalProps {
   isOpen: boolean;

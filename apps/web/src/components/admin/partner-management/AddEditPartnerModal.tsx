@@ -15,14 +15,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Partner } from '@/lib/mock-data/partners';
+import { Partner, CreatePartnerDto } from '@/services/partners/types';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 
 interface AddEditPartnerModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Partner; // Optional data for editing
-  onSave: (partner: Partner) => void;
+  onSave: (partner: CreatePartnerDto) => void;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
 }
 
@@ -112,8 +112,7 @@ export function AddEditPartnerModal({
       return;
     }
 
-    const partnerToSave: Partner = {
-      id: initialData?.id || `new-partner-${Date.now()}`,
+    const partnerToSave: CreatePartnerDto = {
       name,
       type,
       status,
@@ -125,8 +124,6 @@ export function AddEditPartnerModal({
       subdomain,
       domainRouting: domainRouting || undefined,
       revenueSharing,
-      createdAt: initialData?.createdAt || new Date(),
-      updatedAt: new Date(),
     };
 
     onSave(partnerToSave);

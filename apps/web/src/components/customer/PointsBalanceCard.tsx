@@ -1,5 +1,4 @@
 import React from 'react';
-import { mockCustomerData } from '@/lib/mock-data/customer';
 import { useGetParticipantGlobalBalance, useGetParticipantProfile } from '@/services/customer-campaigns/hook';
 import { PointsBalanceDisplay } from './PointsBalanceDisplay';
 
@@ -21,9 +20,7 @@ export function PointsBalanceCard() {
   );
 
   const utilization = profileData?.point_utilization || profileData?.pointUtilization || 0;
-  // Use profile data badge if available, otherwise mock or default
-  // Note: customerBadge is not in the ParticipantProfileResponse type yet, so we default to mock
-  const badgeLevel = mockCustomerData.customerBadge;
+  const badgeLevel = profileData?.customerBadge || profileData?.customer_badge || 'Starter';
 
   return (
     <PointsBalanceDisplay

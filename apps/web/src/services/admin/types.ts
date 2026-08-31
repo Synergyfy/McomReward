@@ -34,6 +34,34 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export type BusinessUser = {
+  id: string;
+  name: string;
+  email: string;
+  tier: string;
+  sector: string;
+  referralCapacity: number;
+  activityStatus: 'Active' | 'Disabled';
+  campaignsCreated: number;
+  rewardsAttached: number;
+  pointsBalance: number;
+  memberSince: Date;
+};
+
+export type ConsumerUser = {
+  id: string;
+  name: string;
+  email: string;
+  badgeLevel: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'None';
+  location: string;
+  activity: 'High' | 'Medium' | 'Low';
+  campaignsJoined: number;
+  rewardsRedeemed: number;
+  points: number;
+  matchingPoints: number;
+  joinedDate: Date;
+};
+
 export interface AdminBusinessDetails {
   id: string;
   created_at: string;

@@ -41,6 +41,19 @@ export class MembershipService {
     return standard || memberships[0];
   }
 
+  async overrideBusinessTier(businessId: string, tierId: string) {
+    const membership = await this.findOneByBusinessId(businessId);
+    if (!membership) {
+      throw new NotFoundException("Membership not found for this business");
+    }
+    const tier = await this.tierRepository.findOne({ where: { id: tierId } });
+    if (!tier) {
+      throw new NotFoundException("Tier not found");
+    }
+    membership.tier = tier;
+    return this.membershipRepository.save(membership);
+  }
+
   async findActiveMemberships(businessId: string) {
     return await this.membershipRepository.find({
       where: {

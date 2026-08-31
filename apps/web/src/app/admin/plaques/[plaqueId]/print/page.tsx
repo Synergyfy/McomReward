@@ -3,7 +3,8 @@
 import React, { useRef, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { QrCode, Printer, Download } from 'lucide-react';
-import { mockPlaques } from '@/lib/mock-data/plaques';
+import { useGetAdminQrPlaques } from '@/services/qr-plaques/hook';
+import LoadingSpinner from '@/components/ui/Loading';
 import { notFound } from 'next/navigation';
 import html2canvas from 'html2canvas'; // For downloading as image
 
@@ -15,8 +16,14 @@ interface PlaquePrintViewPageProps {
 
 export default function PlaquePrintViewPage({ params }: PlaquePrintViewPageProps) {
   const { plaqueId } = use(params);
-  const plaque = mockPlaques.find(p => p.id === plaqueId);
+  const { data, isLoading } = useGetAdminQrPlaques({ limit: 1000 });
   const printRef = useRef<HTMLDivElement>(null);
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  const plaque = (data || []).find(p => p.id === plaqueId);
 
   if (!plaque) {
     notFound();
@@ -55,11 +62,17 @@ export default function PlaquePrintViewPage({ params }: PlaquePrintViewPageProps
       <div ref={printRef} className="bg-white p-8 border rounded-lg shadow-lg text-center space-y-6 max-w-md mx-auto">
         <h2 className="text-2xl font-bold text-gray-800">{plaque.name}</h2>
         <p className="text-muted-foreground text-sm">Plaque ID: {plaque.id}</p>
-        <p className="text-muted-foreground text-sm">Owner: {plaque.ownerName}</p>
-        <p className="text-muted-foreground text-sm">Group: {plaque.groupName}</p>
+        <p className="text-muted-foreground text-sm">Owner: {plaque.ownerName || '—'}</p>
+        <p className="text-muted-foreground text-sm">Group: {plaque.groupName || '—'}</p>
 
         <div className="flex justify-center">
-          <img src={plaque.qrCodeData} alt={`QR Code for ${plaque.name}`} className="w-64 h-64 border-4 border-gray-300 p-2 bg-white" />
+          {plaque.qrCodeUrl ? (
+            <img src={plaque.qrCodeUrl} alt={`QR Code for ${plaque.name}`} className="w-64 h-64 border-4 border-gray-300 p-2 bg-white" />
+          ) : (
+            <div className="w-64 h-64 border-4 border-gray-300 p-2 bg-white flex items-center justify-center text-muted-foreground text-sm">
+              No QR image available
+            </div>
+          )}
         </div>
 
         <p className="text-sm text-gray-600 mt-4">Scan this QR code to interact.</p>

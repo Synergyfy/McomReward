@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Printer, Mail, XCircle } from 'lucide-react';
+import { CheckCircle, Printer, Mail, XCircle, Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockSaleRecords, SaleRecord } from '@/lib/mock-data/sales';
+import { useGetSaleById } from '@/services/plaque-sales/hook';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -13,16 +13,17 @@ export default function SaleConfirmationPage() {
   const router = useRouter();
   const params = useParams();
   const saleId = params.saleId as string;
-  const [saleRecord, setSaleRecord] = useState<SaleRecord | null>(null);
+  const { data: saleRecord, isLoading, isError } = useGetSaleById(saleId);
 
-  useEffect(() => {
-    if (saleId) {
-      const foundSale = mockSaleRecords.find(sale => sale.id === saleId);
-      setSaleRecord(foundSale || null);
-    }
-  }, [saleId]);
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-4 md:p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-  if (!saleRecord) {
+  if (!saleRecord || isError) {
     return (
       <div className="flex-1 p-4 md:p-8 flex items-center justify-center">
         <Card className="w-full max-w-md text-center">
@@ -77,11 +78,11 @@ export default function SaleConfirmationPage() {
             </div>
             <div>
               <p className="font-semibold">Sale Price:</p>
-              <p>${saleRecord.salePrice.toFixed(2)}</p>
+              <p>£{saleRecord.salePrice.toFixed(2)}</p>
             </div>
             <div>
               <p className="font-semibold">Commission Earned:</p>
-              <p>${saleRecord.commissionAmount.toFixed(2)}</p>
+              <p>£{saleRecord.commissionAmount.toFixed(2)}</p>
             </div>
             <div>
               <p className="font-semibold">Payout Status:</p>

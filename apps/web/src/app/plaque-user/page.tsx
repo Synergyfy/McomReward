@@ -21,9 +21,34 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { plaqueUserSummary, plaqueList, recentActivity } from '@/lib/mock-data/plaque-dashboard';
+import { useGetPlaqueUserSummary, useGetPlaqueUserPlaques, useGetPlaqueUserActivities } from '@/services/plaque-user/hook';
+import { useGetBusinessProfile } from '@/services/business/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
 
 export default function PlaqueUserDashboard() {
+    const { data: summary } = useGetPlaqueUserSummary();
+    const { data: plaques = [] } = useGetPlaqueUserPlaques();
+    const { data: activities = [] } = useGetPlaqueUserActivities();
+    const { data: profile } = useGetBusinessProfile();
+    const { data: subscription } = useGetMySubscription();
+
+    const businessName = profile?.name || '—';
+    const plan = subscription?.tier?.name || '—';
+
+    const plaqueUserSummary = {
+        totalScans: summary?.totalScans ?? 0,
+        scans30d: summary?.scans30d ?? 0,
+        redemptions30d: summary?.redemptions30d ?? 0,
+        commissionEarned: summary?.commissionEarned ?? 0,
+    };
+
+    const recentActivity = activities.map((activity) => ({
+        id: activity.id,
+        time: new Date(activity.scannedAt).toLocaleString(),
+        description: activity.description,
+        type: activity.type,
+    }));
+
     return (
         <div className="space-y-6">
             {/* Top Area: Business Card & KPIs */}
@@ -33,11 +58,11 @@ export default function PlaqueUserDashboard() {
                     <CardContent className="p-6 flex flex-col justify-between h-full">
                         <div>
                             <h2 className="text-xl font-bold">My Business</h2>
-                            <p className="text-gray-400 text-sm">John Doe</p>
+                            <p className="text-gray-400 text-sm">{businessName}</p>
                         </div>
                         <div className="mt-4">
                             <p className="text-xs text-gray-500 uppercase tracking-wider">Plan</p>
-                            <p className="font-medium text-orange-400">Premium Partner</p>
+                            <p className="font-medium text-orange-400">{plan}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -85,7 +110,7 @@ export default function PlaqueUserDashboard() {
                     </Link>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plaqueList.map((plaque) => (
+                    {plaques.map((plaque) => (
                         <Card key={plaque.id} className="overflow-hidden">
                             <CardContent className="p-0">
                                 <div className="p-4 flex items-start justify-between">
@@ -98,7 +123,7 @@ export default function PlaqueUserDashboard() {
                                             <p className="text-xs text-muted-foreground">{plaque.id}</p>
                                         </div>
                                     </div>
-                                    <Badge variant={plaque.status === 'Active' ? 'default' : 'secondary'}>
+                                    <Badge variant={plaque.status === 'ACTIVE' || plaque.status === 'Active' ? 'default' : 'secondary'}>
                                         {plaque.status}
                                     </Badge>
                                 </div>

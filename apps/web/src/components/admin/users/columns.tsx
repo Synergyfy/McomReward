@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import { BusinessUser, ConsumerUser } from '@/services/admin/types';
 import Link from 'next/link';
 
 // Define types for the action handlers

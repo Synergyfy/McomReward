@@ -45,6 +45,7 @@ import {
     useRemoveBusinessReward
 } from '@/services/business-reward/hooks';
 import { useGetBusinessTierUsage } from '@/services/business/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
 import { Reward, BusinessReward, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import {
     AlertDialog,
@@ -58,10 +59,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
-
-const currentUser = {
-    plan: 'white-label', // 'starter', 'co-branded', 'white-label'
-};
 
 type ActiveRewardFilter = 'all' | 'stamps' | 'points' | 'hybrid';
 
@@ -104,6 +101,9 @@ export default function BusinessStampRewardsPage() {
     const { mutate: updateBusinessReward } = useUpdateBusinessReward();
     const { mutate: removeBusinessReward, isPending: isDeletingReward } = useRemoveBusinessReward();
     const { data: tierUsageData } = useGetBusinessTierUsage();
+    const { data: subscription } = useGetMySubscription();
+
+    const plan = subscription?.tier?.name.toLowerCase() || 'starter';
 
     const pointRewards = pointRewardsData?.data || [];
 
@@ -278,7 +278,7 @@ export default function BusinessStampRewardsPage() {
 
     const handleCreateFromScratch = useCallback(() => {
         setIsClaimModalOpen(false);
-        if (currentUser.plan === 'white-label') {
+        if (plan === 'white-label') {
             setIsRewardTypeSelectionOpen(true);
         } else {
             setIsUpgradeModalOpen(true);

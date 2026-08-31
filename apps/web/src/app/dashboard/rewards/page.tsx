@@ -14,6 +14,7 @@ import {
   useRemoveBusinessReward,
 } from '@/services/business-reward/hooks';
 import { useGetBusinessTierUsage } from '@/services/business/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessReward, Reward, PaginationMeta, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import LoadingSpinner from '@/components/ui/Loading';
 import UsageCard from '@/components/dashboard/shared/UsageCard';
@@ -40,10 +41,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-const currentUser = {
-  plan: 'white-label', // 'starter', 'co-branded', 'white-label'
-};
 
 interface PaginationProps {
   currentPage: number;
@@ -204,6 +201,9 @@ export default function BusinessRewardsPage() {
   } = useGetBusinessRewards(businessRewardsPage, limit);
 
   const { data: tierUsageData } = useGetBusinessTierUsage();
+  const { data: subscription } = useGetMySubscription();
+
+  const plan = subscription?.tier?.name.toLowerCase() || 'starter';
 
   const { mutate: updateBusinessReward } = useUpdateBusinessReward();
   const { mutateAsync: createBusinessReward } = useCreateBusinessReward();
@@ -230,7 +230,7 @@ export default function BusinessRewardsPage() {
 
   const handleCreateFromScratch = useCallback(() => {
     setIsClaimModalOpen(false);
-    if (currentUser.plan === 'white-label') {
+    if (plan === 'white-label') {
       setEditingBusinessRewardId(null);
       handleOpenCreateModal();
     } else {

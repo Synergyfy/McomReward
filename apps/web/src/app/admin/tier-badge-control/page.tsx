@@ -114,15 +114,13 @@ export default function TierBadgeControlPage() {
   };
 
   const handleManualOverride = (userId: string, newLevelId: string, type: 'tier' | 'badge') => {
-    const adminId = "current-admin-id";
-
     if (type === 'tier') {
-      overrideTier({ businessId: userId, levelId: newLevelId, adminId }, {
+      overrideTier({ businessId: userId, tierId: newLevelId }, {
         onSuccess: () => handleShowFeedback("Override Applied", `Business Tier updated for ${userId}.`),
         onError: () => handleShowFeedback("Error", "Failed to override tier.")
       });
     } else {
-      overrideBadge({ participantId: userId, badgeId: newLevelId, adminId }, {
+      overrideBadge({ participantId: userId, badgeId: newLevelId }, {
         onSuccess: () => handleShowFeedback("Override Applied", `Customer Badge updated for ${userId}.`),
         onError: () => handleShowFeedback("Error", "Failed to override badge.")
       });

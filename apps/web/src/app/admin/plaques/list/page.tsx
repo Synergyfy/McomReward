@@ -8,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Edit, Trash2, QrCode, Share2, Ban, Printer } from 'lucide-react';
-import { mockPlaqueGroups } from '@/lib/mock-data/plaque-groups';
-import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,6 +15,7 @@ import { TransferPlaqueModal } from '@/components/admin/plaques/TransferPlaqueMo
 import { RetirePlaqueModal } from '@/components/admin/plaques/RetirePlaqueModal';
 import { AddEditPlaqueModal } from '@/components/admin/plaques/AddEditPlaqueModal';
 import { useGetAdminQrPlaques, useDeleteAdminQrPlaque, useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
+import { useAdminBusinesses } from '@/services/admin/hook';
 import { QrPlaque } from '@/services/qr-plaques/types';
 import {
   AlertDialog,
@@ -36,7 +35,6 @@ export default function PlaqueListPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterGroup, setFilterGroup] = useState('all');
   const [filterOwner, setFilterOwner] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -50,8 +48,11 @@ export default function PlaqueListPage() {
 
   // API Hooks
   const { data: plaquesResponse, isLoading } = useGetAdminQrPlaques(queryParams);
+  const { data: businessesData } = useAdminBusinesses(1, 100);
   const { mutate: deletePlaque, isPending: isDeleting } = useDeleteAdminQrPlaque();
   const { mutate: updatePlaque, isPending: isUpdating } = useUpdateAdminQrPlaque();
+
+  const businesses = businessesData?.data ?? [];
 
   // Handle response structure
   const plaques = Array.isArray(plaquesResponse)
@@ -93,9 +94,9 @@ export default function PlaqueListPage() {
                             plaque.ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             plaque.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesOwner = filterOwner === 'all' || plaque.assignedBusinessId === filterOwner;
-      return matchesOwner;
+      return matchesSearch && matchesOwner;
     });
-  }, [plaques, searchTerm, filterGroup, filterOwner, filterStatus]);
+  }, [plaques, searchTerm, filterOwner]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -190,24 +191,13 @@ export default function PlaqueListPage() {
                   className="pl-8 w-full max-w-sm"
                 />
               </div>
-              <Select value={filterGroup} onValueChange={setFilterGroup}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by group" />
-                </SelectTrigger>
-                <SelectContent className="z-[10000]">
-                  <SelectItem value="all">All Groups</SelectItem>
-                  {mockPlaqueGroups.map(group => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Select value={filterOwner} onValueChange={setFilterOwner}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by owner" />
                 </SelectTrigger>
                 <SelectContent className="z-[10000]">
                   <SelectItem value="all">All Owners</SelectItem>
-                  {mockBusinessUsers.map(user => (
+                  {businesses.map(user => (
                     <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                   ))}
                 </SelectContent>

@@ -2,7 +2,7 @@
  * Stamp Rewards Service
  *
  * API functions for Admin Stamp Reward Templates.
- * Integrates with the backend API while maintaining mock functions for missing endpoints.
+ * Integrates with the backend API.
  */
 
 import apiClient from '@/services/api';
@@ -17,12 +17,6 @@ import {
     StampTriggerMethod,
     RewardBenefitType
 } from './types';
-
-// Simulate network delay for mocks
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Generate a random ID for mocks
-const generateId = () => Math.random().toString(36).substring(2, 15);
 
 // Helper: Map Backend DTO to Frontend Response
 const mapDtoToResponse = (dto: StampRewardTemplateDto): StampRewardResponse => {
@@ -91,47 +85,33 @@ const mapRequestToDto = (payload: CreateStampRewardRequest): CreateStampTemplate
 export const createStampReward = async (
     payload: CreateStampRewardRequest
 ): Promise<StampRewardResponse> => {
-    try {
-        const dto = mapRequestToDto(payload);
-        const { data } = await apiClient.post<StampRewardTemplateDto>('/admin/stamps/templates', dto);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error('Failed to create stamp reward template', error);
-        throw error;
-    }
+    const dto = mapRequestToDto(payload);
+    const { data } = await apiClient.post<StampRewardTemplateDto>('/admin/stamps/templates', dto);
+    return mapDtoToResponse(data);
 };
 
 /**
  * Get all stamp reward templates
  * Backend: GET /admin/stamps/templates
- * Note: Backend currently doesn't support server-side pagination in the DTO spec (returns array).
- * We will fake pagination on the client side if needed, or pass params if backend supports it later.
  */
 export const getStampRewards = async (
     page: number = 1,
     limit: number = 10
 ): Promise<GetStampRewardsResponse> => {
-    try {
-        const { data } = await apiClient.get<StampRewardTemplateDto[]>('/admin/stamps/templates');
+    const { data } = await apiClient.get<StampRewardTemplateDto[]>('/admin/stamps/templates');
 
-        // Client-side pagination since backend returns all
-        const allRewards = data.map(mapDtoToResponse);
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedData = allRewards.slice(startIndex, endIndex);
+    // Client-side pagination since backend returns all
+    const allRewards = data.map(mapDtoToResponse);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = allRewards.slice(startIndex, endIndex);
 
-        return {
-            data: paginatedData,
-            totalPages: Math.ceil(allRewards.length / limit),
-            currentPage: page,
-            count: allRewards.length,
-        };
-    } catch (error) {
-        console.error('Failed to fetch stamp rewards', error);
-        // Fallback to mock data if API fails (for dev resilience)
-        console.warn('Falling back to mock data');
-        return getMockStampRewardsWithPagination(page, limit);
-    }
+    return {
+        data: paginatedData,
+        totalPages: Math.ceil(allRewards.length / limit),
+        currentPage: page,
+        count: allRewards.length,
+    };
 };
 
 /**
@@ -141,13 +121,8 @@ export const getStampRewards = async (
 export const getStampRewardById = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    try {
-        const { data } = await apiClient.get<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error(`Failed to fetch stamp reward ${id}`, error);
-        throw error;
-    }
+    const { data } = await apiClient.get<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`);
+    return mapDtoToResponse(data);
 };
 
 /**
@@ -158,33 +133,27 @@ export const updateStampReward = async (
     id: string,
     payload: Partial<UpdateStampRewardRequest>
 ): Promise<StampRewardResponse> => {
-    try {
-        // Map partial payload to partial DTO
-        // Constructing a partial DTO manually
-        const dto: Partial<UpdateStampTemplateDto> = {};
-        if (payload.title) dto.title = payload.title;
-        if (payload.description) dto.description = payload.description;
-        if (payload.stampsRequired) dto.required_stamps = payload.stampsRequired;
-        if (payload.rewardBenefitType) dto.reward_benefit = payload.rewardBenefitType.toUpperCase();
-        if (payload.rewardBenefitValue) dto.reward_benefit_value = payload.rewardBenefitValue;
-        if (payload.triggerMethod) dto.trigger_method = payload.triggerMethod.toUpperCase();
-        if (payload.expirationRules) {
-            dto.stamp_validity_days = payload.expirationRules.stampValidityDays || undefined;
-            dto.reward_claim_deadline_days = payload.expirationRules.rewardClaimDays || undefined;
-        }
-        if (payload.hybridSettings) {
-            dto.is_hybrid = payload.hybridSettings.enabled;
-            dto.hybrid_points_per_stamp = payload.hybridSettings.pointsPerStamp;
-            dto.hybrid_completion_bonus_points = payload.hybridSettings.completionBonusPoints;
-        }
-        if (payload.image) dto.default_image = payload.image;
-
-        const { data } = await apiClient.patch<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`, dto);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error(`Failed to update stamp reward ${id}`, error);
-        throw error;
+    // Map partial payload to partial DTO
+    const dto: Partial<UpdateStampTemplateDto> = {};
+    if (payload.title) dto.title = payload.title;
+    if (payload.description) dto.description = payload.description;
+    if (payload.stampsRequired) dto.required_stamps = payload.stampsRequired;
+    if (payload.rewardBenefitType) dto.reward_benefit = payload.rewardBenefitType.toUpperCase();
+    if (payload.rewardBenefitValue) dto.reward_benefit_value = payload.rewardBenefitValue;
+    if (payload.triggerMethod) dto.trigger_method = payload.triggerMethod.toUpperCase();
+    if (payload.expirationRules) {
+        dto.stamp_validity_days = payload.expirationRules.stampValidityDays || undefined;
+        dto.reward_claim_deadline_days = payload.expirationRules.rewardClaimDays || undefined;
     }
+    if (payload.hybridSettings) {
+        dto.is_hybrid = payload.hybridSettings.enabled;
+        dto.hybrid_points_per_stamp = payload.hybridSettings.pointsPerStamp;
+        dto.hybrid_completion_bonus_points = payload.hybridSettings.completionBonusPoints;
+    }
+    if (payload.image) dto.default_image = payload.image;
+
+    const { data } = await apiClient.patch<StampRewardTemplateDto>(`/admin/stamps/templates/${id}`, dto);
+    return mapDtoToResponse(data);
 };
 
 /**
@@ -194,84 +163,8 @@ export const updateStampReward = async (
 export const publishStampReward = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    try {
-        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/publish`);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error(`Failed to publish stamp reward ${id}`, error);
-        throw error;
-    }
-};
-
-// --- MOCK FUNCTIONS (Endpoints not available in backend yet) ---
-
-// Mock database for fallback
-const mockStampRewards: StampRewardResponse[] = [
-    {
-        id: '1',
-        title: 'Buy 5 Coffees, Get 1 Free',
-        description: 'Collect 5 stamps with every coffee purchase and enjoy your 6th coffee absolutely free! Perfect for our regular customers.',
-        stampsRequired: 5,
-        rewardBenefitType: 'free_item',
-        rewardBenefitValue: 'Free Coffee of Your Choice',
-        triggerMethod: 'qr_scan',
-        expirationRules: { stampValidityDays: 30, rewardClaimDays: 7 },
-        audience: 'all_businesses',
-        sectorIds: [],
-        tierIds: [],
-        status: 'active',
-        image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400',
-        stampIcon: '☕',
-        isRepeatable: true,
-        hybridSettings: { enabled: true, pointsPerStamp: 10, completionBonusPoints: 50, pointsFallbackEnabled: true },
-        termsAndConditions: 'Valid at participating locations only.',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 45,
-        customersEnrolled: 1250,
-        totalCompletions: 890,
-        totalRedemptions: 756,
-    },
-    {
-        id: '2',
-        title: 'Pizza Lovers Reward',
-        description: 'Order 8 pizzas and get your 9th pizza completely free. The more you eat, the more you save!',
-        stampsRequired: 8,
-        rewardBenefitType: 'free_item',
-        rewardBenefitValue: 'Free Large Pizza',
-        triggerMethod: 'purchase',
-        expirationRules: { stampValidityDays: 60, rewardClaimDays: 14 },
-        audience: 'specific_sectors',
-        sectorIds: ['food-beverage'],
-        tierIds: [],
-        status: 'active',
-        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-        stampIcon: '🍕',
-        isRepeatable: true,
-        hybridSettings: { enabled: false, pointsPerStamp: 0, completionBonusPoints: 0, pointsFallbackEnabled: false },
-        termsAndConditions: 'Cannot be combined with other offers.',
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin',
-        businessesActivated: 28,
-        customersEnrolled: 890,
-        totalCompletions: 342,
-        totalRedemptions: 298,
-    },
-];
-
-const getMockStampRewardsWithPagination = async (page: number, limit: number): Promise<GetStampRewardsResponse> => {
-    await delay(500);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedData = mockStampRewards.slice(startIndex, endIndex);
-    return {
-        data: paginatedData,
-        totalPages: Math.ceil(mockStampRewards.length / limit),
-        currentPage: page,
-        count: mockStampRewards.length,
-    };
+    const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/publish`);
+    return mapDtoToResponse(data);
 };
 
 /**
@@ -279,12 +172,7 @@ const getMockStampRewardsWithPagination = async (page: number, limit: number): P
  * Backend: DELETE /admin/stamps/templates/:id
  */
 export const deleteStampReward = async (id: string): Promise<void> => {
-    try {
-        await apiClient.delete(`/admin/stamps/templates/${id}`);
-    } catch (error) {
-        console.error(`Failed to delete stamp reward ${id}`, error);
-        throw error;
-    }
+    await apiClient.delete(`/admin/stamps/templates/${id}`);
 };
 
 /**
@@ -294,13 +182,8 @@ export const deleteStampReward = async (id: string): Promise<void> => {
 export const archiveStampReward = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    try {
-        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/archive`);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error(`Failed to archive stamp reward ${id}`, error);
-        throw error;
-    }
+    const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/archive`);
+    return mapDtoToResponse(data);
 };
 
 /**
@@ -310,14 +193,6 @@ export const archiveStampReward = async (
 export const duplicateStampReward = async (
     id: string
 ): Promise<StampRewardResponse> => {
-    try {
-        const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/duplicate`);
-        return mapDtoToResponse(data);
-    } catch (error) {
-        console.error(`Failed to duplicate stamp reward ${id}`, error);
-        throw error;
-    }
+    const { data } = await apiClient.post<StampRewardTemplateDto>(`/admin/stamps/templates/${id}/duplicate`);
+    return mapDtoToResponse(data);
 };
-
-// Export the mock data getter (legacy support)
-export const getMockStampRewards = () => [...mockStampRewards];

@@ -1,21 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import api from "@/services/api";
+import { AxiosError } from "axios";
 
 interface CustomerSignUpForm {
   name?: string;
   email: string;
   phone?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
-export default function CampaignCustomerSignUp() {
+function CampaignCustomerSignUp() {
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId") || undefined;
+
   const {
     register,
     handleSubmit,
@@ -27,42 +34,43 @@ export default function CampaignCustomerSignUp() {
   const [step, setStep] = useState<"email" | "full">("email");
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const email = watch("email");
-
-  // 🧪 Mock backend check for email
-  const checkEmailExists = async (email: string) => {
-    await new Promise((res) => setTimeout(res, 1000)); // fake delay
-    const mockExistingEmails = ["test@example.com", "hello@demo.com"];
-    return mockExistingEmails.includes(email.toLowerCase());
-  };
-
   const onSubmit = async (data: CustomerSignUpForm) => {
     try {
       if (step === "email") {
-        const exists = await checkEmailExists(data.email);
-
-        if (exists) {
-          toast.success("Welcome back! You’ve been automatically enrolled 🎉");
-          setIsSuccess(true);
-          reset();
-          return;
-        }
-
         toast.info("No existing account found. Please complete your details.");
         setStep("full");
         return;
       }
 
-      // 👇 Simulate backend sign-up (replace with your actual API)
-      const response = await api.post("/customers/signup", data);
-      toast.success("Customer account created successfully!");
-      console.log("Customer created:", response.data);
+      // Create the participant via the real signup endpoint
+      const response = await api.post("/participant/signup", {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        campaignId,
+      });
+
+      if (response.data?.accessToken) {
+        toast.success("Customer account created successfully!");
+      } else {
+        toast.success("Customer account created successfully!");
+      }
 
       setIsSuccess(true);
       reset();
     } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      if (axiosError.response?.status === 409) {
+        toast.success("Welcome back! You've been automatically enrolled 🎉");
+        setIsSuccess(true);
+        reset();
+        return;
+      }
       console.error("Customer creation failed:", error);
-      toast.error("Failed to sign up customer.");
+      toast.error(
+        axiosError.response?.data?.message || "Failed to sign up customer."
+      );
     }
   };
 
@@ -101,7 +109,7 @@ export default function CampaignCustomerSignUp() {
             )}
           </div>
 
-          {/* Step 2 — Show name + phone only if new user */}
+          {/* Step 2 — Show details only if new user */}
           {step === "full" && (
             <>
               <motion.div
@@ -131,7 +139,6 @@ export default function CampaignCustomerSignUp() {
                   type="tel"
                   placeholder="+233 555 123 456"
                   {...register("phone", {
-                    required: "Phone number is required",
                     pattern: {
                       value: /^[0-9+ ]{7,15}$/,
                       message: "Enter a valid phone number",
@@ -141,6 +148,53 @@ export default function CampaignCustomerSignUp() {
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.phone.message}
+                  </p>
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="At least 8 characters"
+                  {...register("password", {
+                    required: "Password is required",
+                    minLength: {
+                      value: 8,
+                      message: "Password must be at least 8 characters",
+                    },
+                  })}
+                />
+                {errors.password && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Re-enter your password"
+                  {...register("confirmPassword", {
+                    required: "Please confirm your password",
+                    validate: (value) =>
+                      value === watch("password") ||
+                      "Passwords do not match",
+                  })}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.confirmPassword.message}
                   </p>
                 )}
               </motion.div>
@@ -166,10 +220,18 @@ export default function CampaignCustomerSignUp() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-           You’ve been added! Welcome aboard.
+           You've been added! Welcome aboard.
           </motion.p>
         )}
       </div>
     </motion.div>
+  );
+}
+
+export default function ParticipatePage() {
+  return (
+    <Suspense fallback={null}>
+      <CampaignCustomerSignUp />
+    </Suspense>
   );
 }

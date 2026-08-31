@@ -6,6 +6,7 @@ import { WishlistItem } from "./entities/wishlist-item.entity";
 import { WishlistAggregate } from "./entities/wishlist-aggregate.entity";
 import { Category } from "../category/entities/category.entity";
 import { Business } from "../business/entities/business.entity";
+import { CampaignModule } from "../campaign/campaign.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Business } from "../business/entities/business.entity";
       Category,
       Business,
     ]),
+    CampaignModule,
   ],
   controllers: [WishlistController],
   providers: [WishlistService],

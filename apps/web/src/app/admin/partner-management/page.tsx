@@ -1,23 +1,41 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Handshake, Edit, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
-import { mockPartners, Partner } from '@/lib/mock-data/partners';
+import { PlusCircle, Search, Handshake, Edit, Trash2, Eye, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { AddEditPartnerModal } from '@/components/admin/partner-management/AddEditPartnerModal'; // Will create this
-import { ViewPartnerDetailsModal } from '@/components/admin/partner-management/ViewPartnerDetailsModal'; // Will create this
+import { AddEditPartnerModal } from '@/components/admin/partner-management/AddEditPartnerModal';
+import { ViewPartnerDetailsModal } from '@/components/admin/partner-management/ViewPartnerDetailsModal';
+import { Partner, CreatePartnerDto } from '@/services/partners/types';
+import {
+  useGetAdminPartners,
+  useCreatePartner,
+  useUpdatePartner,
+  useDeletePartner,
+  useTogglePartnerStatus,
+} from '@/services/partners/hook';
 
 export default function PartnerManagementPage() {
-  const [partners, setPartners] = useState<Partner[]>(mockPartners);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  const { data: partnersData, isLoading } = useGetAdminPartners({
+    page: 1,
+    limit: 100,
+    search: searchTerm || undefined,
+    type: filterType === 'all' ? undefined : (filterType as Partner['type']),
+    status: filterStatus === 'all' ? undefined : (filterStatus as Partner['status']),
+  });
+  const createPartnerMutation = useCreatePartner();
+  const updatePartnerMutation = useUpdatePartner();
+  const deletePartnerMutation = useDeletePartner();
+  const togglePartnerStatusMutation = useTogglePartnerStatus();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -44,45 +62,65 @@ export default function PartnerManagementPage() {
   const [showViewPartnerModal, setShowViewPartnerModal] = useState(false);
   const [currentViewPartner, setCurrentViewPartner] = useState<Partner | undefined>(undefined);
 
-  const filteredPartners = useMemo(() => {
-    return partners.filter(partner => {
-      const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            partner.subdomain.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === 'all' || partner.type === filterType;
-      const matchesStatus = filterStatus === 'all' || partner.status === filterStatus;
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [partners, searchTerm, filterType, filterStatus]);
+  const partners = partnersData?.data ?? [];
 
   const handleAddEditPartner = (partner?: Partner) => {
     setCurrentEditPartner(partner);
     setShowAddEditPartnerModal(true);
   };
 
-  const handleSavePartner = (savedPartner: Partner) => {
-    setShowAddEditPartnerModal(false); // Close modal first
-    setTimeout(() => {
-      if (savedPartner.id.startsWith('new-')) {
-        setPartners(prev => [...prev, { ...savedPartner, id: `partner-${Date.now()}`, createdAt: new Date(), updatedAt: new Date() }]);
-        handleShowFeedback("Partner Added", `Partner "${savedPartner.name}" has been added.`);
-      } else {
-        setPartners(prev => prev.map(partner => (partner.id === savedPartner.id ? { ...savedPartner, updatedAt: new Date() } : partner)));
-        handleShowFeedback("Partner Updated", `Partner "${savedPartner.name}" has been updated.`);
-      }
-    }, 300);
+  const handleSavePartner = (dto: CreatePartnerDto) => {
+    if (currentEditPartner) {
+      updatePartnerMutation.mutate(
+        { id: currentEditPartner.id, ...dto },
+        {
+          onSuccess: () => {
+            handleShowFeedback("Partner Updated", `Partner "${dto.name}" has been updated.`);
+          },
+          onError: (error: any) => {
+            handleShowFeedback("Error", error?.response?.data?.message || "Failed to update partner.");
+          },
+        }
+      );
+    } else {
+      createPartnerMutation.mutate(dto, {
+        onSuccess: () => {
+          handleShowFeedback("Partner Added", `Partner "${dto.name}" has been added.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to create partner.");
+        },
+      });
+    }
+    setShowAddEditPartnerModal(false);
   };
 
   const handleDeletePartner = (partnerId: string) => {
-    // In a real app, this would trigger a confirmation dialog first
-    setPartners(prev => prev.filter(partner => partner.id !== partnerId));
-    handleShowFeedback("Partner Deleted", `Partner ${partnerId} has been deleted.`);
+    if (confirm("Are you sure you want to delete this partner?")) {
+      deletePartnerMutation.mutate(partnerId, {
+        onSuccess: () => {
+          handleShowFeedback("Partner Deleted", `Partner ${partnerId} has been deleted.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete partner.");
+        },
+      });
+    }
   };
 
-  const handleToggleStatus = (partnerId: string) => {
-    setPartners(prev => prev.map(partner => (
-      partner.id === partnerId ? { ...partner, status: partner.status === 'active' ? 'inactive' : 'active', updatedAt: new Date() } : partner
-    )));
-    handleShowFeedback("Partner Status Toggled", `Partner ${partnerId} status has been changed.`);
+  const handleToggleStatus = (partner: Partner) => {
+    const nextStatus = partner.status === 'active' ? 'inactive' : 'active';
+    togglePartnerStatusMutation.mutate(
+      { id: partner.id, status: nextStatus },
+      {
+        onSuccess: () => {
+          handleShowFeedback("Partner Status Toggled", `Partner "${partner.name}" status has been changed to ${nextStatus}.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to update partner status.");
+        },
+      }
+    );
   };
 
   const handleViewPartnerDetails = (partner: Partner) => {
@@ -140,49 +178,55 @@ export default function PartnerManagementPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Subdomain</TableHead>
-                <TableHead>Revenue Share</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPartners.length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No partners found.
-                  </TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Subdomain</TableHead>
+                  <TableHead>Revenue Share</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredPartners.map((partner) => (
-                  <TableRow key={partner.id}>
-                    <TableCell className="font-medium">{partner.name}</TableCell>
-                    <TableCell>{partner.type}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(partner.status)}>{partner.status}</Badge>
-                    </TableCell>
-                    <TableCell>{partner.subdomain}</TableCell>
-                    <TableCell>{partner.revenueSharing}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewPartnerDetails(partner)}><Eye className="h-4 w-4" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleAddEditPartner(partner)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(partner.id)}>
-                          {partner.status === 'active' ? <XCircle className="h-4 w-4 text-red-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeletePartner(partner.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {partners.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No partners found.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  partners.map((partner) => (
+                    <TableRow key={partner.id}>
+                      <TableCell className="font-medium">{partner.name}</TableCell>
+                      <TableCell>{partner.type}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(partner.status)}>{partner.status}</Badge>
+                      </TableCell>
+                      <TableCell>{partner.subdomain}</TableCell>
+                      <TableCell>{partner.revenueSharing}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleViewPartnerDetails(partner)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="sm" onClick={() => handleAddEditPartner(partner)}><Edit className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="sm" onClick={() => handleToggleStatus(partner)}>
+                            {partner.status === 'active' ? <XCircle className="h-4 w-4 text-red-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeletePartner(partner.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

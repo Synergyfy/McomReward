@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Partner } from '@/lib/mock-data/partners';
+import { Partner } from '@/services/partners/types';
 import {
   Handshake,
   Building,

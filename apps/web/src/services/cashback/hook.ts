@@ -16,36 +16,36 @@ export const CREDITS_HISTORY_QUERY_KEY = 'creditsHistory';
 export const ADMIN_CREDITS_HISTORY_QUERY_KEY = 'adminCreditsHistory';
 
 const fetchCreditsRules = async (): Promise<CreditsRule[]> => {
-  const { data } = await api.get<CreditsRule[]>('/business/credits/rules');
+  const { data } = await api.get<CreditsRule[]>('/credits/rules');
   return data;
 };
 
 const createCreditsRule = async (payload: CreateCreditsRulePayload) => {
-  const { data } = await api.post('/business/credits/rules', payload);
+  const { data } = await api.post('/credits/rules', payload);
   return data;
 };
 
 const updateCreditsRule = async ({ id, ...payload }: { id: string } & UpdateCreditsRulePayload) => {
-  const { data } = await api.put(`/business/credits/rules/${id}`, payload);
+  const { data } = await api.patch(`/credits/rules/${id}`, payload);
   return data;
 };
 
 const deleteCreditsRule = async (id: string) => {
-  await api.delete(`/business/credits/rules/${id}`);
+  await api.delete(`/credits/rules/${id}`);
 };
 
 const fetchCreditsBalance = async (): Promise<CreditsBalance> => {
-  const { data } = await api.get<CreditsBalance>('/business/credits/balance');
+  const { data } = await api.get<CreditsBalance>('/credits/balance');
   return data;
 };
 
 const fetchCreditsEvents = async (): Promise<string[]> => {
-  const { data } = await api.get<string[]>('/business/credits/events');
+  const { data } = await api.get<string[]>('/credits/events');
   return data;
 };
 
 const fetchCreditsHistory = async (page = 1, limit = 10): Promise<CreditsHistoryResponse> => {
-  const { data } = await api.get<CreditsHistoryResponse>('/business/credits/history', {
+  const { data } = await api.get<CreditsHistoryResponse>('/credits/history', {
     params: { page, limit },
   });
   return data;
@@ -55,6 +55,11 @@ const fetchAdminCreditsHistory = async (page = 1, limit = 10, email?: string): P
   const { data } = await api.get<AdminCreditsHistoryResponse>('/admin/credits/history', {
     params: { page, limit, email },
   });
+  return data;
+};
+
+const unlockCredits = async (level: number): Promise<CreditsBalance> => {
+  const { data } = await api.post<CreditsBalance>('/credits/unlock', { level });
   return data;
 };
 
@@ -129,6 +134,17 @@ export const useGetAdminCreditsHistory = (page = 1, limit = 10, email?: string) 
   return useQuery<AdminCreditsHistoryResponse, Error>({
     queryKey: [ADMIN_CREDITS_HISTORY_QUERY_KEY, page, limit, email],
     queryFn: () => fetchAdminCreditsHistory(page, limit, email),
+  });
+};
+
+export const useUnlockCredits = () => {
+  const queryClient = useQueryClient();
+  return useMutation<CreditsBalance, Error, number>({
+    mutationFn: (level) => unlockCredits(level),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CREDITS_BALANCE_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CREDITS_HISTORY_QUERY_KEY] });
+    },
   });
 };
 

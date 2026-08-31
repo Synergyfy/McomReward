@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
-import { useGetBusinessLevels, useGetCustomerBadges } from '@/services/progression/hook';
+import { useGetTiers } from '@/services/payment/hook';
+import { useGetCustomerBadges } from '@/services/progression/hook';
 import { Loader2 } from 'lucide-react';
 
 interface ManualOverrideModalProps {
@@ -33,7 +34,7 @@ export function ManualOverrideModal({
   const [overrideType, setOverrideType] = useState<'tier' | 'badge'>('tier');
 
   // Fetch data
-  const { data: businessTiers, isLoading: isLoadingTiers } = useGetBusinessLevels();
+  const { data: businessTiers, isLoading: isLoadingTiers } = useGetTiers();
   const { data: consumerBadges, isLoading: isLoadingBadges } = useGetCustomerBadges();
 
   // State for Feedback Dialog

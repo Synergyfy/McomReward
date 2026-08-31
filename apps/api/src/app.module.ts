@@ -65,9 +65,11 @@ import { CreditsModule } from "./resources/credits/credits.module";
 import { LoyaltySetupModule } from "./resources/loyalty-setup/loyalty-setup.module";
 import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
+import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
 
 @Module({
   imports: [
+    McomPackagesModule,
     LibraryAssetsModule,
     GroupCircleModule,
     StampModule,

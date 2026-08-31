@@ -48,17 +48,23 @@ export default function DashboardLayout({
       return;
     }
 
-    // Check if subscription data is loaded and tier is Free, but SKIP for Super Business
-    // Also wait for profile to load to avoid premature redirect
-    if (!isBusinessSubLoading && !isProfileLoading && businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness) {
-      // Prevent redirect loop if already on subscription page
+    // Check if subscription data is loaded and is inactive/expired, but SKIP for Super Business
+    const isSubInactive =
+      businessSubscription?.tier === 'Free' ||
+      businessSubscription?.status === 'expired' ||
+      mySubscription?.status === 'expired';
+
+    if (
+      !isBusinessSubLoading &&
+      !isProfileLoading &&
+      isSubInactive &&
+      !profile?.isSuperBusiness
+    ) {
       if (!pathname.includes('/dashboard/subscription')) {
-        // Ensure we don't redirect if we are in a potentially transient state or just paid
-        // But since we invalidated queries on checkout success, this 'Free' check should be accurate.
         router.push('/dashboard/subscription');
       }
     }
-  }, [businessSubscription, isBusinessSubLoading, pathname, router, profile, isProfileLoading]);
+  }, [businessSubscription, mySubscription, isBusinessSubLoading, pathname, router, profile, isProfileLoading]);
 
 
   return (

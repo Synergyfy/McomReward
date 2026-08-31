@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../../user/user.service";
-import { McomCentralService, CentralPackage } from "./mcom-central.service";
+import { McomCentralService, CentralPackage, CentralUserInfo } from "./mcom-central.service";
 import { MembershipService } from "../membership/membership.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Business } from "../business/entities/business.entity";
@@ -15,6 +15,7 @@ import { Role } from "../../common/role.enum";
 import * as crypto from "crypto";
 import { nanoid } from "nanoid";
 import { ConfigService } from "@nestjs/config";
+import { encrypt, decrypt } from "../../common/utils/crypto.util";
 
 export interface SsoCallbackResult {
   accessToken: string;
@@ -34,9 +35,15 @@ export interface SsoLoginResult {
 }
 
 interface CentralUser {
+  sub?: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   role?: string;
+  membershipLevel?: string;
+  membershipTier?: string;
+  membershipStatus?: string;
 }
 
 @Injectable()
@@ -61,8 +68,14 @@ export class SsoService {
     );
   }
 
-  async exchangeCode(code: string): Promise<SsoCallbackResult> {
-    const redirectUri = `${this.mallFrontendUrl}/auth/callback`;
+  getAuthorizeUrl(state?: string, redirectUri?: string): { authorizeUrl: string; state: string } {
+    const currentState = state || crypto.randomBytes(16).toString("hex");
+    const authorizeUrl = this.mcomCentralService.getAuthorizeUrl(currentState, redirectUri);
+    return { authorizeUrl, state: currentState };
+  }
+
+  async exchangeCode(code: string, customRedirectUri?: string): Promise<SsoCallbackResult> {
+    const redirectUri = customRedirectUri || `${this.mallFrontendUrl}/auth/callback`;
 
     const tokenResponse = await this.mcomCentralService.exchangeCodeForToken(
       code,
@@ -74,14 +87,37 @@ export class SsoService {
       throw new UnauthorizedException("No user data from MCOM Central");
     }
 
-    const user = await this.jitProvisionUser(centralUser);
+    const rawAccessToken = tokenResponse.access_token || tokenResponse.accessToken;
+    const rawRefreshToken = tokenResponse.refresh_token || tokenResponse.refreshToken;
+    const expiresIn = tokenResponse.expires_in || tokenResponse.expiresIn || 3600;
+
+    let user = await this.jitProvisionUser(centralUser);
+
+    // Persist encrypted tokens and Central user details
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    if (user instanceof Business) {
+      user.mcomUserId = centralUser.sub || user.mcomUserId;
+      if (rawAccessToken) user.mcomAccessToken = encrypt(rawAccessToken);
+      if (rawRefreshToken) user.mcomRefreshToken = encrypt(rawRefreshToken);
+      user.mcomTokenExpiresAt = expiresAt;
+      if (centralUser.membershipLevel) user.membershipLevel = centralUser.membershipLevel;
+      if (centralUser.membershipTier) user.membershipTier = centralUser.membershipTier;
+      if (centralUser.membershipStatus) user.membershipStatus = centralUser.membershipStatus;
+      user = await this.businessRepository.save(user);
+    } else if (user instanceof Participant) {
+      user.mcomUserId = centralUser.sub || user.mcomUserId;
+      if (rawAccessToken) user.mcomAccessToken = encrypt(rawAccessToken);
+      if (rawRefreshToken) user.mcomRefreshToken = encrypt(rawRefreshToken);
+      user.mcomTokenExpiresAt = expiresAt;
+      user = await this.participantRepository.save(user);
+    }
 
     let rewardsPackage: CentralPackage | null = null;
     if (user.role === Role.Business) {
-      if (tokenResponse?.access_token) {
+      if (rawAccessToken) {
         rewardsPackage = await this.syncSubscriptionFromCentral(
           user.id,
-          tokenResponse.access_token
+          rawAccessToken
         );
       }
       await this.membershipService.syncFromCentralProfile(user.id, user.email);
@@ -98,6 +134,7 @@ export class SsoService {
       role: user.role,
       isEmailVerified: true,
       hasActiveSubscription,
+      mcomUserId: user.mcomUserId,
     };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: "1h" });
@@ -112,6 +149,25 @@ export class SsoService {
     };
   }
 
+  async refreshCentralToken(userId: string): Promise<string> {
+    const business = await this.businessRepository.findOne({ where: { id: userId } });
+    if (!business || !business.mcomRefreshToken) {
+      throw new UnauthorizedException("No MCOM Central refresh token found for this account");
+    }
+
+    const plainRefreshToken = decrypt(business.mcomRefreshToken);
+    const newTokens = await this.mcomCentralService.refreshToken(plainRefreshToken);
+
+    business.mcomAccessToken = encrypt(newTokens.accessToken);
+    if (newTokens.refreshToken) {
+      business.mcomRefreshToken = encrypt(newTokens.refreshToken);
+    }
+    business.mcomTokenExpiresAt = new Date(Date.now() + (newTokens.expiresIn || 3600) * 1000);
+    await this.businessRepository.save(business);
+
+    return newTokens.accessToken;
+  }
+
   private async jitProvisionUser(centralUser: CentralUser): Promise<Business | Participant> {
     const email = centralUser.email.toLowerCase().trim();
 
@@ -124,31 +180,49 @@ export class SsoService {
       if (role === "owner" || role === "business") {
         const newBusiness = this.businessRepository.create({
           email,
-          name: centralUser.name || email.split("@")[0],
+          name: centralUser.name || `${centralUser.firstName || ""} ${centralUser.lastName || ""}`.trim() || email.split("@")[0],
+          firstName: centralUser.firstName || "",
+          lastName: centralUser.lastName || "",
           password: randomPassword,
           role: Role.Business,
           isEmailVerified: true,
           uniqueCode: nanoid(9),
+          mcomUserId: centralUser.sub,
+          membershipLevel: centralUser.membershipLevel,
+          membershipTier: centralUser.membershipTier,
+          membershipStatus: centralUser.membershipStatus,
         });
         user = await this.businessRepository.save(newBusiness);
         this.logger.log(`JIT provisioned business user: ${email}`);
       } else {
         const newParticipant = this.participantRepository.create({
           email,
-          name: centralUser.name || email.split("@")[0],
+          name: centralUser.name || `${centralUser.firstName || ""} ${centralUser.lastName || ""}`.trim() || email.split("@")[0],
           password: randomPassword,
           role: Role.Participant,
           isEmailVerified: true,
+          uniqueCode: nanoid(9),
+          mcomUserId: centralUser.sub,
         });
         user = await this.participantRepository.save(newParticipant);
         this.logger.log(`JIT provisioned participant user: ${email}`);
       }
-    } else if (centralUser.name && user.name !== centralUser.name) {
-      user.name = centralUser.name;
-      if (user instanceof Business) {
-        await this.businessRepository.save(user);
-      } else if (user instanceof Participant) {
-        await this.participantRepository.save(user);
+    } else {
+      let changed = false;
+      if (centralUser.name && user.name !== centralUser.name) {
+        user.name = centralUser.name;
+        changed = true;
+      }
+      if (centralUser.sub && !user.mcomUserId) {
+        user.mcomUserId = centralUser.sub;
+        changed = true;
+      }
+      if (changed) {
+        if (user instanceof Business) {
+          await this.businessRepository.save(user);
+        } else if (user instanceof Participant) {
+          await this.participantRepository.save(user);
+        }
       }
     }
 
@@ -172,7 +246,7 @@ export class SsoService {
 
       const rewardsPackage = centralUser.packages.find(
         (p) =>
-          p.platform === "MCOM Rewards" &&
+          (p.platform === "MCOM Rewards" || p.platform === "rewards" || p.platform === "loyalty") &&
           p.status === "active" &&
           new Date(p.expiresAt) > new Date()
       );
@@ -215,36 +289,43 @@ export class SsoService {
       throw new UnauthorizedException("SSO token verification failed");
     }
 
-    if (
-      !["mcom-loyalty", "mcom-central"].includes(payload.iss) ||
-      !["mcom-mall", "mcom-ecosystem", "mcom-loyalty"].includes(payload.aud)
-    ) {
-      throw new UnauthorizedException("Invalid SSO Token Issuer/Audience");
-    }
-
     const user = await this.jitProvisionUser({
+      sub: payload.userId || payload.sub,
       email: payload.email,
-      name: payload.name,
+      name: payload.name || `${payload.firstName || ""} ${payload.lastName || ""}`.trim(),
       role: payload.role,
+      membershipLevel: payload.membershipLevel,
+      membershipTier: payload.membershipTier,
+      membershipStatus: payload.membershipStatus,
     });
+
+    // Update mcomUserId if present
+    const mcomSub = payload.userId || payload.sub;
+    if (mcomSub && user.mcomUserId !== mcomSub) {
+      user.mcomUserId = mcomSub;
+      if (user instanceof Business) {
+        await this.businessRepository.save(user);
+      } else if (user instanceof Participant) {
+        await this.participantRepository.save(user);
+      }
+    }
 
     // Sync subscription from MCOM Central if packages are present in token
     let rewardsPackage: any = null;
     if (user.role === Role.Business) {
-      // Handle both formats: packages (array) and platforms (object)
       if (payload.packages) {
         rewardsPackage = payload.packages.find(
           (p: any) =>
-            p.platform === "MCOM Rewards" &&
+            (p.platform === "MCOM Rewards" || p.platform === "rewards" || p.platform === "loyalty") &&
             p.status === "active" &&
             new Date(p.expiresAt) > new Date()
         );
-      } else if (payload.platforms?.["MCOM Rewards"]) {
-        const platform = payload.platforms["MCOM Rewards"];
+      } else if (payload.platforms?.["MCOM Rewards"] || payload.platforms?.["rewards"] || payload.platforms?.["loyalty"]) {
+        const platform = payload.platforms["MCOM Rewards"] || payload.platforms["rewards"] || payload.platforms["loyalty"];
         if (platform.expiresAt && new Date(platform.expiresAt) > new Date()) {
           rewardsPackage = {
             platform: "MCOM Rewards",
-            packageName: platform.planId,
+            packageName: platform.planId || platform.packageName,
             status: "active",
             expiresAt: platform.expiresAt,
           };
@@ -281,6 +362,7 @@ export class SsoService {
       role: user.role,
       isEmailVerified: true,
       hasActiveSubscription,
+      mcomUserId: user.mcomUserId,
     };
 
     return {

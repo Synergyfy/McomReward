@@ -521,19 +521,32 @@ export class BusinessService {
   async getSubscriptionLevel(id: string): Promise<any> {
     const rewardsPackage = await this.getCentralPackage(id);
 
-    if (!rewardsPackage) {
+    if (rewardsPackage) {
       return {
-        tier: "Free",
-        status: "active",
-        features: [],
+        tier: rewardsPackage.packageName || "Unknown",
+        status: rewardsPackage.status || "active",
+        expiresAt: rewardsPackage.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        planType: rewardsPackage.packageName?.toLowerCase().includes("annual") ? "annual" : "monthly",
+      };
+    }
+
+    const localMembership = await this.membershipService.findOneByBusinessId(id);
+    if (localMembership && localMembership.tier) {
+      const isExpired = localMembership.expires_at && new Date(localMembership.expires_at) < new Date();
+      return {
+        tier: localMembership.tier.name,
+        status: isExpired ? "expired" : (localMembership.status || "active"),
+        expiresAt: localMembership.expires_at ? new Date(localMembership.expires_at).toISOString() : null,
+        planType: localMembership.plan_type || "monthly",
+        isTrial: localMembership.is_trial,
+        features: localMembership.tier.features || [],
       };
     }
 
     return {
-      tier: rewardsPackage.packageName || "Unknown",
-      status: rewardsPackage.status || "active",
-      expiresAt: rewardsPackage.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      planType: rewardsPackage.packageName?.toLowerCase().includes("annual") ? "annual" : "monthly",
+      tier: "Free",
+      status: "none",
+      features: [],
     };
   }
 

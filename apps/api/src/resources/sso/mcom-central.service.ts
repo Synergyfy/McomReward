@@ -17,31 +17,45 @@ export interface CentralUserInfo {
   sub: string;
   email: string;
   name: string;
-  packages: CentralPackage[];
+  role?: string;
+  packages?: CentralPackage[];
+  membershipLevel?: string;
+  membershipTier?: string;
+  membershipStatus?: string;
 }
 
 @Injectable()
 export class McomCentralService {
   private readonly baseUrl: string;
-  private readonly serviceId: string;
-  private readonly apiSecret: string;
+  private readonly clientId: string;
+  private readonly clientSecret: string;
+  private readonly hmacSecret: string;
   private readonly internalServiceId: string;
   private readonly internalApiSecret: string;
   private readonly logger = new Logger(McomCentralService.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>(
-      "MCOM_CENTRAL_BASE_URL",
+    this.baseUrl = (
+      this.configService.get<string>("MCOM_SOLUTIONS_URL") ||
+      this.configService.get<string>("MCOM_CENTRAL_BASE_URL") ||
       "http://localhost:3010"
-    );
-    this.serviceId = this.configService.get<string>(
-      "SSO_CLIENT_ID",
-      "mcom-loyalty"
-    );
-    this.apiSecret = this.configService.get<string>(
-      "SSO_API_SECRET",
-      "mcom_loyalty_dev_secret_change_in_prod"
-    );
+    ).replace(/\/$/, "");
+
+    this.clientId =
+      this.configService.get<string>("MCOM_CLIENT_ID") ||
+      this.configService.get<string>("SSO_CLIENT_ID") ||
+      "mcom-loyalty";
+
+    this.clientSecret =
+      this.configService.get<string>("MCOM_CLIENT_SECRET") ||
+      this.configService.get<string>("SSO_CLIENT_SECRET") ||
+      "loyalty_secret_123";
+
+    this.hmacSecret =
+      this.configService.get<string>("MCOM_HMAC_SECRET") ||
+      this.configService.get<string>("SSO_API_SECRET") ||
+      "mcom_loyalty_dev_secret_change_in_prod";
+
     this.internalServiceId = this.configService.get<string>(
       "INTERNAL_SERVICE_ID",
       "mcom-rewards"
@@ -52,46 +66,61 @@ export class McomCentralService {
     );
   }
 
-  private getHmacHeaders(customServiceId?: string, customApiSecret?: string): Record<string, string> {
-    const sId = customServiceId || this.serviceId;
-    const secret = customApiSecret || this.apiSecret;
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  getClientId(): string {
+    return this.clientId;
+  }
+
+  getHmacHeaders(customServiceId?: string, customApiSecret?: string): Record<string, string> {
+    const serviceId = customServiceId || this.clientId;
+    const secret = customApiSecret || this.hmacSecret;
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const message = `${sId}:${timestamp}`;
+    const message = `${serviceId}:${timestamp}`;
     const signature = crypto
       .createHmac("sha256", secret)
       .update(message)
       .digest("hex");
 
     return {
-      "X-Service-Id": sId,
+      "X-Service-Id": serviceId,
       "X-Timestamp": timestamp,
       "X-Signature": signature,
       "Content-Type": "application/json",
     };
   }
 
-  async exchangeCodeForToken(code: string, redirectUri: string): Promise<any> {
-    const clientId = this.configService.get<string>(
-      "SSO_CLIENT_ID",
-      "mcom-loyalty"
-    );
-    const clientSecret = this.configService.get<string>(
-      "SSO_CLIENT_SECRET",
-      "loyalty_secret_123"
-    );
+  getAuthorizeUrl(state: string, redirectUri?: string): string {
+    const defaultRedirect =
+      this.configService.get<string>("MCOM_REDIRECT_URI") ||
+      `${this.configService.get<string>("LOYALTY_FRONTEND_URL", "http://localhost:3005")}/auth/callback`;
 
-    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
-      "base64"
-    );
+    const params = new URLSearchParams({
+      client_id: this.clientId,
+      redirect_uri: redirectUri || defaultRedirect,
+      scope: "profile email business membership packages",
+      state,
+      response_type: "code",
+    });
+
+    return `${this.baseUrl}/api/v1/auth/sso/authorize?${params.toString()}`;
+  }
+
+  async exchangeCodeForToken(code: string, redirectUri: string): Promise<any> {
+    const basicAuth = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString("base64");
 
     const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Basic ${basicAuth}`,
+        Authorization: `Basic ${basicAuth}`,
       },
       body: JSON.stringify({
-        client_id: clientId,
+        client_id: this.clientId,
         code,
         redirect_uri: redirectUri,
       }),
@@ -106,6 +135,41 @@ export class McomCentralService {
     }
 
     return response.json();
+  }
+
+  async refreshToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  }> {
+    const basicAuth = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString("base64");
+
+    const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/token/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${basicAuth}`,
+      },
+      body: JSON.stringify({
+        refresh_token: refreshToken,
+        client_id: this.clientId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      this.logger.error(`Token refresh failed: ${response.status} ${errorText}`);
+      throw new Error(`Token refresh failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      accessToken: data.accessToken || data.access_token,
+      refreshToken: data.refreshToken || data.refresh_token || refreshToken,
+      expiresIn: data.expiresIn || data.expires_in || 3600,
+    };
   }
 
   async getUserMembership(
@@ -139,6 +203,29 @@ export class McomCentralService {
     return response.json();
   }
 
+  async fetchUserPermissions(mcomUserId: string): Promise<any> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/data/user/${mcomUserId}/permissions`,
+        {
+          method: "GET",
+          headers: this.getHmacHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        this.logger.warn(`Failed to get user permissions: ${response.status}`);
+        return null;
+      }
+
+      const res = await response.json();
+      return res.data || res;
+    } catch (error) {
+      this.logger.error(`Error fetching user permissions: ${error?.message}`);
+      return null;
+    }
+  }
+
   async getUserInfo(accessToken: string): Promise<CentralUserInfo | null> {
     try {
       const response = await fetch(
@@ -153,10 +240,26 @@ export class McomCentralService {
       );
 
       if (!response.ok) {
-        this.logger.warn(
-          `Failed to get user info from MCOM Central: ${response.status}`
+        // Fallback to /api/v1/auth/sso/userinfo
+        const fallbackRes = await fetch(
+          `${this.baseUrl}/api/v1/auth/sso/userinfo`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              ...this.getHmacHeaders(),
+            },
+          }
         );
-        return null;
+
+        if (!fallbackRes.ok) {
+          this.logger.warn(
+            `Failed to get user info from MCOM Central: ${fallbackRes.status}`
+          );
+          return null;
+        }
+
+        return fallbackRes.json();
       }
 
       return response.json();

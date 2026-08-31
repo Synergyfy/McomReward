@@ -3,12 +3,14 @@ import {
   UnauthorizedException,
   BadRequestException,
   Body,
+  Get,
   Post,
+  Query,
   Logger,
 } from "@nestjs/common";
 import { SsoService } from "./sso.service";
 import { Public } from "../../common/decorators/public.decorator";
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags("sso")
 @Controller("sso")
@@ -16,6 +18,18 @@ export class SsoController {
   private readonly logger = new Logger(SsoController.name);
 
   constructor(private readonly ssoService: SsoService) {}
+
+  @Public()
+  @Get("authorize-url")
+  @ApiOperation({ summary: "Get MCOM Central OAuth authorize URL and CSRF state" })
+  @ApiQuery({ name: "state", required: false, description: "Optional custom CSRF state" })
+  @ApiQuery({ name: "redirectUri", required: false, description: "Optional custom redirect URI" })
+  getAuthorizeUrl(
+    @Query("state") state?: string,
+    @Query("redirectUri") redirectUri?: string
+  ) {
+    return this.ssoService.getAuthorizeUrl(state, redirectUri);
+  }
 
   @Public()
   @Post("login")
@@ -55,6 +69,7 @@ export class SsoController {
       type: "object",
       properties: {
         code: { type: "string", description: "Authorization code from MCOM Central" },
+        redirectUri: { type: "string", description: "OAuth callback redirect URI" },
       },
       required: ["code"],
     },
@@ -62,13 +77,16 @@ export class SsoController {
   @ApiResponse({ status: 200, description: "Exchange successful" })
   @ApiResponse({ status: 400, description: "Missing authorization code" })
   @ApiResponse({ status: 401, description: "Exchange failed" })
-  async exchangeCode(@Body("code") code: string) {
+  async exchangeCode(
+    @Body("code") code: string,
+    @Body("redirectUri") redirectUri?: string
+  ) {
     if (!code) {
       throw new BadRequestException("Authorization code is required");
     }
 
     try {
-      return await this.ssoService.exchangeCode(code);
+      return await this.ssoService.exchangeCode(code, redirectUri);
     } catch (error) {
       this.logger.error(
         `SSO code exchange failed: ${error?.message || error}`,
@@ -76,5 +94,15 @@ export class SsoController {
       );
       throw new UnauthorizedException("SSO code exchange failed");
     }
+  }
+
+  @Public()
+  @Post("callback")
+  @ApiOperation({ summary: "Alias for exchange code" })
+  async callback(
+    @Body("code") code: string,
+    @Body("redirectUri") redirectUri?: string
+  ) {
+    return this.exchangeCode(code, redirectUri);
   }
 }

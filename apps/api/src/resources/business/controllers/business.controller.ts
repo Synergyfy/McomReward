@@ -76,6 +76,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("profile")
   @ApiOperation({ summary: "Get business profile" })
   @ApiResponse({ status: 200, description: "Return business profile." })
@@ -88,6 +89,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Patch("profile")
   @ApiOperation({ summary: "Update business profile" })
   @ApiResponse({
@@ -118,6 +120,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("billing-history")
   @ApiOperation({ summary: "Get business billing history" })
   @ApiResponse({ status: 200, description: "Return business billing history." })
@@ -126,6 +129,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("onboarding-status")
   @ApiOperation({ summary: "Get business onboarding status" })
   @ApiResponse({

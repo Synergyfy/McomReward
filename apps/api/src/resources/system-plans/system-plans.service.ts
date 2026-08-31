@@ -363,4 +363,47 @@ export class SystemPlansService {
 
     return { message: "Plan deleted successfully" };
   }
+
+  async getPlanSchema() {
+    return {
+      quotas: [
+        { key: "maxActiveCampaigns", label: "Max Active Campaigns", type: "number", unlimited: true },
+        { key: "maxActiveRewards", label: "Max Active Rewards", type: "number", unlimited: true },
+        { key: "maxRewardsPerCampaign", label: "Max Rewards Per Campaign", type: "number" },
+        { key: "monthlyPointsAllowance", label: "Monthly Points Allowance", type: "number" },
+        { key: "monthlyStampsAllowance", label: "Monthly Stamps Allowance", type: "number" },
+        { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
+      ],
+      featureFlags: [
+        { key: "canCreateCampaignFromScratch", label: "Create Campaign From Scratch", type: "boolean" },
+        { key: "canEditAdminTemplates", label: "Edit Admin Templates", type: "boolean" },
+        { key: "hasAccessToAdvancedAnalytics", label: "Advanced Analytics", type: "boolean" },
+        { key: "hasAccessToCRM", label: "CRM Access", type: "boolean" },
+        { key: "canUpdateReward", label: "Update Reward", type: "boolean" },
+      ],
+    };
+  }
+
+  async getSeasons() {
+    const seasons = await this.seasonRepository.find({
+      order: { created_at: "DESC" },
+    });
+    const now = new Date();
+    return seasons.map((s) => {
+      const isActive = s.startDate <= now && s.endDate >= now;
+      const status = isActive
+        ? "ACTIVE"
+        : s.endDate < now
+        ? "EXPIRED"
+        : "UPCOMING";
+      return {
+        id: s.id,
+        name: s.name,
+        startDate: s.startDate,
+        endDate: s.endDate,
+        isActive,
+        status,
+      };
+    });
+  }
 }

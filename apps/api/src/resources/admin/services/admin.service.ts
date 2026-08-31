@@ -278,18 +278,12 @@ export class AdminService {
   }
 
   async disableStaff(id: string) {
-    // Staff doesn't have isDisabled in entity based on previous view, but let's check.
-    // Actually Staff entity doesn't have isDisabled. It has role.
-    // Let's assume we can't disable staff easily unless we delete or change password.
-    // Or maybe we should add isDisabled to Staff entity?
-    // The user asked for "edit or disable anything like ... staff".
-    // I'll check Staff entity again.
-    // Staff entity has no isDisabled.
-    // I will skip disableStaff for now or implement it by deleting? No, disable usually means flag.
-    // I'll add isDisabled to Staff entity in a separate step if needed, but for now I'll just implement update.
-    // Wait, I should probably add isDisabled to Staff entity to fulfill the requirement.
-    // For now, let's just implement update.
-    return this.staffService.update(id, {} as any); // Placeholder
+    const staff = await this.staffService.findOne(id);
+    if (!staff) {
+      throw new NotFoundException("Staff member not found");
+    }
+    staff.isDisabled = !staff.isDisabled;
+    return this.staffService.update(id, { isDisabled: staff.isDisabled });
   }
 
   async getStaffActivities(staffId: string, page: number, limit: number) {

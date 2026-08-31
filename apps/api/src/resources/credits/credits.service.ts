@@ -61,10 +61,16 @@ export class CreditsService {
     userId: string,
     userType: CreditsUserType,
   ): Promise<CreditsBalance> {
-    const [credits, cashback, levels] = await Promise.all([
+    const [credits, cashback, levels, pending] = await Promise.all([
       this.transactionRepository.sum("amount", { userId, userType, unit: CreditsUnit.CREDITS }),
       this.transactionRepository.sum("amount", { userId, userType, unit: CreditsUnit.GBP }),
       this.levelRepository.find({ order: { level: "ASC" } }),
+      this.transactionRepository.sum("amount", {
+        userId,
+        userType,
+        unit: CreditsUnit.GBP,
+        status: "pending",
+      }),
     ]);
 
     const creditsBalance = credits || 0;
@@ -78,7 +84,8 @@ export class CreditsService {
     return {
       credits: creditsBalance,
       availableCashback,
-      pendingAmount: 0,
+      pendingAmount: pending || 0,
+      // Credits schema has no expiry tracking; there is nothing that can expire soon.
       expiringSoon: 0,
       progression: {
         currentCredits: creditsBalance,

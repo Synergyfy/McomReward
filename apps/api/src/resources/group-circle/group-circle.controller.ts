@@ -76,6 +76,20 @@ export class GroupCircleController {
     return this.service.findAll(query, business.id);
   }
 
+  @Get("discover")
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "List Group Circles the business can join" })
+  @ApiResponse({
+    status: 200,
+    description: "List of discoverable Group Circles.",
+  })
+  discover(
+    @Query(new ValidationPipe({ transform: true })) query: PaginationDto,
+    @CurrentUser() business: Business,
+  ) {
+    return this.service.discover(query, business.id);
+  }
+
   @Get(":id")
   @Roles(Role.Business)
   @ApiOperation({ summary: "Get details of a Group Circle" })
@@ -86,6 +100,18 @@ export class GroupCircleController {
   })
   findOne(@Param("id") id: string, @CurrentUser() business: Business) {
     return this.service.findOne(id, business.id);
+  }
+
+  @Post(":id/join")
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "Join a Group Circle" })
+  @ApiResponse({
+    status: 201,
+    description: "Joined the Group Circle.",
+    type: GroupCircleMember,
+  })
+  join(@Param("id") id: string, @CurrentUser() business: Business) {
+    return this.service.join(id, business.id);
   }
 
   @Patch(":id")

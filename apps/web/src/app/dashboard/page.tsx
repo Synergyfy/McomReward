@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGetGeneralAnalytics, useGetChartData } from "@/services/business-dashboard/hook";
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { useGetBusinessTierUsage } from "@/services/business/hook";
 import { useGetMatchingPointBalance } from "@/services/matching-points/hook";
 import Loader from "@/components/ui/loader";
 import type { ChartQueryDto } from "@/services/business-dashboard/types";
@@ -37,6 +38,7 @@ export default function BusinessDashboard() {
   const { data: subscription, isLoading: isLoadingSubscription } = useGetMySubscription();
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
   const { data: matchingBalanceData } = useGetMatchingPointBalance();
+  const { data: tierUsage } = useGetBusinessTierUsage();
 
   const selectedTimeRangeLabel = timeRangeOptions.find(option => option.value === timeRange)?.label;
 
@@ -67,7 +69,13 @@ export default function BusinessDashboard() {
 
   const isSuperBusiness = profile?.isSuperBusiness;
   const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'Starter');
-  const tierProgress = isSuperBusiness ? 100 : ((subscription?.tier as any)?.progress || 35);
+  const tierLimit = tierUsage?.features?.campaigns?.limit ?? 0;
+  const tierUsed = tierUsage?.features?.campaigns?.used ?? 0;
+  const tierProgress = isSuperBusiness
+    ? 100
+    : tierLimit === 0
+      ? 0
+      : Math.min(100, Math.round((tierUsed / tierLimit) * 100));
 
   if (isAnalyticsLoading || isLoadingSubscription || isProfileLoading) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
@@ -157,7 +165,7 @@ export default function BusinessDashboard() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-8">
-        <TierProgress tier={{ name: tierName, progress: tierProgress }} />
+        <TierProgress tier={{ name: tierName, progress: tierProgress }} hasPlan={tierLimit > 0} />
         <PointsSummary
           summary={{ earned: displayData?.totalPointsEarned || 0, spent: displayData?.totalPointsRedeemed || 0, matchingAvailable: matchingBalanceData?.matching_points || 0 }}
           isTrial={subscription?.isTrial}
@@ -265,7 +273,7 @@ const StatCard = ({ title, value, icon }: { title: string; value: string | numbe
   </Card>
 );
 
-const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) => (
+const TierProgress = ({ tier, hasPlan }: { tier: { name: string; progress: number }; hasPlan: boolean }) => (
   <Card className="shadow-md border-none bg-white lg:col-span-1">
     <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
       <CardTitle className="text-sm sm:text-lg font-semibold">Business Tier</CardTitle>
@@ -277,7 +285,7 @@ const TierProgress = ({ tier }: { tier: { name: string; progress: number } }) =>
       </div>
       <Progress value={tier.progress} className="w-full h-2" />
       <p className="text-xs sm:text-sm text-gray-500 mt-2">
-        {tier.name === 'Super Business' ? 'Unlimited Access' : `${tier.progress}% to the next tier`}
+        {tier.name === 'Super Business' ? 'Unlimited Access' : hasPlan ? `${tier.progress}% of plan capacity used` : 'No active plan'}
       </p>
     </CardContent>
   </Card>

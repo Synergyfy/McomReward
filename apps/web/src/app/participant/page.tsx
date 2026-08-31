@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useGetParticipantProfile, useGetParticipantGlobalBalance } from '@/services/customer-campaigns/hook';
 import { useGetCreditsBalance } from '@/services/cashback/hook';
+import { useGetParticipantProgression } from '@/services/progression/hook';
 import { Search, Sparkles, Wallet, Lock, MoreVertical, SlidersHorizontal, Store, Gamepad2, Gift, Ticket, ChevronRight, Award, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,8 +21,9 @@ export default function ParticipantDashboard() {
   const { data: profile, isLoading: isProfileLoading } = useGetParticipantProfile();
   const { data: balance, isLoading: isBalanceLoading } = useGetParticipantGlobalBalance();
   const { data: cashbackData } = useGetCreditsBalance();
+  const { data: progression } = useGetParticipantProgression();
 
-  const userName = profile?.name || 'Gold Member';
+  const userName = profile?.name || 'Member';
   const userInitials = userName
     .split(' ')
     .map((n) => n[0])
@@ -29,8 +31,10 @@ export default function ParticipantDashboard() {
     .toUpperCase()
     .slice(0, 2);
 
-  const globalPoints = balance?.globalTotalPoints ?? 12500;
-  const cashbackVal = cashbackData?.availableCashback ?? 45.20;
+  const globalPoints = balance?.globalTotalPoints ?? 0;
+  const cashbackVal = cashbackData?.availableCashback ?? 0;
+  const progressPercent = progression?.progressPercentage ?? 0;
+  const nextBadgeName = progression?.nextBadge?.name ?? 'Max';
 
   return (
     <div className="min-h-screen bg-[#f9fafb] text-gray-800 pb-32 pt-4 max-w-6xl mx-auto px-4 md:px-8 space-y-8">
@@ -81,12 +85,12 @@ export default function ParticipantDashboard() {
           {/* Progress to next tier */}
           <div className="space-y-2 border-t border-gray-100 pt-4">
             <div className="flex justify-between text-xs font-bold">
-              <span className="text-gray-500">Platinum Progress</span>
-              <span className="text-primary">75%</span>
+              <span className="text-gray-500">{nextBadgeName} Progress</span>
+              <span className="text-primary">{progressPercent}%</span>
             </div>
             <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
               <div 
-                style={{ width: "75%" }} 
+                style={{ width: `${Math.min(100, progressPercent)}%` }} 
                 className="h-full bg-gradient-to-r from-primary to-[#ff843a] rounded-full shadow-[0_0_8px_rgba(245,73,0,0.2)]"
               />
             </div>
@@ -179,28 +183,6 @@ export default function ParticipantDashboard() {
             <span className="text-xs font-bold text-gray-600">Travel</span>
           </Link>
         </div>
-      </section>
-
-      {/* Play & Win (MCOMSpin Banner) */}
-      <section>
-        <Link href="/play-win" className="block">
-          <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 h-48 flex items-center justify-between p-8 group shadow-sm transition-transform hover:-translate-y-0.5">
-            <div className="absolute inset-0 opacity-10 bg-radial-gradient"></div>
-            <div className="relative z-10 space-y-2 w-2/3">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="bg-[#f54900] text-white px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">Live Now</span>
-              </div>
-              <h3 className="text-3xl font-black leading-none text-gray-900 font-sans">MCOM<span className="text-[#f54900] bg-gradient-to-r from-[#f54900] to-[#ff843a] bg-clip-text text-transparent">Spin</span></h3>
-              <p className="text-gray-600 text-xs md:text-sm">Spin the wheel for a chance to win 50,000 bonus points.</p>
-            </div>
-            <div className="relative z-10 flex flex-col items-center justify-center group-hover:scale-105 transition-transform">
-              <div className="w-20 h-20 bg-[#f54900] rounded-full flex items-center justify-center text-white shadow-md hover:bg-[#f54900]/90 active:scale-95 transition-all">
-                <span className="material-symbols-outlined text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>casino</span>
-              </div>
-              <p className="mt-2 text-[#f54900] font-bold text-[10px] uppercase tracking-wider">Spin Now</p>
-            </div>
-          </div>
-        </Link>
       </section>
 
       {/* Near You Section */}

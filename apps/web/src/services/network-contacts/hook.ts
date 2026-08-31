@@ -7,6 +7,7 @@ import {
     CreateContactDto,
     UpdateContactDto,
     BulkContactImportDto,
+    BulkImportResponse,
 } from './types';
 
 const NETWORK_CONTACTS_QUERY_KEY = 'networkContacts';
@@ -85,22 +86,13 @@ const deleteContact = async (id: string): Promise<void> => {
 
 const bulkImportContacts = async (
     importData: BulkContactImportDto
-): Promise<NetworkContactsResponse> => {
-    const { data } = await api.post<any>('/network/bulk', {
+): Promise<BulkImportResponse> => {
+    const { data } = await api.post<BulkImportResponse>('/network/bulk', {
         networks: importData.contacts,
         hasPermission: importData.contacts.some((c) => c.hasPermission) || false,
     });
 
-    return {
-        data: [],
-        meta: {
-            total: data.importedCount || 0,
-            page: 1,
-            lastPage: 1,
-            nextPage: null,
-            prevPage: null,
-        },
-    };
+    return data;
 };
 
 // Hooks

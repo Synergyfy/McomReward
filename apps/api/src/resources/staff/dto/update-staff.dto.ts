@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsOptional, IsUrl } from "class-validator";
+import { IsEmail, IsString, IsOptional, IsUrl, IsBoolean } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class UpdateStaffDto {
@@ -46,4 +46,13 @@ export class UpdateStaffDto {
   @IsUrl()
   @IsOptional()
   avatar?: string;
+
+  @ApiProperty({
+    description: "Whether the staff member account is disabled.",
+    required: false,
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isDisabled?: boolean;
 }

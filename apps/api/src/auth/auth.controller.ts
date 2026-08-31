@@ -56,6 +56,14 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: "Unauthorized." })
   async login(@Request() req, @Body() loginDto: LoginDto) {
+    const verified = await this.authService.verifyTurnstile(
+      loginDto.turnstileToken,
+    );
+    if (!verified) {
+      throw new UnauthorizedException(
+        "CAPTCHA verification failed. Please try again.",
+      );
+    }
     return this.authService.login(req.user);
   }
 

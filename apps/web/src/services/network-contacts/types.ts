@@ -79,3 +79,18 @@ export interface NetworkContactsResponse {
 export interface BulkContactImportDto {
     contacts: CreateContactDto[];
 }
+
+export interface BulkImportError {
+    index?: number;
+    email?: string;
+    phone?: string;
+    error?: string;
+    message?: string;
+}
+
+export interface BulkImportResponse {
+    message: string;
+    importedCount: number;
+    failedCount: number;
+    errors?: BulkImportError[];
+}

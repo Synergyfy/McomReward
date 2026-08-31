@@ -12,6 +12,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/role.enum";
 import { Referral } from "./entities/referral.entity";
+import { ReferralAnalyticsDto } from "./dto/referral-analytics.dto";
 
 @ApiTags("Referrals")
 @Controller("referrals")
@@ -33,5 +34,13 @@ export class ReferralController {
   @ApiResponse({ type: [Referral] })
   async getMyReferrals(@Req() req) {
     return this.referralService.getMyReferrals(req.user.id);
+  }
+
+  @Get("analytics")
+  @Roles(Role.Participant)
+  @ApiOperation({ summary: "Get referral analytics for the current participant" })
+  @ApiResponse({ type: ReferralAnalyticsDto })
+  async getAnalytics(@Req() req) {
+    return this.referralService.getReferralAnalytics(req.user.id);
   }
 }

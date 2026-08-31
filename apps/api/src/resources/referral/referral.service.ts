@@ -67,10 +67,12 @@ export class ReferralService {
     await this.referralRepository.save(referral);
 
     // Send Email
-    // await this.mailService.sendReferralInvite(dto.email, referrer.name, referral.code, campaign?.title);
-    // Assuming mail service method exists or will be added.
-    // For now, logging.
-    console.log(`Sending invite to ${dto.email} with code ${referral.code}`);
+    await this.mailService.sendReferralInvite(
+      dto.email,
+      referrer.name,
+      referral.code,
+      campaign?.name,
+    );
 
     return referral;
   }
@@ -175,15 +177,18 @@ export class ReferralService {
       (referral) => referral.status === ReferralStatus.SUCCESSFUL,
     );
     const totalSuccessfulReferrals = successfulReferrals.length;
-    const totalPointsEarned = totalSuccessfulReferrals * 100;
+    const totalPointsEarned = successfulReferrals.reduce(
+      (sum, referral) => sum + Number(referral.pointsEarned || 0),
+      0,
+    );
 
     const referredBusinesses = referrals.map((referral) => ({
-      businessId: null,
+      businessId: referral.referee?.id || null,
       name: referral.referee ? referral.referee.name : "Unknown",
       email: referral.referee?.email || referral.refereeEmail,
       referredAt: referral.created_at,
       status: referral.status,
-      pointsEarned: 100,
+      pointsEarned: Number(referral.pointsEarned || 0),
       locationTag: null,
       relationshipTag: null,
     }));

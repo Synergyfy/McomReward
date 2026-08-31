@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGetParticipantProgression } from '@/services/progression/hook';
 import { useGetParticipantProfile } from '@/services/customer-campaigns/hook';
-import Link from 'next/link';
 import { 
   Loader2, 
   Rocket, 
@@ -14,11 +13,8 @@ import {
   Lock, 
   Check, 
   Star,
-  Award,
-  ChevronRight,
-  TrendingUp
+  Award
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -29,28 +25,17 @@ export default function CustomerProgressionPage() {
 
   const [strokeOffset, setStrokeOffset] = useState(276.46);
 
-  const currentBadge = progression?.currentBadge || {
-    id: 'gold',
-    name: 'Gold',
-    multiplier: 2.0,
-    benefits: [
-      "Free Priority Delivery (On all orders over $30)",
-      "10% Extra Points (Earn faster on every purchase)"
-    ],
-    color: '#f54900',
-    priority: 2
-  };
+  const totalPoints = progression?.currentPoints ?? 0;
+  const nextPoints =
+    progression?.nextBadge?.minPoints ?? progression?.pointsNeeded ?? 0;
+  const progressPercent =
+    progression?.progressPercentage ??
+    (nextPoints > 0 ? Math.min(100, Math.round((totalPoints / nextPoints) * 100)) : 0);
 
-  const nextBadge = progression?.nextBadge || {
-    id: 'platinum',
-    name: 'Platinum',
-    minPoints: 1000,
-    benefits: ["VIP Concierge (Available at Platinum Tier)"]
-  };
-
-  const totalPoints = progression?.currentPoints ?? 750;
-  const nextPoints = nextBadge ? nextBadge.minPoints : 1000;
-  const progressPercent = totalPoints >= nextPoints ? 100 : Math.round((totalPoints / nextPoints) * 100);
+  const userName = profile?.name;
+  const initials = userName
+    ? userName.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "";
 
   useEffect(() => {
     // Circumference = 2 * PI * r = 2 * 3.14159 * 44 = 276.46
@@ -91,6 +76,11 @@ export default function CustomerProgressionPage() {
     );
   }
 
+  const currentBadge = progression.currentBadge;
+  const nextBadge = progression.nextBadge;
+  const memberLabel = `${currentBadge.name} Member`;
+  const milestones = [...(progression.allBadges ?? [])].sort((a, b) => a.minPoints - b.minPoints);
+
   return (
     <div className="min-h-screen bg-[#f9fafb] text-gray-800 pb-32 pt-4 px-4 max-w-md mx-auto font-sans relative">
       {/* Top App Bar */}
@@ -101,14 +91,11 @@ export default function CustomerProgressionPage() {
             className="w-10 h-10 rounded-full border-2 border-orange-500 overflow-hidden cursor-pointer active:scale-95 duration-200 transition-transform"
           >
             <Avatar className="h-full w-full">
-              <AvatarImage 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTWMmHPKz66MhzyycvvK9PPWPi9S2TpAW5SCpA3lTkZZlJazloVYCPUhk4RL0VIABKe8LsY7Cxsx4JPF2ZOwVsqmsu6EPnL6MULPBiK1MoyGCAfMiZ4rPz0pWlbnn8OJkzkuLiks3Sd0TQUSzz5b3Fqf6bx7JVgH7Ty2g3RlPxfNnB8H9XyfTiJQzbl_HKnymSfbS5D7hR6O_fH7s-BhPfnRmveiPi5ROoW89hnqusV6F0z2J61poKb6Tew5XtvFyBaYwKDstxQPA" 
-                alt="Profile Avatar"
-              />
-              <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">JS</AvatarFallback>
+              <AvatarImage src={undefined} alt="Profile Avatar" />
+              <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">{initials || "ME"}</AvatarFallback>
             </Avatar>
           </div>
-          <span className="font-extrabold text-lg text-gray-900">{currentBadge.name} Member</span>
+          <span className="font-extrabold text-lg text-gray-900">{memberLabel}</span>
         </div>
         <button className="text-gray-500 hover:text-gray-805 active:scale-95 duration-200 transition-transform">
           <Search className="w-6 h-6" />
@@ -174,14 +161,14 @@ export default function CustomerProgressionPage() {
         <section className="space-y-3">
           <h3 className="text-base font-bold text-gray-900 px-1">Your Active Benefits</h3>
           <div className="grid grid-cols-1 gap-3">
-            {currentBadge.benefits.map((benefit, idx) => (
+            {(currentBadge.benefits ?? []).map((benefit, idx) => (
               <div key={idx} className="flex items-center p-4 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm">
                 <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center mr-4 shrink-0 text-orange-655">
                   <Award className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-800 truncate">{benefit.split(' (')[0]}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{benefit.includes('(') ? benefit.split(' (')[1].replace(')', '') : `Active benefit at ${currentBadge.name} tier`}</p>
+                  <p className="text-sm font-bold text-gray-800 truncate">{benefit}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Active benefit at {currentBadge.name} tier</p>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
               </div>
@@ -194,7 +181,7 @@ export default function CustomerProgressionPage() {
                   <Lock className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-400 truncate">{nextBadge.benefits[0].split(' (')[0]}</p>
+                  <p className="text-sm font-bold text-gray-400 truncate">{nextBadge.benefits[0]}</p>
                   <p className="text-xs text-gray-450 mt-0.5">Available at {nextBadge.name} Tier</p>
                 </div>
                 <Lock className="w-5 h-5 text-gray-400 shrink-0" />
@@ -204,62 +191,47 @@ export default function CustomerProgressionPage() {
         </section>
 
         {/* Milestone Progress Timeline */}
-        <section className="space-y-3">
-          <h3 className="text-base font-bold text-gray-900 px-1">Milestone Progress</h3>
-          <div className="relative pl-2 space-y-6">
-            {/* Vertical Line */}
-            <div className="absolute left-[27px] top-4 bottom-4 w-1 bg-gray-200 rounded-full z-0" />
-            
-            {/* Completed Milestone */}
-            <div className="relative flex items-start gap-4 z-10">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-4 border-white flex items-center justify-center shadow-md shrink-0">
-                <Check className="w-4 h-4 text-white stroke-[3]" />
-              </div>
-              <div className="flex-1 pt-1">
-                <p className="text-sm font-bold text-orange-600">500 Points Reached</p>
-                <p className="text-xs text-gray-500">Unlocked: $10 Reward Voucher</p>
-              </div>
+        {milestones.length > 0 && (
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900 px-1">Milestone Progress</h3>
+            <div className="relative pl-2 space-y-6">
+              {/* Vertical Line */}
+              <div className="absolute left-[27px] top-4 bottom-4 w-1 bg-gray-200 rounded-full z-0" />
+              
+              {milestones.map((badge) => {
+                const isReached = badge.minPoints <= totalPoints;
+                const isCurrent = badge.id === currentBadge.id;
+                return (
+                  <div key={badge.id} className="relative flex items-start gap-4 z-10">
+                    {isReached ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-4 border-white flex items-center justify-center shadow-md shrink-0">
+                        <Check className="w-4 h-4 text-white stroke-[3]" />
+                      </div>
+                    ) : isCurrent ? (
+                      <div className="w-10 h-10 rounded-full bg-white border-4 border-orange-500 flex items-center justify-center shadow-md shrink-0">
+                        <Award className="w-4 h-4 text-orange-500" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-50 border-4 border-gray-200 flex items-center justify-center shrink-0 opacity-50">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
+                    )}
+                    <div className={`flex-1 pt-1 ${isCurrent ? "" : isReached ? "" : "opacity-50"}`}>
+                      <p className={`text-sm font-bold ${isReached ? "text-orange-600" : "text-gray-800"}`}>
+                        {badge.name} · {badge.minPoints.toLocaleString()} Points
+                      </p>
+                      {isCurrent && (
+                        <div className="mt-2 h-1 w-32 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-orange-500" style={{ width: `${progressPercent}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* In Progress Milestone */}
-            <div className="relative flex items-start gap-4 z-10">
-              <div className="w-10 h-10 rounded-full bg-white border-4 border-orange-500 flex items-center justify-center shadow-md shrink-0">
-                <Award className="w-4 h-4 text-orange-500" />
-              </div>
-              <div className="flex-1 pt-1">
-                <p className="text-sm font-bold text-gray-800">{nextPoints} Points Milestone</p>
-                <p className="text-xs text-gray-500">Upcoming: Mystery Gift Box</p>
-                <div className="mt-2 h-1 w-32 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-500" style={{ width: `${progressPercent}%` }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Locked Milestone */}
-            <div className="relative flex items-start gap-4 z-10 opacity-50">
-              <div className="w-10 h-10 rounded-full bg-gray-50 border-4 border-gray-200 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-gray-400" />
-              </div>
-              <div className="flex-1 pt-1">
-                <p className="text-sm font-bold text-gray-400">Platinum Upgrade</p>
-                <p className="text-xs text-gray-500">{nextPoints} Points required</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Promo Banner */}
-        <section className="rounded-2xl overflow-hidden relative h-40 flex items-end p-5 group cursor-pointer shadow-md border border-gray-200">
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
-            style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvZxadqQ4aosf9pjptinrfNhNGK3vAyUtwHt9BHSGqkNDweBk8XsNsrtiEzGVcnSGryRNRHcdYysALY7ZH1IzRXxUjxfomjHN4jjK2Th38_KpnFgSjP9ztnFidREoa2BhKu3k8X3o_853fsUYVbvGTp3xz-nFg1gXiv6ukk9JcMr62VLO2vcRsK1-jNy9YLkQqrXCWKP3fRmUFv_BAKFKGs4nNA-z07mTkNWpsbTZjhKNzA-cUjqeM2tMTnALcNaHv7NJ-2fq53xk')" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-          <div className="relative z-10 space-y-1">
-            <h4 className="text-base text-orange-400 font-extrabold uppercase italic tracking-tighter">Double Points Weekend</h4>
-            <p className="text-xs text-gray-250">Earn 2x points on all categories until Sunday.</p>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Subscription / Navigation Controls */}
         <section className="space-y-3 pb-8">

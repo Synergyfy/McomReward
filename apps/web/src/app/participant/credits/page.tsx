@@ -244,30 +244,30 @@ export default function CreditsPage() {
                             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 space-y-4">
                                 <div className="flex justify-between items-center text-sm font-semibold">
                                     <span>Next Available Tier</span>
-                                    <span className="text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full text-xs">Level {nextLevel?.level || 1}</span>
+                                    <span className="text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full text-xs">{nextLevel ? `Level ${nextLevel.level}` : 'Max level'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs opacity-80">
                                     <span>Contributor Stake</span>
-                                    <span>£{nextLevel?.matchingContribution || 25} GBP</span>
+                                    <span>{nextLevel ? `£${nextLevel.matchingContribution} GBP` : '—'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs opacity-80">
                                     <span>Platform Match</span>
-                                    <span>£{((nextLevel?.totalCashback ?? 0) - (nextLevel?.matchingContribution ?? 0)) || 25} GBP</span>
+                                    <span>{nextLevel ? `£${(nextLevel.totalCashback - nextLevel.matchingContribution)} GBP` : '—'}</span>
                                 </div>
                                 <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                                     <span className="text-sm font-semibold">Total Wallet Boost</span>
-                                    <span className="text-2xl font-semibold text-white">£{(nextLevel?.totalCashback || 50).toFixed(2)}</span>
+                                    <span className="text-2xl font-semibold text-white">{nextLevel ? `£${nextLevel.totalCashback.toFixed(2)}` : '—'}</span>
                                 </div>
                             </div>
 
                             {/* Top-up Requirement Messaging */}
-                            {balance < (nextLevel?.matchingContribution || 25) && (
+                            {nextLevel && balance < nextLevel.matchingContribution && (
                                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-2xl p-4 flex items-start gap-3">
                                     <AlertCircle className="w-5 h-5 text-yellow-250 shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-xs font-semibold text-yellow-100">Action Required</p>
                                         <p className="text-[11px] text-yellow-100/80 leading-tight mt-1">
-                                            Your balance is £{balance.toFixed(2)}. You need to top up <span className="text-white font-bold text-xs">£{((nextLevel?.matchingContribution || 25) - balance).toFixed(2)}</span> more to unlock this reward.
+                                            Your balance is £{balance.toFixed(2)}. You need to top up <span className="text-white font-bold text-xs">£{(nextLevel.matchingContribution - balance).toFixed(2)}</span> more to unlock this reward.
                                         </p>
                                     </div>
                                 </div>
@@ -276,12 +276,12 @@ export default function CreditsPage() {
 
                         <div className="mt-10">
                             <Button
-                                onClick={() => handleUnlockClick(nextLevel?.level || 1)}
-                                disabled={credits < (nextLevel?.creditsNeeded || 50)}
+                                onClick={() => nextLevel && handleUnlockClick(nextLevel.level)}
+                                disabled={!nextLevel || credits < nextLevel.creditsNeeded}
                                 className="w-full h-16 rounded-2xl bg-white text-primary font-semibold text-sm uppercase tracking-widest shadow-xl transition-all hover:bg-white/95 disabled:bg-white/10 disabled:text-white/50"
                             >
-                                {credits < (nextLevel?.creditsNeeded || 50) 
-                                    ? `Need ${nextLevel?.creditsNeeded - credits} More Credits` 
+                                {!nextLevel ? 'Maximum level reached' : credits < nextLevel.creditsNeeded
+                                    ? `Need ${nextLevel.creditsNeeded - credits} More Credits` 
                                     : "Unlock My Rewards"} <ArrowRight className="ml-3 w-5 h-5" />
                             </Button>
                         </div>

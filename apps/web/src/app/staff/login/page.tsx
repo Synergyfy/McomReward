@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useStaffLogin } from "@/services/staff/hook";
-import FakeTurnstile from "@/components/ui/turnstile";
+import Turnstile from "@/components/ui/turnstile";
 
 type StaffLoginForm = {
   email: string;
@@ -35,6 +35,7 @@ export default function StaffLoginPage() {
   const router = useRouter();
 
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const { mutateAsync: staffLogin, isPending } = useStaffLogin();
 
@@ -54,7 +55,7 @@ export default function StaffLoginPage() {
   // ✅ Login handler
   const onSubmit = async (data: StaffLoginForm) => {
     try {
-      await staffLogin({ ...data,});
+      await staffLogin({ ...data, turnstileToken });
       router.push("/staff/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
@@ -142,7 +143,7 @@ export default function StaffLoginPage() {
           </div>
 
           {/* Turnstile widget */}
-         <FakeTurnstile onVerify={(token) => console.log("Turnstile token:", token)} />
+         <Turnstile onVerify={setTurnstileToken} />
 
           {/* Submit Button */}
           <Button

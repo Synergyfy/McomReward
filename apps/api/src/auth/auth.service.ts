@@ -57,10 +57,40 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.userService.findOne(email);
     if (user && (await this.hashService.comparePassword(pass, user.password))) {
+      if (user.role === Role.Staff && user.isDisabled) {
+        throw new UnauthorizedException(
+          "This staff account has been disabled. Contact your business admin.",
+        );
+      }
       const { password, ...result } = user;
       return { ...result, isEmailVerified: user.isEmailVerified };
     }
     throw new UnauthorizedException("Invalid login credentials");
+  }
+
+  /**
+   * Validates a Cloudflare Turnstile token against the siteverify API.
+   * When TURNSTILE_SECRET is not configured, verification is skipped
+   * (dev/opt-in behaviour). When configured, a missing/invalid token fails.
+   */
+  async verifyTurnstile(token?: string): Promise<boolean> {
+    const secret = process.env.TURNSTILE_SECRET;
+    if (!secret) return true;
+    if (!token) return false;
+    try {
+      const res = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret, response: token }),
+        },
+      );
+      const data: any = await res.json();
+      return data?.success === true;
+    } catch {
+      return false;
+    }
   }
 
   async login(user: any) {

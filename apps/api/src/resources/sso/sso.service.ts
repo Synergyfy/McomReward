@@ -276,10 +276,13 @@ export class SsoService {
   }
 
   async loginWithSsoToken(token: string): Promise<SsoLoginResult> {
-    const secret = this.configService.get<string>(
-      "SSO_SECRET",
-      "shared-sso-secret"
-    );
+    const configuredSecret = this.configService.get<string>("SSO_SECRET");
+    if (!configuredSecret && process.env.NODE_ENV === "production") {
+      throw new UnauthorizedException(
+        "SSO is not configured on the server",
+      );
+    }
+    const secret = configuredSecret || "dev-sso-secret";
 
     let payload: any;
     try {

@@ -41,6 +41,7 @@ export class DealRedemptionService {
     try {
       const deal = await queryRunner.manager.findOne(Deal, {
         where: { id: dealId },
+        relations: ["business"], // Load business for PointHistory context
         lock: { mode: "pessimistic_write" }, // Lock the row to prevent race conditions on inventory
       });
 
@@ -109,7 +110,20 @@ export class DealRedemptionService {
 
           participant.global_total_points += pointsToEarn;
           await queryRunner.manager.save(participant);
-          // TODO: Insert PointHistory record for earning.
+
+          // Record the earn in PointHistory
+          await queryRunner.manager.save(
+            queryRunner.manager.create(PointHistory, {
+              participant: { id: user.id },
+              points: pointsToEarn,
+              type: PointHistoryType.EARN,
+              deal,
+              business: deal.business
+                ? { id: (deal.business as any).id }
+                : undefined,
+              description: `Deal purchase: ${deal.title}`,
+            }),
+          );
         }
       }
 

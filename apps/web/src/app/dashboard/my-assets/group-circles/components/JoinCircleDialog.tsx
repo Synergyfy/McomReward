@@ -42,15 +42,14 @@ export function JoinCircleDialog({ open, onOpenChange, groupCircleTypes, onJoine
         if (!selectedCircle) return;
 
         setIsJoining(true);
-        // Simulate API delay for "perfect" feel
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
         try {
-            // In a real app we'd use: await joinMutation.mutateAsync(selectedCircle.id);
+            await joinMutation.mutateAsync(selectedCircle.id);
             setStep("success");
             toast.success(`Successfully joined ${selectedCircle.name}!`);
-        } catch (error) {
-            toast.error("Failed to join circle. You might already be a member.");
+        } catch (error: any) {
+            toast.error(
+                error?.response?.data?.message || "Failed to join circle. You might already be a member."
+            );
             setIsJoining(false);
         }
     };

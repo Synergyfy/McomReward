@@ -32,20 +32,19 @@ function LoginForm() {
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ||
         (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
-      const redirectUri = `${appUrl}/auth/callback`;
+      const redirectUri =
+        process.env.NEXT_PUBLIC_MCOM_REDIRECT_URI || `${appUrl}/auth/callback`;
       const scopes =
         process.env.NEXT_PUBLIC_MCOM_SCOPES ||
-        "profile email business packages membership";
+        "profile email business membership packages";
 
-      const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        response_type: "code",
-        state,
-        scope: scopes,
-      });
+      const authorizeUrl = `${solutionsUrl}/api/v1/auth/sso/authorize?client_id=${encodeURIComponent(
+        clientId
+      )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(
+        scopes
+      )}&state=${encodeURIComponent(state)}&response_type=code`;
 
-      window.location.href = `${solutionsUrl}/api/v1/auth/sso/authorize?${params.toString()}`;
+      window.location.href = authorizeUrl;
     } catch (error) {
       toast.error("Failed to initiate SSO login. Please try again.");
       setIsLoading(false);
@@ -76,7 +75,7 @@ function LoginForm() {
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="currentColor"/>
             </svg>
           )}
-          {isLoading ? "Redirecting to Central Hub..." : "Login with Central Hub Solutions"}
+          {isLoading ? "Redirecting to MCOM..." : "Login with MCOM"}
         </Button>
 
         <p className="text-center text-sm text-slate-500">

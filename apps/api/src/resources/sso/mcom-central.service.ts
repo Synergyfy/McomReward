@@ -49,12 +49,12 @@ export class McomCentralService {
     this.clientSecret =
       this.configService.get<string>("MCOM_CLIENT_SECRET") ||
       this.configService.get<string>("SSO_CLIENT_SECRET") ||
-      "cs_ec63957d787b758514e4bd3decc22dd6fd010620dc7f9c2932ac8d84b0f20201";
+      "cs_9ece7e79acaf3256d3078119e2f9c4163e2692c47179da6ec3fe0d28a302bc85";
 
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") ||
       this.configService.get<string>("SSO_API_SECRET") ||
-      "hm_3033b6a3f741f50b0ed3da462ccde80f9eb6447e3d879a6ba95e9be26d90ae55";
+      "hm_71496cff3923f33645eb2e0ff208319b2634a096eb88a7676e9abe4f6af82c00";
 
     this.internalServiceId = this.configService.get<string>(
       "INTERNAL_SERVICE_ID",
@@ -62,7 +62,7 @@ export class McomCentralService {
     );
     this.internalApiSecret = this.configService.get<string>(
       "INTERNAL_SERVICE_SECRET",
-      "hm_3033b6a3f741f50b0ed3da462ccde80f9eb6447e3d879a6ba95e9be26d90ae55"
+      "hm_71496cff3923f33645eb2e0ff208319b2634a096eb88a7676e9abe4f6af82c00"
     );
   }
 
@@ -99,7 +99,7 @@ export class McomCentralService {
 
     const scopes =
       this.configService.get<string>("MCOM_SCOPES") ||
-      "profile email business packages membership";
+      "profile email business membership packages";
 
     const params = new URLSearchParams({
       client_id: this.clientId,
@@ -125,6 +125,7 @@ export class McomCentralService {
       },
       body: JSON.stringify({
         client_id: this.clientId,
+        client_secret: this.clientSecret,
         code,
         redirect_uri: redirectUri,
       }),

@@ -73,7 +73,7 @@ test.describe("Login Page", () => {
     await page.goto(`${LOYALTY_URL}/login`);
 
     await expect(page.getByText("Welcome Back")).toBeVisible();
-    await expect(page.getByText("Login with Central Hub Solutions")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Login with MCOM/i })).toBeVisible();
   });
 
   test("should redirect to backend SSO authorize endpoint", async ({
@@ -81,7 +81,7 @@ test.describe("Login Page", () => {
   }) => {
     await page.goto(`${LOYALTY_URL}/login`);
 
-    const ssoButton = page.getByText("Login with Central Hub Solutions");
+    const ssoButton = page.getByRole("button", { name: /Login with MCOM/i });
     await expect(ssoButton).toBeVisible();
 
     const requestPromise = page.waitForRequest((req) =>

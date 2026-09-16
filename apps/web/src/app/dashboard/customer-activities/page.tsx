@@ -32,33 +32,6 @@ export default function CustomerActivitiesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleViewDetails = (participantId: string) => {
-    // In a real scenario, the participantId should be available in the activity data.
-    // However, the provided interface CustomerActivityResponseDto only has participantName.
-    // Assuming for now we might need to adjust the API or use a mock ID if not provided.
-    // Wait, the prompt says: "when I click on view details, use the business/campaigns/activities/:participantId hook for that"
-    // This implies we should have the ID. Let's assume the API returns it or we can't do it.
-    // Looking at the user request, the response DTO DOES NOT have participantId.
-    // But the endpoint requires it. This is a potential issue.
-    // I will assume for now that the API *should* return it and I'll add it to the type if needed, 
-    // or maybe I have to use the name? No, endpoint uses ID.
-    // Let's check the prompt again. "Endpoint: GET /business/campaigns/activities/:participantId".
-    // "URL Parameters: participantId (required)".
-    // The example response for the list doesn't show ID.
-    // I will proceed by adding an optional `participantId` to the interface in the component for now to avoid type errors if I were to mock it,
-    // but ideally the backend should provide it.
-    // For the purpose of this task, I will assume the `details` or another field might contain it, or I'll just use a placeholder 
-    // if it's missing, but clearly the user expects this flow.
-    // Actually, I'll check if I can update the type to include participantId as it's logical.
-    // But I must stick to the provided interface. 
-    // Wait, if I can't get the ID, I can't call the hook.
-    // I'll assume the `participantName` might be unique or there's a hidden ID. 
-    // Let's look at the example request: `.../activities/c7a8b9c0...`.
-    // I will assume the API *does* return it and the user just omitted it in the interface definition, 
-    // OR I should use the name? No, UUID is shown.
-    // I will cast the row data to `any` to access `participantId` if it exists, or just pass a dummy one if not found to show the UI.
-    // Better: I'll update the interface locally in this file or just use `any` for the row to avoid blocking.
-    // Actually, I'll update the type in types.ts to include optional participantId to be safe.
-
     setSelectedParticipantId(participantId);
     setIsSheetOpen(true);
   };
@@ -112,7 +85,8 @@ export default function CustomerActivitiesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewDetails(activity.participantId ?? 'c7a8b9c0-d1e2-f3a4-b5c6-d7e8f9a0b1c2')} // Fallback ID for demo if missing
+                            disabled={!activity.participantId}
+                            onClick={() => activity.participantId && handleViewDetails(activity.participantId)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             Details

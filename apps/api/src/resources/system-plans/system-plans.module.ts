@@ -6,8 +6,13 @@ import { Tier } from "../tier/entities/tier.entity";
 import { TierHistory } from "../tier/entities/tier-history.entity";
 import { Season } from "../season/entities/season.entity";
 
+import { PlansModule } from "../plans/plans.module";
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Tier, TierHistory, Season])],
+  imports: [
+    TypeOrmModule.forFeature([Tier, TierHistory, Season]),
+    PlansModule,
+  ],
   controllers: [SystemPlansController],
   providers: [SystemPlansService],
 })

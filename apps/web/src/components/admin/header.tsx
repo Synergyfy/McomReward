@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Menu, Bell, Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +21,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter();
-    const [notifications] = useState(3); // Mock notification count
+    const notifications = 0;
 
     const handleLogout = () => {
         // Clear any auth tokens/session data
@@ -90,21 +90,9 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <div className="max-h-96 overflow-y-auto">
-                                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                                    <div className="font-medium">New reward created</div>
-                                    <div className="text-sm text-gray-500">Summer Sale Voucher was added</div>
-                                    <div className="text-xs text-gray-400 mt-1">2 hours ago</div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                                    <div className="font-medium">Campaign ending soon</div>
-                                    <div className="text-sm text-gray-500">Spring Campaign ends in 2 days</div>
-                                    <div className="text-xs text-gray-400 mt-1">5 hours ago</div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer">
-                                    <div className="font-medium">New tier unlocked</div>
-                                    <div className="text-sm text-gray-500">Gold tier reached 100 members</div>
-                                    <div className="text-xs text-gray-400 mt-1">1 day ago</div>
-                                </DropdownMenuItem>
+                                <div className="px-3 py-6 text-center text-sm text-gray-500">
+                                    No new notifications.
+                                </div>
                             </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-center justify-center text-primary cursor-pointer">

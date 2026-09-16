@@ -47,4 +47,7 @@ export class Staff extends AbstractBaseEntity {
 
   @Column({ type: "enum", enum: Role, default: Role.Staff })
   role: Role;
+
+  @Column({ default: false })
+  isDisabled: boolean;
 }

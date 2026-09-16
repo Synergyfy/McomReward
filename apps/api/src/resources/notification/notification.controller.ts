@@ -20,11 +20,13 @@ import { Role } from "../../common/role.enum";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../common/interfaces/user.interface";
 import { PaginationDto } from "../../common/dto/pagination.dto";
+import { SkipMembershipCheck } from "../../common/decorators/skip-membership-check.decorator";
 
 @ApiTags("Notifications")
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Controller("notifications")
+@SkipMembershipCheck()
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 

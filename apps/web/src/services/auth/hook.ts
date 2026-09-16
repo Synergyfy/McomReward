@@ -152,8 +152,11 @@ export const useSsoLogin = () => {
 };
 
 // SSO Exchange (OAuth2 code flow)
-const ssoExchange = async (code: string): Promise<any> => {
-  const { data } = await api.post('/sso/exchange', { code });
+const ssoExchange = async (params: string | { code: string; redirectUri?: string }): Promise<any> => {
+  const code = typeof params === 'string' ? params : params.code;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3005');
+  const redirectUri = typeof params === 'object' && params.redirectUri ? params.redirectUri : `${appUrl}/auth/callback`;
+  const { data } = await api.post('/sso/exchange', { code, redirectUri });
   return data;
 };
 

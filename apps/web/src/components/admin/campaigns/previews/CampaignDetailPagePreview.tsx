@@ -6,43 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Calendar, Tag, Info, Gift, CheckCircle, Users, Trophy, ShoppingBag } from "lucide-react";
 import { CampaignFormData } from "@/context/CampaignFormContext";
+import { useGetRewards } from "@/services/rewards/hook";
 
 interface CampaignDetailPagePreviewProps {
   campaignData: CampaignFormData;
 }
 
-const mockAllRewards = [
-  {
-    id: '1',
-    title: 'Summer Voucher ($50)',
-    description: 'Get a $50 voucher for your summer shopping.',
-    points: 50,
-    image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-  {
-    id: '2',
-    title: 'Gift Card ($100)',
-    description: 'A $100 gift card to use on any purchase.',
-    points: 100,
-    image: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-  {
-    id: '3',
-    title: 'Discount Coupon (20% off)',
-    description: 'Enjoy 20% off your next order.',
-    points: 20,
-    image: 'https://images.unsplash.com/photo-1508615039623-a25605d2b022?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-  },
-];
-
 export default function CampaignDetailPagePreview({ campaignData }: CampaignDetailPagePreviewProps) {
   const campaign = campaignData;
+  const { data: rewardsData } = useGetRewards(1, 100);
+  const rewards = rewardsData?.data ?? [];
 
   const handleJoin = () => {
     alert('This is a preview. Join functionality is not active here.');
   };
 
-  const selectedRewards = mockAllRewards.filter(r => campaign.rewardIds.includes(r.id));
+  const rewardById = (id: string) => rewards.find(r => r.id === id);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -161,13 +140,14 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
               <h2 className="text-3xl font-bold text-gray-800 mb-6">Rewards in this Campaign</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {campaign.rewardIds.map((rewardId) => {
-                  const rewardItem = mockAllRewards.find(r => r.id === rewardId);
-                  if (!rewardItem) return null; // Handle case where rewardId is not found in mock
+                  const rewardItem = rewardById(rewardId);
+                  if (!rewardItem) return null;
+                  const points = rewardItem.pointRequired ?? rewardItem.maxPoints ?? 0;
                   return (
                     <Card key={rewardItem.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-200">
                       <div className="relative h-48 w-full">
                         <Image
-                          src={rewardItem.image}
+                          src={rewardItem.image || '/placeholder-qr.svg'}
                           alt={rewardItem.title}
                           layout="fill"
                           objectFit="cover"
@@ -177,7 +157,7 @@ export default function CampaignDetailPagePreview({ campaignData }: CampaignDeta
                         <h3 className="text-xl font-bold text-gray-800 mb-2">{rewardItem.title}</h3>
                         <p className="text-gray-600 text-sm mb-3 line-clamp-3">{rewardItem.description}</p>
                         <div className="flex justify-between items-center text-md font-semibold text-gray-700">
-                          <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {rewardItem.points > 0 ? `${rewardItem.points} Points` : 'No Points Req.'}</p>
+                          <p className="flex items-center"><Trophy className="w-4 h-4 mr-2 text-blue-500" /> {points > 0 ? `${points} Points` : 'No Points Req.'}</p>
                         </div>
                       </CardContent>
                     </Card>

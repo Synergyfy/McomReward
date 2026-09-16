@@ -3,6 +3,7 @@
 export interface BusinessLoginDto {
   email: string;
   password: string;
+  turnstileToken?: string;
 }
 
 export interface User {

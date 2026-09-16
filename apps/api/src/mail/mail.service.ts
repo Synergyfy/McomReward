@@ -13,6 +13,46 @@ export class MailService {
     });
   }
 
+  async sendReferralInvite(
+    email: string,
+    referrerName: string,
+    referralCode: string,
+    campaignTitle?: string,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `${referrerName} invited you to join MCOM!`,
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #f0f0f0;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #ea580c; margin: 0; font-size: 28px; font-weight: 700;">You're Invited!</h2>
+            <p style="color: #666; margin-top: 10px; font-size: 16px;">${referrerName} wants you to join the MCOM rewards club${campaignTitle ? ` for ${campaignTitle}` : ""}</p>
+          </div>
+
+          <div style="color: #333333; font-size: 16px; line-height: 1.6;">
+            <p>Hello,</p>
+            <p><strong>${referrerName}</strong> has invited you to join MCOM. Use the referral code below when signing up to start earning rewards together.</p>
+
+            <div style="text-align: center; margin: 35px 0;">
+              <span style="display: inline-block; background-color: #ea580c; color: #ffffff; font-size: 28px; font-weight: bold; padding: 16px 32px; border-radius: 8px; letter-spacing: 3px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);">
+                ${referralCode}
+              </span>
+            </div>
+
+            <p>Simply enter this code during sign-up to join.</p>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <p style="font-size: 14px; color: #888; text-align: center;">
+              Best regards,<br>
+              <strong>The Mcom Loyalty Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+  }
+
   async sendInviteEmail(email: string, inviteCode: string) {
     await this.mailerService.sendMail({
       to: email,

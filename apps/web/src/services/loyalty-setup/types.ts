@@ -6,6 +6,7 @@ export interface SectorTemplate {
   rewards: TemplateReward[];
   campaigns: TemplateCampaign[];
   benefits?: string[];
+  isBuiltIn?: boolean;
 }
 
 export interface TemplateReward {

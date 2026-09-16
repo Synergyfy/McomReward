@@ -14,14 +14,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Role, mockPermissions } from '@/lib/mock-data/security';
+import { Loader2 } from 'lucide-react';
+import { Role, CreateRoleDto } from '@/services/security/types';
+import { useGetPermissions, useCreateRole, useUpdateRole } from '@/services/security/hook';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 
 interface AddEditRoleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Role; // Optional data for editing
-  onSave: (role: Role) => void;
+  initialData?: Role;
   onShowFeedback: (title: string, description: React.ReactNode, actionText?: string) => void;
 }
 
@@ -29,12 +30,16 @@ export function AddEditRoleModal({
   isOpen,
   onClose,
   initialData,
-  onSave,
   onShowFeedback,
 }: AddEditRoleModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+
+  const { data: permissions = [] } = useGetPermissions();
+  const createRoleMutation = useCreateRole();
+  const updateRoleMutation = useUpdateRole();
+  const isPending = createRoleMutation.isPending || updateRoleMutation.isPending;
 
   // State for Feedback Dialog (local to modal for validation errors)
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -59,12 +64,11 @@ export function AddEditRoleModal({
       setDescription(initialData.description);
       setSelectedPermissions(initialData.permissions);
     } else {
-      // Reset form for new entry
       setName('');
       setDescription('');
       setSelectedPermissions([]);
     }
-  }, [initialData]);
+  }, [initialData, isOpen]);
 
   const handleSave = () => {
     const errors: string[] = [];
@@ -88,15 +92,26 @@ export function AddEditRoleModal({
       return;
     }
 
-    const roleToSave: Role = {
-      id: initialData?.id || `new-role-${Date.now()}`,
-      name,
+    const payload: CreateRoleDto = {
+      name: name.trim(),
       description,
-      permissions: selectedPermissions,
+      permissionIds: selectedPermissions,
     };
 
-    onSave(roleToSave);
-    onClose();
+    const onSuccess = () => {
+      onClose();
+      onShowFeedback("Success", `Role "${name}" has been saved successfully.`);
+    };
+
+    const onError = (error: any) => {
+      handleShowLocalFeedback("Error", error?.response?.data?.message || "Failed to save role.");
+    };
+
+    if (initialData) {
+      updateRoleMutation.mutate({ id: initialData.id, ...payload }, { onSuccess, onError });
+    } else {
+      createRoleMutation.mutate(payload, { onSuccess, onError });
+    }
   };
 
   const handlePermissionToggle = (permissionId: string) => {
@@ -131,27 +146,33 @@ export function AddEditRoleModal({
           <div className="grid grid-cols-4 items-start gap-4">
             <Label className="text-right pt-2">Permissions</Label>
             <div className="col-span-3 space-y-2">
-              {mockPermissions.map((permission) => (
-                <div key={permission.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={permission.id}
-                    checked={selectedPermissions.includes(permission.id)}
-                    onCheckedChange={() => handlePermissionToggle(permission.id)}
-                  />
-                  <label
-                    htmlFor={permission.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {permission.name}
-                  </label>
-                </div>
-              ))}
+              {permissions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No permissions defined yet.</p>
+              ) : (
+                permissions.map((permission) => (
+                  <div key={permission.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={permission.id}
+                      checked={selectedPermissions.includes(permission.id)}
+                      onCheckedChange={() => handlePermissionToggle(permission.id)}
+                    />
+                    <label
+                      htmlFor={permission.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {permission.name}
+                    </label>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save Role</Button>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isPending}>
+            {isPending ? <Loader2 className="animate-spin h-4 w-4" /> : 'Save Role'}
+          </Button>
         </DialogFooter>
       </DialogContent>
 

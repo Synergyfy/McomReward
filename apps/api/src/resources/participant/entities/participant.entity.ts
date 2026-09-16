@@ -104,4 +104,16 @@ export class Participant extends AbstractBaseEntity {
 
   @Column({ nullable: true })
   lastAppOpenDate: Date;
+
+  @Column({ nullable: true })
+  mcomUserId?: string;
+
+  @Column({ type: "text", nullable: true })
+  mcomAccessToken?: string;
+
+  @Column({ type: "text", nullable: true })
+  mcomRefreshToken?: string;
+
+  @Column({ nullable: true })
+  mcomTokenExpiresAt?: Date;
 }

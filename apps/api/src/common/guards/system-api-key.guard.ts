@@ -13,20 +13,24 @@ export class SystemApiKeyGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers["x-mcom-solution-api-key"];
+    const apiKey =
+      request.headers["x-mcom-solution-api-key"] ||
+      request.headers["x-mcom-api-key"];
 
     if (!apiKey) {
-      throw new UnauthorizedException("Missing x-mcom-solution-api-key header");
+      throw new UnauthorizedException("Missing x-mcom-solution-api-key or x-mcom-api-key header");
     }
 
-    const validApiKey = this.configService.get<string>("MCOM_SOLUTION_API_KEY");
+    const validApiKey =
+      this.configService.get<string>("MCOM_API_KEY") ||
+      this.configService.get<string>("MCOM_SOLUTION_API_KEY");
 
     if (!validApiKey) {
       throw new UnauthorizedException("System API key not configured");
     }
 
-    const a = Buffer.from(apiKey);
-    const b = Buffer.from(validApiKey);
+    const a = Buffer.from(String(apiKey));
+    const b = Buffer.from(String(validApiKey));
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       throw new UnauthorizedException("Invalid API key");
     }

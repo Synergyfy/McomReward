@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserDataTable } from '@/components/admin/users/UserDataTable';
 import { createConsumerColumns } from '@/components/admin/users/columns';
-import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import { BusinessUser, ConsumerUser } from '@/services/admin/types';
 import { useAdminParticipants } from '@/services/admin/hook';
 import { Loader2, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';

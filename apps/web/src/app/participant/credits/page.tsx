@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useGetCreditsBalance, useGetCreditsRules, useGetCreditsHistory } from '@/services/cashback/hook';
+import React, { useState, useMemo } from 'react';
+import { useGetCreditsBalance, useGetCreditsRules, useGetCreditsHistory, useUnlockCredits } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,38 +44,17 @@ export default function CreditsPage() {
     const { data: balanceData } = useGetCreditsBalance();
     const { data: rulesData } = useGetCreditsRules();
     const { data: historyData } = useGetCreditsHistory(1, 10);
+    const { mutate: unlockCredits, isPending: isUnlocking } = useUnlockCredits();
 
     const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
     const [selectedLevelId, setSelectedLevelId] = useState<number | null>(null);
-    
-    // Simulation state to act as "Live Version"
-    const [simulatedBalance, setSimulatedBalance] = useState(60.00);
-    const [simulatedCredits, setSimulatedCredits] = useState(125);
-    const [simulatedLevel, setSimulatedLevel] = useState(0);
 
-    // Initialize simulation from real data if available - only once
-    const [isInitialized, setIsInitialized] = useState(false);
-    useEffect(() => {
-        if (balanceData && !isInitialized) {
-            setSimulatedBalance(prev => Math.max(prev, balanceData.availableCashback || 0));
-            setSimulatedCredits(prev => Math.max(prev, balanceData.credits || 0));
-            setSimulatedLevel(prev => Math.max(prev, balanceData.progression?.currentLevel || 0));
-            setIsInitialized(true);
-        }
-    }, [balanceData, isInitialized]);
+    const credits = balanceData?.credits ?? 0;
+    const balance = balanceData?.availableCashback ?? 0;
+    const currentLevel = balanceData?.progression?.currentLevel ?? 0;
 
-    // Mocking levels
-    const levels = useMemo(() => [
-        { level: 1, creditsNeeded: 50, matchingContribution: 25, platformMatch: 25, totalCashback: 50 },
-        { level: 2, creditsNeeded: 100, matchingContribution: 50, platformMatch: 50, totalCashback: 100 },
-        { level: 3, creditsNeeded: 200, matchingContribution: 100, platformMatch: 100, totalCashback: 200 },
-    ], []);
-
-    const credits = simulatedCredits;
-    const currentLevel = simulatedLevel;
-    const nextLevel = useMemo(() => 
-        levels.find(l => l.level > currentLevel) || levels[levels.length - 1],
-    [levels, currentLevel]);
+    const levels = balanceData?.progression?.allLevels ?? [];
+    const nextLevel = balanceData?.progression?.nextLevel ?? levels[levels.length - 1];
 
     const selectedLevel = useMemo(() => 
         levels.find(l => l.level === selectedLevelId),
@@ -93,24 +72,26 @@ export default function CreditsPage() {
     const handleConfirmUnlock = () => {
         if (!selectedLevel) return;
         
-        if (simulatedBalance < selectedLevel.matchingContribution) {
+        if (balance < selectedLevel.matchingContribution) {
             toast.error("Insufficient Funds", {
                 description: "You need more in your spendable balance to match this level."
             });
             return;
         }
 
-        const rewardAmount = selectedLevel.totalCashback;
-        const contribution = selectedLevel.matchingContribution;
-        
-        setSimulatedBalance(prev => (prev - contribution) + rewardAmount);
-        setSimulatedLevel(selectedLevel.level);
-        
-        setIsUnlockModalOpen(false);
-        
-        toast.success("Reward Unlocked!", {
-            description: `Level ${selectedLevel.level} activated. £${rewardAmount.toFixed(2)} added to your wallet.`,
-            icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
+        unlockCredits(selectedLevel.level, {
+            onSuccess: (newBalance) => {
+                setIsUnlockModalOpen(false);
+                toast.success("Reward Unlocked!", {
+                    description: `Level ${selectedLevel.level} activated. Your wallet has been credited.`,
+                    icon: <CheckCircle2 className="w-5 h-5 text-green-500" />
+                });
+            },
+            onError: (error: any) => {
+                toast.error("Failed to Unlock", {
+                    description: error?.response?.data?.message || 'Something went wrong. Please try again.'
+                });
+            }
         });
     };
 
@@ -142,7 +123,7 @@ export default function CreditsPage() {
                                 <Wallet className="w-5 h-5 text-primary" />
                                 <div>
                                     <p className="text-[10px] font-semibold text-gray-500 uppercase">Spendable Balance</p>
-                                    <p className="text-lg font-semibold text-white">£{simulatedBalance.toFixed(2)}</p>
+                                    <p className="text-lg font-semibold text-white">£{balance.toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="px-6 py-3 bg-primary rounded-2xl flex items-center gap-3 shadow-xl shadow-primary/20">
@@ -232,7 +213,7 @@ export default function CreditsPage() {
                                                 <p className="text-sm font-bold text-primary">Level {lv.level} Contributors</p>
                                                 <ul className="text-xs space-y-1.5 list-disc pl-4 text-gray-300">
                                                     <li>You need to contribute <span className="text-white font-semibold">£{lv.matchingContribution}</span></li>
-                                                    <li>Platform will match with <span className="text-white font-semibold">£{lv.platformMatch}</span></li>
+                                                    <li>Platform will match with <span className="text-white font-semibold">£{(lv.totalCashback - lv.matchingContribution)}</span></li>
                                                     <li>Total reward available: <span className="text-white font-semibold">£{lv.totalCashback}</span></li>
                                                 </ul>
                                                 <p className="text-[10px] text-gray-500 mt-2 italic">This instruction links your contribution to the reward unlock.</p>
@@ -263,30 +244,30 @@ export default function CreditsPage() {
                             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 space-y-4">
                                 <div className="flex justify-between items-center text-sm font-semibold">
                                     <span>Next Available Tier</span>
-                                    <span className="text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full text-xs">Level {nextLevel?.level || 1}</span>
+                                    <span className="text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full text-xs">{nextLevel ? `Level ${nextLevel.level}` : 'Max level'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs opacity-80">
                                     <span>Contributor Stake</span>
-                                    <span>£{nextLevel?.matchingContribution || 25} GBP</span>
+                                    <span>{nextLevel ? `£${nextLevel.matchingContribution} GBP` : '—'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs opacity-80">
                                     <span>Platform Match</span>
-                                    <span>£{nextLevel?.platformMatch || 25} GBP</span>
+                                    <span>{nextLevel ? `£${(nextLevel.totalCashback - nextLevel.matchingContribution)} GBP` : '—'}</span>
                                 </div>
                                 <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                                     <span className="text-sm font-semibold">Total Wallet Boost</span>
-                                    <span className="text-2xl font-semibold text-white">£{(nextLevel?.totalCashback || 50).toFixed(2)}</span>
+                                    <span className="text-2xl font-semibold text-white">{nextLevel ? `£${nextLevel.totalCashback.toFixed(2)}` : '—'}</span>
                                 </div>
                             </div>
 
                             {/* Top-up Requirement Messaging */}
-                            {simulatedBalance < (nextLevel?.matchingContribution || 25) && (
+                            {nextLevel && balance < nextLevel.matchingContribution && (
                                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-2xl p-4 flex items-start gap-3">
                                     <AlertCircle className="w-5 h-5 text-yellow-250 shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-xs font-semibold text-yellow-100">Action Required</p>
                                         <p className="text-[11px] text-yellow-100/80 leading-tight mt-1">
-                                            Your balance is £{simulatedBalance.toFixed(2)}. You need to top up <span className="text-white font-bold text-xs">£{((nextLevel?.matchingContribution || 25) - simulatedBalance).toFixed(2)}</span> more to unlock this reward.
+                                            Your balance is £{balance.toFixed(2)}. You need to top up <span className="text-white font-bold text-xs">£{(nextLevel.matchingContribution - balance).toFixed(2)}</span> more to unlock this reward.
                                         </p>
                                     </div>
                                 </div>
@@ -295,12 +276,12 @@ export default function CreditsPage() {
 
                         <div className="mt-10">
                             <Button
-                                onClick={() => handleUnlockClick(nextLevel?.level || 1)}
-                                disabled={credits < (nextLevel?.creditsNeeded || 50)}
+                                onClick={() => nextLevel && handleUnlockClick(nextLevel.level)}
+                                disabled={!nextLevel || credits < nextLevel.creditsNeeded}
                                 className="w-full h-16 rounded-2xl bg-white text-primary font-semibold text-sm uppercase tracking-widest shadow-xl transition-all hover:bg-white/95 disabled:bg-white/10 disabled:text-white/50"
                             >
-                                {credits < (nextLevel?.creditsNeeded || 50) 
-                                    ? `Need ${nextLevel?.creditsNeeded - credits} More Credits` 
+                                {!nextLevel ? 'Maximum level reached' : credits < nextLevel.creditsNeeded
+                                    ? `Need ${nextLevel.creditsNeeded - credits} More Credits` 
                                     : "Unlock My Rewards"} <ArrowRight className="ml-3 w-5 h-5" />
                             </Button>
                         </div>
@@ -422,7 +403,7 @@ export default function CreditsPage() {
                                 </div>
                                 <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
                                     <p className="text-[10px] font-bold text-blue-400 uppercase mb-1">Platform Match</p>
-                                    <p className="text-xl font-bold text-white">£{selectedLevel?.platformMatch}</p>
+                                    <p className="text-xl font-bold text-white">£{((selectedLevel?.totalCashback ?? 0) - (selectedLevel?.matchingContribution ?? 0))}</p>
                                 </div>
                             </div>
 
@@ -432,13 +413,13 @@ export default function CreditsPage() {
                             </div>
                         </div>
 
-                        {simulatedBalance < (selectedLevel?.matchingContribution || 0) && (
+                        {balance < (selectedLevel?.matchingContribution || 0) && (
                             <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-xs font-bold text-red-400">Insufficient Balance</p>
                                     <p className="text-[11px] text-red-300 leading-tight mt-1">
-                                        You need to top up <span className="font-bold">£{((selectedLevel?.matchingContribution || 0) - simulatedBalance).toFixed(2)}</span> to unlock this reward.
+                                        You need to top up <span className="font-bold">£{((selectedLevel?.matchingContribution || 0) - balance).toFixed(2)}</span> to unlock this reward.
                                     </p>
                                 </div>
                             </div>
@@ -447,11 +428,11 @@ export default function CreditsPage() {
                         <div className="space-y-3">
                             <Button 
                                 onClick={handleConfirmUnlock}
-                                disabled={simulatedBalance < (selectedLevel?.matchingContribution || 0)}
+                                disabled={balance < (selectedLevel?.matchingContribution || 0)}
                                 className="w-full h-14 rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-sm uppercase tracking-wider border-none"
                             >
-                                {simulatedBalance < (selectedLevel?.matchingContribution || 0) 
-                                    ? `Top Up £${((selectedLevel?.matchingContribution || 0) - simulatedBalance).toFixed(2)} to Unlock` 
+                                {balance < (selectedLevel?.matchingContribution || 0) 
+                                    ? `Top Up £${((selectedLevel?.matchingContribution || 0) - balance).toFixed(2)} to Unlock` 
                                     : "Yes, unlock these now"}
                             </Button>
                             

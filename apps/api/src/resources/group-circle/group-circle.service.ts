@@ -29,6 +29,7 @@ import { Business } from "../business/entities/business.entity";
 import {
   GroupCircleType,
   GroupCircleRole,
+  GroupCircleStatus,
   PaymentProvider,
   GroupMessageType,
 } from "./enums/group-circle.enums";
@@ -378,6 +379,116 @@ export class GroupCircleService {
     });
     if (!circle) throw new NotFoundException("Group Circle not found");
     return circle;
+  }
+
+  async discover(query: PaginationDto, businessId: string) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 10));
+    const skip = (page - 1) * limit;
+
+    const qb = this.circleRepo
+      .createQueryBuilder("circle")
+      .leftJoinAndSelect("circle.business", "business")
+      .leftJoinAndSelect("circle.members", "members")
+      .leftJoinAndSelect("members.network", "memberNetwork")
+      .loadRelationCountAndMap("circle.memberCount", "circle.members")
+      .where("circle.business.id != :businessId", { businessId })
+      .andWhere("circle.status = :status", { status: GroupCircleStatus.ACTIVE })
+      .andWhere(
+        (q) =>
+          `NOT EXISTS (${q
+            .subQuery()
+            .select("1")
+            .from(GroupCircleMember, "gm")
+            .innerJoin("gm.network", "nw")
+            .where("gm.groupCircleId = circle.id")
+            .andWhere("nw.onboardedBusinessId = :businessId", { businessId })
+            .getQuery()})`,
+      )
+      .orderBy("circle.created_at", "DESC");
+
+    const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();
+
+    const lastPage = Math.ceil(total / limit);
+    const nextPage = page < lastPage ? page + 1 : null;
+    const prevPage = page > 1 ? page - 1 : null;
+
+    const result = data.map((circle: any) => ({
+      ...circle,
+      ownerName: circle.business?.name || "",
+      isPublic: true,
+      memberCount: circle.memberCount ?? circle.members?.length ?? 0,
+    }));
+
+    return {
+      data: result,
+      meta: {
+        total,
+        page,
+        limit,
+        lastPage,
+        nextPage,
+        prevPage,
+      },
+    };
+  }
+
+  async join(id: string, businessId: string) {
+    const circle = await this.circleRepo.findOne({
+      where: { id },
+      relations: ["members", "members.network", "business"],
+    });
+    if (!circle) throw new NotFoundException("Group Circle not found");
+    if (circle.business?.id === businessId) {
+      throw new BadRequestException("You cannot join your own circle");
+    }
+
+    const isMember = (circle.members || []).some(
+      (m) => m.network?.onboardedBusinessId === businessId,
+    );
+    if (isMember) {
+      throw new BadRequestException("You are already a member of this circle");
+    }
+
+    const ownerId = circle.business?.id;
+    if (!ownerId) throw new BadRequestException("Circle owner not found");
+
+    let network = await this.networkRepo.findOne({
+      where: {
+        business: { id: ownerId },
+        onboardedBusinessId: businessId,
+      },
+    });
+
+    if (!network) {
+      const business = await this.circleRepo.manager.findOne(Business, {
+        where: { id: businessId },
+      });
+      if (!business) throw new NotFoundException("Business not found");
+      network = this.networkRepo.create({
+        business: { id: ownerId } as Business,
+        fullName: business.name || "Business",
+        businessName: business.name || "Business",
+        email: business.email,
+        phone: business.phone || "00000000000",
+        status: NetworkStatus.ACCEPTED,
+        permission: "accepted",
+        isOnboarded: true,
+        onboardedType: "business",
+        onboardedBusinessId: business.id,
+        hasSharingPermission: true,
+      });
+      await this.networkRepo.save(network);
+    }
+
+    const member = this.memberRepo.create({
+      groupCircle: circle,
+      network,
+      role: GroupCircleRole.PERIPHERAL,
+    });
+    await this.memberRepo.save(member);
+    await this.logActivity(circle, "MEMBER_ADDED", { networkId: network.id });
+    return member;
   }
 
   async update(id: string, dto: UpdateGroupCircleDto, businessId: string) {

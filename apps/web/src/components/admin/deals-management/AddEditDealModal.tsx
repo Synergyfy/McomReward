@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Deal, CreateDealDto } from '@/services/deals/types';
-import { initialSectors } from '@/lib/mock-data/sectors';
+import { useGetSectors } from '@/services/sectors/hook';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -50,10 +50,12 @@ export function AddEditDealModal({
   const [termsAndConditions, setTermsAndConditions] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
-  // Flatten categories for the dropdown
+  const { data: sectors = [] } = useGetSectors();
+
+  // Flatten categories from real sectors for the dropdown
   const allCategories = useMemo(() => {
-    return initialSectors.flatMap(sector => sector.categories);
-  }, []);
+    return sectors.flatMap(sector => sector.categories);
+  }, [sectors]);
 
   useEffect(() => {
     if (initialData) {
@@ -198,8 +200,7 @@ export function AddEditDealModal({
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))
                 ) : (
-                  // Fallback if no categories are found in mock data
-                  <SelectItem value="default">Default Category</SelectItem>
+                  <SelectItem value="none" disabled>No categories available</SelectItem>
                 )}
               </SelectContent>
             </Select>

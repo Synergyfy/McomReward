@@ -1,15 +1,30 @@
 import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
+import { Reflector, ModuleRef } from "@nestjs/core";
 import { Role } from "../role.enum";
 import { ROLES_KEY } from "../decorators/roles.decorator";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { SKIP_MEMBERSHIP_CHECK_KEY } from "../decorators/skip-membership-check.decorator";
+import { MembershipService } from "../../resources/membership/membership.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  private membershipService?: MembershipService;
 
-  canActivate(context: ExecutionContext): boolean {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly moduleRef: ModuleRef,
+  ) {}
+
+  private getMembershipService(): MembershipService {
+    if (!this.membershipService) {
+      this.membershipService = this.moduleRef.get(MembershipService, {
+        strict: false,
+      });
+    }
+    return this.membershipService;
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -43,16 +58,21 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    // Check for active subscription for Business role
+    // Live, cached membership check — no hardcoding, TTL from Config via MembershipService
+    // hasActiveSubscription in JWT is stale after purchase; use DB-backed cache instead.
     if (
       user.role === Role.Business &&
       requiredRoles.includes(Role.Business) &&
-      !user.hasActiveSubscription &&
       !skipSubscriptionCheck
     ) {
-      // Allow access to auth related endpoints or subscription setup endpoints if we had them excluded, but for now block everything else.
-      // Ideally we might whitelist some endpoints, but user said "any business role guarded endpoint"
-      return false;
+      // Super business bypass (from JWT, config-driven role)
+      if (user.isSuperBusiness) {
+        return requiredRoles.some((role) => user.role === role);
+      }
+      const hasActive = await this.getMembershipService().hasActiveSubscription(user.id);
+      if (!hasActive) {
+        return false;
+      }
     }
 
     return requiredRoles.some((role) => user.role === role);

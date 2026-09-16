@@ -94,6 +94,9 @@ export interface BusinessSubscriptionResponse {
     tier: string;
     status: string;
     features: string[];
+    expiresAt?: string | null;
+    planType?: string;
+    isTrial?: boolean;
 }
 
 export interface CentralPackage {

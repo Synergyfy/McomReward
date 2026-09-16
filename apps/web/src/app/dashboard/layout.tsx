@@ -8,7 +8,8 @@ import Navbar from '@/components/Navbar';
 import { GuideProvider } from '@/context/GuideContext';
 import FloatingGuide from '@/components/Guide/FloatingGuide';
 import { usePathname, useRouter } from 'next/navigation';
-import { useGetBusinessSubscription, useGetMySubscription } from '@/services/tiers/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetMyPackage } from '@/services/mcom-packages';
 import { useGetBusinessProfile } from '@/services/business/hook';
 import TrialBanner from '@/components/dashboard/trial-banner';
 import { useImpersonation } from '@/context/ImpersonationContext';
@@ -26,7 +27,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isImpersonating, businessId, participantId, stopImpersonation } = useImpersonation();
-  const { data: businessSubscription, isLoading: isBusinessSubLoading } = useGetBusinessSubscription();
+  // LOCAL-FIRST gating: Rewards DB membership via my-package (planVariant)
+  // + my-membership. Central /business/subscription is never consulted.
+  const { data: myPackage, isLoading: isMyPackageLoading } = useGetMyPackage();
   const { data: mySubscription, isLoading: isMySubLoading } = useGetMySubscription();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -48,17 +51,26 @@ export default function DashboardLayout({
       return;
     }
 
-    // Check if subscription data is loaded and tier is Free, but SKIP for Super Business
-    // Also wait for profile to load to avoid premature redirect
-    if (!isBusinessSubLoading && !isProfileLoading && businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness) {
-      // Prevent redirect loop if already on subscription page
+    // Check if subscription data is loaded and is inactive/expired, but SKIP for Super Business
+    const localPlanName =
+      myPackage?.planName || myPackage?.membershipTier || 'Free';
+    const isSubInactive =
+      localPlanName === 'Free' ||
+      myPackage?.membershipStatus === 'expired' ||
+      myPackage?.isExpired ||
+      mySubscription?.status === 'expired';
+
+    if (
+      !isMyPackageLoading &&
+      !isProfileLoading &&
+      isSubInactive &&
+      !profile?.isSuperBusiness
+    ) {
       if (!pathname.includes('/dashboard/subscription')) {
-        // Ensure we don't redirect if we are in a potentially transient state or just paid
-        // But since we invalidated queries on checkout success, this 'Free' check should be accurate.
         router.push('/dashboard/subscription');
       }
     }
-  }, [businessSubscription, isBusinessSubLoading, pathname, router, profile, isProfileLoading]);
+  }, [myPackage, mySubscription, isMyPackageLoading, pathname, router, profile, isProfileLoading]);
 
 
   return (

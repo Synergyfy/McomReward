@@ -26,7 +26,7 @@ import { ConfirmationDialog } from './ConfirmationDialog';
 import { AdjustPointsModal } from './AdjustPointsModal';
 import { EditBusinessUserModal } from './EditBusinessUserModal';
 import { EditConsumerUserModal } from './EditConsumerUserModal';
-import { BusinessUser, ConsumerUser } from '@/lib/mock-data/users';
+import { BusinessUser, ConsumerUser } from '@/services/admin/types';
 import { ActionHandlers } from './columns'; // Import ActionHandlers type
 
 interface DataTableProps<TData, TValue> {

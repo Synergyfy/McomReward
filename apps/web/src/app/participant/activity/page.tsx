@@ -6,80 +6,67 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   Sparkles, 
-  Dices, 
   ShoppingBag, 
   UserPlus, 
-  CalendarDays, 
   CreditCard,
-  ChevronRight,
-  ArrowLeft
+  Stamp,
+  Gift,
+  type LucideIcon
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useGetParticipantProfile, useGetParticipantGlobalBalance } from '@/services/customer-campaigns/hook';
+import { format } from 'date-fns';
+import { useGetParticipantProfile, useGetParticipantGlobalBalance, useGetParticipantGlobalHistory } from '@/services/customer-campaigns/hook';
+import { type ParticipantHistoryItem, type PointHistoryType } from '@/services/customer-campaigns/types';
 
-const activitiesData = [
-  {
-    id: "act-1",
-    type: "Games",
-    title: "MCOMSpin Winner",
-    amount: "+500 Pts",
-    amountType: "earn",
-    description: "Daily spin challenge completed. Level 4 Multiplier applied.",
-    time: "02:45 PM",
-    date: "TODAY, NOV 24",
-    icon: Dices,
-    gradient: "linear-gradient(135deg, #4ae176 0%, #009542 100%)",
-  },
-  {
-    id: "act-2",
-    type: "Purchases",
-    title: "Amazon Gift Card",
-    amount: "-2,500 Pts",
-    amountType: "spend",
-    description: "Redeemed $25 Digital Voucher. Code sent to registered email.",
-    time: "11:20 AM",
-    date: "TODAY, NOV 24",
-    code: "AMZN-X24-GOLD",
-    icon: ShoppingBag,
-    gradient: "linear-gradient(135deg, #bec6e0 0%, #565e74 100%)",
-  },
-  {
-    id: "act-3",
-    type: "Rewards",
-    title: "Referral Successful",
-    amount: "+1,000 Pts",
-    amountType: "earn",
-    description: "User 'sarah_j' joined using your invite link. 2x multiplier active.",
-    time: "08:15 PM",
-    date: "YESTERDAY, NOV 23",
-    icon: UserPlus,
-    gradient: "linear-gradient(135deg, #ffe083 0%, #eec200 100%)",
-  },
-  {
-    id: "act-4",
-    type: "Events",
-    title: "Tech Summit Access",
-    amount: "Confirmed",
-    amountType: "status",
-    description: "VIP RSVP for the upcoming \"Innovation 2024\" digital event.",
-    time: "03:30 PM",
-    date: "YESTERDAY, NOV 23",
-    icon: CalendarDays,
-    gradient: "bg-slate-700",
-  },
-  {
-    id: "act-5",
-    type: "Purchases",
-    title: "Online Store Purchase",
-    amount: "+125 Pts",
-    amountType: "earn",
-    description: "Points earned on Order #88219 (Electronics Category).",
-    time: "09:12 AM",
-    date: "YESTERDAY, NOV 23",
-    icon: CreditCard,
-    gradient: "linear-gradient(135deg, #bec6e0 0%, #565e74 100%)",
-  }
-];
+const historyTypeConfig: Record<PointHistoryType, { label: string; icon: LucideIcon; gradient: string; direction: 'earn' | 'spend' }> = {
+  EARN: { label: 'Points Earned', icon: Sparkles, gradient: 'linear-gradient(135deg, #4ae176 0%, #009542 100%)', direction: 'earn' },
+  REDEEM: { label: 'Points Redeemed', icon: ShoppingBag, gradient: 'linear-gradient(135deg, #f87171 0%, #b91c1c 100%)', direction: 'spend' },
+  MATCHING: { label: 'Matching Points', icon: UserPlus, gradient: 'linear-gradient(135deg, #60a5fa 0%, #1d4ed8 100%)', direction: 'earn' },
+  PURCHASED_EXTRA: { label: 'Extra Points', icon: CreditCard, gradient: 'linear-gradient(135deg, #fbbf24 0%, #b45309 100%)', direction: 'earn' },
+  STAMP_EARN: { label: 'Stamps Earned', icon: Stamp, gradient: 'linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)', direction: 'earn' },
+  STAMP_REDEEM: { label: 'Stamps Redeemed', icon: Gift, gradient: 'linear-gradient(135deg, #f472b6 0%, #be185d 100%)', direction: 'spend' },
+};
+
+interface ActivityDisplayItem {
+  id: string;
+  type: string;
+  title: string;
+  amount: string;
+  amountType: 'earn' | 'spend';
+  description: string;
+  time: string;
+  date: string;
+  icon: LucideIcon;
+  gradient: string;
+  code?: string;
+}
+
+const toDisplayItem = (item: ParticipantHistoryItem): ActivityDisplayItem => {
+  const config = historyTypeConfig[item.type] ?? historyTypeConfig.EARN;
+  const createdAt = new Date(item.createdAt);
+  const title =
+    item.reward?.title ||
+    item.description ||
+    item.campaign?.name ||
+    item.business?.name ||
+    config.label;
+  const amount = `${config.direction === 'earn' ? '+' : '-'}${item.points} Pts`;
+  return {
+    id: item.id,
+    type: config.label,
+    title,
+    amount,
+    amountType: config.direction,
+    description: item.description,
+    time: format(createdAt, 'hh:mm a'),
+    date: format(createdAt, 'EEE, MMM d'),
+    icon: config.icon,
+    gradient: config.gradient,
+    code: item.redemptionCode ?? undefined,
+  };
+};
+
+const PAGE_SIZE = 20;
 
 export default function ParticipantActivityHistory() {
   const router = useRouter();
@@ -89,17 +76,37 @@ export default function ParticipantActivityHistory() {
   const [activeFilter, setActiveFilter] = useState("All Activity");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
 
-  const userName = profile?.name || 'Julian Sterling';
-  const globalPoints = balance?.globalTotalPoints !== undefined ? balance.globalTotalPoints.toLocaleString() : '124,500';
+  const historyType =
+    activeFilter === "Points" ? "points" : activeFilter === "Stamps" ? "stamps" : undefined;
 
-  const filterChips = ["All Activity", "Rewards", "Games", "Purchases", "Events"];
+  const { data: historyData, isLoading } = useGetParticipantGlobalHistory(page, PAGE_SIZE, historyType);
 
-  const filteredActivities = activitiesData.filter(act => {
-    const matchesFilter = activeFilter === "All Activity" || act.type === activeFilter;
-    const matchesSearch = act.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          act.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const userName = profile?.name;
+  const initials = userName
+    ? userName.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "";
+  const badgeLabel = profile?.customerBadge || profile?.customer_badge || "Member";
+  const globalPoints =
+    balance?.globalTotalPoints !== undefined ? balance.globalTotalPoints.toLocaleString() : undefined;
+  const redeemedPoints =
+    profile?.totalPointsRedeemed !== undefined
+      ? profile.totalPointsRedeemed.toLocaleString()
+      : profile?.total_points_redeemed !== undefined
+        ? profile.total_points_redeemed.toLocaleString()
+        : undefined;
+  const campaignCount = balance?.campaignBalances?.length;
+
+  const filterChips = ["All Activity", "Points", "Stamps"];
+
+  const allActivities = (historyData?.data ?? []).map(toDisplayItem);
+
+  const filteredActivities = allActivities.filter((act) => {
+    const matchesSearch =
+      act.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      act.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   return (
@@ -112,14 +119,12 @@ export default function ParticipantActivityHistory() {
             className="w-10 h-10 rounded-full border-2 border-orange-500 overflow-hidden cursor-pointer active:scale-95 duration-200 transition-transform"
           >
             <Avatar className="h-full w-full">
-              <AvatarImage 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYmbBm1iD4miSQ7O41tDBzPon44_CbNJD4GAQGesU4wxShbP4GulqU49g8o36p1qiKBxi0lmeyTzlxtmlPYcOyh9-i0SfkXBEmb3UdYaxLmTiw5GlZXLzfX8gAPsYiP_oU5JTYksiUGdIOvdxj_apmMkUvWpmcarJZsDwmEo3D7C39m1RaCi4ZJFOrBuvzJsgqWX2TuM_yyxT3NlpBsQcDDblYz1tcO13aVXXWMFrwKqxHekDB_s57mt3x66iuwV6V1WlOzr8YCmQ" 
-                alt="Profile Avatar"
-              />
-              <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">JS</AvatarFallback>
+              <AvatarImage src={undefined} alt="Profile Avatar" />
+              <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">{initials || "ME"}</AvatarFallback>
             </Avatar>
           </div>
-          <span className="font-extrabold text-lg text-gray-900">Gold Member</span>
+          <span className="font-extrabold text-lg text-gray-900">{userName || "Member"}</span>
+          <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">{badgeLabel}</span>
         </div>
         <div className="flex items-center gap-2">
           {searchOpen && (
@@ -151,7 +156,7 @@ export default function ParticipantActivityHistory() {
             <div className="bg-white border border-gray-200 p-4 rounded-2xl col-span-2 flex items-center justify-between shadow-sm">
               <div>
                 <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Lifetime Rewards</p>
-                <p className="text-3xl font-extrabold text-orange-600">{globalPoints} <span className="text-sm font-semibold text-gray-550">Pts</span></p>
+                <p className="text-3xl font-extrabold text-orange-600">{globalPoints ?? "—"} <span className="text-sm font-semibold text-gray-550">Pts</span></p>
               </div>
               <div className="w-12 h-12 bg-orange-100 border border-orange-200 rounded-full flex items-center justify-center text-orange-600">
                 <Sparkles className="w-6 h-6 fill-current" />
@@ -159,11 +164,11 @@ export default function ParticipantActivityHistory() {
             </div>
             <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
               <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Redeemed</p>
-              <p className="text-xl font-extrabold text-green-600 mt-2">12.4k</p>
+              <p className="text-xl font-extrabold text-green-600 mt-2">{redeemedPoints ?? "—"}</p>
             </div>
             <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
-              <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Games Won</p>
-              <p className="text-xl font-extrabold text-orange-600 mt-2">84</p>
+              <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Campaigns</p>
+              <p className="text-xl font-extrabold text-orange-600 mt-2">{campaignCount ?? "—"}</p>
             </div>
           </section>
 
@@ -174,7 +179,7 @@ export default function ParticipantActivityHistory() {
               {filterChips.map((chip) => (
                 <button
                   key={chip}
-                  onClick={() => setActiveFilter(chip)}
+                  onClick={() => { setActiveFilter(chip); setPage(1); }}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                     activeFilter === chip
                       ? 'bg-orange-600 text-white shadow-sm'
@@ -194,74 +199,84 @@ export default function ParticipantActivityHistory() {
             {/* Vertical Timeline Line */}
             <div className="absolute left-7 md:left-13 top-4 bottom-4 w-[2px] bg-gray-200 z-0"></div>
 
-            <AnimatePresence mode="popLayout">
-              {filteredActivities.length > 0 ? (
-                // Group activities by date
-                Object.entries(
-                  filteredActivities.reduce((acc, act) => {
-                    if (!acc[act.date]) acc[act.date] = [];
-                    acc[act.date].push(act);
-                    return acc;
-                  }, {} as Record<string, typeof activitiesData>)
-                ).map(([date, items]) => (
-                  <div key={date} className="space-y-4">
-                    {/* Date Header */}
-                    <div className="sticky top-16 md:top-0 z-10 py-1 bg-white/95 backdrop-blur-sm">
-                      <h3 className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{date}</h3>
-                    </div>
+            {isLoading ? (
+              <div className="text-center py-12 text-gray-500">
+                <p>Loading activity...</p>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {filteredActivities.length > 0 ? (
+                  // Group activities by date
+                  Object.entries(
+                    filteredActivities.reduce((acc, act) => {
+                      if (!acc[act.date]) acc[act.date] = [];
+                      acc[act.date].push(act);
+                      return acc;
+                    }, {} as Record<string, ActivityDisplayItem[]>)
+                  ).map(([date, items]) => (
+                    <div key={date} className="space-y-4">
+                      {/* Date Header */}
+                      <div className="sticky top-16 md:top-0 z-10 py-1 bg-white/95 backdrop-blur-sm">
+                        <h3 className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{date}</h3>
+                      </div>
 
-                    {items.map((act) => {
-                      const IconComponent = act.icon;
-                      return (
-                        <motion.div
-                          key={act.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="relative flex gap-4 items-start group"
-                        >
-                          <div 
-                            className={`z-10 w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0 ${
-                              !act.gradient.startsWith('linear') ? act.gradient : ''
-                            }`}
-                            style={{ background: act.gradient.startsWith('linear') ? act.gradient : undefined }}
+                      {items.map((act) => {
+                        const IconComponent = act.icon;
+                        return (
+                          <motion.div
+                            key={act.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="relative flex gap-4 items-start group"
                           >
-                            <IconComponent className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="bg-white border border-gray-200 flex-1 p-4 rounded-2xl transition-transform active:scale-[0.98] shadow-sm">
-                            <div className="flex justify-between items-start mb-1">
-                              <h4 className="font-bold text-sm text-gray-800">{act.title}</h4>
-                              <span className={`text-xs font-bold ${
-                                act.amountType === 'earn' ? 'text-green-600' : 
-                                act.amountType === 'spend' ? 'text-red-500' : 'text-orange-600'
-                              }`}>
-                                {act.amount}
-                              </span>
+                            <div 
+                              className={`z-10 w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:scale-110 shrink-0 ${
+                                !act.gradient.startsWith('linear') ? act.gradient : ''
+                              }`}
+                              style={{ background: act.gradient.startsWith('linear') ? act.gradient : undefined }}
+                            >
+                              <IconComponent className="w-6 h-6 text-white" />
                             </div>
-                            <p className="text-xs text-gray-505 leading-relaxed">{act.description}</p>
-                            {act.code && (
-                              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
-                                <span>{act.code}</span>
+                            <div className="bg-white border border-gray-200 flex-1 p-4 rounded-2xl transition-transform active:scale-[0.98] shadow-sm">
+                              <div className="flex justify-between items-start mb-1">
+                                <h4 className="font-bold text-sm text-gray-800">{act.title}</h4>
+                                <span className={`text-xs font-bold ${
+                                  act.amountType === 'earn' ? 'text-green-600' : 'text-red-500'
+                                }`}>
+                                  {act.amount}
+                                </span>
                               </div>
-                            )}
-                            <p className="text-[9px] text-gray-400 mt-3">{act.time} • {act.type}</p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
+                              <p className="text-xs text-gray-505 leading-relaxed">{act.description}</p>
+                              {act.code && (
+                                <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
+                                  <span>{act.code}</span>
+                                </div>
+                              )}
+                              <p className="text-[9px] text-gray-400 mt-3">{act.time} • {act.type}</p>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <p>No activity found matching filters.</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No activity found matching filters.</p>
-                </div>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+            )}
 
             {/* Load More */}
-            <button className="w-full mt-6 py-3 rounded-2xl border border-gray-200 text-gray-600 hover:text-gray-800 font-bold text-xs bg-white hover:bg-gray-50 transition-colors shadow-sm">
-              View Older Activity
-            </button>
+            {(historyData?.data?.length ?? 0) >= PAGE_SIZE && (
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                className="w-full mt-6 py-3 rounded-2xl border border-gray-200 text-gray-600 hover:text-gray-800 font-bold text-xs bg-white hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                View Older Activity
+              </button>
+            )}
           </section>
         </div>
       </main>

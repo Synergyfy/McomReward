@@ -16,6 +16,7 @@ const createStaff = async (staffData: CreateStaffDto, businessId?: string): Prom
 interface StaffLoginDto {
     email: string;
     password: string;
+    turnstileToken?: string;
 };
 
 // Staff login

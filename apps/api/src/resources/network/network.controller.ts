@@ -15,7 +15,6 @@ import { CreateNetworkDto } from "./dto/create-network.dto";
 import { BulkImportNetworkDto } from "./dto/bulk-import-network.dto";
 import { GetNetworkDto } from "./dto/get-network.dto";
 import { UpdateNetworkDto } from "./dto/update-network.dto";
-import { PaginationDto } from "../../common/dto/pagination.dto";
 import { Role } from "../../common/role.enum";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
@@ -132,6 +131,15 @@ export class NetworkController {
   ) {
     const businessId = user.role === Role.Business ? user.id : undefined;
     return this.networkService.findAll(query, businessId);
+  }
+
+  @Get(":id")
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "Get a single network contact by ID" })
+  @ApiResponse({ status: 200, description: "Contact returned successfully." })
+  @ApiResponse({ status: 404, description: "Contact not found." })
+  findOne(@Param("id") id: string, @CurrentUser() business: Business) {
+    return this.networkService.findOne(id, business.id);
   }
 
   @Patch(":id")

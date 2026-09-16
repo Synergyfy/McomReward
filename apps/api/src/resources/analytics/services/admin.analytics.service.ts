@@ -359,7 +359,7 @@ export class AdminAnalyticsService {
 
     const data: PointLogItemDto[] = results.map((log) => {
       const description = log.type.toString();
-      const type = "Regular";
+      const type = String(log.type);
 
       return {
         name: log.participant ? log.participant.name : "Unknown",

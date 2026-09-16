@@ -8,6 +8,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { LoggingMiddleware } from "./middleware/logging.middleware";
 import { ConfigModule } from "@nestjs/config";
 import commissionConfig from "./config/commission.config";
+import jwtConfig from "./config/jwt.config";
 import { BusinessModule } from "./resources/business/business.module";
 import { SectorModule } from "./resources/sector/sector.module";
 import { AdminModule } from "./resources/admin/admin.module";
@@ -57,11 +58,21 @@ import { WalletModule } from "./resources/wallet/wallet.module";
 import { TrainingSupportModule } from "./resources/training-support/training-support.module";
 import { ProvisionModule } from "./resources/provision/provision.module";
 import { HelpRequestsModule } from "./resources/help-requests/help-requests.module";
+import { PlaqueSalesModule } from "./resources/plaque-sales/plaque-sales.module";
+import { SecurityModule } from "./resources/security/security.module";
+import { FinancialsModule } from "./resources/financials/financials.module";
+import { PlaqueUserModule } from "./resources/plaque-user/plaque-user.module";
+import { CreditsModule } from "./resources/credits/credits.module";
+import { LoyaltySetupModule } from "./resources/loyalty-setup/loyalty-setup.module";
 import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
+import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
+import { PlansModule } from "./resources/plans/plans.module";
 
 @Module({
   imports: [
+    PlansModule,
+    McomPackagesModule,
     LibraryAssetsModule,
     GroupCircleModule,
     StampModule,
@@ -83,7 +94,7 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
     HelpRequestsModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [commissionConfig],
+      load: [commissionConfig, jwtConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
@@ -110,7 +121,6 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
     PointPackageModule,
     NotificationModule,
     SetupModule,
-    SetupModule,
     MatchingPointModule,
     ReferralModule,
     SeasonModule,
@@ -123,6 +133,12 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
     TrainingSupportModule,
     SsoModule,
     SystemPlansModule,
+    PlaqueSalesModule,
+    SecurityModule,
+    FinancialsModule,
+    PlaqueUserModule,
+    CreditsModule,
+    LoyaltySetupModule,
   ],
   controllers: [AppController],
   providers: [

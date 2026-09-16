@@ -280,6 +280,55 @@ export class Business extends AbstractBaseEntity {
   @OneToMany(() => Network, (network) => network.business)
   network: Network[];
 
+  @ApiProperty({
+    description: "Central MCOM Solutions User ID",
+    required: false,
+  })
+  @Column({ nullable: true })
+  mcomUserId?: string;
+
+  @ApiProperty({
+    description: "Encrypted MCOM Central OAuth Access Token",
+    required: false,
+  })
+  @Column({ type: "text", nullable: true })
+  mcomAccessToken?: string;
+
+  @ApiProperty({
+    description: "Encrypted MCOM Central OAuth Refresh Token",
+    required: false,
+  })
+  @Column({ type: "text", nullable: true })
+  mcomRefreshToken?: string;
+
+  @ApiProperty({
+    description: "Central MCOM Token Expiration Timestamp",
+    required: false,
+  })
+  @Column({ nullable: true })
+  mcomTokenExpiresAt?: Date;
+
+  @ApiProperty({
+    description: "MCOM Ecosystem Membership Level (e.g. Standard, Silver, Gold, Platinum)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  membershipLevel?: string;
+
+  @ApiProperty({
+    description: "MCOM Ecosystem Membership Tier (e.g. Free, Normal, Pro, Pro+)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  membershipTier?: string;
+
+  @ApiProperty({
+    description: "MCOM Ecosystem Membership Status (e.g. active, trial, inactive)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  membershipStatus?: string;
+
   @ManyToMany(
     () => BusinessCampaign,
     (campaign) => campaign.participatingBusinesses,

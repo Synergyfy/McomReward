@@ -76,6 +76,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("profile")
   @ApiOperation({ summary: "Get business profile" })
   @ApiResponse({ status: 200, description: "Return business profile." })
@@ -88,6 +89,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Patch("profile")
   @ApiOperation({ summary: "Update business profile" })
   @ApiResponse({
@@ -111,13 +113,13 @@ export class BusinessController {
     description: "Return business subscription details.",
   })
   async getSubscription(@Request() req) {
-    if (req.user?.email) {
-      await this.membershipService.syncFromCentralProfile(req.user.id, req.user.email);
-    }
+    // LOCAL-FIRST: no Central sync on read. Central webhook + purchase
+    // confirm paths write into the local membership; reads enforce from it.
     return this.businessService.getSubscriptionLevel(req.user.id);
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("billing-history")
   @ApiOperation({ summary: "Get business billing history" })
   @ApiResponse({ status: 200, description: "Return business billing history." })
@@ -126,6 +128,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("onboarding-status")
   @ApiOperation({ summary: "Get business onboarding status" })
   @ApiResponse({
@@ -147,6 +150,7 @@ export class BusinessController {
     return this.businessService.delete(req.user.id);
   }
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("points/balance/monthly")
   @ApiOperation({ summary: "Get monthly point balance" })
   @ApiResponse({ status: 200, description: "Return monthly point balance." })
@@ -155,6 +159,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("stamps/balance/monthly")
   @ApiOperation({ summary: "Get monthly stamp balance" })
   @ApiResponse({ status: 200, description: "Return monthly stamp balance." })

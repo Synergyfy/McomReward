@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,11 +19,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Package, Plus, Search, Trash2, Edit3, Copy, Layers, FolderOpen,
-  Coins, Stamp, X, Sparkles,
+  Coins, Stamp, X, Sparkles, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SectorTemplate, TemplateReward } from '@/services/loyalty-setup/types';
 import type { RewardResponse } from '@/services/rewards/types';
+import { useGetRewards } from '@/services/rewards/hook';
+import {
+  useGetLoyaltySetupTemplates,
+  useCreateLoyaltySetupTemplate,
+  useUpdateLoyaltySetupTemplate,
+  useDeleteLoyaltySetupTemplate,
+} from '@/services/loyalty-setup/hook';
 
 // ─── SECTORS ────────────────────────────────────────────────────────────────
 
@@ -47,23 +54,6 @@ const REDEMPTION_TYPES = [
 function sectorLabel(key: string): string {
   return SECTORS.find(s => s.key === key)?.label ?? key;
 }
-
-// ─── LOCAL STORAGE ──────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'mcom-admin-reward-templates';
-
-function loadTemplates(): SectorTemplate[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-const BUILT_IN_IDS = [
-  'tpl-restaurant', 'tpl-cafe', 'tpl-retail', 'tpl-salon',
-  'tpl-service', 'tpl-gym', 'tpl-custom',
-];
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -112,62 +102,68 @@ function getRedemptionType(r: RewardResponse): 'point' | 'stamp' | 'hybrid' | 'n
 export default function AdminRewardTemplatesPage() {
   const [search, setSearch] = useState('');
   const [sectorFilter, setSectorFilter] = useState('all');
-  const [templates, setTemplates] = useState<SectorTemplate[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
 
-  useEffect(() => { setTemplates(loadTemplates()); }, []);
-
-  function save(data: SectorTemplate[]) {
-    setTemplates(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
-
-  const allTemplates = useMemo(() => [...templates], [templates]);
+  const { data: templates = [], isLoading } = useGetLoyaltySetupTemplates();
+  const { mutate: createTemplateMutation } = useCreateLoyaltySetupTemplate();
+  const { mutate: updateTemplateMutation } = useUpdateLoyaltySetupTemplate();
+  const { mutate: deleteTemplateMutation } = useDeleteLoyaltySetupTemplate();
 
   const filtered = useMemo(() => {
-    return allTemplates.filter(t => {
+    return templates.filter(t => {
       const matchSearch = !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.description.toLowerCase().includes(search.toLowerCase());
       const matchSector = sectorFilter === 'all' || t.sectorKey === sectorFilter;
       return matchSearch && matchSector;
     });
-  }, [allTemplates, search, sectorFilter]);
+  }, [templates, search, sectorFilter]);
 
   function handleCreate(t: SectorTemplate) {
-    save([...templates, t]);
-    toast.success(`Template "${t.name}" created`);
-    setShowCreate(false);
+    createTemplateMutation(t, {
+      onSuccess: () => {
+        toast.success(`Template "${t.name}" created`);
+        setShowCreate(false);
+      },
+      onError: () => toast.error('Failed to create template'),
+    });
   }
 
   function handleUpdate(idx: number, t: SectorTemplate) {
-    const next = [...templates];
-    next[idx] = t;
-    save(next);
-    toast.success(`Template "${t.name}" updated`);
-    setEditingIdx(null);
+    updateTemplateMutation({ id: t.id, payload: t }, {
+      onSuccess: () => {
+        toast.success(`Template "${t.name}" updated`);
+        setEditingIdx(null);
+      },
+      onError: () => toast.error('Failed to update template'),
+    });
   }
 
   function handleDelete() {
     if (deleteIdx === null) return;
     const t = templates[deleteIdx];
-    if (BUILT_IN_IDS.includes(t.id)) {
+    if (t.isBuiltIn) {
       toast.error('Cannot delete built-in templates');
       setDeleteIdx(null);
       return;
     }
-    const next = templates.filter((_, i) => i !== deleteIdx);
-    save(next);
-    toast.success(`Template "${t.name}" deleted`);
-    setDeleteIdx(null);
+    deleteTemplateMutation(t.id, {
+      onSuccess: () => {
+        toast.success(`Template "${t.name}" deleted`);
+        setDeleteIdx(null);
+      },
+      onError: () => toast.error('Failed to delete template'),
+    });
   }
 
   function handleDuplicate(idx: number) {
     const cloned = cloneTemplate(templates[idx]);
-    save([...templates, cloned]);
-    toast.success(`Template duplicated as "${cloned.name}"`);
+    createTemplateMutation(cloned, {
+      onSuccess: () => toast.success(`Template duplicated as "${cloned.name}"`),
+      onError: () => toast.error('Failed to duplicate template'),
+    });
   }
 
   const currentTemplate = editingIdx !== null ? templates[editingIdx] : null;
@@ -226,7 +222,14 @@ export default function AdminRewardTemplatesPage() {
         </div>
 
         {/* Template Grid */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <Loader2 className="w-8 h-8 mb-3 animate-spin" />
+              <p className="text-lg font-medium">Loading templates...</p>
+            </CardContent>
+          </Card>
+        ) : filtered.length === 0 ? (
           <Card className="border-dashed border-2">
             <CardContent className="flex flex-col items-center justify-center py-16 text-gray-400">
               <FolderOpen className="w-12 h-12 mb-3" />
@@ -238,7 +241,7 @@ export default function AdminRewardTemplatesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((t) => {
               const globalIdx = templates.indexOf(t);
-              const isBuiltIn = BUILT_IN_IDS.includes(t.id);
+              const isBuiltIn = t.isBuiltIn;
               return (
                 <Card key={t.id} className="shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <CardHeader className="p-4 pb-2">
@@ -561,23 +564,6 @@ function TemplateFormModal({
 
 // ─── REWARD PICKER MODAL ────────────────────────────────────────────────────
 
-// ─── MOCK REWARDS ────────────────────────────────────────────────────────────
-
-const MOCK_REWARDS: RewardResponse[] = [
-  { id: 'rw-mock-1', title: 'Free Coffee', description: 'Any size coffee, completely free', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '☕', pointRequired: 100, maxPoints: 100, max_stamps_required: 0, value: 3.50, quantity: 999, remainingQuantity: 450, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-2', title: 'Free Pastry', description: 'Complimentary pastry with any drink purchase', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '🥐', pointRequired: 75, maxPoints: 75, max_stamps_required: 0, value: 2.50, quantity: 999, remainingQuantity: 320, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-3', title: 'Free Dessert', description: 'Free dessert on your next visit', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '🍰', pointRequired: 200, maxPoints: 200, max_stamps_required: 0, value: 6.00, quantity: 500, remainingQuantity: 210, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-4', title: 'Buy 5 Get 1 Free', description: 'Buy 5 coffees and get the 6th free', rewardType: 'Stamp Card', type: 'Stamp Card', status: 'active', image: '🔄', pointRequired: 0, maxPoints: 0, max_stamps_required: 5, value: 3.50, quantity: 999, remainingQuantity: 180, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: false, is_stamps_enabled: true, stamp_emoji: '☕', audience: 'all' },
-  { id: 'rw-mock-5', title: '£5 Off Voucher', description: '£5 discount on any purchase over £25', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '💷', pointRequired: 250, maxPoints: 250, max_stamps_required: 0, value: 5.00, quantity: 1000, remainingQuantity: 620, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-6', title: 'Birthday Treat', description: 'Free item of your choice on your birthday', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '🎂', pointRequired: 0, maxPoints: 0, max_stamps_required: 0, value: 5.00, quantity: 999, remainingQuantity: 890, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: false, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-7', title: 'Points + Stamp Hybrid', description: 'Earn 50 points AND get a stamp towards your next free item', rewardType: 'Hybrid', type: 'Hybrid', status: 'active', image: '⭐', pointRequired: 50, maxPoints: 50, max_stamps_required: 1, value: 2.00, quantity: 999, remainingQuantity: 340, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: true, stamp_emoji: '⭐', audience: 'all' },
-  { id: 'rw-mock-8', title: '10% Off Entire Bill', description: '10% discount on your total bill', rewardType: 'Coupon', type: 'Coupon', status: 'active', image: '🏷️', pointRequired: 300, maxPoints: 300, max_stamps_required: 0, value: 10.00, quantity: 500, remainingQuantity: 150, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-9', title: 'Stamp Card - 10 Visits', description: 'Visit 10 times and receive a free month upgrade', rewardType: 'Stamp Card', type: 'Stamp Card', status: 'active', image: '🏅', pointRequired: 0, maxPoints: 0, max_stamps_required: 10, value: 25.00, quantity: 999, remainingQuantity: 75, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: false, is_stamps_enabled: true, stamp_emoji: '✅', audience: 'all' },
-  { id: 'rw-mock-10', title: 'Referral Reward', description: 'Refer a friend and both get £5 credit', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '👥', pointRequired: 0, maxPoints: 0, max_stamps_required: 0, value: 5.00, quantity: 999, remainingQuantity: 410, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: false, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-11', title: 'Free Smoothie', description: 'Free smoothie with any meal purchase', rewardType: 'Voucher', type: 'Voucher', status: 'active', image: '🥤', pointRequired: 150, maxPoints: 150, max_stamps_required: 0, value: 4.50, quantity: 500, remainingQuantity: 290, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: true, is_stamps_enabled: false, audience: 'all' },
-  { id: 'rw-mock-12', title: '20% Off First Visit', description: '20% discount for new customers on their first booking', rewardType: 'Coupon', type: 'Coupon', status: 'active', image: '🎉', pointRequired: 0, maxPoints: 0, max_stamps_required: 0, value: 20.00, quantity: 999, remainingQuantity: 550, disabled: false, expiry: '', createdAt: '', updatedAt: '', badgeLevel: '', is_points_enabled: false, is_stamps_enabled: false, audience: 'new' },
-];
-
 // ─── REWARD PICKER MODAL ────────────────────────────────────────────────────
 
 function RewardPickerModal({
@@ -593,7 +579,9 @@ function RewardPickerModal({
   const [redemptionFilter, setRedemptionFilter] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const allRewards = MOCK_REWARDS;
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 100);
+
+  const allRewards = rewardsData?.data || [];
 
   const filtered = useMemo(() => {
     return allRewards.filter(r => {
@@ -658,7 +646,9 @@ function RewardPickerModal({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto min-h-0 max-h-[400px] space-y-1.5">
-          {filtered.length === 0 ? (
+          {isLoadingRewards ? (
+            <p className="text-sm text-gray-400 text-center py-8">Loading rewards...</p>
+          ) : filtered.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-8">No rewards match your search criteria.</p>
           ) : (
             filtered.map(r => {

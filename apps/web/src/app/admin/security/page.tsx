@@ -1,34 +1,30 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Edit, Trash2, Shield, Key, Lock } from 'lucide-react';
-import {
-  mockPermissions,
-  mockRoles,
-  mockAuditLogs,
-  Permission,
-  Role,
-  AuditLog,
-} from '@/lib/mock-data/security';
+import { PlusCircle, Search, Edit, Trash2, Shield, Loader2 } from 'lucide-react';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AddEditRoleModal } from '@/components/admin/security/AddEditRoleModal'; // Will create this
-
-interface FeedbackDialogProps {
-  title: string;
-  description: React.ReactNode;
-  actionText?: string;
-}
+import { AddEditRoleModal } from '@/components/admin/security/AddEditRoleModal';
+import { Role } from '@/services/security/types';
+import {
+  useGetRoles,
+  useGetPermissions,
+  useDeleteRole,
+  useGetAuditLogs,
+} from '@/services/security/hook';
 
 export default function SecurityPage() {
-  const [roles, setRoles] = useState<Role[]>(mockRoles);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(mockAuditLogs);
+  const { data: roles = [], isLoading: isLoadingRoles } = useGetRoles();
+  const { data: permissions = [] } = useGetPermissions();
+  const { data: auditLogsData, isLoading: isLoadingAuditLogs } = useGetAuditLogs({ page: 1, limit: 100 });
+  const deleteRoleMutation = useDeleteRole();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
 
@@ -58,38 +54,32 @@ export default function SecurityPage() {
     setShowAddEditRoleModal(true);
   };
 
-  const handleSaveRole = (savedRole: Role) => {
-    setShowAddEditRoleModal(false);
-    setTimeout(() => {
-      if (savedRole.id.startsWith('new-')) {
-        setRoles(prev => [...prev, { ...savedRole, id: `role-${Date.now()}` }]);
-        handleShowFeedback("Role Added", `Role "${savedRole.name}" has been added.`);
-      } else {
-        setRoles(prev => prev.map(role => (role.id === savedRole.id ? savedRole : role)));
-        handleShowFeedback("Role Updated", `Role "${savedRole.name}" has been updated.`);
-      }
-    }, 300);
-  };
-
   const handleDeleteRole = (roleId: string) => {
-    setRoles(prev => prev.filter(role => role.id !== roleId));
-    handleShowFeedback("Role Deleted", `Role ${roleId} has been deleted.`);
+    if (confirm("Are you sure you want to delete this role?")) {
+      deleteRoleMutation.mutate(roleId, {
+        onSuccess: () => {
+          handleShowFeedback("Role Deleted", `Role ${roleId} has been deleted.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete role.");
+        },
+      });
+    }
   };
 
-  const filteredAuditLogs = useMemo(() => {
-    return auditLogs.filter(log => {
-      const matchesSearch = log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            log.details.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesAction = filterAction === 'all' || log.action === filterAction;
-      return matchesSearch && matchesAction;
-    });
-  }, [auditLogs, searchTerm, filterAction]);
+  const auditLogs = auditLogsData?.data ?? [];
 
-  const uniqueActions = useMemo(() => {
-    const actions = new Set(auditLogs.map(log => log.action));
-    return Array.from(actions);
-  }, [auditLogs]);
+  const filteredAuditLogs = auditLogs.filter(log => {
+    const matchesSearch = log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          log.details.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesAction = filterAction === 'all' || log.action === filterAction;
+    return matchesSearch && matchesAction;
+  });
+
+  const uniqueActions = Array.from(new Set(auditLogs.map(log => log.action)));
+
+  const permissionName = (id: string) => permissions.find(p => p.id === id)?.name || id;
 
   return (
     <div className="space-y-8">
@@ -116,38 +106,50 @@ export default function SecurityPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Permissions</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {roles.map((role) => (
-                    <TableRow key={role.id}>
-                      <TableCell className="font-medium">{role.name}</TableCell>
-                      <TableCell>{role.description}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {role.permissions.map(permId => {
-                            const perm = mockPermissions.find(p => p.id === permId);
-                            return <Badge key={permId} variant="secondary">{perm?.name || permId}</Badge>;
-                          })}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleAddEditRole(role)}><Edit className="h-4 w-4" /></Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteRole(role.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
+              {isLoadingRoles ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Role Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Permissions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {roles.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                          No roles found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {roles.map((role) => (
+                      <TableRow key={role.id}>
+                        <TableCell className="font-medium">{role.name}</TableCell>
+                        <TableCell>{role.description}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {role.permissions.map(permId => (
+                              <Badge key={permId} variant="secondary">{permissionName(permId)}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleAddEditRole(role)}><Edit className="h-4 w-4" /></Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteRole(role.id)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -183,26 +185,39 @@ export default function SecurityPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Timestamp</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAuditLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>{log.userName} ({log.userId})</TableCell>
-                      <TableCell><Badge>{log.action}</Badge></TableCell>
-                      <TableCell>{log.details}</TableCell>
-                      <TableCell>{log.timestamp.toLocaleString()}</TableCell>
+              {isLoadingAuditLogs ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>Timestamp</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAuditLogs.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                          No audit logs found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {filteredAuditLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>{log.userName} ({log.userId})</TableCell>
+                        <TableCell><Badge>{log.action}</Badge></TableCell>
+                        <TableCell>{log.details}</TableCell>
+                        <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -233,7 +248,6 @@ export default function SecurityPage() {
         isOpen={showAddEditRoleModal}
         onClose={() => setShowAddEditRoleModal(false)}
         initialData={currentEditRole}
-        onSave={handleSaveRole}
         onShowFeedback={handleShowFeedback}
       />
 

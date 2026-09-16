@@ -6,12 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Edit, Trash2, BookOpen, Youtube, LifeBuoy } from 'lucide-react';
-import {
-  mockHelpArticles,
-  mockLearningModules,
-  HelpArticle,
-  LearningModule,
-} from '@/lib/mock-data/resources';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddEditVideoModal } from '@/components/admin/resources/AddEditVideoModal';
@@ -19,13 +13,23 @@ import { AddEditArticleModal } from '@/components/admin/resources/AddEditArticle
 import { AddEditModuleModal } from '@/components/admin/resources/AddEditModuleModal';
 import { useGetTrainingVideos, useDeleteTrainingVideo } from '@/services/training-videos/hook';
 import { TrainingVideo } from '@/services/training-videos/types';
+import { HelpCenterArticle } from '@/services/help-center-articles/types';
+import { TrainingGuide } from '@/services/training-guides/types';
+import {
+  useGetHelpCenterArticles,
+  useDeleteHelpCenterArticle,
+} from '@/services/help-center-articles/hook';
+import { useGetTrainingGuides, useDeleteTrainingGuide } from '@/services/training-guides/hook';
 
 export default function ResourcesPage() {
-  const { data: videoData, refetch: refetchVideos } = useGetTrainingVideos({ page: 1, limit: 100 }); // Fetch all or reasonably high limit for now
+  const { data: videoData } = useGetTrainingVideos({ page: 1, limit: 100 });
   const deleteVideoMutation = useDeleteTrainingVideo();
 
-  const [articles, setArticles] = useState<HelpArticle[]>(mockHelpArticles);
-  const [modules, setModules] = useState<LearningModule[]>(mockLearningModules);
+  const { data: articlesData } = useGetHelpCenterArticles({ page: 1, limit: 100 });
+  const deleteArticleMutation = useDeleteHelpCenterArticle();
+
+  const { data: guidesData } = useGetTrainingGuides({ page: 1, limit: 100 });
+  const deleteGuideMutation = useDeleteTrainingGuide();
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -48,9 +52,9 @@ export default function ResourcesPage() {
   const [showAddEditVideoModal, setShowAddEditVideoModal] = useState(false);
   const [currentEditVideo, setCurrentEditVideo] = useState<TrainingVideo | undefined>(undefined);
   const [showAddEditArticleModal, setShowAddEditArticleModal] = useState(false);
-  const [currentEditArticle, setCurrentEditArticle] = useState<HelpArticle | undefined>(undefined);
+  const [currentEditArticle, setCurrentEditArticle] = useState<HelpCenterArticle | undefined>(undefined);
   const [showAddEditModuleModal, setShowAddEditModuleModal] = useState(false);
-  const [currentEditModule, setCurrentEditModule] = useState<LearningModule | undefined>(undefined);
+  const [currentEditModule, setCurrentEditModule] = useState<TrainingGuide | undefined>(undefined);
 
   // Handlers for Videos
   const handleAddEditVideo = (video?: TrainingVideo) => {
@@ -58,77 +62,59 @@ export default function ResourcesPage() {
     setShowAddEditVideoModal(true);
   };
 
-  const handleSaveVideo = (savedVideo: TrainingVideo) => {
-    // Refresh list is handled by react-query invalidation in the hook
-    setShowAddEditVideoModal(false);
-    // Logic for feedback is now inside the modal's success handler or we can show a generic one here if needed,
-    // but the modal calls onShowFeedback already.
-    // However, the modal prop 'onSave' is currently just closing the modal or local state update in the old version.
-    // In the new version, the mutation is in the modal.
-    // We can just rely on the modal to handle the mutation and feedback.
-    // But this function is passed to the modal.
-  };
-
   const handleDeleteVideo = (videoId: string) => {
     if (confirm("Are you sure you want to delete this video?")) {
-        deleteVideoMutation.mutate(videoId, {
-            onSuccess: () => {
-                handleShowFeedback("Video Deleted", `Video has been deleted.`);
-            },
-            onError: (error: any) => {
-                 handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete video.");
-            }
-        });
+      deleteVideoMutation.mutate(videoId, {
+        onSuccess: () => {
+          handleShowFeedback("Video Deleted", `Video has been deleted.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete video.");
+        }
+      });
     }
   };
 
   // Handlers for Articles
-  const handleAddEditArticle = (article?: HelpArticle) => {
+  const handleAddEditArticle = (article?: HelpCenterArticle) => {
     setCurrentEditArticle(article);
     setShowAddEditArticleModal(true);
   };
 
-  const handleSaveArticle = (savedArticle: HelpArticle) => {
-    setShowAddEditArticleModal(false);
-    setTimeout(() => {
-      if (savedArticle.id.startsWith('new-')) {
-        setArticles(prev => [...prev, { ...savedArticle, id: `art-${Date.now()}`, lastUpdated: new Date() }]);
-        handleShowFeedback("Article Added", `Article "${savedArticle.title}" has been added.`);
-      } else {
-        setArticles(prev => prev.map(article => (article.id === savedArticle.id ? { ...savedArticle, lastUpdated: new Date() } : article)));
-        handleShowFeedback("Article Updated", `Article "${savedArticle.title}" has been updated.`);
-      }
-    }, 300);
-  };
-
   const handleDeleteArticle = (articleId: string) => {
-    setArticles(prev => prev.filter(article => article.id !== articleId));
-    handleShowFeedback("Article Deleted", `Article ${articleId} has been deleted.`);
+    if (confirm("Are you sure you want to delete this article?")) {
+      deleteArticleMutation.mutate(articleId, {
+        onSuccess: () => {
+          handleShowFeedback("Article Deleted", `Article has been deleted.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete article.");
+        }
+      });
+    }
   };
 
   // Handlers for Modules
-  const handleAddEditModule = (module?: LearningModule) => {
+  const handleAddEditModule = (module?: TrainingGuide) => {
     setCurrentEditModule(module);
     setShowAddEditModuleModal(true);
   };
 
-  const handleSaveModule = (savedModule: LearningModule) => {
-    setShowAddEditModuleModal(false);
-    setTimeout(() => {
-      if (savedModule.id.startsWith('new-')) {
-        setModules(prev => [...prev, { ...savedModule, id: `mod-${Date.now()}` }]);
-        handleShowFeedback("Module Added", `Module "${savedModule.title}" has been added.`);
-      } else {
-        setModules(prev => prev.map(mod => (mod.id === savedModule.id ? savedModule : mod)));
-        handleShowFeedback("Module Updated", `Module "${savedModule.title}" has been updated.`);
-      }
-    }, 300);
+  const handleDeleteModule = (moduleId: string) => {
+    if (confirm("Are you sure you want to delete this module?")) {
+      deleteGuideMutation.mutate(moduleId, {
+        onSuccess: () => {
+          handleShowFeedback("Module Deleted", `Module has been deleted.`);
+        },
+        onError: (error: any) => {
+          handleShowFeedback("Error", error?.response?.data?.message || "Failed to delete module.");
+        }
+      });
+    }
   };
 
-  const handleDeleteModule = (moduleId: string) => {
-    setModules(prev => prev.filter(mod => mod.id !== moduleId));
-    handleShowFeedback("Module Deleted", `Module ${moduleId} has been deleted.`);
-  };
+  const articles = articlesData?.data ?? [];
+  const guides = guidesData?.data ?? [];
 
   return (
     <div className="space-y-8">
@@ -161,8 +147,6 @@ export default function ResourcesPage() {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Target Audience</TableHead>
-                    {/* Duration removed from display as it's not in the new schema, or we can calculate it/fetch it if backend supports.
-                        The mock had it, but the new API might not. I will remove it for now to be safe or leave blank. */}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,7 +157,6 @@ export default function ResourcesPage() {
                       <TableCell>{video.targetAudience === 'business' ? 'Business Owners' : 'Consumers'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {/* Note: Edit requires converting mapped type to form type if they differ, but they match closely. */}
                           <Button variant="outline" size="sm" onClick={() => handleAddEditVideo(video)}><Edit className="h-4 w-4" /></Button>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteVideo(video.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
@@ -181,11 +164,11 @@ export default function ResourcesPage() {
                     </TableRow>
                   ))}
                   {(!videoData?.items || videoData.items.length === 0) && (
-                      <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
-                              No videos found.
-                          </TableCell>
-                      </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                        No videos found.
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -217,7 +200,7 @@ export default function ResourcesPage() {
                     <TableRow key={article.id}>
                       <TableCell className="font-medium">{article.title}</TableCell>
                       <TableCell><Badge>{article.category}</Badge></TableCell>
-                      <TableCell>{article.lastUpdated.toLocaleDateString()}</TableCell>
+                      <TableCell>{article.createdAt ? new Date(article.createdAt).toLocaleDateString() : '—'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleAddEditArticle(article)}><Edit className="h-4 w-4" /></Button>
@@ -226,6 +209,13 @@ export default function ResourcesPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {articles.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                        No articles found.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -252,11 +242,11 @@ export default function ResourcesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {modules.map((mod) => (
+                  {guides.map((mod) => (
                     <TableRow key={mod.id}>
                       <TableCell className="font-medium">{mod.title}</TableCell>
-                      <TableCell><Badge variant="secondary">{mod.tierLevel}</Badge></TableCell>
-                      <TableCell>{mod.resources.length}</TableCell>
+                      <TableCell><Badge variant="secondary">{mod.targetTier?.name ?? '—'}</Badge></TableCell>
+                      <TableCell>{(mod.videos?.length ?? 0) + (mod.articles?.length ?? 0)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleAddEditModule(mod)}><Edit className="h-4 w-4" /></Button>
@@ -265,6 +255,13 @@ export default function ResourcesPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {guides.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                        No learning modules found.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -286,7 +283,7 @@ export default function ResourcesPage() {
         isOpen={showAddEditVideoModal}
         onClose={() => setShowAddEditVideoModal(false)}
         initialData={currentEditVideo}
-        onSave={handleSaveVideo}
+        onSave={() => setShowAddEditVideoModal(false)}
         onShowFeedback={handleShowFeedback}
       />
 
@@ -294,7 +291,6 @@ export default function ResourcesPage() {
         isOpen={showAddEditArticleModal}
         onClose={() => setShowAddEditArticleModal(false)}
         initialData={currentEditArticle}
-        onSave={handleSaveArticle}
         onShowFeedback={handleShowFeedback}
       />
 
@@ -302,7 +298,6 @@ export default function ResourcesPage() {
         isOpen={showAddEditModuleModal}
         onClose={() => setShowAddEditModuleModal(false)}
         initialData={currentEditModule}
-        onSave={handleSaveModule}
         onShowFeedback={handleShowFeedback}
       />
 

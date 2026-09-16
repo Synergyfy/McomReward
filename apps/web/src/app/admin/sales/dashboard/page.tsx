@@ -1,86 +1,76 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockSaleRecords, SaleRecord } from '@/lib/mock-data/sales';
-import { mockBusinessUsers } from '@/lib/mock-data/users';
-import { PoundSterling, CheckCircle, XCircle, Search, Filter, Eye } from 'lucide-react';
+import { PoundSterling, CheckCircle, Search, Filter, Eye, Loader2 } from 'lucide-react';
 import FeedbackDialog from '@/components/FeedbackDialog';
 import { format } from 'date-fns';
+import { useGetAdminSales, useGetAdminSalesAnalytics, useMarkSalePaid } from '@/services/plaque-sales/hook';
+import { PlaqueSale } from '@/services/plaque-sales/types';
+import { useAdminBusinesses } from '@/services/admin/hook';
 
 export default function SalesDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSeller, setFilterSeller] = useState('');
-  const [filterBuyer, setFilterBuyer] = useState('');
-  const [filterPayoutStatus, setFilterPayoutStatus] = useState('');
+  const [filterSeller, setFilterSeller] = useState('all');
+  const [filterBuyer, setFilterBuyer] = useState('all');
+  const [filterPayoutStatus, setFilterPayoutStatus] = useState('all');
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackDialogProps, setFeedbackDialogProps] = useState<{ title: string; description: React.ReactNode; actionText: string }>({
     title: '',
     description: '',
     actionText: 'OK',
   });
-  const [viewingSale, setViewingSale] = useState<SaleRecord | null>(null);
+  const [viewingSale, setViewingSale] = useState<PlaqueSale | null>(null);
 
-  const sellers = mockBusinessUsers; // Assuming business users can be sellers
-  const buyers = mockBusinessUsers; // Assuming business users can be buyers
+  const { data: salesData, isLoading } = useGetAdminSales({
+    page: 1,
+    limit: 100,
+    search: searchTerm || undefined,
+    sellerId: filterSeller === 'all' ? undefined : filterSeller,
+    buyerId: filterBuyer === 'all' ? undefined : filterBuyer,
+    payoutStatus: filterPayoutStatus === 'all' ? undefined : (filterPayoutStatus as PlaqueSale['payoutStatus']),
+  });
+  const { data: analytics } = useGetAdminSalesAnalytics();
+  const { data: businessesData } = useAdminBusinesses(1, 100);
+  const { mutate: markSalePaid } = useMarkSalePaid();
 
-  const filteredSales = useMemo(() => {
-    let filtered = mockSaleRecords;
-
-    if (searchTerm) {
-      filtered = filtered.filter(sale =>
-        sale.plaqueName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.plaqueId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.sellerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.buyerName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (filterSeller && filterSeller !== 'all') {
-      filtered = filtered.filter(sale => sale.sellerId === filterSeller);
-    }
-
-    if (filterBuyer && filterBuyer !== 'all') {
-      filtered = filtered.filter(sale => sale.buyerId === filterBuyer);
-    }
-
-    if (filterPayoutStatus && filterPayoutStatus !== 'all') {
-      filtered = filtered.filter(sale => sale.payoutStatus === filterPayoutStatus);
-    }
-
-    return filtered;
-  }, [searchTerm, filterSeller, filterBuyer, filterPayoutStatus]);
-
-  const totalPlaquesSold = filteredSales.length;
-  const totalCommissionEarned = filteredSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
-  const pendingPayouts = filteredSales.filter(sale => sale.payoutStatus === 'Pending').reduce((sum, sale) => sum + sale.commissionAmount, 0);
+  const sales = salesData?.data ?? [];
+  const businesses = businessesData?.data ?? [];
 
   const handleMarkAsPaid = (saleId: string) => {
-    const saleIndex = mockSaleRecords.findIndex(sale => sale.id === saleId);
-    if (saleIndex !== -1) {
-      mockSaleRecords[saleIndex].payoutStatus = 'Paid';
-      setFeedbackDialogProps({
-        title: 'Payout Marked as Paid',
-        description: (
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="text-green-500" />
-            <span>Sale {saleId} payout has been marked as paid.</span>
-          </div>
-        ),
-        actionText: 'OK',
-      });
-      setShowFeedbackDialog(true);
-      // Force re-render to update the table and summaries
-      setSearchTerm(prev => prev + ' '); // Small trick to force re-memoization
-      setSearchTerm(prev => prev.trim());
-    }
+    markSalePaid(
+      { id: saleId, payoutStatus: 'Paid' },
+      {
+        onSuccess: () => {
+          setFeedbackDialogProps({
+            title: 'Payout Marked as Paid',
+            description: (
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="text-green-500" />
+                <span>Sale {saleId} payout has been marked as paid.</span>
+              </div>
+            ),
+            actionText: 'OK',
+          });
+          setShowFeedbackDialog(true);
+        },
+        onError: (error: any) => {
+          setFeedbackDialogProps({
+            title: 'Error',
+            description: error?.response?.data?.message || 'Failed to mark payout as paid.',
+            actionText: 'OK',
+          });
+          setShowFeedbackDialog(true);
+        },
+      }
+    );
   };
 
-  const handleViewDetails = (sale: SaleRecord) => {
+  const handleViewDetails = (sale: PlaqueSale) => {
     setViewingSale(sale);
     setFeedbackDialogProps({
       title: `Sale Details: ${sale.plaqueName}`,
@@ -113,7 +103,7 @@ export default function SalesDashboardPage() {
             <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPlaquesSold}</div>
+            <div className="text-2xl font-bold">{analytics?.totalPlaquesSold ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -122,7 +112,7 @@ export default function SalesDashboardPage() {
             <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{totalCommissionEarned.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{(analytics?.totalCommissionEarned ?? 0).toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -131,7 +121,7 @@ export default function SalesDashboardPage() {
             <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{pendingPayouts.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{(analytics?.pendingPayouts ?? 0).toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -158,7 +148,7 @@ export default function SalesDashboardPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sellers</SelectItem>
-                {sellers.map(seller => (
+                {businesses.map(seller => (
                   <SelectItem key={seller.id} value={seller.id}>
                     {seller.name}
                   </SelectItem>
@@ -172,7 +162,7 @@ export default function SalesDashboardPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Buyers</SelectItem>
-                {buyers.map(buyer => (
+                {businesses.map(buyer => (
                   <SelectItem key={buyer.id} value={buyer.id}>
                     {buyer.name}
                   </SelectItem>
@@ -193,71 +183,77 @@ export default function SalesDashboardPage() {
             </Select>
             <Button variant="outline" onClick={() => {
               setSearchTerm('');
-              setFilterSeller('');
-              setFilterBuyer('');
-              setFilterPayoutStatus('');
+              setFilterSeller('all');
+              setFilterBuyer('all');
+              setFilterPayoutStatus('all');
             }}>
               Reset Filters
             </Button>
           </div>
 
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plaque Name</TableHead>
-                  <TableHead>Seller</TableHead>
-                  <TableHead>Buyer</TableHead>
-                  <TableHead>Sale Date</TableHead>
-                  <TableHead>Sale Price</TableHead>
-                  <TableHead>Commission</TableHead>
-                  <TableHead>Payout Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSales.length > 0 ? (
-                  filteredSales.map(sale => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-medium">{sale.plaqueName}</TableCell>
-                      <TableCell>{sale.sellerName}</TableCell>
-                      <TableCell>{sale.buyerName}</TableCell>
-                      <TableCell>{format(new Date(sale.saleDate), 'PPP')}</TableCell>
-                      <TableCell>£{sale.salePrice.toFixed(2)}</TableCell>
-                      <TableCell>£{sale.commissionAmount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          sale.payoutStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                          sale.payoutStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {sale.payoutStatus}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleViewDetails(sale)}>
-                            <Eye className="h-4 w-4 mr-1" /> View
-                          </Button>
-                          {sale.payoutStatus === 'Pending' && (
-                            <Button variant="secondary" size="sm" onClick={() => handleMarkAsPaid(sale.id)}>
-                              <CheckCircle className="h-4 w-4 mr-1" /> Mark Paid
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Plaque Name</TableHead>
+                    <TableHead>Seller</TableHead>
+                    <TableHead>Buyer</TableHead>
+                    <TableHead>Sale Date</TableHead>
+                    <TableHead>Sale Price</TableHead>
+                    <TableHead>Commission</TableHead>
+                    <TableHead>Payout Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sales.length > 0 ? (
+                    sales.map(sale => (
+                      <TableRow key={sale.id}>
+                        <TableCell className="font-medium">{sale.plaqueName}</TableCell>
+                        <TableCell>{sale.sellerName}</TableCell>
+                        <TableCell>{sale.buyerName}</TableCell>
+                        <TableCell>{format(new Date(sale.saleDate), 'PPP')}</TableCell>
+                        <TableCell>£{sale.salePrice.toFixed(2)}</TableCell>
+                        <TableCell>£{sale.commissionAmount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            sale.payoutStatus === 'Paid' ? 'bg-green-100 text-green-800' :
+                            sale.payoutStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {sale.payoutStatus}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleViewDetails(sale)}>
+                              <Eye className="h-4 w-4 mr-1" /> View
                             </Button>
-                          )}
-                        </div>
+                            {sale.payoutStatus === 'Pending' && (
+                              <Button variant="secondary" size="sm" onClick={() => handleMarkAsPaid(sale.id)}>
+                                <CheckCircle className="h-4 w-4 mr-1" /> Mark Paid
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-24 text-center">
+                        No sales records found.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
-                      No sales records found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

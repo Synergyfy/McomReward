@@ -13,10 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockBusinessUsers } from '@/lib/mock-data/users';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { QrPlaque } from '@/services/qr-plaques/types';
 import { useUpdateAdminQrPlaque } from '@/services/qr-plaques/hook';
+import { useAdminBusinesses } from '@/services/admin/hook';
 
 interface TransferPlaqueModalProps {
   isOpen: boolean;
@@ -32,6 +32,8 @@ export function TransferPlaqueModal({
   onSuccess,
 }: TransferPlaqueModalProps) {
   const { mutate: updatePlaque, isPending } = useUpdateAdminQrPlaque();
+  const { data: businessesData } = useAdminBusinesses(1, 100);
+  const businesses = businessesData?.data ?? [];
   const [newOwnerId, setNewOwnerId] = useState('');
 
   // State for Feedback Dialog (local to modal for validation errors)
@@ -80,7 +82,7 @@ export function TransferPlaqueModal({
         id: plaque.id,
         data: {
             assignedBusinessId: newOwnerId,
-            status: 'SOLD' // Assuming transfer implies Sold, or keeping existing? Instructions didn't specify, defaulting to SOLD as per original mock logic
+            status: 'SOLD' // Transferring ownership implies the plaque is sold
         }
     }, {
         onSuccess: () => {
@@ -120,7 +122,7 @@ export function TransferPlaqueModal({
                 <SelectValue placeholder="Select new owner" />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
-                {mockBusinessUsers.map(user => (
+                {businesses.map(user => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
                   </SelectItem>

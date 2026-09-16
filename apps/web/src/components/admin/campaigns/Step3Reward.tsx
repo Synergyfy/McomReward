@@ -3,63 +3,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SelectableRewardCard from './SelectableRewardCard';
 import { RewardResponse } from '@/services/rewards/types';
-
-const mockRewards: RewardResponse[] = [
-  {
-    id: 'reward-1',
-    title: 'Free Coffee',
-    pointRequired: 100,
-    value: 5,
-    description: 'Get a free coffee of your choice.',
-    image: 'https://res.cloudinary.com/dnejwzsgy/image/upload/v1700000000/coffee.jpg',
-    quantity: 50,
-    remainingQuantity: 50,
-    createdAt: '2023-01-01T00:00:00Z',
-    updatedAt: '2023-01-01T00:00:00Z',
-    disabled: false,
-    rewardType: 'voucher',
-    type: 'voucher',
-    status: 'active',
-    expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [] as string[],
-  } as RewardResponse,
-  {
-    id: 'reward-2',
-    title: '10% Off Next Purchase',
-    pointRequired: 200,
-    value: 10,
-    description: 'Enjoy 10% off your entire next purchase.',
-    image: 'https://res.cloudinary.com/dnejwzsgy/image/upload/v1700000000/discount.jpg',
-    quantity: 100,
-    remainingQuantity: 100,
-    createdAt: '2023-01-01T00:00:00Z',
-    updatedAt: '2023-01-01T00:00:00Z',
-    disabled: false,
-    rewardType: 'voucher',
-    type: 'voucher',
-    status: 'active',
-    expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [] as string[],
-  } as RewardResponse,
-  {
-    id: 'reward-3',
-    title: 'Free Dessert',
-    pointRequired: 150,
-    value: 7,
-    description: 'Indulge in a complimentary dessert with your meal.',
-    image: 'https://res.cloudinary.com/dnejwzsgy/image/upload/v1700000000/dessert.jpg',
-    quantity: 30,
-    remainingQuantity: 30,
-    createdAt: '2023-01-01T00:00:00Z',
-    updatedAt: '2023-01-01T00:00:00Z',
-    disabled: false,
-    rewardType: 'voucher',
-    type: 'voucher',
-    status: 'active',
-    expiry: '2025-12-31T00:00:00Z',
-    badgeLevel: [] as string[],
-  } as RewardResponse,
-];
+import { useGetRewards } from '@/services/rewards/hook';
 
 interface Step3RewardProps {
   rewardId: string;
@@ -68,7 +12,8 @@ interface Step3RewardProps {
 }
 
 export default function Step3Reward({ rewardId, setRewardId, error }: Step3RewardProps) {
-  const isLoadingRewards = false; 
+  const { data: rewardsData, isLoading: isLoadingRewards } = useGetRewards(1, 100);
+  const rewards = rewardsData?.data ?? [];
 
   return (
     <div>
@@ -86,9 +31,9 @@ export default function Step3Reward({ rewardId, setRewardId, error }: Step3Rewar
 
       {isLoadingRewards ? (
         <p>Loading rewards...</p>
-      ) : mockRewards && mockRewards.length > 0 ? (
+      ) : rewards.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mockRewards.map((reward) => (
+          {rewards.map((reward) => (
             <SelectableRewardCard
               key={reward.id}
               reward={reward}

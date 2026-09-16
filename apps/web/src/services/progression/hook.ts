@@ -1,21 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import {
-    BusinessLevel,
     CustomerBadge,
-    CreateBusinessLevelPayload,
-    UpdateBusinessLevelPayload,
     CreateCustomerBadgePayload,
     UpdateCustomerBadgePayload,
     OverrideBusinessTierPayload,
     OverrideCustomerBadgePayload,
-    BusinessProgression,
-    CustomerProgression,
     MyProgressionResponse,
     ParticipantProgressionResponse,
 } from './types';
 
 const PROGRESSION_QUERY_KEY = 'progression';
+const CUSTOMER_BADGES_QUERY_KEY = 'customer-badges';
 
 // --- My Progression ---
 
@@ -45,81 +41,74 @@ export const useGetParticipantProgression = () => {
     });
 };
 
-// --- Business Levels ---
+// --- Customer Badges (backend: participant-progression) ---
 
-const getBusinessLevels = async (): Promise<BusinessLevel[]> => {
-    const { data } = await api.get<BusinessLevel[]>('/progression/levels');
-    return data;
-};
+interface ParticipantBadgeDto {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    name: string;
+    priority: number;
+    multiplier: number;
+    benefits: string[] | null;
+    minPoints: number;
+    maxPoints: number | null;
+    privileges: string | null;
+    color: string | null;
+}
 
-export const useGetBusinessLevels = () => {
-    return useQuery({
-        queryKey: [PROGRESSION_QUERY_KEY, 'levels'],
-        queryFn: getBusinessLevels,
-    });
-};
-
-const createBusinessLevel = async (payload: CreateBusinessLevelPayload): Promise<BusinessLevel> => {
-    const { data } = await api.post<BusinessLevel>('/progression/admin/levels', payload);
-    return data;
-};
-
-export const useCreateBusinessLevel = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: createBusinessLevel,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'levels'] });
-        },
-    });
-};
-
-const updateBusinessLevel = async ({ id, payload }: { id: string; payload: UpdateBusinessLevelPayload }): Promise<BusinessLevel> => {
-    const { data } = await api.put<BusinessLevel>(`/progression/admin/levels/${id}`, payload);
-    return data;
-};
-
-export const useUpdateBusinessLevel = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: updateBusinessLevel,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'levels'] });
-        },
-    });
-};
-
-const deleteBusinessLevel = async (id: string): Promise<void> => {
-    await api.delete(`/progression/admin/levels/${id}`);
-};
-
-export const useDeleteBusinessLevel = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: deleteBusinessLevel,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'levels'] });
-        },
-    });
-};
-
-// --- Customer Badges ---
+const mapBadgeDtoToCustomerBadge = (dto: ParticipantBadgeDto): CustomerBadge => ({
+    id: dto.id,
+    name: dto.name,
+    minPoints: dto.minPoints,
+    maxPoints: dto.maxPoints,
+    minCampaignsJoined: 0,
+    maxCampaignsJoined: null,
+    privileges: dto.benefits?.length
+        ? dto.benefits
+        : dto.privileges
+            ? dto.privileges.split(',').map((s) => s.trim()).filter(Boolean)
+            : [],
+    description: dto.benefits?.join(', ') || dto.privileges || '',
+    priority: dto.priority,
+    color: dto.color,
+    created_at: dto.createdAt,
+    updated_at: dto.updatedAt,
+});
 
 const getCustomerBadges = async (): Promise<CustomerBadge[]> => {
-    const { data } = await api.get<CustomerBadge[]>('/participant-progression/badges');
-    return data;
+    const { data } = await api.get<ParticipantBadgeDto[]>('/participant-progression/badges');
+    return data.map(mapBadgeDtoToCustomerBadge);
 };
 
 export const useGetCustomerBadges = () => {
     return useQuery({
-        queryKey: [PROGRESSION_QUERY_KEY, 'badges'],
+        queryKey: [CUSTOMER_BADGES_QUERY_KEY],
         queryFn: getCustomerBadges,
     });
 };
 
+const mapCreateBadgePayload = (payload: Partial<CreateCustomerBadgePayload>): Record<string, unknown> => ({
+    name: payload.name,
+    description: payload.description,
+    minPoints: payload.minPoints,
+    maxPoints: payload.maxPoints,
+    benefits: payload.privileges || [],
+    privileges: (payload.privileges || []).join(', '),
+    color: payload.color,
+});
+
 const createCustomerBadge = async (payload: CreateCustomerBadgePayload): Promise<CustomerBadge> => {
-    const { data } = await api.post<CustomerBadge>('/progression/admin/badges', payload);
-    return data;
+    const badges = await getCustomerBadges();
+    const nextPriority = badges.length
+        ? Math.max(...badges.map((b) => b.priority)) + 1
+        : 1;
+
+    const { data } = await api.post<ParticipantBadgeDto>('/participant-progression/badges', {
+        ...mapCreateBadgePayload(payload),
+        priority: nextPriority,
+    });
+    return mapBadgeDtoToCustomerBadge(data);
 };
 
 export const useCreateCustomerBadge = () => {
@@ -127,14 +116,14 @@ export const useCreateCustomerBadge = () => {
     return useMutation({
         mutationFn: createCustomerBadge,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'badges'] });
+            queryClient.invalidateQueries({ queryKey: [CUSTOMER_BADGES_QUERY_KEY] });
         },
     });
 };
 
 const updateCustomerBadge = async ({ id, payload }: { id: string; payload: UpdateCustomerBadgePayload }): Promise<CustomerBadge> => {
-    const { data } = await api.put<CustomerBadge>(`/progression/admin/badges/${id}`, payload);
-    return data;
+    const { data } = await api.patch<ParticipantBadgeDto>(`/participant-progression/badges/${id}`, mapCreateBadgePayload(payload));
+    return mapBadgeDtoToCustomerBadge(data);
 };
 
 export const useUpdateCustomerBadge = () => {
@@ -142,13 +131,13 @@ export const useUpdateCustomerBadge = () => {
     return useMutation({
         mutationFn: updateCustomerBadge,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'badges'] });
+            queryClient.invalidateQueries({ queryKey: [CUSTOMER_BADGES_QUERY_KEY] });
         },
     });
 };
 
 const deleteCustomerBadge = async (id: string): Promise<void> => {
-    await api.delete(`/progression/admin/badges/${id}`);
+    await api.delete(`/participant-progression/badges/${id}`);
 };
 
 export const useDeleteCustomerBadge = () => {
@@ -156,31 +145,39 @@ export const useDeleteCustomerBadge = () => {
     return useMutation({
         mutationFn: deleteCustomerBadge,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY, 'badges'] });
+            queryClient.invalidateQueries({ queryKey: [CUSTOMER_BADGES_QUERY_KEY] });
         },
     });
 };
 
-// --- Overrides ---
+// --- Overrides (acting admin is derived server-side from the auth token) ---
 
-const overrideBusinessTier = async (payload: OverrideBusinessTierPayload): Promise<BusinessProgression> => {
-    const { data } = await api.post<BusinessProgression>('/progression/admin/override/business', payload);
+const overrideBusinessTier = async (payload: OverrideBusinessTierPayload): Promise<unknown> => {
+    const { data } = await api.post('/membership/admin/override/tier', payload);
     return data;
 };
 
 export const useOverrideBusinessTier = () => {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: overrideBusinessTier,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY] });
+        },
     });
 };
 
-const overrideCustomerBadge = async (payload: OverrideCustomerBadgePayload): Promise<CustomerProgression> => {
-    const { data } = await api.post<CustomerProgression>('/progression/admin/override/customer', payload);
+const overrideCustomerBadge = async (payload: OverrideCustomerBadgePayload): Promise<unknown> => {
+    const { data } = await api.post('/participant-progression/manual-promote', payload);
     return data;
 };
 
 export const useOverrideCustomerBadge = () => {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: overrideCustomerBadge,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [PROGRESSION_QUERY_KEY] });
+        },
     });
 };

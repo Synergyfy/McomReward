@@ -84,7 +84,10 @@ export class ParticipantService {
     try {
       await this.mailService.sendOtp(savedParticipant.email, otp);
     } catch (mailError) {
-      console.error(`Failed to send signup OTP email to ${savedParticipant.email}:`, mailError);
+      console.error(
+        `Failed to send signup OTP email to ${savedParticipant.email}:`,
+        mailError,
+      );
       savedParticipant.otp = otp;
     }
 
@@ -437,6 +440,7 @@ export class ParticipantService {
   async getProfile(participantId: string) {
     const participant = await this.participantRepository.findOne({
       where: { id: participantId },
+      relations: ["currentBadge"],
       select: [
         "id",
         "name",
@@ -485,6 +489,7 @@ export class ParticipantService {
 
     return {
       ...participant,
+      customer_badge: participant.currentBadge?.name || null,
       point_utilization: Math.round(utilization * 100) / 100,
       total_points_earned: earned,
       total_points_redeemed: redeemed,

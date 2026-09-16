@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner"; // or your toast lib (shadcn, react-hot-toast, etc.)
 import { useAuth } from "@/services/business/hook";
+import Turnstile from "@/components/ui/turnstile";
 
 type LoginFormData = {
   email: string;
@@ -27,13 +28,13 @@ export default function BusinessLoginPage() {
 
   const { mutateAsync: login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       const { rememberMe, ...loginData } = data;
-      console.log("Logging in:", loginData);
 
-      await login(loginData);
+      await login({ ...loginData, turnstileToken });
 
       toast.success("Login successful! Redirecting...");
       // Redirection is handled by the useAuth hook onSuccess callback
@@ -146,6 +147,9 @@ export default function BusinessLoginPage() {
               Forgot password?
             </a>
           </div>
+
+          {/* Turnstile widget */}
+          <Turnstile onVerify={setTurnstileToken} />
 
           <Button
             type="submit"

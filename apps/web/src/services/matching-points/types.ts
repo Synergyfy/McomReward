@@ -77,6 +77,24 @@ export interface MatchingPointsQueryDto {
     businessId?: string; // For admin impersonation
 }
 
+// Matching Point Config (per activity type)
+export type MatchingPointConfigActivityType = 'CAMPAIGN_CREATION' | 'REFERRAL' | 'MEMBERSHIP_PAYMENT' | 'MANUAL_ADJUSTMENT' | 'REWARD_REDEMPTION';
+
+export interface MatchingPointConfig {
+    id: string;
+    activity_type: MatchingPointConfigActivityType;
+    points: number;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface UpdateMatchingPointConfigDto {
+    activity_type: MatchingPointConfigActivityType;
+    points: number;
+    is_active?: boolean;
+}
+
 // Earning Actions
 export interface EarningAction {
     id: string;

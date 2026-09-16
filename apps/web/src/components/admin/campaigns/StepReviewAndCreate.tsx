@@ -29,13 +29,6 @@ interface StepProps {
   onBack: () => void;
 }
 
-// Mock rewards data (should be fetched from API)
-const mockRewards = [
-  { id: '1', title: 'Summer Voucher ($50)', image: 'https://via.placeholder.com/150' },
-  { id: '2', title: 'Gift Card ($100)', image: 'https://via.placeholder.com/150' },
-  { id: '3', title: 'Discount Coupon (20% off)', image: 'https://via.placeholder.com/150' },
-];
-
 import { useCreateCampaign } from '@/services/campaigns/hook';
 import { CreateCampaignPayload } from '@/services/campaigns/types';
 import { toast } from 'sonner';
@@ -167,8 +160,6 @@ export default function StepReviewAndCreate({ onBack }: StepProps) {
       router.push('/admin/campaigns/list');
     }
   };
-
-  const selectedRewards = mockRewards.filter(r => formData.rewardIds.includes(r.id));
 
   return (
     <>

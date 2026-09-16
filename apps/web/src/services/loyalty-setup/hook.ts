@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../api";
 import type {
   SectorTemplate, LoyaltySetupProgress, SaveSetupRequest, RewardCustomization,
   RewardEngineConfig, TierConfig,
@@ -336,6 +337,66 @@ export function useSaveTierConfig() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    },
+  });
+}
+
+// ─── TEMPLATE CRUD (backend: loyalty-setup/templates) ──────────────────────
+
+const TEMPLATES_QUERY_KEY = "loyaltySetupTemplates";
+
+const fetchTemplates = async (): Promise<SectorTemplate[]> => {
+  const { data } = await api.get<SectorTemplate[]>("/loyalty-setup/templates");
+  return data;
+};
+
+export function useGetLoyaltySetupTemplates() {
+  return useQuery<SectorTemplate[]>({
+    queryKey: [TEMPLATES_QUERY_KEY],
+    queryFn: fetchTemplates,
+  });
+}
+
+const createTemplate = async (payload: SectorTemplate): Promise<SectorTemplate> => {
+  const { data } = await api.post<SectorTemplate>("/loyalty-setup/templates", payload);
+  return data;
+};
+
+export function useCreateLoyaltySetupTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation<SectorTemplate, Error, SectorTemplate>({
+    mutationFn: createTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [TEMPLATES_QUERY_KEY] });
+    },
+  });
+}
+
+const updateTemplate = async ({ id, payload }: { id: string; payload: SectorTemplate }): Promise<SectorTemplate> => {
+  const { data } = await api.patch<SectorTemplate>(`/loyalty-setup/templates/${id}`, payload);
+  return data;
+};
+
+export function useUpdateLoyaltySetupTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation<SectorTemplate, Error, { id: string; payload: SectorTemplate }>({
+    mutationFn: updateTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [TEMPLATES_QUERY_KEY] });
+    },
+  });
+}
+
+const deleteTemplate = async (id: string): Promise<void> => {
+  await api.delete(`/loyalty-setup/templates/${id}`);
+};
+
+export function useDeleteLoyaltySetupTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: deleteTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [TEMPLATES_QUERY_KEY] });
     },
   });
 }

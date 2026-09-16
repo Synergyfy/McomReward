@@ -8,13 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Tag as TagIcon, DollarSign, CheckCircle, XCircle, Star, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
-import { initialSectors } from '@/lib/mock-data/sectors';
 import { FeedbackDialog } from '@/components/ui/feedback-dialog';
 import { AddEditDealModal } from '@/components/admin/deals-management/AddEditDealModal';
 import { ViewDealDetailsModal } from '@/components/admin/deals-management/ViewDealDetailsModal';
 import { useGetAdminDeals, useUpdateDealStatus, useDeleteDeal, useCreateDeal, useUpdateDeal } from '@/services/deals/hook';
 import { Deal, CreateDealDto } from '@/services/deals/types';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useGetSectors } from '@/services/sectors/hook';
 
 export default function DealsManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +24,8 @@ export default function DealsManagementPage() {
   const limit = 10;
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const { data: sectors } = useGetSectors();
 
   // API Hooks
   const { data: dealsData, isLoading, isError } = useGetAdminDeals({
@@ -164,7 +166,7 @@ export default function DealsManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sectors</SelectItem>
-                  {initialSectors.map(sector => (
+                  {(sectors || []).map(sector => (
                     <SelectItem key={sector.id} value={sector.id}>{sector.name}</SelectItem>
                   ))}
                 </SelectContent>

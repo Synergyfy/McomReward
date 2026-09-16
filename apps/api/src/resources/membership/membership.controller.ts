@@ -13,6 +13,9 @@ import { PaymentHistory } from "../payment-history/entities/payment-history.enti
 import { JoinTrialDto } from "./dto/join-trial.dto";
 import { Post, Body } from "@nestjs/common";
 import { SkipMembershipCheck } from "../../common/decorators/skip-membership-check.decorator";
+import { OverrideBusinessTierDto } from "./dto/override-business-tier.dto";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { Role } from "../../common/role.enum";
 
 @ApiTags("Membership")
 @Controller("membership")
@@ -31,9 +34,8 @@ export class MembershipController {
   })
   @ApiResponse({ status: 404, description: "Membership not found." })
   async getMyMembership(@CurrentUser() user) {
-    if (user.email) {
-      await this.membershipService.syncFromCentralProfile(user.id, user.email);
-    }
+    // LOCAL-FIRST: no Central sync on read. See McomPackagesService +
+    // webhook for the write paths that keep the local membership current.
     return this.membershipService.getMyMembership(user);
   }
 
@@ -58,5 +60,24 @@ export class MembershipController {
   @ApiResponse({ status: 400, description: "Membership already exists." })
   joinTrial(@CurrentUser() user, @Body() joinTrialDto: JoinTrialDto) {
     return this.membershipService.joinTrial(user, joinTrialDto);
+  }
+
+  @Post("admin/override/tier")
+  @Roles(Role.Admin)
+  @ApiOperation({
+    summary: "Manually override a business's tier (Admin only)",
+    description:
+      "Sets the membership tier for the given business. The acting admin is resolved server-side from the auth token.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Membership updated with the new tier.",
+    type: Membership,
+  })
+  overrideTier(@Body() dto: OverrideBusinessTierDto) {
+    return this.membershipService.overrideBusinessTier(
+      dto.businessId,
+      dto.tierId,
+    );
   }
 }

@@ -11,12 +11,21 @@ import { MembershipStatus, PlanType } from "./entities/membership.entity";
 import { PaymentService } from "../payment/payment.service";
 import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
 import { TierType } from "../tier/entities/tier-type.enum";
+import { TierStatus } from "../tier/entities/tier-status.enum";
 import { MoreThan, LessThanOrEqual, MoreThanOrEqual, LessThan } from "typeorm";
 import { CentralPackage, McomCentralService } from "../sso/mcom-central.service";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class MembershipService {
   private readonly logger = new Logger(MembershipService.name);
+
+  // In-memory cache for active memberships — TTL from config, no hardcoded values
+  private readonly activeMembershipCache = new Map<
+    string,
+    { data: Membership[]; expiresAt: number }
+  >();
+
   constructor(
     @InjectRepository(Membership)
     private readonly membershipRepository: Repository<Membership>,
@@ -26,29 +35,119 @@ export class MembershipService {
     private readonly tierRepository: Repository<Tier>,
     private readonly paymentService: PaymentService,
     private readonly mcomCentralService: McomCentralService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async findOneByBusinessId(businessId: string) {
-    // Prefer Standard tier if multiple exist, otherwise just one
-    const memberships = await this.membershipRepository.find({
-      where: { business: { id: businessId } },
-      relations: ["tier", "tier.season"],
-    });
-    // Return standard if exists, else first one
-    const standard = memberships.find(
-      (m) => m.tier && m.tier.type === TierType.STANDARD,
+  private cachedTtlMs?: number;
+  private readonly MAX_CACHE_SIZE = 5000;
+
+  private getCacheTtlMs(): number {
+    if (this.cachedTtlMs !== undefined) return this.cachedTtlMs;
+    const fromEnv = this.configService.get<number>("MEMBERSHIP_CACHE_TTL_MS");
+    if (typeof fromEnv === "number" && !Number.isNaN(fromEnv)) {
+      this.cachedTtlMs = fromEnv;
+      return fromEnv;
+    }
+    const parsed = parseInt(
+      this.configService.get<string>("MEMBERSHIP_CACHE_TTL_MS") as unknown as string,
+      10,
     );
-    return standard || memberships[0];
+    this.cachedTtlMs = !Number.isNaN(parsed) && parsed > 0 ? parsed : 15000;
+    return this.cachedTtlMs;
   }
 
+  private getCacheKey(businessId: string): string {
+    return `membership:active:${businessId}`;
+  }
+
+  invalidateMembershipCache(businessId: string): void {
+    this.activeMembershipCache.delete(this.getCacheKey(businessId));
+  }
+
+  clearAllMembershipCache(): void {
+    this.activeMembershipCache.clear();
+  }
+
+  async findOneByBusinessId(businessId: string) {
+    const memberships = await this.membershipRepository.find({
+      where: { business: { id: businessId } },
+      relations: [
+        "planVariant",
+        "planVariant.plan",
+        "planVariant.tierLevel",
+        "planVariant.prices",
+        "tier",
+        "tier.season",
+        "payment",
+      ],
+      order: { created_at: "DESC" },
+    });
+    return memberships[0] || null;
+  }
+
+  async overrideBusinessTier(businessId: string, tierId: string) {
+    const membership = await this.findOneByBusinessId(businessId);
+    if (!membership) {
+      throw new NotFoundException("Membership not found for this business");
+    }
+    const tier = await this.tierRepository.findOne({ where: { id: tierId } });
+    if (!tier) {
+      throw new NotFoundException("Tier not found");
+    }
+    membership.tier = tier;
+    const saved = await this.membershipRepository.save(membership);
+    this.invalidateMembershipCache(businessId);
+    return saved;
+  }
+
+  /**
+   * LOCAL-FIRST enforcement read. Returns non-expired ACTIVE memberships
+   * from the Rewards DB only — never consults MCOM Solutions Central.
+   * Expiry is enforced live via expires_at so a stale ACTIVE row past its
+   * date cannot grant capabilities. Result is cached per-business for
+   * MEMBERSHIP_CACHE_TTL_MS to avoid hot-path DB thrash.
+   */
   async findActiveMemberships(businessId: string) {
-    return await this.membershipRepository.find({
+    const cacheKey = this.getCacheKey(businessId);
+    const cached = this.activeMembershipCache.get(cacheKey);
+    const nowMs = Date.now();
+    if (cached && cached.expiresAt > nowMs) {
+      return cached.data;
+    }
+
+    const memberships = await this.membershipRepository.find({
       where: {
         business: { id: businessId },
         status: MembershipStatus.ACTIVE,
       },
-      relations: ["tier", "tier.season"],
+      relations: [
+        "planVariant",
+        "planVariant.plan",
+        "planVariant.tierLevel",
+        "planVariant.prices",
+        "tier",
+        "tier.season",
+        "payment",
+      ],
     });
+    const now = new Date();
+    const filtered = memberships.filter(
+      (m) => !m.expires_at || new Date(m.expires_at) > now,
+    );
+
+    if (this.activeMembershipCache.size >= this.MAX_CACHE_SIZE) {
+      // Prune oldest 10% of entries to keep memory bounded
+      const keysToDelete = Array.from(this.activeMembershipCache.keys()).slice(0, 500);
+      for (const k of keysToDelete) {
+        this.activeMembershipCache.delete(k);
+      }
+    }
+
+    this.activeMembershipCache.set(cacheKey, {
+      data: filtered,
+      expiresAt: nowMs + this.getCacheTtlMs(),
+    });
+    return filtered;
   }
 
   async checkSeasonalOverlap(
@@ -66,11 +165,9 @@ export class MembershipService {
     });
 
     for (const membership of activeSeasonal) {
-      // Membership dates usually align with Tier dates for seasonal, but relies on what was saved
       const memStart = membership.starts_at;
       const memEnd = membership.expires_at;
 
-      // Check Overlap: (StartA <= EndB) and (EndA >= StartB)
       if (startDate <= memEnd && endDate >= memStart) {
         return true;
       }
@@ -81,23 +178,23 @@ export class MembershipService {
   async getMyMembership(user: any) {
     return await this.membershipRepository.findOne({
       where: { business: { id: user.id } },
-      relations: ["tier", "tier.season"],
+      relations: [
+        "planVariant",
+        "planVariant.plan",
+        "planVariant.tierLevel",
+        "planVariant.prices",
+        "tier",
+        "tier.season",
+        "payment",
+      ],
+      order: { created_at: "DESC" },
     });
   }
 
   async hasActiveSubscription(businessId: string): Promise<boolean> {
-    const membership = await this.membershipRepository.findOne({
-      where: { business: { id: businessId } },
-      order: { created_at: "DESC" },
-    });
-
-    if (!membership) return false;
-
-    const isTrialValid =
-      membership.is_trial && new Date(membership.expires_at) > new Date();
-    const isActive = membership.status === MembershipStatus.ACTIVE;
-
-    return isActive || isTrialValid;
+    // No trials: active means non-expired ACTIVE membership (cached)
+    const active = await this.findActiveMemberships(businessId);
+    return active.length > 0;
   }
 
   async getMyPaymentHistory(user: any) {
@@ -111,11 +208,25 @@ export class MembershipService {
     id: string,
     level: "basic" | "pro" | "pro_plus",
   ) {
+    const membership = await this.membershipRepository.findOne({
+      where: { id },
+      relations: ["business"],
+    });
     await this.membershipRepository.update(id, { progression_level: level });
+    if (membership?.business?.id) {
+      this.invalidateMembershipCache(membership.business.id);
+    }
   }
 
   async remove(id: string) {
+    const membership = await this.membershipRepository.findOne({
+      where: { id },
+      relations: ["business"],
+    });
     await this.membershipRepository.softDelete(id);
+    if (membership?.business?.id) {
+      this.invalidateMembershipCache(membership.business.id);
+    }
   }
 
   async joinTrial(user: any, joinTrialDto: JoinTrialDto) {
@@ -206,6 +317,7 @@ export class MembershipService {
       });
 
       await this.membershipRepository.save(membership);
+      this.invalidateMembershipCache(user.id);
 
       return {
         ...membership,
@@ -225,6 +337,7 @@ export class MembershipService {
     });
 
     await this.membershipRepository.save(membership);
+    this.invalidateMembershipCache(user.id);
     return membership;
   }
 
@@ -248,7 +361,89 @@ export class MembershipService {
         transaction_id: `VOUCHER-${source}`
       });
   
-      return this.membershipRepository.save(membership);
+      const saved = await this.membershipRepository.save(membership);
+      this.invalidateMembershipCache(businessId);
+      return saved;
+  }
+
+  async syncFromAppPlan(
+    businessId: string,
+    appPlan: {
+      source?: "membership" | "direct" | string;
+      platform?: string;
+      clientId?: string;
+      planId?: string;
+      planName?: string;
+      status?: string;
+      quotas?: Record<string, any>;
+      limits?: Record<string, any>;
+      membershipPlanName?: string;
+      expiresAt?: string;
+      directPlan?: any;
+      membershipPlan?: any;
+    }
+  ): Promise<Membership | null> {
+    if (!appPlan) return null;
+
+    const expiresAt = appPlan.expiresAt
+      ? new Date(appPlan.expiresAt)
+      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    const isExpired = expiresAt <= new Date();
+    const isActive = appPlan.status === "active" && !isExpired;
+
+    let tier: Tier | null = null;
+    if (appPlan.planName) {
+      tier = await this.tierRepository.findOne({
+        where: { name: appPlan.planName },
+      });
+    }
+    if (!tier && appPlan.planId) {
+      tier = await this.tierRepository.findOne({
+        where: { id: appPlan.planId as any },
+      });
+    }
+    if (!tier) {
+      tier = await this.tierRepository.findOne({
+        where: [{ is_default: true }, { status: TierStatus.PUBLISHED }],
+      });
+    }
+
+    let membership = await this.membershipRepository.findOne({
+      where: { business: { id: businessId } },
+      relations: ["tier", "planVariant"],
+    });
+
+    const transactionId = `CENTRAL-APPPLAN-${appPlan.source || "bundle"}-${appPlan.planId || "active"}`;
+
+    if (membership) {
+      if (tier) membership.tier = tier;
+      membership.status = isActive ? MembershipStatus.ACTIVE : MembershipStatus.EXPIRED;
+      membership.isActive = isActive;
+      membership.expires_at = expiresAt;
+      membership.transaction_id = transactionId;
+      membership.is_trial = false;
+    } else {
+      membership = this.membershipRepository.create({
+        business: { id: businessId } as Business,
+        tier: tier || undefined,
+        plan_type: this.mapPlanType(appPlan.planName || "monthly"),
+        starts_at: new Date(),
+        expires_at: expiresAt,
+        status: isActive ? MembershipStatus.ACTIVE : MembershipStatus.EXPIRED,
+        isActive,
+        is_trial: false,
+        transaction_id: transactionId,
+        payment_provider: PaymentProvider.STRIPE,
+      });
+    }
+
+    this.logger.log(
+      `Synced appPlan "${appPlan.planName}" (source: ${appPlan.source}, active: ${isActive}) for business ${businessId}`
+    );
+
+    const savedAppPlan = await this.membershipRepository.save(membership);
+    this.invalidateMembershipCache(businessId);
+    return savedAppPlan;
   }
 
   async syncFromCentralPackage(
@@ -308,7 +503,9 @@ export class MembershipService {
       `Synced MCOM Central package "${centralPackage.packageName}" (status: ${membership.status}) for business ${businessId}`
     );
 
-    return this.membershipRepository.save(membership);
+    const savedCentral = await this.membershipRepository.save(membership);
+    this.invalidateMembershipCache(businessId);
+    return savedCentral;
   }
 
   private mapPlanType(planName: string): PlanType {
@@ -370,6 +567,7 @@ export class MembershipService {
         if (existingMembership && existingMembership.status === MembershipStatus.ACTIVE) {
           existingMembership.status = MembershipStatus.EXPIRED;
           await this.membershipRepository.save(existingMembership);
+          this.invalidateMembershipCache(businessId);
           this.logger.log(
             `Revoked expired/inactive MCOM Central package for business ${businessId}`
           );

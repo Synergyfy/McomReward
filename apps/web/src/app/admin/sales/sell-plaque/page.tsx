@@ -6,13 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockPlaques } from '@/lib/mock-data/plaques';
-import { mockBusinessUsers } from '@/lib/mock-data/users';
-import { mockSaleRecords, SaleRecord } from '@/lib/mock-data/sales';
-import { v4 as uuidv4 } from 'uuid';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import FeedbackDialog from '@/components/FeedbackDialog'; // Assuming this component exists
-import { CheckCircle, XCircle } from 'lucide-react';
+import FeedbackDialog from '@/components/FeedbackDialog';
+import { CheckCircle } from 'lucide-react';
+import { useCreateSale } from '@/services/plaque-sales/hook';
+import { useGetAdminQrPlaques } from '@/services/qr-plaques/hook';
+import { useAdminBusinesses } from '@/services/admin/hook';
 
 export default function SellPlaquePage() {
   const router = useRouter();
@@ -28,9 +28,13 @@ export default function SellPlaquePage() {
     actionText: 'OK',
   });
 
-  const availablePlaques = mockPlaques.filter(plaque => plaque.status === 'Active');
-  const sellers = mockBusinessUsers; // Assuming business users can be sellers or a separate mock for sellers
-  const buyers = mockBusinessUsers; // Assuming business users can be buyers
+  const { data: plaquesData } = useGetAdminQrPlaques({ page: 1, limit: 100 });
+  const { data: businessesData } = useAdminBusinesses(1, 100);
+  const { mutate: createSale, isPending: isSelling } = useCreateSale();
+
+  const plaques = (Array.isArray(plaquesData) ? plaquesData : (plaquesData as any)?.data ?? []);
+  const availablePlaques = plaques.filter((plaque: any) => plaque.status !== 'SOLD');
+  const businesses = businessesData?.data ?? [];
 
   const handleSellPlaque = () => {
     if (!selectedPlaqueId || !selectedSellerId || !selectedBuyerId || salePrice === '' || commissionPercentage === '') {
@@ -43,9 +47,9 @@ export default function SellPlaquePage() {
       return;
     }
 
-    const plaque = availablePlaques.find(p => p.id === selectedPlaqueId);
-    const seller = sellers.find(s => s.id === selectedSellerId);
-    const buyer = buyers.find(b => b.id === selectedBuyerId);
+    const plaque = availablePlaques.find((p: any) => p.id === selectedPlaqueId);
+    const seller = businesses.find(s => s.id === selectedSellerId);
+    const buyer = businesses.find(b => b.id === selectedBuyerId);
 
     if (!plaque || !seller || !buyer) {
       setFeedbackDialogProps({
@@ -57,52 +61,41 @@ export default function SellPlaquePage() {
       return;
     }
 
-    const newSale: SaleRecord = {
-      id: uuidv4(),
-      plaqueId: plaque.id,
-      plaqueName: plaque.name,
-      sellerId: seller.id,
-      sellerName: seller.name,
-      buyerId: buyer.id,
-      buyerName: buyer.name,
-      saleDate: new Date().toISOString(),
-      salePrice: Number(salePrice),
-      commissionAmount: Number(salePrice) * (Number(commissionPercentage) / 100),
-      payoutStatus: 'Pending',
-      status: 'Completed',
-    };
-
-    // In a real application, you would update a backend database here.
-    // For mock data, we'll simulate the update.
-    mockSaleRecords.push(newSale);
-
-    // Update plaque status and transfer history (simulated)
-    const plaqueIndex = mockPlaques.findIndex(p => p.id === plaque.id);
-    if (plaqueIndex !== -1) {
-      mockPlaques[plaqueIndex].status = 'Sold';
-      mockPlaques[plaqueIndex].ownerId = buyer.id;
-      mockPlaques[plaqueIndex].ownerName = buyer.name;
-      mockPlaques[plaqueIndex].transferHistory.push({
-        fromOwnerId: seller.id,
-        fromOwnerName: seller.name,
-        toOwnerId: buyer.id,
-        toOwnerName: buyer.name,
-        transferDate: new Date(),
-      });
-    }
-
-    setFeedbackDialogProps({
-      title: 'Sale Confirmed!',
-      description: (
-        <div className="flex items-center space-x-2">
-          <CheckCircle className="text-green-500" />
-          <span>Plaque "{plaque.name}" successfully sold to {buyer.name}.</span>
-        </div>
-      ),
-      actionText: 'View Sales Dashboard',
-    });
-    setShowFeedbackDialog(true);
-    router.push(`/admin/sales/confirmation/${newSale.id}`);
+    createSale(
+      {
+        plaqueId: plaque.id,
+        sellerId: seller.id,
+        sellerName: seller.name,
+        buyerId: buyer.id,
+        buyerName: buyer.name,
+        salePrice: Number(salePrice),
+        commissionPercentage: Number(commissionPercentage),
+      },
+      {
+        onSuccess: (sale) => {
+          setFeedbackDialogProps({
+            title: 'Sale Confirmed!',
+            description: (
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="text-green-500" />
+                <span>Plaque "{plaque.name}" successfully sold to {buyer.name}.</span>
+              </div>
+            ),
+            actionText: 'View Sales Dashboard',
+          });
+          setShowFeedbackDialog(true);
+          router.push(`/admin/sales/confirmation/${sale.id}`);
+        },
+        onError: (error: any) => {
+          setFeedbackDialogProps({
+            title: 'Sale Failed',
+            description: error?.response?.data?.message || 'Failed to record the sale. Please try again.',
+            actionText: 'OK',
+          });
+          setShowFeedbackDialog(true);
+        },
+      }
+    );
   };
 
   return (
@@ -113,14 +106,14 @@ export default function SellPlaquePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-sm text-gray-500 mb-2">Choose the plaque that is being sold from the available active plaques.</p>
+            <p className="text-sm text-gray-500 mb-2">Choose the plaque that is being sold from the available plaques.</p>
             <Label htmlFor="plaque">Select Plaque</Label>
             <Select onValueChange={setSelectedPlaqueId} value={selectedPlaqueId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a plaque" />
               </SelectTrigger>
               <SelectContent>
-                {availablePlaques.map(plaque => (
+                {availablePlaques.map((plaque: any) => (
                   <SelectItem key={plaque.id} value={plaque.id}>
                     {plaque.name} (ID: {plaque.id})
                   </SelectItem>
@@ -137,7 +130,7 @@ export default function SellPlaquePage() {
                 <SelectValue placeholder="Select a seller" />
               </SelectTrigger>
               <SelectContent>
-                {sellers.map(seller => (
+                {businesses.map(seller => (
                   <SelectItem key={seller.id} value={seller.id}>
                     {seller.name} (ID: {seller.id})
                   </SelectItem>
@@ -154,7 +147,7 @@ export default function SellPlaquePage() {
                 <SelectValue placeholder="Select a buyer" />
               </SelectTrigger>
               <SelectContent>
-                {buyers.map(buyer => (
+                {businesses.map(buyer => (
                   <SelectItem key={buyer.id} value={buyer.id}>
                     {buyer.name} (ID: {buyer.id})
                   </SelectItem>
@@ -187,8 +180,9 @@ export default function SellPlaquePage() {
             />
           </div>
 
-          <Button onClick={handleSellPlaque} className="w-full">
-            Confirm Sale
+          <Button onClick={handleSellPlaque} className="w-full" disabled={isSelling}>
+            {isSelling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {isSelling ? 'Recording Sale...' : 'Confirm Sale'}
           </Button>
         </CardContent>
       </Card>

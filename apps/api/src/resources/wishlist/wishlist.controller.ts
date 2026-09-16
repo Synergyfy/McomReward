@@ -20,14 +20,20 @@ import {
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Participant } from "../participant/entities/participant.entity";
 import { PaginationDto } from "../../common/dto/pagination.dto";
-
+import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/role.enum";
+import { CampaignService } from "../campaign/campaign.service";
+import { CreateCampaignFromWishlistDto } from "../campaign/dto/create-campaign-from-wishlist.dto";
+import { Business } from "../business/entities/business.entity";
 
 @ApiTags("wishlist")
 @Controller("wishlist")
 @ApiBearerAuth()
 export class WishlistController {
-  constructor(private readonly wishlistService: WishlistService) {}
+  constructor(
+    private readonly wishlistService: WishlistService,
+    private readonly campaignService: CampaignService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: "Create a wishlist item" })
@@ -96,14 +102,24 @@ export class WishlistController {
   }
 
   @Post("campaign/target-wishlist")
-  @ApiOperation({ summary: "Create a campaign targeting a wishlist" })
+  @Roles(Role.Admin, Role.Business)
+  @ApiOperation({
+    summary: "Create a campaign targeting a wishlist",
+    description:
+      "Creates a campaign from a wishlist aggregate, targeting the participants who added the item to their wishlist.",
+  })
   @ApiResponse({
     status: 201,
     description: "The campaign has been successfully created.",
   })
-  targetWishlist() {
-    // This would be implemented in a separate campaign service,
-    // which would then call the wishlist service to get the target audience.
-    return "This endpoint is a placeholder for creating a campaign targeting a wishlist.";
+  @ApiResponse({ status: 404, description: "Wishlist aggregate not found." })
+  targetWishlist(
+    @Body() createCampaignDto: CreateCampaignFromWishlistDto,
+    @CurrentUser() currentUser: Business | Participant,
+  ) {
+    return this.campaignService.createFromWishlist(
+      createCampaignDto,
+      currentUser as any,
+    );
   }
 }

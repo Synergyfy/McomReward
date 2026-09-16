@@ -6,48 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Gift, Ticket, ShoppingBag, Star } from "lucide-react";
 import Image from 'next/image';
 import { CampaignFormData } from "@/context/CampaignFormContext";
+import { useGetRewards } from "@/services/rewards/hook";
 
 interface RedeemPointsPagePreviewProps {
   campaignData: CampaignFormData;
 }
 
-const mockRewards = [
-  {
-    id: '1',
-    title: 'Free Coffee',
-    description: 'Enjoy a complimentary cup of our finest brewed coffee.',
-    points: 50,
-    image: 'https://images.unsplash.com/photo-1511920183359-3b1d1b4a32d6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
-  },
-  {
-    id: '2',
-    title: '10% Discount Voucher',
-    description: 'Get 10% off your next purchase in-store or online.',
-    points: 100,
-    image: 'https://images.unsplash.com/photo-1529592691919-7a6aa481f520?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Ticket,
-  },
-  {
-    id: '3',
-    title: 'Exclusive Tote Bag',
-    description: 'A stylish and reusable tote bag, perfect for your shopping.',
-    points: 250,
-    image: 'https://images.unsplash.com/photo-1544441893-675d73b31985?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: ShoppingBag,
-  },
-    {
-    id: '4',
-    title: 'Gift Card ()',
-    description: 'A gift card to spend on anything you like in our store.',
-    points: 500,
-    image: 'https://images.unsplash.com/photo-1579621970795-87f943b9e7a6?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3',
-    icon: Gift,
-  },
-];
-
 export default function RedeemPointsPagePreview({ campaignData }: RedeemPointsPagePreviewProps) {
-  const userPoints = 300; // Mock user's current points for preview
+  const { data: rewardsData } = useGetRewards(1, 100);
+  const rewards = (rewardsData?.data ?? []).map((reward) => ({
+    id: reward.id,
+    title: reward.title,
+    description: reward.description,
+    points: reward.pointRequired ?? reward.maxPoints ?? 0,
+    image: reward.image || '/placeholder-qr.svg',
+    icon: Gift,
+  }));
+  const userPoints = 300; // Preview user's current points
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -63,7 +38,10 @@ export default function RedeemPointsPagePreview({ campaignData }: RedeemPointsPa
 
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {mockRewards.map((reward) => {
+          {rewards.length === 0 && (
+            <p className="col-span-full text-center text-gray-500">No rewards available for this campaign.</p>
+          )}
+          {rewards.map((reward) => {
             const canRedeem = userPoints >= reward.points;
             return (
               <Card key={reward.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">

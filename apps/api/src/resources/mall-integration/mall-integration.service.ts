@@ -18,11 +18,21 @@ export class MallIntegrationService {
   ) {
     this.mallApiUrl =
       this.configService.get<string>("MALL_API_URL") || "http://localhost:3001"; // Default fallback
-    this.apiKey =
-      this.configService.get<string>("MALL_API_KEY") || "secret-system-key";
-    this.ssoSecret =
-      this.configService.get<string>("SSO_SECRET") ||
-      "shared-sso-secret-key-123";
+    this.apiKey = this.configService.get<string>("MALL_API_KEY") || "";
+    this.ssoSecret = this.configService.get<string>("SSO_SECRET") || "";
+
+    if (
+      process.env.NODE_ENV === "production" &&
+      (!this.apiKey || !this.ssoSecret)
+    ) {
+      throw new Error(
+        "MALL_API_KEY and SSO_SECRET must be configured in production",
+      );
+    }
+
+    // Dev-only fallbacks — never ship a known constant secret to production.
+    this.apiKey = this.apiKey || "dev-mall-key";
+    this.ssoSecret = this.ssoSecret || "dev-sso-secret";
     this.mallFrontendUrl =
       this.configService.get<string>("MALL_FRONTEND_URL") ||
       "http://localhost:3000";

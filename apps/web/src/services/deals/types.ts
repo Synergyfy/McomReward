@@ -88,6 +88,8 @@ export interface Deal {
   perCustomerLimit: number | null;
   redemptionMethod: string;
   location: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   isReward: boolean;
   pointsCost: number | null;
   pointsEarned: number;

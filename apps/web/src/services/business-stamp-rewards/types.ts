@@ -27,13 +27,19 @@ export interface ActivateStampRewardDto {
 export interface BusinessStampRewardDto {
     id: string;
     template: StampRewardTemplateDto;
-    // business: Business; // Define if needed, usually just ID
+    business?: {
+        id: string;
+        name: string;
+        logo?: string;
+        address?: string;
+    };
     custom_image: string;
     operating_hours: string;
     is_active: boolean;
     total_enrolled: number;
     total_completions: number;
     total_redemptions: number;
+    created_at?: string;
 }
 
 export interface ScanParticipantQrDto {
@@ -50,13 +56,21 @@ export interface AwardStampsDto {
 export interface RedeemStampCardDto {
     participantUniqueCode?: string;
     stampCardId?: string;
+    staffId?: string;
 }
 
 // Backend StampCard Response
 export interface StampCardDto {
     id: string;
-    // participant: Participant;
-    // businessStampReward: BusinessStampReward; 
+    participant?: {
+        id: string;
+        name: string;
+        email: string;
+        avatar?: string;
+    };
+    businessStampReward?: BusinessStampRewardDto;
+    business_stamp_reward_id?: string;
+    stamps_required?: number;
     current_stamps: number;
     status: 'IN_PROGRESS' | 'COMPLETED' | 'REDEEMED';
     completed_at?: string;

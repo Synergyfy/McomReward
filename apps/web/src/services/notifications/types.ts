@@ -4,7 +4,9 @@ export interface Notification {
   message: string;
   type?: 'approval' | 'announcement' | 'flag' | 'new_user' | 'info' | string;
   isRead: boolean;
+  is_read?: boolean;
   createdAt: string;
+  created_at?: string;
 }
 
 export interface GetNotificationsResponse {

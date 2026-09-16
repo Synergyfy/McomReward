@@ -52,11 +52,15 @@ function CallbackContent() {
       return;
     }
 
-    const storedState = getCookie("sso_state");
-    if (storedState) {
+    if (code) {
+      const storedState = getCookie("sso_state");
       document.cookie = "sso_state=; path=/; maxAge=0";
-      if (state && storedState !== state) {
-        console.warn("SSO state mismatch: stored =", storedState, "received =", state);
+      if (!storedState || storedState !== state) {
+        attempted.current = true;
+        console.error("SSO CSRF state mismatch: stored =", storedState, "received =", state);
+        toast.error("CSRF security verification failed. Please try again.");
+        router.push("/login");
+        return;
       }
     }
 
@@ -97,7 +101,13 @@ function CallbackContent() {
       if (processedCodes.has(code)) return;
       processedCodes.add(code);
 
-      ssoExchange(code)
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
+      const redirectUri =
+        process.env.NEXT_PUBLIC_MCOM_REDIRECT_URI || `${appUrl}/auth/callback`;
+
+      ssoExchange({ code, redirectUri })
         .then(handleSuccess)
         .catch(handleError);
     } else if (ssoToken) {

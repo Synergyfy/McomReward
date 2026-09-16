@@ -116,17 +116,24 @@ export class SsoService {
     let rewardsPackage: CentralPackage | null = null;
     if (user.role === Role.Business) {
       const anyUser = centralUser as any;
-      const appPlan = anyUser?.businessProfile?.appPlan || anyUser?.appPlan;
-      const permissions = anyUser?.permissions;
+      const businessProfile = anyUser?.businessProfile;
+      const appPlan = businessProfile?.appPlan || anyUser?.appPlan;
+      const permissions = anyUser?.permissions || (tokenResponse as any)?.permissions;
       const hasAccess = permissions?.canAccess_rewards ?? true;
 
       if (hasAccess && appPlan && appPlan.status === "active") {
+        const source = appPlan.source || "membership";
+        const membershipTier = appPlan.membershipPlanName;
         this.logger.log(
-          `User ${user.email} entitled to "${appPlan.planName}" via ${appPlan.source || "membership"} (bundle: ${appPlan.membershipPlanName || "none"})`
+          `User ${user.email} entitled to "${appPlan.planName}" via ${source}${membershipTier ? ` (bundle: ${membershipTier})` : ""}`
         );
         if (this.membershipService.syncFromAppPlan) {
           await this.membershipService.syncFromAppPlan(user.id, appPlan);
         }
+      } else if (!hasAccess) {
+        this.logger.warn(
+          `User ${user.email} does not have access permission for rewards (canAccess_rewards: false)`
+        );
       } else {
         if (rawAccessToken) {
           rewardsPackage = await this.syncSubscriptionFromCentral(

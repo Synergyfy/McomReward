@@ -49,21 +49,20 @@ export class McomCentralService {
     this.clientSecret =
       this.configService.get<string>("MCOM_CLIENT_SECRET") ||
       this.configService.get<string>("SSO_CLIENT_SECRET") ||
-      "cs_212341062602d8c593eacf5a3abd4b9fd10dc69ed22cd7e7d10920585bbdfa93";
+      "";
 
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") ||
       this.configService.get<string>("SSO_API_SECRET") ||
-      "hm_d65ea8732a8c276bd73a4c2372b399decedd9147e52b08d7a0e17158d1c91e5d";
+      "";
 
-    this.internalServiceId = this.configService.get<string>(
-      "INTERNAL_SERVICE_ID",
-      "mcom-rewards"
-    );
-    this.internalApiSecret = this.configService.get<string>(
-      "INTERNAL_SERVICE_SECRET",
-      "hm_d65ea8732a8c276bd73a4c2372b399decedd9147e52b08d7a0e17158d1c91e5d"
-    );
+    this.internalServiceId =
+      this.configService.get<string>("INTERNAL_SERVICE_ID") ||
+      this.clientId;
+
+    this.internalApiSecret =
+      this.configService.get<string>("INTERNAL_SERVICE_SECRET") ||
+      this.hmacSecret;
   }
 
   getBaseUrl(): string {

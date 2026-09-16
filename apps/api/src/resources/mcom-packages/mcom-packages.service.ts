@@ -17,7 +17,7 @@ import { Membership, MembershipStatus, PlanType } from "../membership/entities/m
 import { MembershipPayment, MembershipPaymentMethod } from "../membership/entities/membership-payment.entity";
 import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
 import { SsoService } from "../sso/sso.service";
-import { decrypt } from "../../common/utils/crypto.util";
+import { encrypt, decrypt } from "../../common/utils/crypto.util";
 import { InitiatePlatformPurchaseDto, PaymentProviderType } from "./dto/initiate-purchase.dto";
 import { ConfirmPlatformPurchaseDto } from "./dto/confirm-purchase.dto";
 import { PlansService } from "../plans/plans.service";

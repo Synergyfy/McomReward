@@ -11,39 +11,36 @@ function LoginForm() {
   const campaignId = searchParams.get("campaignId");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSsoLogin = async () => {
+  const handleSsoLogin = () => {
     setIsLoading(true);
     try {
-      // 32-byte CSRF state token
+      // 1. Generate random 32-byte CSRF state token
       const array = new Uint8Array(32);
       crypto.getRandomValues(array);
       const state = Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
       const isSecure = window.location.protocol === "https:";
       document.cookie = `sso_state=${state}; path=/; maxAge=600; SameSite=Lax${isSecure ? "; Secure" : ""}`;
 
-      const solutionsUrl =
-        process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL ||
-        process.env.NEXT_PUBLIC_MCOM_CENTRAL_API?.replace(/\/api\/v1\/?$/, "") ||
-        "http://localhost:3010";
-      const clientId =
-        process.env.NEXT_PUBLIC_MCOM_CLIENT_ID ||
-        process.env.NEXT_PUBLIC_SSO_CLIENT_ID ||
-        "mcom-rewards";
+      // 2. Construct OAuth 2.0 Authorization redirect URL
+      const mcomSolutionsUrl = (
+        process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3010"
+      ).replace(/\/$/, "");
+      const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || "mcom-rewards";
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ||
         (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
       const redirectUri =
         process.env.NEXT_PUBLIC_MCOM_REDIRECT_URI || `${appUrl}/auth/callback`;
       const scopes =
-        process.env.NEXT_PUBLIC_MCOM_SCOPES ||
-        "profile email business membership packages";
+        process.env.NEXT_PUBLIC_MCOM_SCOPES || "profile email business packages membership";
 
-      const authorizeUrl = `${solutionsUrl}/api/v1/auth/sso/authorize?client_id=${encodeURIComponent(
+      const authorizeUrl = `${mcomSolutionsUrl}/api/v1/auth/sso/authorize?client_id=${encodeURIComponent(
         clientId
       )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(
         scopes
-      )}&state=${encodeURIComponent(state)}&response_type=code`;
+      )}&state=${encodeURIComponent(state)}`;
 
+      // 3. Redirect user browser to MCOM Solutions SSO
       window.location.href = authorizeUrl;
     } catch (error) {
       toast.error("Failed to initiate SSO login. Please try again.");
@@ -65,7 +62,7 @@ function LoginForm() {
           type="button"
           onClick={handleSsoLogin}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold py-3 rounded-xl shadow-xs"
+          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold py-3 rounded-xl shadow-xs cursor-pointer"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -91,7 +88,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

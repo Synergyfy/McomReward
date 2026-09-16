@@ -49,12 +49,12 @@ export class McomCentralService {
     this.clientSecret =
       this.configService.get<string>("MCOM_CLIENT_SECRET") ||
       this.configService.get<string>("SSO_CLIENT_SECRET") ||
-      "cs_9ece7e79acaf3256d3078119e2f9c4163e2692c47179da6ec3fe0d28a302bc85";
+      "cs_212341062602d8c593eacf5a3abd4b9fd10dc69ed22cd7e7d10920585bbdfa93";
 
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") ||
       this.configService.get<string>("SSO_API_SECRET") ||
-      "hm_71496cff3923f33645eb2e0ff208319b2634a096eb88a7676e9abe4f6af82c00";
+      "hm_d65ea8732a8c276bd73a4c2372b399decedd9147e52b08d7a0e17158d1c91e5d";
 
     this.internalServiceId = this.configService.get<string>(
       "INTERNAL_SERVICE_ID",
@@ -62,7 +62,7 @@ export class McomCentralService {
     );
     this.internalApiSecret = this.configService.get<string>(
       "INTERNAL_SERVICE_SECRET",
-      "hm_71496cff3923f33645eb2e0ff208319b2634a096eb88a7676e9abe4f6af82c00"
+      "hm_d65ea8732a8c276bd73a4c2372b399decedd9147e52b08d7a0e17158d1c91e5d"
     );
   }
 
@@ -99,14 +99,13 @@ export class McomCentralService {
 
     const scopes =
       this.configService.get<string>("MCOM_SCOPES") ||
-      "profile email business membership packages";
+      "profile email business packages membership";
 
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: redirectUri || defaultRedirect,
       scope: scopes,
       state,
-      response_type: "code",
     });
 
     return `${this.baseUrl}/api/v1/auth/sso/authorize?${params.toString()}`;
@@ -136,7 +135,7 @@ export class McomCentralService {
       this.logger.error(
         `Token exchange failed: ${response.status} ${errorText}`
       );
-      throw new Error(`Token exchange failed: ${response.status}`);
+      throw new Error(`Token exchange failed: ${response.status} ${errorText}`);
     }
 
     return response.json();

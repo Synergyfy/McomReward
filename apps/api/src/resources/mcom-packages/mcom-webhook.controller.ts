@@ -18,6 +18,7 @@ import { RawBody } from "../../common/decorators/raw-body.decorator";
 import { Business } from "../business/entities/business.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import { Membership, MembershipStatus, PlanType } from "../membership/entities/membership.entity";
+import { MembershipService } from "../membership/membership.service";
 
 @ApiTags("MCOM Webhooks")
 @Controller("mcom")
@@ -33,16 +34,27 @@ export class McomWebhookController {
     private readonly tierRepository: Repository<Tier>,
     @InjectRepository(Membership)
     private readonly membershipRepository: Repository<Membership>,
+    private readonly membershipService: MembershipService,
   ) {}
 
   private verifySignature(rawBody: Buffer | string, signatureHeader?: string): boolean {
     const webhookSecret =
       this.configService.get<string>("MCOM_WEBHOOK_SECRET") ||
-      this.configService.get<string>("SSO_API_SECRET") ||
-      "sec_webhook_signing_secret_here";
+      this.configService.get<string>("SSO_API_SECRET");
+
+    if (!webhookSecret) {
+      if (process.env.NODE_ENV !== "production") {
+        this.logger.warn(
+          "Neither MCOM_WEBHOOK_SECRET nor SSO_API_SECRET is configured (allowed only in non-production)",
+        );
+        return true;
+      }
+      this.logger.error("Webhook signing secret is not configured in production");
+      return false;
+    }
 
     if (!signatureHeader || !signatureHeader.startsWith("sha256=")) {
-      // In dev fallback, if no secret or signature mismatch, log warning
+      // In dev fallback, if no signature header, log warning
       if (process.env.NODE_ENV !== "production") {
         this.logger.warn("Webhook signature missing or header not starting with sha256= (allowed in dev)");
         return true;
@@ -50,14 +62,17 @@ export class McomWebhookController {
       return false;
     }
 
-    const expectedHash = signatureHeader.replace("sha256=", "");
+    const expectedHash = signatureHeader.replace(/^sha256=/, "");
     const actualHash = crypto
       .createHmac("sha256", webhookSecret)
       .update(rawBody)
       .digest("hex");
 
     try {
-      return crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(actualHash));
+      const expectedBuf = Buffer.from(expectedHash, "hex");
+      const actualBuf = Buffer.from(actualHash, "hex");
+      if (expectedBuf.length !== actualBuf.length) return false;
+      return crypto.timingSafeEqual(expectedBuf, actualBuf);
     } catch {
       return false;
     }
@@ -69,10 +84,16 @@ export class McomWebhookController {
   @ApiResponse({ status: 200, description: "Webhook processed" })
   @ApiResponse({ status: 401, description: "Invalid webhook signature" })
   async handleWebhook(
-    @Headers("x-mcom-webhook-signature") signature: string,
+    @Headers("x-mcom-webhook-signature") webhookSig: string,
+    @Headers("x-mcom-signature") standardSig: string,
     @RawBody() rawBody: Buffer,
     @Req() req: any,
   ) {
+    const signature =
+      webhookSig ||
+      standardSig ||
+      req.headers?.["x-mcom-webhook-signature"] ||
+      req.headers?.["x-mcom-signature"];
     const payload = req.body || (rawBody ? JSON.parse(rawBody.toString("utf8")) : {});
 
     if (rawBody && !this.verifySignature(rawBody, signature)) {
@@ -167,6 +188,7 @@ export class McomWebhookController {
     business.membershipTier = tier.name;
     business.membershipStatus = "active";
     await this.businessRepository.save(business);
+    this.membershipService.invalidateMembershipCache(business.id);
 
     this.logger.log(`Webhook applied: Plan "${tier.name}" active for business ${business.id} until ${expiresAt.toISOString()}`);
   }
@@ -202,6 +224,7 @@ export class McomWebhookController {
         business.membershipStatus = "expired";
       }
       await this.businessRepository.save(business);
+      this.membershipService.invalidateMembershipCache(business.id);
     }
 
     this.logger.log(`Webhook: Subscription expired for business ${business.id}, downgraded.`);

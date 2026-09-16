@@ -10,10 +10,19 @@ import { Tier } from "../tier/entities/tier.entity";
 import { PaymentModule } from "../payment/payment.module";
 import { McomCentralService } from "../sso/mcom-central.service";
 
+import { MembershipPayment } from "./entities/membership-payment.entity";
+import { PlansModule } from "../plans/plans.module";
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Membership, PaymentHistory, Tier]),
+    TypeOrmModule.forFeature([
+      Membership,
+      PaymentHistory,
+      Tier,
+      MembershipPayment,
+    ]),
     PaymentModule,
+    PlansModule,
   ],
   controllers: [MembershipController],
   providers: [MembershipService, McomCentralService],

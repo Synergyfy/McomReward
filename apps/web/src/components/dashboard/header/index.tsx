@@ -13,7 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useGetMySubscription, useGetBusinessSubscription } from '@/services/tiers/hook';
+import { useGetMySubscription } from '@/services/tiers/hook';
+import { useGetMyPackage } from '@/services/mcom-packages';
 import { useGetBusinessProfile, useGetBusinessMonthlyBalance, useGetPointPackageBalance, useGetBusinessMonthlyStampBalance } from '@/services/business/hook';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
@@ -55,7 +56,8 @@ export default function BusinessHeader({
   const { data: hookProfile, isLoading: hookIsLoadingProfile, isError: hookIsErrorProfile } = useGetBusinessProfile();
   const { data: hookMonthlyBalance, isLoading: hookIsLoadingMonthlyBalance, isError: hookIsErrorMonthlyBalance } = useGetBusinessMonthlyBalance();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
-  const { data: businessSubscription } = useGetBusinessSubscription();
+  // LOCAL-FIRST: header gating reads local my-package, never Central.
+  const { data: myPackage } = useGetMyPackage();
   const { data: pointPackageBalance } = useGetPointPackageBalance();
   const { data: stampMonthlyBalance } = useGetBusinessMonthlyStampBalance();
 
@@ -83,8 +85,11 @@ export default function BusinessHeader({
   const unreadCount = notificationsData?.unreadCount ?? 0;
   const notifications = notificationsData?.data ?? [];
 
-  // Check if user is on Free tier
-  const isFreeTier = businessSubscription?.tier === 'Free' && !profile?.isSuperBusiness;
+  // Check if user is on Free tier (local my-package truth)
+  const localPlanName = myPackage?.planName || myPackage?.membershipTier || 'Free';
+  const isFreeTier =
+    (localPlanName === 'Free' || myPackage?.membershipStatus === 'expired') &&
+    !profile?.isSuperBusiness;
   const isSuperBusiness = profile?.isSuperBusiness;
 
   // Override tier name for Super Business

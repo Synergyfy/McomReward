@@ -12,6 +12,9 @@ import { TierType } from "../tier/entities/tier-type.enum";
 import { TierStatus } from "../tier/entities/tier-status.enum";
 import { TierHistory } from "../tier/entities/tier-history.entity";
 import { Season } from "../season/entities/season.entity";
+import { PlansService } from "../plans/plans.service";
+import { Plan } from "../plans/entities/plan.entity";
+import { PlanTierLevelEnum } from "../plans/entities/plan-tier-level.entity";
 import { CreateSystemPlanDto } from "./dto/create-system-plan.dto";
 import { UpdateSystemPlanDto } from "./dto/update-system-plan.dto";
 
@@ -24,6 +27,7 @@ export class SystemPlansService {
     private readonly tierHistoryRepository: Repository<TierHistory>,
     @InjectRepository(Season)
     private readonly seasonRepository: Repository<Season>,
+    private readonly plansService: PlansService,
   ) {}
 
   private mapTypeToInternal(type?: string): TierType | undefined {
@@ -206,7 +210,101 @@ export class SystemPlansService {
     }
   }
 
+  private toExternalUnifiedPlanResponse(plan: Plan) {
+    const variants = (plan.variants || []).map((v) => {
+      const activePrice = v.prices?.find((p) => p.isActive) || v.prices?.[0];
+      const level = v.tierLevel?.name;
+      const label =
+        level === PlanTierLevelEnum.PRO_PLUS
+          ? "Pro+"
+          : level === PlanTierLevelEnum.PRO
+          ? "Pro"
+          : "Standard";
+      const amount = activePrice?.amount != null ? Number(activePrice.amount) : undefined;
+
+      return {
+        id: v.id,
+        planId: plan.id,
+        tier: label,
+        tierName: label,
+        tierLevel: v.tierLevel,
+        durationDays: v.tierLevel?.durationDays || (v.tierLevel?.isCalendarYear ? 365 : 90),
+        isCalendarYear: v.tierLevel?.isCalendarYear || false,
+        price: amount,
+        features: v.features || [],
+        configuration: v.configuration || {},
+        isActive: v.isActive && plan.isActive,
+        stripePriceId: activePrice?.stripePriceId || null,
+        paypalPlanId: activePrice?.paypalPlanId || null,
+        prices: v.prices || [],
+        createdAt: v.created_at,
+        updatedAt: v.updated_at,
+        created_at: v.created_at,
+        updated_at: v.updated_at,
+      };
+    });
+
+    const standardVariant = variants.find((v) => v.tier === "Standard") || variants[0];
+    const proVariant = variants.find((v) => v.tier === "Pro");
+    const proPlusVariant = variants.find((v) => v.tier === "Pro+");
+
+    const tierPrices: Record<string, number> = {};
+    const tierFeatures: Record<string, string[]> = {};
+    for (const v of variants) {
+      if (v.price != null) tierPrices[v.tier] = v.price;
+      if (v.features) tierFeatures[v.tier] = v.features;
+    }
+
+    const tierDurations: Record<string, number> = {
+      Standard: standardVariant?.durationDays || 90,
+      Pro: proVariant?.durationDays || 180,
+      "Pro+": proPlusVariant?.durationDays || 365,
+    };
+
+    const standardPrice = standardVariant?.price ?? 0;
+    const proPrice = proVariant?.price ?? standardPrice;
+    const proPlusPrice = proPlusVariant?.price ?? proPrice;
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      slug: plan.slug,
+      description: plan.description || null,
+      variants,
+      tierPrices,
+      tierFeatures,
+      tierDurations,
+      monthlyPrice: standardPrice,
+      quarterlyPrice: proPrice,
+      annualPrice: proPlusPrice,
+      features: standardVariant?.features || [],
+      configuration: standardVariant?.configuration || {},
+      isActive: plan.isActive,
+      isDefault: false,
+      type: "STANDARD",
+      trialDuration: null,
+      seasonId: null,
+      stripeMonthlyPriceId: standardVariant?.stripePriceId || null,
+      stripeQuarterlyPriceId: proVariant?.stripePriceId || null,
+      stripeAnnualPriceId: proPlusVariant?.stripePriceId || null,
+      paypalMonthlyPlanId: standardVariant?.paypalPlanId || null,
+      paypalQuarterlyPlanId: proVariant?.paypalPlanId || null,
+      paypalAnnualPlanId: proPlusVariant?.paypalPlanId || null,
+      createdAt: plan.created_at,
+      updatedAt: plan.updated_at,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at,
+    };
+  }
+
   async findAll() {
+    // 1. Fetch all unified Plans with nested variants
+    const unifiedPlans = await this.plansService.findAll();
+    if (unifiedPlans && unifiedPlans.length > 0) {
+      return unifiedPlans.map((plan) => this.toExternalUnifiedPlanResponse(plan));
+    }
+
+    // Fallback to legacy tiers if no unified plans exist
     const tiers = await this.tierRepository.find({
       relations: ["season"],
       order: { created_at: "DESC" },
@@ -215,6 +313,28 @@ export class SystemPlansService {
   }
 
   async findOne(id: string) {
+    // 1. Try unified Plan directly by plan ID
+    try {
+      const plan = await this.plansService.findOne(id);
+      if (plan) {
+        return this.toExternalUnifiedPlanResponse(plan);
+      }
+    } catch {
+      // Not a plan ID, try variant resolution
+    }
+
+    // 2. Try variant ID
+    try {
+      const { variant } = await this.plansService.resolveActivePrice(id);
+      if (variant?.plan) {
+        const fullPlan = await this.plansService.findOne(variant.plan.id);
+        return this.toExternalUnifiedPlanResponse(fullPlan);
+      }
+    } catch {
+      // Not a variant ID, fallback to legacy tier
+    }
+
+    // 3. Fallback to legacy Tier lookup
     const tier = await this.tierRepository.findOne({
       where: { id },
       relations: ["season"],
@@ -226,6 +346,21 @@ export class SystemPlansService {
   }
 
   async update(id: string, dto: UpdateSystemPlanDto) {
+    // Check if it's a unified plan
+    try {
+      const plan = await this.plansService.findOne(id);
+      if (plan) {
+        const updated = await this.plansService.update(id, {
+          name: dto.name,
+          description: dto.description,
+          isActive: dto.isActive,
+        });
+        return this.toExternalUnifiedPlanResponse(updated);
+      }
+    } catch {
+      // Fallback to legacy tier update
+    }
+
     const tier = await this.tierRepository.findOne({
       where: { id },
       relations: ["season"],
@@ -342,6 +477,15 @@ export class SystemPlansService {
   }
 
   async remove(id: string) {
+    try {
+      const plan = await this.plansService.findOne(id);
+      if (plan) {
+        return await this.plansService.remove(id);
+      }
+    } catch {
+      // Fallback to legacy tier delete
+    }
+
     const tier = await this.tierRepository.findOne({ where: { id } });
     if (!tier) {
       throw new NotFoundException("Plan not found");

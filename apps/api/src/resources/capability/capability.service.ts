@@ -68,13 +68,17 @@ export class CapabilityService {
       return; // Super Business has no limitations
     }
 
-    // 1. Fetch User's Active Memberships
+    // 1. Fetch User's Active Memberships (LOCAL-FIRST: Rewards DB only,
+    // non-expired ACTIVE rows via MembershipService.findActiveMemberships).
     const memberships =
       await this.membershipService.findActiveMemberships(userId);
 
-    const standardMembership = memberships.find(
-      (m) => m.tier && m.tier.type === TierType.STANDARD,
-    );
+    // New Plans system: a membership with an active planVariant IS the
+    // standard entitlement (local purchase flow writes planVariantId).
+    const planVariantMembership = memberships.find((m) => m.planVariant);
+    const standardMembership =
+      planVariantMembership ||
+      memberships.find((m) => m.tier && m.tier.type === TierType.STANDARD);
 
     // Filter valid seasonal memberships (active dates)
     const seasonalMemberships = memberships.filter((m) => {
@@ -94,14 +98,24 @@ export class CapabilityService {
 
     let effectiveConfig: TierConfig = null;
 
-    if (standardMembership && standardMembership.tier.configuration) {
+    // New Plans system first: planVariant.configuration is the enforced
+    // capability set (quotas + featureFlags). No Central lookup.
+    if (
+      standardMembership?.planVariant?.configuration &&
+      Object.keys(standardMembership.planVariant.configuration).length > 0
+    ) {
+      effectiveConfig = standardMembership.planVariant
+        .configuration as unknown as TierConfig;
+    }
+
+    if (!effectiveConfig && standardMembership?.tier?.configuration) {
       effectiveConfig = { ...standardMembership.tier.configuration };
 
+      // Progression overrides driven by DB config, not hardcoded
       const progressionLevel = standardMembership.progression_level;
       const proConfig = effectiveConfig.pro;
       const proPlusConfig = effectiveConfig.pro_plus;
 
-      // Apply Progression Level Overrides (Standard Only)
       if (progressionLevel === "pro" && proConfig) {
         effectiveConfig = this.mergeProgressionBenefits(
           effectiveConfig,
@@ -113,14 +127,7 @@ export class CapabilityService {
           proPlusConfig.benefits,
         );
       }
-
-      // Apply Trial Configuration Overrides
-      if (standardMembership.is_trial && effectiveConfig.trial) {
-        effectiveConfig = this.mergeTrialConfig(
-          effectiveConfig,
-          effectiveConfig.trial,
-        );
-      }
+      // No trial handling — trials removed, purchase required
     }
 
     // If no standard, start with first seasonal
@@ -133,12 +140,34 @@ export class CapabilityService {
       throw new ForbiddenException("Tier configuration missing.");
     }
 
+    // Ensure quotas and featureFlags objects are safely initialized to prevent runtime TypeErrors
+    effectiveConfig.quotas = {
+      maxActiveCampaigns: -1,
+      maxActiveRewards: -1,
+      maxRewardsPerCampaign: -1,
+      monthlyPointsAllowance: -1,
+      monthlyStampsAllowance: -1,
+      monthlyRewardBudget: -1,
+      maxTeamMembers: -1,
+      maxRewardPoints: -1,
+      ...(effectiveConfig.quotas || {}),
+    };
+    effectiveConfig.featureFlags = {
+      canCreateCampaignFromScratch: true,
+      canEditAdminTemplates: true,
+      hasAccessToAdvancedAnalytics: true,
+      hasAccessToCRM: true,
+      canUpdateReward: true,
+      canCreateRewardFromScratch: true,
+      ...(effectiveConfig.featureFlags || {}),
+    };
+
     // Apply Seasonal Overrides (Overlay on top of Standard or Base Seasonal)
     for (const seaMem of seasonalMemberships) {
       // If we started with this seasonal one, skip
       if (!standardMembership && seaMem === seasonalMemberships[0]) continue;
 
-      if (seaMem.tier.configuration) {
+      if (seaMem.tier?.configuration) {
         // We treat the seasonal tier config as an "override"
         effectiveConfig = this.mergeSeasonalConfig(
           effectiveConfig,

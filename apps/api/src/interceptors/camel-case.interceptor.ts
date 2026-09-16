@@ -18,15 +18,26 @@ export class CamelCaseInterceptor implements NestInterceptor {
     );
   }
 
-  private transformToCamelCase(data: any): any {
+  private transformToCamelCase(data: any, parentKey?: string): any {
     if (isArray(data)) {
-      return data.map((item) => this.transformToCamelCase(item));
+      return data.map((item) => this.transformToCamelCase(item, parentKey));
     }
 
     if (isObject(data) && data !== null && !(data instanceof Date)) {
+      const isDictMap =
+        parentKey &&
+        [
+          "tierPrices",
+          "tierFeatures",
+          "tierDurations",
+          "tier_prices",
+          "tier_features",
+          "tier_durations",
+        ].includes(parentKey);
+
       return Object.keys(data).reduce((acc, key) => {
-        const newKey = camelCase(key);
-        acc[newKey] = this.transformToCamelCase(data[key]);
+        const newKey = isDictMap ? key : camelCase(key);
+        acc[newKey] = this.transformToCamelCase(data[key], key);
         return acc;
       }, {});
     }

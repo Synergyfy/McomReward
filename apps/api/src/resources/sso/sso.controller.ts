@@ -2,6 +2,7 @@ import {
   Controller,
   UnauthorizedException,
   BadRequestException,
+  HttpException,
   Body,
   Get,
   Post,
@@ -47,7 +48,7 @@ export class SsoController {
   @ApiResponse({ status: 401, description: "SSO login failed" })
   async ssoLogin(@Body("token") token: string) {
     if (!token) {
-      throw new UnauthorizedException("Token is required");
+      throw new BadRequestException("Token is required");
     }
 
     try {
@@ -68,14 +69,13 @@ export class SsoController {
     schema: {
       type: "object",
       properties: {
-        code: { type: "string", description: "Authorization code from MCOM Central" },
-        redirectUri: { type: "string", description: "OAuth callback redirect URI" },
+        code: { type: "string", description: "Authorization code" },
+        redirectUri: { type: "string", description: "Optional redirect URI" },
       },
       required: ["code"],
     },
   })
   @ApiResponse({ status: 200, description: "Exchange successful" })
-  @ApiResponse({ status: 400, description: "Missing authorization code" })
   @ApiResponse({ status: 401, description: "Exchange failed" })
   async exchangeCode(
     @Body("code") code: string,
@@ -86,13 +86,18 @@ export class SsoController {
     }
 
     try {
-      return await this.ssoService.exchangeCode(code, redirectUri);
+      return await (redirectUri
+        ? this.ssoService.exchangeCode(code, redirectUri)
+        : this.ssoService.exchangeCode(code));
     } catch (error) {
       this.logger.error(
         `SSO code exchange failed: ${error?.message || error}`,
         error?.stack
       );
-      throw new UnauthorizedException("SSO code exchange failed");
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new UnauthorizedException(error?.message || "SSO code exchange failed");
     }
   }
 

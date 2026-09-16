@@ -34,9 +34,8 @@ export class MembershipController {
   })
   @ApiResponse({ status: 404, description: "Membership not found." })
   async getMyMembership(@CurrentUser() user) {
-    if (user.email) {
-      await this.membershipService.syncFromCentralProfile(user.id, user.email);
-    }
+    // LOCAL-FIRST: no Central sync on read. See McomPackagesService +
+    // webhook for the write paths that keep the local membership current.
     return this.membershipService.getMyMembership(user);
   }
 

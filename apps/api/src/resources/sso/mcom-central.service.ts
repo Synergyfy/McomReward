@@ -44,17 +44,17 @@ export class McomCentralService {
     this.clientId =
       this.configService.get<string>("MCOM_CLIENT_ID") ||
       this.configService.get<string>("SSO_CLIENT_ID") ||
-      "mcom-loyalty";
+      "mcom-rewards";
 
     this.clientSecret =
       this.configService.get<string>("MCOM_CLIENT_SECRET") ||
       this.configService.get<string>("SSO_CLIENT_SECRET") ||
-      "loyalty_secret_123";
+      "cs_ec63957d787b758514e4bd3decc22dd6fd010620dc7f9c2932ac8d84b0f20201";
 
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") ||
       this.configService.get<string>("SSO_API_SECRET") ||
-      "mcom_loyalty_dev_secret_change_in_prod";
+      "hm_3033b6a3f741f50b0ed3da462ccde80f9eb6447e3d879a6ba95e9be26d90ae55";
 
     this.internalServiceId = this.configService.get<string>(
       "INTERNAL_SERVICE_ID",
@@ -62,7 +62,7 @@ export class McomCentralService {
     );
     this.internalApiSecret = this.configService.get<string>(
       "INTERNAL_SERVICE_SECRET",
-      "mcom_rewards_dev_secret_change_in_prod"
+      "hm_3033b6a3f741f50b0ed3da462ccde80f9eb6447e3d879a6ba95e9be26d90ae55"
     );
   }
 
@@ -97,10 +97,14 @@ export class McomCentralService {
       this.configService.get<string>("MCOM_REDIRECT_URI") ||
       `${this.configService.get<string>("LOYALTY_FRONTEND_URL", "http://localhost:3005")}/auth/callback`;
 
+    const scopes =
+      this.configService.get<string>("MCOM_SCOPES") ||
+      "profile email business packages membership";
+
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: redirectUri || defaultRedirect,
-      scope: "profile email business membership packages",
+      scope: scopes,
       state,
       response_type: "code",
     });
@@ -154,7 +158,6 @@ export class McomCentralService {
       },
       body: JSON.stringify({
         refresh_token: refreshToken,
-        client_id: this.clientId,
       }),
     });
 
@@ -229,7 +232,7 @@ export class McomCentralService {
   async getUserInfo(accessToken: string): Promise<CentralUserInfo | null> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/v1/sso/userinfo`,
+        `${this.baseUrl}/api/v1/auth/sso/userinfo`,
         {
           method: "GET",
           headers: {
@@ -240,9 +243,9 @@ export class McomCentralService {
       );
 
       if (!response.ok) {
-        // Fallback to /api/v1/auth/sso/userinfo
+        // Fallback to /api/v1/sso/userinfo
         const fallbackRes = await fetch(
-          `${this.baseUrl}/api/v1/auth/sso/userinfo`,
+          `${this.baseUrl}/api/v1/sso/userinfo`,
           {
             method: "GET",
             headers: {

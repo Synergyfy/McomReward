@@ -33,7 +33,7 @@ import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetBusinessProfile } from '@/services/business/hook';
-import { useGetBusinessSubscription } from '@/services/tiers/hook';
+import { useGetMyPackage } from '@/services/mcom-packages';
 import { useRouter } from 'next/navigation';
 import { useLogout } from '@/services/auth/hook';
 import { toast } from 'sonner';
@@ -90,7 +90,8 @@ export default function BusinessSidebar({
   const linkClasses = useLinkClasses();
 
   const { data: hookProfile, isLoading: hookIsLoadingProfile } = useGetBusinessProfile();
-  const { data: subscription } = useGetBusinessSubscription();
+  // LOCAL-FIRST: sidebar gating reads the local my-package, never Central.
+  const { data: myPackage } = useGetMyPackage();
 
   const profile = propProfile ?? hookProfile;
   const isLoading = propIsLoading ?? hookIsLoadingProfile;
@@ -100,8 +101,9 @@ export default function BusinessSidebar({
 
   const isFreeTier = useMemo(() => {
     if (profile?.isSuperBusiness) return false;
-    return subscription?.tier === 'Free';
-  }, [subscription, profile]);
+    const planName = myPackage?.planName || myPackage?.membershipTier || 'Free';
+    return planName === 'Free' || myPackage?.membershipStatus === 'expired';
+  }, [myPackage, profile]);
 
   const isSuperBusiness = profile?.isSuperBusiness;
 

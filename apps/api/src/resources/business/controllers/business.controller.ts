@@ -113,9 +113,8 @@ export class BusinessController {
     description: "Return business subscription details.",
   })
   async getSubscription(@Request() req) {
-    if (req.user?.email) {
-      await this.membershipService.syncFromCentralProfile(req.user.id, req.user.email);
-    }
+    // LOCAL-FIRST: no Central sync on read. Central webhook + purchase
+    // confirm paths write into the local membership; reads enforce from it.
     return this.businessService.getSubscriptionLevel(req.user.id);
   }
 
@@ -151,6 +150,7 @@ export class BusinessController {
     return this.businessService.delete(req.user.id);
   }
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("points/balance/monthly")
   @ApiOperation({ summary: "Get monthly point balance" })
   @ApiResponse({ status: 200, description: "Return monthly point balance." })
@@ -159,6 +159,7 @@ export class BusinessController {
   }
 
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @Get("stamps/balance/monthly")
   @ApiOperation({ summary: "Get monthly stamp balance" })
   @ApiResponse({ status: 200, description: "Return monthly stamp balance." })

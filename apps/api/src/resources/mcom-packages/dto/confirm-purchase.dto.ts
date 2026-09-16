@@ -31,4 +31,9 @@ export class ConfirmPlatformPurchaseDto {
   @IsString()
   @IsOptional()
   provider?: string;
+
+  @ApiProperty({ description: "Wallet hold ID from initiate step (wallet rail)", required: false })
+  @IsString()
+  @IsOptional()
+  holdId?: string;
 }

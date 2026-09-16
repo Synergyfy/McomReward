@@ -14,24 +14,38 @@ function LoginForm() {
   const handleSsoLogin = async () => {
     setIsLoading(true);
     try {
-      const state = crypto.randomUUID();
+      // 32-byte CSRF state token
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      const state = Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
       const isSecure = window.location.protocol === "https:";
       document.cookie = `sso_state=${state}; path=/; maxAge=600; SameSite=Lax${isSecure ? "; Secure" : ""}`;
 
-      const centralApi = process.env.NEXT_PUBLIC_MCOM_CENTRAL_API || "http://localhost:3010/api/v1";
-      const clientId = process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-loyalty";
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
+      const solutionsUrl =
+        process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL ||
+        process.env.NEXT_PUBLIC_MCOM_CENTRAL_API?.replace(/\/api\/v1\/?$/, "") ||
+        "http://localhost:3010";
+      const clientId =
+        process.env.NEXT_PUBLIC_MCOM_CLIENT_ID ||
+        process.env.NEXT_PUBLIC_SSO_CLIENT_ID ||
+        "mcom-rewards";
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
       const redirectUri = `${appUrl}/auth/callback`;
+      const scopes =
+        process.env.NEXT_PUBLIC_MCOM_SCOPES ||
+        "profile email business packages membership";
 
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: redirectUri,
         response_type: "code",
         state,
-        scope: "profile email",
+        scope: scopes,
       });
 
-      window.location.href = `${centralApi}/auth/sso/authorize?${params.toString()}`;
+      window.location.href = `${solutionsUrl}/api/v1/auth/sso/authorize?${params.toString()}`;
     } catch (error) {
       toast.error("Failed to initiate SSO login. Please try again.");
       setIsLoading(false);
@@ -52,17 +66,17 @@ function LoginForm() {
           type="button"
           onClick={handleSsoLogin}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800"
+          className="w-full flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold py-3 rounded-xl shadow-xs"
           disabled={isLoading}
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="currentColor"/>
             </svg>
           )}
-          {isLoading ? "Redirecting..." : "Login with MCOM Solutions"}
+          {isLoading ? "Redirecting to Central Hub..." : "Login with Central Hub Solutions"}
         </Button>
 
         <p className="text-center text-sm text-slate-500">

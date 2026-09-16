@@ -8,6 +8,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { LoggingMiddleware } from "./middleware/logging.middleware";
 import { ConfigModule } from "@nestjs/config";
 import commissionConfig from "./config/commission.config";
+import jwtConfig from "./config/jwt.config";
 import { BusinessModule } from "./resources/business/business.module";
 import { SectorModule } from "./resources/sector/sector.module";
 import { AdminModule } from "./resources/admin/admin.module";
@@ -66,9 +67,11 @@ import { LoyaltySetupModule } from "./resources/loyalty-setup/loyalty-setup.modu
 import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
 import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
+import { PlansModule } from "./resources/plans/plans.module";
 
 @Module({
   imports: [
+    PlansModule,
     McomPackagesModule,
     LibraryAssetsModule,
     GroupCircleModule,
@@ -91,7 +94,7 @@ import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.modu
     HelpRequestsModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [commissionConfig],
+      load: [commissionConfig, jwtConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
@@ -117,7 +120,6 @@ import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.modu
     SystemSettingModule,
     PointPackageModule,
     NotificationModule,
-    SetupModule,
     SetupModule,
     MatchingPointModule,
     ReferralModule,

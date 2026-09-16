@@ -1,9 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from '../api';
+import api, { setBearerToken } from '../api';
+import Cookies from 'js-cookie';
+
+export interface PlanVariantDto {
+  id: string;
+  tierLevel: 'STANDARD' | 'PRO' | 'PRO_PLUS' | string;
+  sortOrder?: number;
+  durationDays?: number | null;
+  isCalendarYear?: boolean;
+  price: number;
+  currency?: string;
+  features: string[];
+  configuration?: {
+    quotas?: Record<string, number | boolean>;
+    featureFlags?: Record<string, boolean>;
+    disabledNavIds?: string[];
+    [key: string]: any;
+  } | null;
+  isActive: boolean;
+}
 
 export interface McomPlan {
   id: string;
   name: string;
+  slug?: string;
   description?: string | null;
   monthlyPrice: number;
   quarterlyPrice: number;
@@ -15,21 +35,15 @@ export interface McomPlan {
     [key: string]: any;
   } | null;
   isActive: boolean;
-  isDefault: boolean;
-  type: 'STANDARD' | 'TRIAL' | 'SEASONAL';
-  trialDuration?: number | null;
-  season?: {
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-  } | null;
+  isDefault?: boolean;
+  type?: 'STANDARD' | 'TRIAL' | 'SEASONAL' | string;
+  variants?: PlanVariantDto[];
 }
 
 export interface InitiatePurchaseDto {
   externalPlanId: string;
-  billingCycle: 'monthly' | 'quarterly' | 'annual';
-  provider: 'stripe' | 'paypal' | 'wallet';
+  billingCycle?: 'monthly' | 'quarterly' | 'annual' | string;
+  provider: 'stripe' | 'paypal' | 'wallet' | 'mcom_wallet';
   returnUrl?: string;
   cancelUrl?: string;
 }
@@ -39,6 +53,7 @@ export interface InitiatePurchaseResponse {
   type?: 'payment' | 'setup';
   orderId?: string;
   approvalUrl?: string;
+  holdId?: string;
   success?: boolean;
   transactionId?: string;
   plan?: any;
@@ -47,10 +62,11 @@ export interface InitiatePurchaseResponse {
 
 export interface ConfirmPurchaseDto {
   externalPlanId: string;
-  billingCycle: string;
+  billingCycle?: string;
   paymentIntentId?: string;
   setupIntentId?: string;
   orderId?: string;
+  holdId?: string;
   provider?: string;
 }
 
@@ -61,6 +77,12 @@ export interface MyPackageResponse {
   membershipLevel: string;
   membershipTier: string;
   membershipStatus: string;
+  /** Local-first extras from GET /mcom/packages/my-package */
+  planName?: string;
+  planVariantId?: string | null;
+  isExpired?: boolean;
+  isTrial?: boolean;
+  expiresAt?: string | null;
 }
 
 const MCOM_PACKAGES_KEY = 'mcom-packages';
@@ -109,6 +131,15 @@ export const confirmPurchase = async (
   payload: ConfirmPurchaseDto
 ): Promise<any> => {
   const { data } = await api.post('/mcom/packages/purchase/confirm', payload);
+  // Instant JWT refresh — backend returns fresh tokens after successful purchase
+  // No hardcoded keys; cookie names match api.ts interceptor (access/refresh)
+  const accessToken = (data as any)?.access_token;
+  const refreshToken = (data as any)?.refresh_token;
+  if (typeof window !== 'undefined' && accessToken) {
+    Cookies.set('access', accessToken, { path: '/' });
+    if (refreshToken) Cookies.set('refresh', refreshToken, { path: '/' });
+    setBearerToken(accessToken);
+  }
   return data;
 };
 
@@ -121,6 +152,10 @@ export const useConfirmPurchase = () => {
       queryClient.invalidateQueries({ queryKey: ['payment'] });
       queryClient.invalidateQueries({ queryKey: ['tiers'] });
       queryClient.invalidateQueries({ queryKey: ['membership'] });
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['businessSubscription'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['businessProfile'] });
     },
   });
 };

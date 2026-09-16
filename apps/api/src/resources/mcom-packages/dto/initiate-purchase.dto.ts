@@ -11,6 +11,10 @@ export enum BillingCycleType {
   MONTHLY = "monthly",
   QUARTERLY = "quarterly",
   ANNUAL = "annual",
+  // Tier-level aliases (sent by the frontend when selecting a plan variant)
+  STANDARD = "STANDARD",
+  PRO = "PRO",
+  PRO_PLUS = "PRO_PLUS",
 }
 
 export class InitiatePlatformPurchaseDto {

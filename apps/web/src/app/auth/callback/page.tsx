@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSsoExchange, useSsoLogin } from "@/services/auth/hook";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
+
+const processedCodes = new Set<string>();
 
 function CallbackContent() {
   const router = useRouter();
@@ -81,15 +84,26 @@ function CallbackContent() {
       if (!mountedRef.current) return;
 
       console.error("SSO Authentication Error:", err);
-      toast.error("Failed to complete SSO login. Please try again.");
+      if (Cookies.get("access")) {
+        router.push("/loyalty-setup");
+        return;
+      }
+
+      toast.error(err?.response?.data?.message || "Failed to complete SSO login. Please try again.");
       router.push("/login");
     };
 
     if (code) {
+      if (processedCodes.has(code)) return;
+      processedCodes.add(code);
+
       ssoExchange(code)
         .then(handleSuccess)
         .catch(handleError);
     } else if (ssoToken) {
+      if (processedCodes.has(ssoToken)) return;
+      processedCodes.add(ssoToken);
+
       ssoLogin(ssoToken)
         .then(handleSuccess)
         .catch(handleError);

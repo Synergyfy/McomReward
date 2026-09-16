@@ -31,6 +31,7 @@ import { ConfirmPurchaseResponseDto } from "./dto/confirm-purchase-response.dto"
 
 import { MembershipService } from "../membership/membership.service";
 import { Public } from "../../common/decorators/public.decorator";
+import { SkipMembershipCheck } from "../../common/decorators/skip-membership-check.decorator";
 
 @ApiTags("Point Packages")
 @Controller("point-packages")
@@ -168,6 +169,7 @@ export class PointPackageController {
 
   @Get("business/balance")
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Get aggregate point balance from purchased packages",

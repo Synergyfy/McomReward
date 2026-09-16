@@ -518,34 +518,46 @@ export class BusinessService {
     }
   }
 
+  /**
+   * LOCAL-FIRST subscription truth.
+   * Reads the Rewards DB membership (planVariant → plan/tierLevel, legacy tier
+   * fallback). MCOM Solutions Central is NOT consulted here — billing actions
+   * (initiate/confirm/webhook) write into the local membership, and all reads
+   * + capability guards enforce from it.
+   */
   async getSubscriptionLevel(id: string): Promise<any> {
-    const rewardsPackage = await this.getCentralPackage(id);
-
-    if (rewardsPackage) {
-      return {
-        tier: rewardsPackage.packageName || "Unknown",
-        status: rewardsPackage.status || "active",
-        expiresAt: rewardsPackage.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        planType: rewardsPackage.packageName?.toLowerCase().includes("annual") ? "annual" : "monthly",
-      };
-    }
-
     const localMembership = await this.membershipService.findOneByBusinessId(id);
-    if (localMembership && localMembership.tier) {
-      const isExpired = localMembership.expires_at && new Date(localMembership.expires_at) < new Date();
+    if (localMembership && (localMembership.planVariant || localMembership.tier)) {
+      const isExpired =
+        (localMembership.expires_at && new Date(localMembership.expires_at) < new Date()) ||
+        localMembership.status === "expired";
+      const planName =
+        localMembership.planVariant?.plan?.name || localMembership.tier?.name || "Free";
+      const membershipLevel =
+        localMembership.planVariant?.tierLevel?.name || null;
       return {
-        tier: localMembership.tier.name,
+        tier: planName,
+        planName,
+        membershipLevel,
+        planVariantId: localMembership.planVariant?.id || localMembership.planVariantId || null,
         status: isExpired ? "expired" : (localMembership.status || "active"),
         expiresAt: localMembership.expires_at ? new Date(localMembership.expires_at).toISOString() : null,
         planType: localMembership.plan_type || "monthly",
         isTrial: localMembership.is_trial,
-        features: localMembership.tier.features || [],
+        features:
+          localMembership.planVariant?.features || localMembership.tier?.features || [],
       };
     }
 
     return {
       tier: "Free",
+      planName: "Free",
+      membershipLevel: null,
+      planVariantId: null,
       status: "none",
+      expiresAt: null,
+      planType: null,
+      isTrial: false,
       features: [],
     };
   }

@@ -22,20 +22,24 @@ import {
   useGetPurchasablePlans,
   useGetMyPackage,
 } from '@/services/mcom-packages';
-import { useGetBusinessSubscription } from '@/services/tiers/hook';
 import { toast } from 'sonner';
 
 export default function SubscriptionDashboardPage() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
+  const [durationTab, setDurationTab] = useState<'STANDARD' | 'PRO' | 'PRO_PLUS'>('STANDARD');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<McomPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<(McomPlan & { selectedVariantId?: string }) | null>(null);
 
+  // LOCAL-FIRST: active plan comes from the Rewards DB via
+  // GET /mcom/packages/my-package. MCOM Solutions Central is never
+  // consulted for reads — purchase confirm + webhook write locally.
   const { data: plans, isLoading: isLoadingPlans, refetch: refetchPlans } = useGetPurchasablePlans();
   const { data: myPackage, isLoading: isLoadingMyPackage, refetch: refetchMyPackage } = useGetMyPackage();
-  const { data: subDetails, refetch: refetchSub } = useGetBusinessSubscription();
 
-  const handleChoosePlan = (plan: McomPlan) => {
-    setSelectedPlan(plan);
+  const handleChoosePlan = (plan: McomPlan, variant?: any) => {
+    setSelectedPlan({
+      ...plan,
+      selectedVariantId: variant?.id,
+    });
     setIsModalOpen(true);
   };
 
@@ -48,23 +52,33 @@ export default function SubscriptionDashboardPage() {
     handleCloseModal();
     refetchPlans();
     refetchMyPackage();
-    refetchSub();
     toast.success('Subscription updated successfully!');
   };
 
-  const currentTierName =
-    myPackage?.membership?.tier?.name ||
-    subDetails?.tier ||
+  // Local membership truth (planVariant → plan/tierLevel, legacy tier fallback)
+  const membership = myPackage?.membership;
+  const currentPlanName =
+    myPackage?.planName ||
+    membership?.planVariant?.plan?.name ||
+    membership?.tier?.name ||
+    myPackage?.membershipTier ||
     'Free';
+  const currentLevel = (
+    myPackage?.membershipLevel ||
+    membership?.planVariant?.tierLevel?.name ||
+    'STANDARD'
+  ).toUpperCase();
 
   const isExpired =
-    myPackage?.membership?.status === 'expired' ||
-    subDetails?.status === 'expired';
+    myPackage?.isExpired ||
+    membership?.status === 'expired' ||
+    (membership?.expiresAt ? new Date(membership.expiresAt) < new Date() : false) ||
+    (myPackage?.expiresAt ? new Date(myPackage.expiresAt) < new Date() : false);
 
-  const isTrial = myPackage?.membership?.isTrial || subDetails?.isTrial;
+  const isTrial = myPackage?.isTrial || membership?.isTrial || false;
 
   const expiresAtFormatted = React.useMemo(() => {
-    const rawDate = myPackage?.membership?.expiresAt || subDetails?.expiresAt;
+    const rawDate = membership?.expiresAt || myPackage?.expiresAt;
     if (!rawDate) return null;
     try {
       return new Date(rawDate).toLocaleDateString('en-GB', {
@@ -75,7 +89,16 @@ export default function SubscriptionDashboardPage() {
     } catch {
       return null;
     }
-  }, [myPackage, subDetails]);
+  }, [membership, myPackage]);
+
+  const currentTierName = currentPlanName;
+
+  /** A card is "current" only when plan AND billed variant match the local membership. */
+  const isPlanCurrent = (plan: McomPlan) => {
+    if (isExpired) return false;
+    if (currentPlanName.toLowerCase() !== plan.name.toLowerCase()) return false;
+    return currentLevel === durationTab.toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-4 sm:p-6 lg:p-8">
@@ -97,7 +120,6 @@ export default function SubscriptionDashboardPage() {
             onClick={() => {
               refetchPlans();
               refetchMyPackage();
-              refetchSub();
               toast.info('Refreshed subscription status');
             }}
             className="gap-2 self-start sm:self-auto"
@@ -132,7 +154,12 @@ export default function SubscriptionDashboardPage() {
                     </span>
                   )}
                 </div>
-                <h2 className="text-3xl font-black">{currentTierName} Tier</h2>
+                <h2 className="text-3xl font-black">
+                  {currentTierName}
+                  {currentTierName !== 'Free' && (
+                    <span className="text-orange-400 text-xl font-bold"> · {currentLevel}</span>
+                  )}
+                </h2>
                 <p className="text-gray-300 text-xs max-w-xl">
                   {isExpired
                     ? 'Your subscription period has ended. Upgrade or renew to restore campaign creation, digital stamps, and customer analytics.'
@@ -178,40 +205,40 @@ export default function SubscriptionDashboardPage() {
               Select the plan that fits your business scale. Change or cancel anytime.
             </p>
 
-            {/* Billing Cycle Switcher */}
+            {/* Duration Selector */}
             <div className="mt-4 inline-flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200">
               <button
-                onClick={() => setBillingCycle('monthly')}
+                onClick={() => setDurationTab('STANDARD')}
                 className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  billingCycle === 'monthly'
+                  durationTab === 'STANDARD'
                     ? 'bg-gray-900 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Monthly
+                Standard (90d)
               </button>
               <button
-                onClick={() => setBillingCycle('quarterly')}
+                onClick={() => setDurationTab('PRO')}
                 className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
-                  billingCycle === 'quarterly'
-                    ? 'bg-gray-900 text-white shadow-sm'
+                  durationTab === 'PRO'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Quarterly
+                Pro (180d)
                 <span className="ml-1.5 text-[10px] bg-green-100 text-green-700 font-extrabold px-1.5 py-0.5 rounded-md">
                   Save 15%
                 </span>
               </button>
               <button
-                onClick={() => setBillingCycle('annual')}
+                onClick={() => setDurationTab('PRO_PLUS')}
                 className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
-                  billingCycle === 'annual'
-                    ? 'bg-gray-900 text-white shadow-sm'
+                  durationTab === 'PRO_PLUS'
+                    ? 'bg-amber-500 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Annual
+                Pro+ (1yr)
                 <span className="ml-1.5 text-[10px] bg-orange-100 text-orange-700 font-extrabold px-1.5 py-0.5 rounded-md">
                   Save 25%
                 </span>
@@ -234,13 +261,13 @@ export default function SubscriptionDashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {plans.map((plan) => (
                 <PlanCard
                   key={plan.id}
                   plan={plan}
-                  billingCycle={billingCycle}
-                  isCurrent={!isExpired && currentTierName.toLowerCase() === plan.name.toLowerCase()}
+                  durationTab={durationTab}
+                  isCurrent={isPlanCurrent(plan)}
                   onChoosePlan={handleChoosePlan}
                 />
               ))}
@@ -268,7 +295,7 @@ export default function SubscriptionDashboardPage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         plan={selectedPlan}
-        initialBillingCycle={billingCycle}
+        initialBillingCycle={durationTab}
         onConfirm={handlePaymentSuccess}
       />
     </div>

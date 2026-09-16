@@ -27,6 +27,7 @@ import { Partner } from "../resources/partner/entities/partner.entity";
 import { Participant } from "../resources/participant/entities/participant.entity";
 import { User } from "../common/interfaces/user.interface";
 import { Network } from "../resources/network/entities/network.entity";
+import { ConfigService } from "@nestjs/config";
 
 import { ParticipantProgressionService } from "../resources/participant-progression/participant-progression.service";
 
@@ -52,6 +53,7 @@ export class AuthService {
     @InjectRepository(Network)
     private readonly networkRepository: Repository<Network>,
     private readonly progressionService: ParticipantProgressionService,
+    private readonly configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -142,28 +144,32 @@ export class AuthService {
           order: { created_at: "DESC" },
         });
 
-        const isTrialValid =
-          membership &&
-          membership.is_trial &&
-          new Date(membership.expires_at) > new Date();
+        // No trials — active means non-expired ACTIVE membership
         const isActive =
-          membership && membership.status === MembershipStatus.ACTIVE;
-
-        const hasActiveSubscription = isActive || isTrialValid;
+          membership &&
+          membership.status === MembershipStatus.ACTIVE &&
+          new Date(membership.expires_at) > new Date();
 
         response.user.subscription = {
-          isActive: isActive,
-          isTrial: membership ? membership.is_trial : false,
+          isActive: !!isActive,
+          isTrial: false,
         };
 
-        // Add subscription status to payload for Business users
-        payload.hasActiveSubscription = hasActiveSubscription;
+        payload.hasActiveSubscription = !!isActive;
       }
     }
 
-    // Sign tokens once with the final payload
-    response.access_token = this.jwtService.sign(payload, { expiresIn: "1h" });
-    response.refresh_token = this.jwtService.sign(payload, { expiresIn: "7d" });
+    // Expiry from Config (jwt.config / env), no hardcoded magic strings
+    const accessExpiresIn =
+      this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
+      (this.configService.get<number>("jwt.expiresIn")
+        ? `${this.configService.get<number>("jwt.expiresIn")}s`
+        : "1h");
+    const refreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
+
+    response.access_token = this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any });
+    response.refresh_token = this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any });
 
     return response;
   }
@@ -300,20 +306,26 @@ export class AuthService {
         order: { created_at: "DESC" },
       });
 
-      const isTrialValid =
-        membership &&
-        membership.is_trial &&
-        new Date(membership.expires_at) > new Date();
       const isActive =
-        membership && membership.status === MembershipStatus.ACTIVE;
+        membership &&
+        membership.status === MembershipStatus.ACTIVE &&
+        new Date(membership.expires_at) > new Date();
 
-      payload.hasActiveSubscription = isActive || isTrialValid;
+      payload.hasActiveSubscription = !!isActive;
     }
+
+    const accessExpiresIn =
+      this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
+      (this.configService.get<number>("jwt.expiresIn")
+        ? `${this.configService.get<number>("jwt.expiresIn")}s`
+        : "1h");
+    const refreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
 
     return {
       message: "Email verified successfully",
-      access_token: this.jwtService.sign(payload, { expiresIn: "1h" }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: "7d" }),
+      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
     };
   }
 
@@ -348,13 +360,20 @@ export class AuthService {
       sub: partner.id,
       role: Role.Partner,
     };
+    const accessExpiresIn =
+      this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
+      (this.configService.get<number>("jwt.expiresIn")
+        ? `${this.configService.get<number>("jwt.expiresIn")}s`
+        : "1h");
+    const refreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
     return {
       user: {
         name: partner.name,
         role: Role.Partner,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: "1h" }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: "7d" }),
+      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
     };
   }
 
@@ -364,14 +383,21 @@ export class AuthService {
       sub: network.id,
       role: Role.Network,
     };
+    const accessExpiresIn =
+      this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
+      (this.configService.get<number>("jwt.expiresIn")
+        ? `${this.configService.get<number>("jwt.expiresIn")}s`
+        : "1h");
+    const refreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
     return {
       user: {
         name: network.fullName,
         role: Role.Network,
         email: network.email,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: "1h" }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: "7d" }),
+      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
     };
   }
 
@@ -582,6 +608,13 @@ export class AuthService {
       role: Role.Network,
       isEmailVerified: network.isEmailVerified,
     };
+    const accessExpiresIn =
+      this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
+      (this.configService.get<number>("jwt.expiresIn")
+        ? `${this.configService.get<number>("jwt.expiresIn")}s`
+        : "1h");
+    const refreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
     return {
       user: {
         name: network.fullName,
@@ -589,8 +622,8 @@ export class AuthService {
         email: network.email,
         isEmailVerified: network.isEmailVerified,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: "1h" }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: "7d" }),
+      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
     };
   }
 }

@@ -53,6 +53,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           </Link>
         </li>
         <li>
+          <Link href="/admin/plans" className={linkClasses("/admin/plans")}>
+            <Layers className="mr-3" />
+            Plans & Tiers
+          </Link>
+        </li>
+        <li>
           <Link href="/admin/reward-templates" className={linkClasses("/admin/reward-templates")}>
             <Layers className="mr-3" />
             Reward Templates

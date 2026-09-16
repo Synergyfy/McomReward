@@ -119,7 +119,7 @@ export class SsoService {
       const businessProfile = anyUser?.businessProfile;
       const appPlan = businessProfile?.appPlan || anyUser?.appPlan;
       const permissions = anyUser?.permissions || (tokenResponse as any)?.permissions;
-      const hasAccess = permissions?.canAccess_rewards ?? true;
+      const hasAccess = permissions?.canAccess_rewards_prod ?? permissions?.canAccess_rewards ?? true;
 
       if (hasAccess && appPlan && appPlan.status === "active") {
         const source = appPlan.source || "membership";
@@ -132,7 +132,7 @@ export class SsoService {
         }
       } else if (!hasAccess) {
         this.logger.warn(
-          `User ${user.email} does not have access permission for rewards (canAccess_rewards: false)`
+          `User ${user.email} does not have access permission for rewards (canAccess_rewards_prod: false)`
         );
       } else {
         if (rawAccessToken) {

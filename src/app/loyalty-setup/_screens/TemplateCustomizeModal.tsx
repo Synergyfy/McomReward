@@ -91,8 +91,8 @@ export default function TemplateCustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col" onInteractOutside={(e: Event) => e.preventDefault()}>
-        <DialogHeader>
+      <DialogContent className="w-[calc(100%-1rem)] sm:max-w-4xl h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[90dvh] flex flex-col p-4 sm:p-6 overflow-hidden" onInteractOutside={(e: Event) => e.preventDefault()}>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Gift className="w-5 h-5 text-orange-500" />
             Customise: {template.name}
@@ -100,7 +100,7 @@ export default function TemplateCustomizeModal({
           <p className="text-sm text-gray-500">Select the rewards you want and customise them as needed.</p>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
           <div className="w-full overflow-x-auto">
             <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg w-max min-w-full md:w-auto">
               {FILTER_TABS.map((tab) => {
@@ -133,11 +133,11 @@ export default function TemplateCustomizeModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-2 flex-shrink-0">
           <span>{selectedIds.size} of {localRewards.length} rewards selected</span>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-1 min-h-[300px]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-1">
           {filteredRewards.length === 0 ? (
             <div className="text-center py-12">
               <Filter className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -217,12 +217,12 @@ export default function TemplateCustomizeModal({
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t flex justify-center gap-3">
+        <div className="mt-4 pt-4 border-t flex flex-wrap justify-center gap-3 flex-shrink-0">
           <Button
             variant="outline"
             size="lg"
             onClick={onClose}
-            className="px-8 py-6 text-lg rounded-xl"
+            className="px-8 py-6 text-lg rounded-xl w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -230,7 +230,7 @@ export default function TemplateCustomizeModal({
             size="lg"
             disabled={!hasSelected}
             onClick={handleSave}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 min-w-[280px]"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 w-full min-w-[280px] sm:w-auto"
           >
             <Save className="mr-2 w-5 h-5" /> Save Changes
           </Button>

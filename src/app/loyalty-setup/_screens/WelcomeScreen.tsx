@@ -26,10 +26,10 @@ export default function WelcomeScreen({ onComplete, onSkip }: WelcomeScreenProps
     <>
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-orange-50 via-white to-white px-4">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="mb-6">
+          <div className="mb-8 pt-5">
+            {/* <div className="mb-6">
               <span className="text-3xl font-bold text-orange-600 tracking-tight">Loyalty CardX</span>
-            </div>
+            </div> */}
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">Welcome to MCOM<br /><span className="text-orange-600">Reward & Loyalty</span></h1>
             <p className="text-lg text-gray-500 max-w-lg mx-auto">Your all-in-one loyalty activation platform. We already understand your business — now let&apos;s set up the tools to reward your customers.</p>
           </div>

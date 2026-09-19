@@ -27,6 +27,13 @@ const localBusinesses = [
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYl5SedD4uSItVrNNXxIHvMIulMZhx6vIYYXTkWRav22aO_PEiYVK_ryI-IIuz5XHhu_tYnba_OPT5LzyBT9lK0TjvpwwFtPu6ViSIPhzxmerHj1qhITuttbtqhauL72G4m3d6aIcHun0oDqlcUikStuS36Ke5uWhg9Kf-l-BpLF83cYTHcjHRH8EeW_VgL557iTqAP_MouvWqCkZL3ivIpVLg1t1b8g47mltRWRryxl9sxJ-1Ny3GwvQBn382kH_Bro-wG2KjXwXZ",
     location: "Borough Market",
     id: "artisan-coffee-house"
+  },
+  {
+    name: "Artisan Coffee House",
+    offer: "Free Pastry on 5th Coffee stamp",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYl5SedD4uSItVrNNXxIHvMIulMZhx6vIYYXTkWRav22aO_PEiYVK_ryI-IIuz5XHhu_tYnba_OPT5LzyBT9lK0TjvpwwFtPu6ViSIPhzxmerHj1qhITuttbtqhauL72G4m3d6aIcHun0oDqlcUikStuS36Ke5uWhg9Kf-l-BpLF83cYTHcjHRH8EeW_VgL557iTqAP_MouvWqCkZL3ivIpVLg1t1b8g47mltRWRryxl9sxJ-1Ny3GwvQBn382kH_Bro-wG2KjXwXZ",
+    location: "Borough Market",
+    id: "artisan-coffee-house-2"
   }
 ];
 
@@ -93,23 +100,23 @@ export default function Homepage() {
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
-                href="/customer"
+                href="https://mcomsolutions.vercel.app/register/customer?source=mcomloyalty&redirect=http%3A%2F%2Flocalhost%3A3005%2Fsso-login"
                 className="px-8 py-3.5 bg-orange-500 text-white font-bold rounded-full shadow-lg shadow-orange-500/20 hover:shadow-xl hover:bg-orange-600 transition duration-200 active:scale-95 text-center"
               >
-                Join Free
+                Get Started
               </Link>
               <Link
-                href="/reward"
+                href="https://mcomsolutions.vercel.app/getstarted/business?source=mcomloyalty&redirect=http%3A%2F%2Flocalhost%3A3005%2Fsso-login"
                 className="px-8 py-3.5 border-2 border-gray-300 text-gray-700 font-bold rounded-full hover:bg-gray-50 transition duration-200 active:scale-95 text-center"
               >
-                Explore Rewards
+                For Businesses →
               </Link>
-              <Link
+              {/* <Link
                 href="/business"
                 className="flex items-center justify-center text-orange-600 hover:text-orange-700 font-bold px-4 hover:underline py-3.5 text-center"
               >
                 For Businesses →
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -195,23 +202,23 @@ export default function Homepage() {
           <div className="relative z-10 space-y-6 pt-8">
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/customer"
+                href="https://mcomsolutions.vercel.app/register/customer?source=mcomloyalty&redirect=http%3A%2F%2Flocalhost%3A3005%2Fsso-login"
                 className="px-6 py-3 bg-orange-500 text-white font-bold rounded-full text-xs text-center shadow shadow-orange-500/20 active:scale-95 transition-transform"
               >
-                Join Free
+                Get Started
               </Link>
               <Link
-                href="/reward"
+                href="https://mcomsolutions.vercel.app/getstarted/business?source=mcomloyalty&redirect=http%3A%2F%2Flocalhost%3A3005%2Fsso-login"
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-full text-xs text-center backdrop-blur-md active:scale-95 transition-transform"
               >
-                Explore Rewards
+                For Businesses
               </Link>
-              <Link
+              {/* <Link
                 href="/business"
                 className="text-orange-400 hover:text-orange-300 font-bold py-2 text-xs text-center active:scale-95"
               >
                 For Businesses →
-              </Link>
+              </Link> */}
             </div>
 
             {/* Pagination dots & index */}
@@ -291,10 +298,10 @@ export default function Homepage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Featured Local Spotlight Carousel */}
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {localBusinesses.map((biz) => (
               <motion.div
-                key={biz.name}
+                key={biz.id}
                 whileHover={{ y: -4 }}
                 className="group relative overflow-hidden rounded-3xl h-[380px] shadow-sm border border-gray-100/60"
               >
@@ -316,14 +323,14 @@ export default function Homepage() {
                       href={`/merchants/${biz.id}`}
                       className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-1.5 rounded-full text-xs font-bold transition duration-200"
                     >
-                      View Offer
+                      View
                     </Link>
-                    <Link
+                    {/* <Link
                       href={`/merchants/${biz.id}`}
                       className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-1.5 rounded-full text-xs font-semibold"
                     >
                       Details
-                    </Link>
+                    </Link> */}
                   </div>
                 </div>
               </motion.div>
@@ -331,7 +338,7 @@ export default function Homepage() {
           </div>
 
           {/* Reward Types Cards Bento */}
-          <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+          {/* <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
             <div className="bg-orange-50/50 border border-orange-100 rounded-3xl p-6 flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start">
                 <span className="material-symbols-outlined text-orange-500 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
@@ -353,7 +360,7 @@ export default function Homepage() {
                 <p className="text-xs text-orange-600 mt-1">Unlock stamps, custom merchant tiers, and lifestyle awards.</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -482,7 +489,7 @@ export default function Homepage() {
             </p>
           </div>
           <Link
-            href="/play-win"
+            href="https://mcomspin.centralhubsolution.com"
             className="w-fit bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-bold text-xs shadow-md transition duration-200"
           >
             Play Games Now

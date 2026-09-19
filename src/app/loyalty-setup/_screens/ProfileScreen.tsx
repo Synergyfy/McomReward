@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Building2, MapPin, Phone, Globe, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,16 @@ export default function ProfileScreen({ onComplete, onBack }: ProfileScreenProps
   const [editedAddress, setEditedAddress] = useState(profile?.address || "");
   const [editedPhone, setEditedPhone] = useState(profile?.phone || "");
   const [editedWebsite, setEditedWebsite] = useState(profile?.website || "");
+  const profileSynced = useRef(false);
+
+  useEffect(() => {
+    if (!profile || profileSynced.current) return;
+    profileSynced.current = true;
+    setEditedName(profile.name);
+    setEditedAddress(profile.address || "");
+    setEditedPhone(profile.phone || "");
+    setEditedWebsite(profile.website || "");
+  }, [profile]);
 
   const industryName = profile?.sector?.name || profile?.category?.name || "Business";
 

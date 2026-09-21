@@ -440,7 +440,7 @@ export default function Homepage() {
       </section>
 
       {/* Membership Tiers Comparison */}
-      <section className="py-16 bg-gray-50 border-t border-gray-100">
+      {/* <section className="py-16 bg-gray-50 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold font-headline-lg text-gray-900">Unlock Tier Status</h2>
@@ -471,7 +471,7 @@ export default function Homepage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Play & Win & Events Bento Grid */}
       <section className="py-16 max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">

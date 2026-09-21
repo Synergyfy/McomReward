@@ -2,7 +2,10 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { PaymentService } from "./payment.service";
 import { Tier } from "../tier/entities/tier.entity";
-import { Membership, PlanType } from "../membership/entities/membership.entity";
+import {
+  PlanSubscription,
+  PlanType,
+} from "../plans/entities/plan-subscription.entity";
 import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
 import { StripeService } from "./stripe.service";
 import { PaypalService } from "./paypal.service";
@@ -22,7 +25,7 @@ describe("PaymentService", () => {
     findOne: jest.fn(),
   };
 
-  const mockMembershipRepository = {
+  const mockPlanSubscriptionRepository = {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
@@ -84,8 +87,8 @@ describe("PaymentService", () => {
           useValue: mockTierRepository,
         },
         {
-          provide: getRepositoryToken(Membership),
-          useValue: mockMembershipRepository,
+          provide: getRepositoryToken(PlanSubscription),
+          useValue: mockPlanSubscriptionRepository,
         },
         {
           provide: getRepositoryToken(PaymentHistory),
@@ -285,13 +288,13 @@ describe("PaymentService", () => {
         metadata: { tier_id: "1", plan_type: "monthly" },
       });
       mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockMembershipRepository.findOne.mockResolvedValue(null);
-      mockMembershipRepository.create.mockReturnValue({});
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockPlanSubscriptionRepository.create.mockReturnValue({});
       await service.verifyStripePayment(
         { transaction_id: "1" },
         { id: "1", role: "business" },
       );
-      expect(mockMembershipRepository.create).toHaveBeenCalled();
+      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
       expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
     });
 
@@ -303,12 +306,12 @@ describe("PaymentService", () => {
         metadata: { tier_id: "1", plan_type: "monthly" },
       });
       mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockMembershipRepository.findOne.mockResolvedValue({});
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue({});
       await service.verifyStripePayment(
         { transaction_id: "1" },
         { id: "1", role: "business" },
       );
-      expect(mockMembershipRepository.save).toHaveBeenCalled();
+      expect(mockPlanSubscriptionRepository.save).toHaveBeenCalled();
       expect(mockPaymentHistoryRepository.save).toHaveBeenCalled();
     });
 
@@ -318,7 +321,7 @@ describe("PaymentService", () => {
         { transaction_id: "1" },
         { id: "1", role: "business" },
       );
-      expect(mockMembershipRepository.create).not.toHaveBeenCalled();
+      expect(mockPlanSubscriptionRepository.create).not.toHaveBeenCalled();
     });
   });
 
@@ -360,13 +363,13 @@ describe("PaymentService", () => {
         },
       });
       mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockMembershipRepository.findOne.mockResolvedValue(null);
-      mockMembershipRepository.create.mockReturnValue({});
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockPlanSubscriptionRepository.create.mockReturnValue({});
       await service.verifyPaypalPayment(
         { transaction_id: "1" },
         { id: "1", role: "business" },
       );
-      expect(mockMembershipRepository.create).toHaveBeenCalled();
+      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
       expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
     });
   });
@@ -458,8 +461,8 @@ describe("PaymentService", () => {
         qrCodeCount: 0,
       };
       mockTierRepository.findOne.mockResolvedValue(tier);
-      mockMembershipRepository.findOne.mockResolvedValue(null);
-      mockMembershipRepository.create.mockReturnValue({});
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockPlanSubscriptionRepository.create.mockReturnValue({});
 
       const result = await service.verifyPaypalSubscription(
         { subscription_id: "sub-123" },
@@ -467,7 +470,7 @@ describe("PaymentService", () => {
       );
 
       expect(result.status).toBe("ACTIVE");
-      expect(mockMembershipRepository.create).toHaveBeenCalled();
+      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
       expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
     });
   });

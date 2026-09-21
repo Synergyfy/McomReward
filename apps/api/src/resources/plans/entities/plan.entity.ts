@@ -1,15 +1,14 @@
-import {
-  Entity,
-  Column,
-  OneToMany,
-} from "typeorm";
+import { Entity, Column, OneToMany } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 import { PlanVariant } from "./plan-variant.entity";
 
 @Entity({ name: "plans" })
 export class Plan extends AbstractBaseEntity {
-  @ApiProperty({ description: "Display name of the plan family (e.g. Starter, Bronze, Silver, Gold)" })
+  @ApiProperty({
+    description:
+      "Display name of the plan family (e.g. Starter, Bronze, Silver, Gold)",
+  })
   @Column()
   name: string;
 
@@ -17,11 +16,16 @@ export class Plan extends AbstractBaseEntity {
   @Column({ unique: true })
   slug: string;
 
-  @ApiProperty({ description: "Commercial description of the plan family", required: false })
+  @ApiProperty({
+    description: "Commercial description of the plan family",
+    required: false,
+  })
   @Column({ type: "text", nullable: true })
   description: string;
 
-  @ApiProperty({ description: "Whether this plan family is active and available" })
+  @ApiProperty({
+    description: "Whether this plan family is active and available",
+  })
   @Column({ default: true })
   isActive: boolean;
 

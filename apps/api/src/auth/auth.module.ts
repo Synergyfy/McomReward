@@ -13,7 +13,7 @@ import { OtpModule } from "../resources/otp/otp.module";
 import { MailModule } from "../mail/mail.module";
 import { BusinessModule } from "../resources/business/business.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Membership } from "../resources/membership/entities/membership.entity";
+import { PlanSubscription } from "../resources/plans/entities/plan-subscription.entity";
 import { PartnerModule } from "../resources/partner/partner.module";
 import { PartnerLocalStrategy } from "./partner-local.strategy";
 import { Business } from "../resources/business/entities/business.entity";
@@ -41,7 +41,7 @@ import { Partner } from "../resources/partner/entities/partner.entity";
     MailModule,
     forwardRef(() => BusinessModule),
     TypeOrmModule.forFeature([
-      Membership,
+      PlanSubscription,
       Business,
       Staff,
       Participant,

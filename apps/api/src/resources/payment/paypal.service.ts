@@ -7,7 +7,7 @@ import {
   OrderRequest,
   CheckoutPaymentIntent,
 } from "@paypal/paypal-server-sdk";
-import { PlanType } from "../membership/entities/membership.entity";
+import { PlanType } from "../plans/entities/plan-subscription.entity";
 import axios from "axios";
 
 @Injectable()

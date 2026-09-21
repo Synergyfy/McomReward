@@ -1,6 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { CapabilityService } from "./capability.service";
-import { MembershipModule } from "../membership/membership.module";
+import { PlansModule } from "../plans/plans.module";
 import { CampaignModule } from "../campaign/campaign.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
@@ -10,7 +10,7 @@ import { BusinessModule } from "../business/business.module";
 
 @Module({
   imports: [
-    MembershipModule,
+    PlansModule,
     forwardRef(() => CampaignModule),
     RewardsModule,
     TypeOrmModule.forFeature([PointHistory, Staff]),

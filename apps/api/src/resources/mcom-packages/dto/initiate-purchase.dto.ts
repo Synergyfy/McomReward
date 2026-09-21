@@ -39,12 +39,18 @@ export class InitiatePlatformPurchaseDto {
   @IsEnum(PaymentProviderType)
   provider: PaymentProviderType;
 
-  @ApiProperty({ description: "Return URL after payment completion", required: false })
+  @ApiProperty({
+    description: "Return URL after payment completion",
+    required: false,
+  })
   @IsString()
   @IsOptional()
   returnUrl?: string;
 
-  @ApiProperty({ description: "Cancel URL if user cancels checkout", required: false })
+  @ApiProperty({
+    description: "Cancel URL if user cancels checkout",
+    required: false,
+  })
   @IsString()
   @IsOptional()
   cancelUrl?: string;

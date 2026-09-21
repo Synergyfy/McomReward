@@ -38,7 +38,9 @@ export class ReferralController {
 
   @Get("analytics")
   @Roles(Role.Participant)
-  @ApiOperation({ summary: "Get referral analytics for the current participant" })
+  @ApiOperation({
+    summary: "Get referral analytics for the current participant",
+  })
   @ApiResponse({ type: ReferralAnalyticsDto })
   async getAnalytics(@Req() req) {
     return this.referralService.getReferralAnalytics(req.user.id);

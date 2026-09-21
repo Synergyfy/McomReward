@@ -5,14 +5,14 @@ import { PointPackageController } from "./point-package.controller";
 import { PointPackage } from "./entities/point-package.entity";
 import { BusinessPointPackage } from "./entities/business-point-package.entity";
 import { Tier } from "../tier/entities/tier.entity";
-import { MembershipModule } from "../membership/membership.module";
+import { PlansModule } from "../plans/plans.module";
 
 import { PaymentModule } from "../payment/payment.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PointPackage, BusinessPointPackage, Tier]),
-    MembershipModule,
+    PlansModule,
     PaymentModule,
   ],
   controllers: [PointPackageController],

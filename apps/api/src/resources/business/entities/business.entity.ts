@@ -21,8 +21,8 @@ import { Referral } from "../../referral/entities/referral.entity";
 import { Deal } from "../../deal/entities/deal.entity";
 import { Campaign } from "../../campaign/entities/campaign.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
-import { Membership } from "../../membership/entities/membership.entity";
 import { Network } from "../../network/entities/network.entity";
+import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
 import {
   NetworkLocationTag,
   NetworkRelationshipTag,
@@ -32,14 +32,24 @@ import { BusinessWallet } from "../../wallet/entities/business-wallet.entity";
 
 @Entity("businesses")
 export class Business extends AbstractBaseEntity {
-  @ApiProperty({ description: "OTP for email verification (only present if SMTP mail delivery fails)", required: false })
+  @ApiProperty({
+    description:
+      "OTP for email verification (only present if SMTP mail delivery fails)",
+    required: false,
+  })
   otp?: string;
 
-  @ApiProperty({ description: "The first name of the business owner", required: false })
+  @ApiProperty({
+    description: "The first name of the business owner",
+    required: false,
+  })
   @Column({ nullable: true })
   firstName: string;
 
-  @ApiProperty({ description: "The last name of the business owner", required: false })
+  @ApiProperty({
+    description: "The last name of the business owner",
+    required: false,
+  })
   @Column({ nullable: true })
   lastName: string;
 
@@ -223,8 +233,8 @@ export class Business extends AbstractBaseEntity {
   @Column({ default: 0 })
   total_points_redeemed: number;
 
-  @OneToMany(() => Membership, (membership) => membership.business)
-  memberships: Membership[];
+  @OneToMany(() => PlanSubscription, (subscription) => subscription.business)
+  subscriptions: PlanSubscription[];
 
   @ApiProperty({
     description:
@@ -309,21 +319,24 @@ export class Business extends AbstractBaseEntity {
   mcomTokenExpiresAt?: Date;
 
   @ApiProperty({
-    description: "MCOM Ecosystem Membership Level (e.g. Standard, Silver, Gold, Platinum)",
+    description:
+      "MCOM Ecosystem Membership Level (e.g. Standard, Silver, Gold, Platinum)",
     required: false,
   })
   @Column({ nullable: true })
   membershipLevel?: string;
 
   @ApiProperty({
-    description: "MCOM Ecosystem Membership Tier (e.g. Free, Normal, Pro, Pro+)",
+    description:
+      "MCOM Ecosystem Membership Tier (e.g. Free, Normal, Pro, Pro+)",
     required: false,
   })
   @Column({ nullable: true })
   membershipTier?: string;
 
   @ApiProperty({
-    description: "MCOM Ecosystem Membership Status (e.g. active, trial, inactive)",
+    description:
+      "MCOM Ecosystem Membership Status (e.g. active, trial, inactive)",
     required: false,
   })
   @Column({ nullable: true })

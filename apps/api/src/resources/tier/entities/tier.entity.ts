@@ -17,7 +17,10 @@ export class Tier extends AbstractBaseEntity {
   @Column({ nullable: true })
   description: string;
 
-  @ApiProperty({ description: "Whether this is the default plan", default: false })
+  @ApiProperty({
+    description: "Whether this is the default plan",
+    default: false,
+  })
   @Column({ type: "boolean", default: false })
   is_default: boolean;
 

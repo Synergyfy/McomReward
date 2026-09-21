@@ -57,7 +57,9 @@ export class SystemPlansController {
   }
 
   @Get("seasons")
-  @ApiOperation({ summary: "Get list of active seasons for plan configuration" })
+  @ApiOperation({
+    summary: "Get list of active seasons for plan configuration",
+  })
   @ApiResponse({ status: 200, description: "Return seasons" })
   getSeasons() {
     return this.systemPlansService.getSeasons();

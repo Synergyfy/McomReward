@@ -9,7 +9,7 @@ import { OtpService } from "../resources/otp/otp.service";
 import { MailService } from "../mail/mail.service";
 import { BusinessService } from "../resources/business/services/business.service";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Membership } from "../resources/membership/entities/membership.entity";
+import { PlanSubscription } from "../resources/plans/entities/plan-subscription.entity";
 
 describe("AuthService", () => {
   let service: AuthService;
@@ -33,14 +33,14 @@ describe("AuthService", () => {
   };
 
   const mockMailService = {
-    sendOtp: jest.fn(),
+    sendMail: jest.fn(),
   };
 
   const mockBusinessService = {
-    findById: jest.fn(),
+    findOne: jest.fn(),
   };
 
-  const mockMembershipRepository = {
+  const mockPlanSubscriptionRepository = {
     findOne: jest.fn(),
   };
 
@@ -48,15 +48,33 @@ describe("AuthService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: UserService, useValue: mockUserService },
-        { provide: HashService, useValue: mockHashService },
-        { provide: JwtService, useValue: mockJwtService },
-        { provide: OtpService, useValue: mockOtpService },
-        { provide: MailService, useValue: mockMailService },
-        { provide: BusinessService, useValue: mockBusinessService },
         {
-          provide: getRepositoryToken(Membership),
-          useValue: mockMembershipRepository,
+          provide: UserService,
+          useValue: mockUserService,
+        },
+        {
+          provide: HashService,
+          useValue: mockHashService,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+        {
+          provide: OtpService,
+          useValue: mockOtpService,
+        },
+        {
+          provide: MailService,
+          useValue: mockMailService,
+        },
+        {
+          provide: BusinessService,
+          useValue: mockBusinessService,
+        },
+        {
+          provide: getRepositoryToken(PlanSubscription),
+          useValue: mockPlanSubscriptionRepository,
         },
       ],
     }).compile();
@@ -147,7 +165,7 @@ describe("AuthService", () => {
       });
       mockBusinessService.findById.mockResolvedValue({ sector: {} });
 
-      mockMembershipRepository.findOne.mockResolvedValue(null);
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
 
       const result = await service.login(user);
       expect(result).toEqual({

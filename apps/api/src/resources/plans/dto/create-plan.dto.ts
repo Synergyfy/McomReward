@@ -24,7 +24,10 @@ export class CreatePlanVariantDto {
   @IsNotEmpty()
   tier: PlanTierLevelEnum;
 
-  @ApiProperty({ description: "One-off price amount in GBP for this variant duration", example: 49.99 })
+  @ApiProperty({
+    description: "One-off price amount in GBP for this variant duration",
+    example: 49.99,
+  })
   @IsNumber()
   @Min(0)
   price: number;
@@ -34,13 +37,18 @@ export class CreatePlanVariantDto {
   @IsString({ each: true })
   features: string[];
 
-  @ApiProperty({ description: "Enforced capabilities quotas and feature flags" })
+  @ApiProperty({
+    description: "Enforced capabilities quotas and feature flags",
+  })
   @IsOptional()
   configuration?: PlanVariantConfiguration;
 }
 
 export class CreatePlanDto {
-  @ApiProperty({ description: "Plan family name (e.g. Starter, Gold)", example: "Gold Plan" })
+  @ApiProperty({
+    description: "Plan family name (e.g. Starter, Gold)",
+    example: "Gold Plan",
+  })
   @IsString()
   @IsNotEmpty()
   name: string;

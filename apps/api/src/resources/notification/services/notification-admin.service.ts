@@ -116,9 +116,8 @@ export class NotificationAdminService {
 
   async findAnnouncements(filterDto: FilterAnnouncementDto) {
     const { page = 1, limit = 10, search, status } = filterDto;
-    const queryBuilder = this.announcementRepository.createQueryBuilder(
-      "announcement",
-    );
+    const queryBuilder =
+      this.announcementRepository.createQueryBuilder("announcement");
 
     if (search) {
       queryBuilder.andWhere(
@@ -166,7 +165,9 @@ export class NotificationAdminService {
       title: updateDto.title,
       content: updateDto.content,
       target_audience: updateDto.targetAudience,
-      start_date: updateDto.startDate ? new Date(updateDto.startDate) : undefined,
+      start_date: updateDto.startDate
+        ? new Date(updateDto.startDate)
+        : undefined,
       end_date: updateDto.endDate ? new Date(updateDto.endDate) : undefined,
       status: updateDto.status,
     });

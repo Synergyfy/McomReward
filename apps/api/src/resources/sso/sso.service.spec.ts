@@ -3,7 +3,7 @@ import { SsoService } from "./sso.service";
 import { McomCentralService } from "./mcom-central.service";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../../user/user.service";
-import { MembershipService } from "../membership/membership.service";
+import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
 import { ConfigService } from "@nestjs/config";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Business } from "../business/entities/business.entity";
@@ -27,7 +27,7 @@ describe("SsoService", () => {
     exchangeCodeForToken: jest.fn(),
   };
 
-  const mockMembershipService = {
+  const mockPlanSubscriptionService = {
     syncFromCentralPackage: jest.fn(),
   };
 
@@ -58,10 +58,19 @@ describe("SsoService", () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: UserService, useValue: mockUserService },
         { provide: McomCentralService, useValue: mockMcomCentralService },
-        { provide: MembershipService, useValue: mockMembershipService },
+        {
+          provide: PlanSubscriptionService,
+          useValue: mockPlanSubscriptionService,
+        },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: getRepositoryToken(Business), useValue: mockBusinessRepository },
-        { provide: getRepositoryToken(Participant), useValue: mockParticipantRepository },
+        {
+          provide: getRepositoryToken(Business),
+          useValue: mockBusinessRepository,
+        },
+        {
+          provide: getRepositoryToken(Participant),
+          useValue: mockParticipantRepository,
+        },
       ],
     }).compile();
 
@@ -77,9 +86,9 @@ describe("SsoService", () => {
     it("should throw UnauthorizedException if no user data from MCOM Central", async () => {
       mockMcomCentralService.exchangeCodeForToken.mockResolvedValue({});
 
-      await expect(
-        service.exchangeCode("code-123")
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.exchangeCode("code-123")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should provision new business user and return tokens", async () => {
@@ -122,7 +131,7 @@ describe("SsoService", () => {
           name: centralUser.name,
           role: Role.Business,
           isEmailVerified: true,
-        })
+        }),
       );
     });
 
@@ -198,9 +207,9 @@ describe("SsoService", () => {
         throw new Error("Invalid token");
       });
 
-      await expect(
-        service.loginWithSsoToken("invalid-token")
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginWithSsoToken("invalid-token")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should throw UnauthorizedException for wrong issuer", async () => {
@@ -212,9 +221,9 @@ describe("SsoService", () => {
         aud: "mcom-mall",
       });
 
-      await expect(
-        service.loginWithSsoToken("token")
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginWithSsoToken("token")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should throw UnauthorizedException for wrong audience", async () => {
@@ -226,9 +235,9 @@ describe("SsoService", () => {
         aud: "wrong-audience",
       });
 
-      await expect(
-        service.loginWithSsoToken("token")
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginWithSsoToken("token")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should login existing user with valid SSO token", async () => {

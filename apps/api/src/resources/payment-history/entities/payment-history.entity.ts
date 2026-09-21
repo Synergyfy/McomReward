@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
 import { Business } from "../../business/entities/business.entity";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
-import { Membership } from "../../membership/entities/membership.entity";
+import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
 
 export enum PaymentProvider {
   STRIPE = "stripe",
@@ -30,8 +30,8 @@ export class PaymentHistory extends AbstractBaseEntity {
   @Column()
   user_type: string;
 
-  @ManyToOne(() => Membership, { eager: true, nullable: true })
-  membership: Membership;
+  @ManyToOne(() => PlanSubscription, { eager: true, nullable: true })
+  subscription: PlanSubscription;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount: number;

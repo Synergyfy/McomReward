@@ -23,9 +23,7 @@ export class AddPlaqueSales1770000000001 implements MigrationInterface {
       `DROP INDEX "public"."IDX_plaque_sales_plaque_name"`,
     );
     await queryRunner.query(`DROP TABLE "plaque_sales"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."plaque_sales_status_enum"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."plaque_sales_status_enum"`);
     await queryRunner.query(
       `DROP TYPE "public"."plaque_sales_payout_status_enum"`,
     );

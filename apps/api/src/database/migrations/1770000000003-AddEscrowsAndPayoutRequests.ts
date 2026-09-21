@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddEscrowsAndPayoutRequests1770000000003
-  implements MigrationInterface
-{
+export class AddEscrowsAndPayoutRequests1770000000003 implements MigrationInterface {
   name = "AddEscrowsAndPayoutRequests1770000000003";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -31,12 +29,8 @@ export class AddEscrowsAndPayoutRequests1770000000003
       `DROP INDEX "public"."IDX_payout_requests_business_id"`,
     );
     await queryRunner.query(`DROP TABLE "payout_requests"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."payout_requests_status_enum"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_escrows_campaign_id"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."payout_requests_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."IDX_escrows_campaign_id"`);
     await queryRunner.query(`DROP TABLE "escrows"`);
     await queryRunner.query(`DROP TYPE "public"."escrows_status_enum"`);
   }

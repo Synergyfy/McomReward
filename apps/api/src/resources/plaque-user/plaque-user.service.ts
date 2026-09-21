@@ -51,7 +51,12 @@ export class PlaqueUserService {
   async getSummary(userId: string) {
     const plaqueIds = await this.getOwnedPlaqueIds(userId);
     if (plaqueIds.length === 0) {
-      return { totalScans: 0, scans30d: 0, redemptions30d: 0, commissionEarned: 0 };
+      return {
+        totalScans: 0,
+        scans30d: 0,
+        redemptions30d: 0,
+        commissionEarned: 0,
+      };
     }
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -59,7 +64,10 @@ export class PlaqueUserService {
       where: { plaqueId: In(plaqueIds) },
     });
     const scans30d = await this.scanRepository.count({
-      where: { plaqueId: In(plaqueIds), scannedAt: MoreThanOrEqual(thirtyDaysAgo) },
+      where: {
+        plaqueId: In(plaqueIds),
+        scannedAt: MoreThanOrEqual(thirtyDaysAgo),
+      },
     });
     const redemptions30d = await this.scanRepository.count({
       where: {
@@ -86,7 +94,10 @@ export class PlaqueUserService {
     const results = [];
     for (const plaque of plaques) {
       const scans30d = await this.scanRepository.count({
-        where: { plaqueId: plaque.id, scannedAt: MoreThanOrEqual(thirtyDaysAgo) },
+        where: {
+          plaqueId: plaque.id,
+          scannedAt: MoreThanOrEqual(thirtyDaysAgo),
+        },
       });
       results.push({
         id: plaque.id,

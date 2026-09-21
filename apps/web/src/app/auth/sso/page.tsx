@@ -48,10 +48,13 @@ function SSOReceiverContent() {
 
         toast.success("Welcome back!");
 
-        const userRole = data?.user?.role || role;
+        const userRole = data?.role || data?.user?.role || role;
+        if (userRole) {
+          localStorage.setItem("userRole", userRole);
+        }
 
         if (userRole === "Business" || userRole === "business") {
-          router.push("/loyalty-setup");
+          router.push("/dashboard");
         } else if (userRole === "Admin") {
           router.push("/admin/dashboard");
         } else if (userRole === "Staff") {

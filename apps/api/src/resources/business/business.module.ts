@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Business } from "./entities/business.entity";
 import { Referral } from "../referral/entities/referral.entity";
@@ -24,7 +24,7 @@ import { MailModule } from "../../mail/mail.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { StampModule } from "../stamp/stamp.module";
 import { ProvisionModule } from "../provision/provision.module";
-import { MembershipModule } from "../membership/membership.module";
+import { PlansModule } from "../plans/plans.module";
 import { MatchingPointModule } from "../matching-point/matching-point.module";
 import { McomCentralService } from "../sso/mcom-central.service";
 
@@ -53,8 +53,8 @@ import { McomCentralService } from "../sso/mcom-central.service";
     WalletModule,
     StampModule,
     ProvisionModule,
-    MembershipModule,
-    MatchingPointModule
+    forwardRef(() => PlansModule),
+    MatchingPointModule,
   ],
   providers: [BusinessService, McomCentralService],
   controllers: [BusinessController, AffiliateController],

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ParticipantController } from "./participant.controller";
 import { ParticipantService } from "./participant.service";
+import { RewardsService } from "../rewards/services/rewards.service";
 
 describe("ParticipantController", () => {
   let controller: ParticipantController;
@@ -11,6 +12,10 @@ describe("ParticipantController", () => {
       providers: [
         {
           provide: ParticipantService,
+          useValue: {},
+        },
+        {
+          provide: RewardsService,
           useValue: {},
         },
       ],

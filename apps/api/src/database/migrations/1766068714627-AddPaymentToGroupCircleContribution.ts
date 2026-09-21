@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddPaymentToGroupCircleContribution1766068714627
-  implements MigrationInterface
-{
+export class AddPaymentToGroupCircleContribution1766068714627 implements MigrationInterface {
   name = "AddPaymentToGroupCircleContribution1766068714627";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

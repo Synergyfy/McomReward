@@ -7,7 +7,7 @@ import {
   IsString,
   ValidateIf,
 } from "class-validator";
-import { PlanType } from "../../membership/entities/membership.entity";
+import { PlanType } from "../../plans/entities/plan-subscription.entity";
 import { PaymentProvider } from "../../payment-history/entities/payment-history.entity";
 
 export class SubscribeDto {

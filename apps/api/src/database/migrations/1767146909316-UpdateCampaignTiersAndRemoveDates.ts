@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class UpdateCampaignTiersAndRemoveDates1767146909316
-  implements MigrationInterface
-{
+export class UpdateCampaignTiersAndRemoveDates1767146909316 implements MigrationInterface {
   name = "UpdateCampaignTiersAndRemoveDates1767146909316";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

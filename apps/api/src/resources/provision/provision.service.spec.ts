@@ -27,7 +27,9 @@ describe("ProvisionService", () => {
     }).compile();
 
     service = module.get<ProvisionService>(ProvisionService);
-    repository = module.get<Repository<Provision>>(getRepositoryToken(Provision));
+    repository = module.get<Repository<Provision>>(
+      getRepositoryToken(Provision),
+    );
   });
 
   afterEach(() => {
@@ -49,8 +51,12 @@ describe("ProvisionService", () => {
 
       const result = await service.create(dto);
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { code: dto.code } });
-      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ code: dto.code }));
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { code: dto.code },
+      });
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ code: dto.code }),
+      );
       expect(repository.save).toHaveBeenCalled();
       expect(result).toEqual(dto);
     });
@@ -69,7 +75,7 @@ describe("ProvisionService", () => {
     });
 
     it("should return existing provision if code exists but not redeemed", async () => {
-       const dto = {
+      const dto = {
         code: "TEST-CODE",
         type: ProvisionType.TIER_ACCESS,
         payload: { tierId: "123", durationDays: 30 },
@@ -86,43 +92,49 @@ describe("ProvisionService", () => {
   });
 
   describe("validateAndMarkRedeemed", () => {
-      it("should mark provision as redeemed if valid", async () => {
-          const code = "VALID-CODE";
-          const userId = "user-123";
-          const provision = {
-              code,
-              isRedeemed: false,
-              expiresAt: new Date(Date.now() + 100000), // Future date
-              save: jest.fn()
-          };
+    it("should mark provision as redeemed if valid", async () => {
+      const code = "VALID-CODE";
+      const userId = "user-123";
+      const provision = {
+        code,
+        isRedeemed: false,
+        expiresAt: new Date(Date.now() + 100000), // Future date
+        save: jest.fn(),
+      };
 
-          mockProvisionRepository.findOne.mockResolvedValue(provision);
-          mockProvisionRepository.save.mockImplementation((val) => val);
+      mockProvisionRepository.findOne.mockResolvedValue(provision);
+      mockProvisionRepository.save.mockImplementation((val) => val);
 
-          const result = await service.validateAndMarkRedeemed(code, userId);
+      const result = await service.validateAndMarkRedeemed(code, userId);
 
-          expect(result.isRedeemed).toBe(true);
-          expect(result.redeemedByUserId).toBe(userId);
-          expect(result.redeemedAt).toBeDefined();
-          expect(repository.save).toHaveBeenCalled();
+      expect(result.isRedeemed).toBe(true);
+      expect(result.redeemedByUserId).toBe(userId);
+      expect(result.redeemedAt).toBeDefined();
+      expect(repository.save).toHaveBeenCalled();
+    });
+
+    it("should throw NotFoundException if code not found", async () => {
+      mockProvisionRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.validateAndMarkRedeemed("INVALID", "user-1"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw BadRequestException if already redeemed", async () => {
+      mockProvisionRepository.findOne.mockResolvedValue({ isRedeemed: true });
+      await expect(
+        service.validateAndMarkRedeemed("REDEEMED", "user-1"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should throw BadRequestException if expired", async () => {
+      mockProvisionRepository.findOne.mockResolvedValue({
+        isRedeemed: false,
+        expiresAt: new Date(Date.now() - 10000),
       });
-
-      it("should throw NotFoundException if code not found", async () => {
-          mockProvisionRepository.findOne.mockResolvedValue(null);
-          await expect(service.validateAndMarkRedeemed("INVALID", "user-1")).rejects.toThrow(NotFoundException);
-      });
-
-      it("should throw BadRequestException if already redeemed", async () => {
-          mockProvisionRepository.findOne.mockResolvedValue({ isRedeemed: true });
-          await expect(service.validateAndMarkRedeemed("REDEEMED", "user-1")).rejects.toThrow(BadRequestException);
-      });
-
-      it("should throw BadRequestException if expired", async () => {
-          mockProvisionRepository.findOne.mockResolvedValue({ 
-              isRedeemed: false, 
-              expiresAt: new Date(Date.now() - 10000) 
-          });
-          await expect(service.validateAndMarkRedeemed("EXPIRED", "user-1")).rejects.toThrow(BadRequestException);
-      });
+      await expect(
+        service.validateAndMarkRedeemed("EXPIRED", "user-1"),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 });

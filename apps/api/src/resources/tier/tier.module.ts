@@ -5,10 +5,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Tier } from "./entities/tier.entity";
 import { TierHistory } from "./entities/tier-history.entity";
 import { Season } from "../season/entities/season.entity";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tier, TierHistory, Membership, Season])],
+  imports: [
+    TypeOrmModule.forFeature([Tier, TierHistory, PlanSubscription, Season]),
+  ],
   controllers: [TierController],
   providers: [TierService],
 })

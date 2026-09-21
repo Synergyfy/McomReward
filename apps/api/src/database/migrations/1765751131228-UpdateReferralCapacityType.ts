@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class UpdateReferralCapacityType1765751131228
-  implements MigrationInterface
-{
+export class UpdateReferralCapacityType1765751131228 implements MigrationInterface {
   name = "UpdateReferralCapacityType1765751131228";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -57,8 +57,7 @@ export class McomCentralService {
       "";
 
     this.internalServiceId =
-      this.configService.get<string>("INTERNAL_SERVICE_ID") ||
-      this.clientId;
+      this.configService.get<string>("INTERNAL_SERVICE_ID") || this.clientId;
 
     this.internalApiSecret =
       this.configService.get<string>("INTERNAL_SERVICE_SECRET") ||
@@ -73,7 +72,10 @@ export class McomCentralService {
     return this.clientId;
   }
 
-  getHmacHeaders(customServiceId?: string, customApiSecret?: string): Record<string, string> {
+  getHmacHeaders(
+    customServiceId?: string,
+    customApiSecret?: string,
+  ): Record<string, string> {
     const serviceId = customServiceId || this.clientId;
     const secret = customApiSecret || this.hmacSecret;
     const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -112,7 +114,7 @@ export class McomCentralService {
 
   async exchangeCodeForToken(code: string, redirectUri: string): Promise<any> {
     const basicAuth = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`
+      `${this.clientId}:${this.clientSecret}`,
     ).toString("base64");
 
     const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/token`, {
@@ -132,7 +134,7 @@ export class McomCentralService {
     if (!response.ok) {
       const errorText = await response.text();
       this.logger.error(
-        `Token exchange failed: ${response.status} ${errorText}`
+        `Token exchange failed: ${response.status} ${errorText}`,
       );
       throw new Error(`Token exchange failed: ${response.status} ${errorText}`);
     }
@@ -146,23 +148,28 @@ export class McomCentralService {
     expiresIn: number;
   }> {
     const basicAuth = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`
+      `${this.clientId}:${this.clientSecret}`,
     ).toString("base64");
 
-    const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/token/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${basicAuth}`,
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/auth/sso/token/refresh`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${basicAuth}`,
+        },
+        body: JSON.stringify({
+          refresh_token: refreshToken,
+        }),
       },
-      body: JSON.stringify({
-        refresh_token: refreshToken,
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      this.logger.error(`Token refresh failed: ${response.status} ${errorText}`);
+      this.logger.error(
+        `Token refresh failed: ${response.status} ${errorText}`,
+      );
       throw new Error(`Token refresh failed: ${response.status}`);
     }
 
@@ -175,7 +182,7 @@ export class McomCentralService {
   }
 
   async getUserMembership(
-    userIdOrParams: string | { userId?: string; email?: string }
+    userIdOrParams: string | { userId?: string; email?: string },
   ): Promise<any> {
     let query = "";
     if (typeof userIdOrParams === "string") {
@@ -186,16 +193,13 @@ export class McomCentralService {
         : `userId=${encodeURIComponent(userIdOrParams.userId || "")}`;
     }
 
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/data/user?${query}`,
-      {
-        method: "GET",
-        headers: this.getHmacHeaders(
-          this.internalServiceId,
-          this.internalApiSecret
-        ),
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/api/v1/data/user?${query}`, {
+      method: "GET",
+      headers: this.getHmacHeaders(
+        this.internalServiceId,
+        this.internalApiSecret,
+      ),
+    });
 
     if (!response.ok) {
       this.logger.warn(`Failed to get user membership: ${response.status}`);
@@ -212,7 +216,7 @@ export class McomCentralService {
         {
           method: "GET",
           headers: this.getHmacHeaders(),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -230,33 +234,27 @@ export class McomCentralService {
 
   async getUserInfo(accessToken: string): Promise<CentralUserInfo | null> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/api/v1/auth/sso/userinfo`,
-        {
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/userinfo`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          ...this.getHmacHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        // Fallback to /api/v1/sso/userinfo
+        const fallbackRes = await fetch(`${this.baseUrl}/api/v1/sso/userinfo`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
             ...this.getHmacHeaders(),
           },
-        }
-      );
-
-      if (!response.ok) {
-        // Fallback to /api/v1/sso/userinfo
-        const fallbackRes = await fetch(
-          `${this.baseUrl}/api/v1/sso/userinfo`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              ...this.getHmacHeaders(),
-            },
-          }
-        );
+        });
 
         if (!fallbackRes.ok) {
           this.logger.warn(
-            `Failed to get user info from MCOM Central: ${fallbackRes.status}`
+            `Failed to get user info from MCOM Central: ${fallbackRes.status}`,
           );
           return null;
         }
@@ -268,7 +266,7 @@ export class McomCentralService {
     } catch (error) {
       this.logger.error(
         `Error fetching user info from MCOM Central: ${error?.message}`,
-        error?.stack
+        error?.stack,
       );
       return null;
     }

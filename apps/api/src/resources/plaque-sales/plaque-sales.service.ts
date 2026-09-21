@@ -1,8 +1,15 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { PlaqueSale, PayoutStatus, SaleStatus } from "./entities/plaque-sale.entity";
-import { QrPlaque, QrPlaqueStatus } from "../qr-plaques/entities/qr-plaque.entity";
+import {
+  PlaqueSale,
+  PayoutStatus,
+  SaleStatus,
+} from "./entities/plaque-sale.entity";
+import {
+  QrPlaque,
+  QrPlaqueStatus,
+} from "../qr-plaques/entities/qr-plaque.entity";
 import {
   CreatePlaqueSaleDto,
   UpdatePayoutStatusDto,

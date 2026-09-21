@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Get, Post, Param, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { PlaqueUserService } from "./plaque-user.service";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";

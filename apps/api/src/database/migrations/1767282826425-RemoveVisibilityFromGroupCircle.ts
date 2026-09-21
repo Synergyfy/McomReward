@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RemoveVisibilityFromGroupCircle1767282826425
-  implements MigrationInterface
-{
+export class RemoveVisibilityFromGroupCircle1767282826425 implements MigrationInterface {
   name = "RemoveVisibilityFromGroupCircle1767282826425";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

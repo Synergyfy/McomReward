@@ -55,7 +55,9 @@ export class AddCreditsSystem1770000000005 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."IDX_credit_transactions_user"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_credit_transactions_user"`,
+    );
     await queryRunner.query(`DROP TABLE "credit_transactions"`);
     await queryRunner.query(
       `DROP TYPE "public"."credit_transactions_source_platform_enum"`,
@@ -69,14 +71,14 @@ export class AddCreditsSystem1770000000005 implements MigrationInterface {
     await queryRunner.query(
       `DROP TYPE "public"."credit_transactions_user_type_enum"`,
     );
-    await queryRunner.query(`DROP INDEX "public"."IDX_credit_rules_event_type"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_credit_rules_event_type"`,
+    );
     await queryRunner.query(`DROP TABLE "credit_rules"`);
     await queryRunner.query(
       `DROP TYPE "public"."credit_rules_reward_type_enum"`,
     );
-    await queryRunner.query(
-      `DROP TYPE "public"."credit_rules_platform_enum"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."credit_rules_platform_enum"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_credit_levels_level"`);
     await queryRunner.query(`DROP TABLE "credit_levels"`);
   }

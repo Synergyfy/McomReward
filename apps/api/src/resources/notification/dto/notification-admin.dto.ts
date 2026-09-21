@@ -1,19 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsInt,
-  Min,
-} from "class-validator";
+import { IsString, IsOptional, IsEnum, IsInt, Min } from "class-validator";
 import {
   NotificationTemplateType,
   NotificationTemplateStatus,
 } from "../entities/notification-template.entity";
-import {
-  AnnouncementStatus,
-} from "../entities/announcement.entity";
+import { AnnouncementStatus } from "../entities/announcement.entity";
 
 export class CreateNotificationTemplateDto {
   @ApiProperty()

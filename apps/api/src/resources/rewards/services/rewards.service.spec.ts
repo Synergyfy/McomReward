@@ -5,7 +5,7 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { Reward } from "../entities/reward.entity";
 import { BusinessReward } from "../entities/business-reward.entity";
 import { Business } from "../../business/entities/business.entity";
-import { Membership } from "../../membership/entities/membership.entity";
+import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
 import { Sector } from "../../sector/entities/sector.entity";
 import { Tier } from "../../tier/entities/tier.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
@@ -45,7 +45,7 @@ describe("RewardsService", () => {
   const mockBusinessRepository = {
     findOne: jest.fn(),
   };
-  const mockMembershipRepository = {
+  const mockPlanSubscriptionRepository = {
     findOne: jest.fn(),
   };
 
@@ -55,11 +55,12 @@ describe("RewardsService", () => {
 
   const mockTierRepository = {
     findBy: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockBusinessCampaignRepository = {
-    createQueryBuilder: jest.fn(),
-    count: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockTierProgressionService = {
@@ -94,8 +95,8 @@ describe("RewardsService", () => {
           useValue: mockBusinessRepository,
         },
         {
-          provide: getRepositoryToken(Membership),
-          useValue: mockMembershipRepository,
+          provide: getRepositoryToken(PlanSubscription),
+          useValue: mockPlanSubscriptionRepository,
         },
         { provide: getRepositoryToken(Sector), useValue: mockSectorRepository },
         { provide: getRepositoryToken(Tier), useValue: mockTierRepository },

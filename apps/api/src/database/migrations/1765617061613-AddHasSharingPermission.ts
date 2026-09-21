@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddHasSharingPermission1765617061613
-  implements MigrationInterface
-{
+export class AddHasSharingPermission1765617061613 implements MigrationInterface {
   name = "AddHasSharingPermission1765617061613";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

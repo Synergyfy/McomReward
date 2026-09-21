@@ -16,9 +16,7 @@ export class AddPlaqueScans1770000000004 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_plaque_scans_plaque_id"`,
-    );
+    await queryRunner.query(`DROP INDEX "public"."IDX_plaque_scans_plaque_id"`);
     await queryRunner.query(`DROP TABLE "plaque_scans"`);
     await queryRunner.query(`DROP TYPE "public"."plaque_scans_type_enum"`);
   }

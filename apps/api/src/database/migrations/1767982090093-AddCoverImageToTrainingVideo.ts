@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddCoverImageToTrainingVideo1767982090093
-  implements MigrationInterface
-{
+export class AddCoverImageToTrainingVideo1767982090093 implements MigrationInterface {
   name = "AddCoverImageToTrainingVideo1767982090093";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

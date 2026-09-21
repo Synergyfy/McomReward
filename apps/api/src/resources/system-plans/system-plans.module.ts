@@ -9,10 +9,7 @@ import { Season } from "../season/entities/season.entity";
 import { PlansModule } from "../plans/plans.module";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Tier, TierHistory, Season]),
-    PlansModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Tier, TierHistory, Season]), PlansModule],
   controllers: [SystemPlansController],
   providers: [SystemPlansService],
 })

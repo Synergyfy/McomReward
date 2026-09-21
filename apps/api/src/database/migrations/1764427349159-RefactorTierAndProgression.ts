@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RefactorTierAndProgression1764427349159
-  implements MigrationInterface
-{
+export class RefactorTierAndProgression1764427349159 implements MigrationInterface {
   name = "RefactorTierAndProgression1764427349159";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

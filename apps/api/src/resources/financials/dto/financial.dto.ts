@@ -1,6 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsString, IsOptional, IsNumber, IsInt, Min, IsUUID } from "class-validator";
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsInt,
+  Min,
+  IsUUID,
+} from "class-validator";
 
 export class CreateEscrowDto {
   @ApiProperty()

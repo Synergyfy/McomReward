@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateCampaignFromWishlist1764205805229
-  implements MigrationInterface
-{
+export class CreateCampaignFromWishlist1764205805229 implements MigrationInterface {
   name = "CreateCampaignFromWishlist1764205805229";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

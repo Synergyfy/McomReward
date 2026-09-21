@@ -30,10 +30,10 @@ import { Category } from "../category/entities/category.entity";
 import { SubCategory } from "../subcategory/entities/subcategory.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import {
-  Membership,
-  MembershipStatus,
+  PlanSubscription,
+  PlanSubscriptionStatus,
   PlanType,
-} from "../membership/entities/membership.entity";
+} from "../plans/entities/plan-subscription.entity";
 import { Role } from "../../common/role.enum";
 import { nanoid } from "nanoid";
 
@@ -54,8 +54,8 @@ export class NetworkService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(Tier)
     private readonly tierRepository: Repository<Tier>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     private readonly hashService: HashService,
   ) {}
 

@@ -59,7 +59,12 @@ export class PlaqueSale extends AbstractBaseEntity {
   commissionPercentage: number;
 
   @ApiProperty()
-  @Column({ name: "commission_amount", type: "decimal", precision: 12, scale: 2 })
+  @Column({
+    name: "commission_amount",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+  })
   commissionAmount: number;
 
   @ApiProperty({ enum: PayoutStatus })

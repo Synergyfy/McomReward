@@ -20,9 +20,9 @@ import { WishlistAggregate } from "../wishlist/entities/wishlist-aggregate.entit
 import { WishlistItem } from "../wishlist/entities/wishlist-item.entity";
 import { MailService } from "../../mail/mail.service";
 import {
-  Membership,
-  MembershipStatus,
-} from "../membership/entities/membership.entity";
+  PlanSubscription,
+  PlanSubscriptionStatus,
+} from "../plans/entities/plan-subscription.entity";
 
 import { Tier } from "../tier/entities/tier.entity";
 import { TierProgressionService } from "../tier-progression/tier-progression.service";
@@ -124,11 +124,11 @@ describe("CampaignService", () => {
     create: jest.fn(),
   };
 
-  const mockMembershipRepository = {
+  const mockPlanSubscriptionRepository = {
     findOne: jest.fn(),
     find: jest.fn().mockResolvedValue([
       {
-        status: MembershipStatus.ACTIVE,
+        status: PlanSubscriptionStatus.ACTIVE,
         expires_at: new Date(Date.now() + 10000000),
       },
     ]),
@@ -206,8 +206,8 @@ describe("CampaignService", () => {
           useValue: mockParticipantCampaignBalanceRepository,
         },
         {
-          provide: getRepositoryToken(Membership),
-          useValue: mockMembershipRepository,
+          provide: getRepositoryToken(PlanSubscription),
+          useValue: mockPlanSubscriptionRepository,
         },
         {
           provide: TierProgressionService,

@@ -14,7 +14,7 @@ import { Season } from "../season/entities/season.entity";
 import { UpdateTierProgressionDto } from "./dto/update-tier-progression.dto";
 import { TierHistory } from "./entities/tier-history.entity";
 import { Admin } from "../admin/entities/admin.entity";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 import { Role } from "../../common/role.enum";
 
 @Injectable()
@@ -24,8 +24,8 @@ export class TierService {
     private readonly tierRepository: Repository<Tier>,
     @InjectRepository(TierHistory)
     private readonly tierHistoryRepository: Repository<TierHistory>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     @InjectRepository(Season)
     private readonly seasonRepository: Repository<Season>,
   ) {}
@@ -131,10 +131,11 @@ export class TierService {
     const tiers = await this.tierRepository.find();
     const breakdown = await Promise.all(
       tiers.map(async (tier) => {
-        const count = await this.membershipRepository.count({
+        const count = await this.planSubscriptionRepository.count({
           where: {
-            tier: { id: tier.id },
-            // user_type removed from Membership entity
+            planVariant: {
+              tierLevel: { id: tier.id },
+            },
           },
         });
         return {

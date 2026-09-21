@@ -23,7 +23,7 @@ import { MailService } from "../../../mail/mail.service";
 import { WalletService } from "../../wallet/wallet.service";
 import { StampPackageService } from "../../stamp/services/stamp-package.service";
 import { ProvisionService } from "../../provision/provision.service";
-import { MembershipService } from "../../membership/membership.service";
+import { PlanSubscriptionService } from "../../plans/services/plan-subscription.service";
 import { CreateBusinessDto } from "../dto/create-business.dto";
 import { ProvisionType } from "../../provision/entities/provision.entity";
 import { BadRequestException } from "@nestjs/common";
@@ -31,7 +31,7 @@ import { BadRequestException } from "@nestjs/common";
 describe("BusinessService", () => {
   let service: BusinessService;
   let provisionService: ProvisionService;
-  let membershipService: MembershipService;
+  let planSubscriptionService: PlanSubscriptionService;
 
   // Mock Repositories
   const mockRepo = {
@@ -44,28 +44,28 @@ describe("BusinessService", () => {
 
   // Mock Services
   const mockService = {
-      // Add specific methods if needed, default to jest.fn()
-      create: jest.fn(),
-      findOne: jest.fn(),
-      findAll: jest.fn(),
+    // Add specific methods if needed, default to jest.fn()
+    create: jest.fn(),
+    findOne: jest.fn(),
+    findAll: jest.fn(),
   };
 
   const mockProvisionService = {
-      findByCode: jest.fn(),
-      validateAndMarkRedeemed: jest.fn(),
+    findByCode: jest.fn(),
+    validateAndMarkRedeemed: jest.fn(),
   };
 
-  const mockMembershipService = {
-      grantAccess: jest.fn(),
+  const mockPlanSubscriptionService = {
+    grantAccess: jest.fn(),
   };
 
   const mockMailService = {
-      sendOtp: jest.fn(),
-  }
+    sendOtp: jest.fn(),
+  };
 
   const mockWalletService = {
-      createWallet: jest.fn(),
-  }
+    createWallet: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -78,7 +78,10 @@ describe("BusinessService", () => {
         { provide: getRepositoryToken(BusinessReward), useValue: mockRepo },
         { provide: getRepositoryToken(Staff), useValue: mockRepo },
         { provide: getRepositoryToken(Network), useValue: mockRepo },
-        { provide: HashService, useValue: { hashPassword: jest.fn().mockResolvedValue("hashed") } },
+        {
+          provide: HashService,
+          useValue: { hashPassword: jest.fn().mockResolvedValue("hashed") },
+        },
         { provide: SectorService, useValue: mockService },
         { provide: CategoryService, useValue: mockService },
         { provide: SubcategoryService, useValue: mockService },
@@ -92,13 +95,18 @@ describe("BusinessService", () => {
         { provide: WalletService, useValue: mockWalletService },
         { provide: StampPackageService, useValue: mockService },
         { provide: ProvisionService, useValue: mockProvisionService },
-        { provide: MembershipService, useValue: mockMembershipService },
+        {
+          provide: PlanSubscriptionService,
+          useValue: mockPlanSubscriptionService,
+        },
       ],
     }).compile();
 
     service = module.get<BusinessService>(BusinessService);
     provisionService = module.get<ProvisionService>(ProvisionService);
-    membershipService = module.get<MembershipService>(MembershipService);
+    planSubscriptionService = module.get<PlanSubscriptionService>(
+      PlanSubscriptionService,
+    );
   });
 
   afterEach(() => {
@@ -116,39 +124,53 @@ describe("BusinessService", () => {
       };
 
       const provisionMock = {
-          code: "VALID-PROV",
-          isRedeemed: false,
-          expiresAt: new Date(Date.now() + 100000),
-          type: ProvisionType.TIER_ACCESS,
-          payload: { tierId: "gold", durationDays: 30 }
+        code: "VALID-PROV",
+        isRedeemed: false,
+        expiresAt: new Date(Date.now() + 100000),
+        type: ProvisionType.TIER_ACCESS,
+        payload: { tierId: "gold", durationDays: 30 },
       };
 
       mockRepo.findOne.mockResolvedValue(null); // No existing email/affiliate
       mockProvisionService.findByCode.mockResolvedValue(provisionMock);
       mockRepo.create.mockReturnValue({ id: "bus-1", ...dto });
-      mockRepo.save.mockResolvedValue({ id: "bus-1", ...dto, email: dto.email });
-      mockProvisionService.validateAndMarkRedeemed.mockResolvedValue(provisionMock);
+      mockRepo.save.mockResolvedValue({
+        id: "bus-1",
+        ...dto,
+        email: dto.email,
+      });
+      mockProvisionService.validateAndMarkRedeemed.mockResolvedValue(
+        provisionMock,
+      );
 
       await service.create(dto);
 
       expect(provisionService.findByCode).toHaveBeenCalledWith("VALID-PROV");
-      expect(provisionService.validateAndMarkRedeemed).toHaveBeenCalledWith("VALID-PROV", "bus-1");
-      expect(membershipService.grantAccess).toHaveBeenCalledWith("bus-1", "gold", 30, "PROVISION");
+      expect(provisionService.validateAndMarkRedeemed).toHaveBeenCalledWith(
+        "VALID-PROV",
+        "bus-1",
+      );
+      expect(membershipService.grantAccess).toHaveBeenCalledWith(
+        "bus-1",
+        "gold",
+        30,
+        "PROVISION",
+      );
     });
 
     it("should throw BadRequest if provision code is invalid/redeemed", async () => {
-        const dto: CreateBusinessDto = {
-            name: "Test Business",
-            email: "test@business.com",
-            password: "password",
-            confirmPassword: "password",
-            provisionCode: "INVALID-PROV",
-          };
+      const dto: CreateBusinessDto = {
+        name: "Test Business",
+        email: "test@business.com",
+        password: "password",
+        confirmPassword: "password",
+        provisionCode: "INVALID-PROV",
+      };
 
-        mockRepo.findOne.mockResolvedValue(null);
-        mockProvisionService.findByCode.mockResolvedValue(null);
+      mockRepo.findOne.mockResolvedValue(null);
+      mockProvisionService.findByCode.mockResolvedValue(null);
 
-        await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
     });
   });
 });

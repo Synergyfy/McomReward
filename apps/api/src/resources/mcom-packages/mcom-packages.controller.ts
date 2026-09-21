@@ -1,12 +1,10 @@
+import { Controller, Get, Post, Body, UseGuards, Req } from "@nestjs/common";
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-} from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from "@nestjs/swagger";
 import { McomPackagesService } from "./mcom-packages.service";
 import { InitiatePlatformPurchaseDto } from "./dto/initiate-purchase.dto";
 import { ConfirmPlatformPurchaseDto } from "./dto/confirm-purchase.dto";
@@ -36,9 +34,18 @@ export class McomPackagesController {
   @Post("purchase/initiate")
   @ApiBearerAuth()
   @Roles(Role.Business)
-  @ApiOperation({ summary: "Initiate in-app plan purchase via MCOM Solutions (Stripe/PayPal/Wallet)" })
-  @ApiResponse({ status: 200, description: "Payment intent / approval URL returned" })
-  @ApiResponse({ status: 401, description: "Not linked to MCOM or session expired" })
+  @ApiOperation({
+    summary:
+      "Initiate in-app plan purchase via MCOM Solutions (Stripe/PayPal/Wallet)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Payment intent / approval URL returned",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Not linked to MCOM or session expired",
+  })
   async initiatePurchase(
     @CurrentUser() user: any,
     @Body() dto: InitiatePlatformPurchaseDto,
@@ -49,8 +56,13 @@ export class McomPackagesController {
   @Post("purchase/confirm")
   @ApiBearerAuth()
   @Roles(Role.Business)
-  @ApiOperation({ summary: "Confirm plan purchase and activate local entitlements" })
-  @ApiResponse({ status: 200, description: "Subscription activated successfully" })
+  @ApiOperation({
+    summary: "Confirm plan purchase and activate local entitlements",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Subscription activated successfully",
+  })
   async confirmPurchase(
     @CurrentUser() user: any,
     @Body() dto: ConfirmPlatformPurchaseDto,
@@ -61,7 +73,9 @@ export class McomPackagesController {
   @Get("my-package")
   @ApiBearerAuth()
   @Roles(Role.Business)
-  @ApiOperation({ summary: "Get current user subscription package and MCOM connection status" })
+  @ApiOperation({
+    summary: "Get current user subscription package and MCOM connection status",
+  })
   async getMyActivePackage(@CurrentUser() user: any) {
     return this.mcomPackagesService.getMyActivePackage(user.id);
   }

@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
   ForbiddenException,
   BadRequestException,
   Inject,
@@ -23,14 +22,13 @@ import { Business } from "../../business/entities/business.entity";
 import { RewardStatus } from "../enums/reward-status.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
 import { RewardType } from "../enums/reward-type.enum";
-import { Membership } from "../../membership/entities/membership.entity";
+import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
 import { Sector } from "../../sector/entities/sector.entity";
 import { Tier } from "../../tier/entities/tier.entity";
 import { In, Brackets } from "typeorm";
 import { PaginationResult } from "../../../common/interfaces/pagination-result.interface";
 import { TierProgressionService } from "../../tier-progression/tier-progression.service";
 import { RewardSource } from "../enums/reward-source.enum";
-import { MembershipStatus } from "../../membership/entities/membership.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
 
 import { AddRewardToBusinessDto } from "../dto/add-reward-to-business.dto";
@@ -49,8 +47,8 @@ export class RewardsService {
     private readonly businessRewardRepository: Repository<BusinessReward>,
     @InjectRepository(Business)
     private readonly businessRepository: Repository<Business>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     @InjectRepository(Sector)
     private readonly sectorRepository: Repository<Sector>,
     @InjectRepository(Tier)
@@ -250,19 +248,22 @@ export class RewardsService {
       );
     }
 
-    // Check points Required against Tier Max Points
-    const membership = await this.membershipRepository.findOne({
+    // Check points Required against Plan Max Points
+    const subscription = await this.planSubscriptionRepository.findOne({
       where: { business: { id: businessId } },
-      relations: ["tier"],
+      relations: ["planVariant"],
     });
 
-    if (membership && membership.tier) {
-      const maxPoints = membership.tier.configuration.quotas.maxRewardPoints;
-      if (pointRequired && pointRequired > maxPoints) {
-        throw new BadRequestException(
-          `Points required cannot exceed the maximum points set by admin (${maxPoints} points).`,
-        );
-      }
+    const maxPoints =
+      subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
+      (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
+        ?.maxRewardPoints ||
+      0;
+
+    if (maxPoints > 0 && pointRequired && pointRequired > maxPoints) {
+      throw new BadRequestException(
+        `Points required cannot exceed the maximum points set by admin (${maxPoints} points).`,
+      );
     }
 
     const businessReward = this.businessRewardRepository.create({
@@ -296,17 +297,22 @@ export class RewardsService {
       throw new NotFoundException(`Business with ID ${businessId} not found`);
     }
 
-    // 1. Check points Required against Tier Max Points
-    const membership = await this.membershipRepository.findOne({
+    // 1. Check points Required against Plan Max Points
+    const subscription = await this.planSubscriptionRepository.findOne({
       where: { business: { id: businessId } },
-      relations: ["tier"],
+      relations: ["planVariant"],
     });
 
     const isPointsEnabled = createBusinessRewardDto.is_points_enabled ?? true;
     const isStampsEnabled = createBusinessRewardDto.is_stamps_enabled ?? false;
 
-    if (isPointsEnabled && membership && membership.tier) {
-      const maxPoints = membership.tier.configuration.quotas.maxRewardPoints;
+    const maxPoints =
+      subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
+      (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
+        ?.maxRewardPoints ||
+      0;
+
+    if (isPointsEnabled && maxPoints > 0) {
       const pointRequired = createBusinessRewardDto.points_required;
       if (pointRequired && pointRequired > maxPoints) {
         throw new BadRequestException(
@@ -432,20 +438,26 @@ export class RewardsService {
       );
     }
 
-    // Check points Required against Tier Max Points
+    // Check points Required against Plan Max Points
     if (updateBusinessRewardDto.points_required) {
-      const membership = await this.membershipRepository.findOne({
+      const subscription = await this.planSubscriptionRepository.findOne({
         where: { business: { id: businessId } },
-        relations: ["tier"],
+        relations: ["planVariant"],
       });
 
-      if (membership && membership.tier) {
-        const maxPoints = membership.tier.configuration.quotas.maxRewardPoints;
-        if (updateBusinessRewardDto.points_required > maxPoints) {
-          throw new BadRequestException(
-            `Points required cannot exceed the maximum points set by admin (${maxPoints} points).`,
-          );
-        }
+      const maxPoints =
+        subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
+        (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
+          ?.maxRewardPoints ||
+        0;
+
+      if (
+        maxPoints > 0 &&
+        updateBusinessRewardDto.points_required > maxPoints
+      ) {
+        throw new BadRequestException(
+          `Points required cannot exceed the maximum points set by admin (${maxPoints} points).`,
+        );
       }
     }
 

@@ -9,7 +9,10 @@ import { SubCategory } from "./resources/subcategory/entities/subcategory.entity
 import { Participant } from "./resources/participant/entities/participant.entity";
 import { Role } from "./common/role.enum";
 
-dotenv.config({ path: path.resolve(__dirname, "..", ".env.prod"), override: true });
+dotenv.config({
+  path: path.resolve(__dirname, "..", ".env.prod"),
+  override: true,
+});
 
 const dataSource = new DataSource({
   type: "postgres",
@@ -19,7 +22,10 @@ const dataSource = new DataSource({
   database: process.env.POSTGRES_NAME || "dbname",
   host: process.env.POSTGRES_HOST || "localhost",
   entities: [
-    Sector, Category, SubCategory, Participant,
+    Sector,
+    Category,
+    SubCategory,
+    Participant,
     path.resolve(__dirname, "..") + "/src/**/*.entity{.ts,.js}",
   ],
   ssl: { rejectUnauthorized: false },
@@ -39,11 +45,22 @@ const taxonomyData: TaxonomySector[] = [
     categories: [
       {
         name: "Restaurants & Dining",
-        subcategories: ["Fine Dining", "Fast Food", "Casual Dining", "Cafes & Bakeries", "Buffets"],
+        subcategories: [
+          "Fine Dining",
+          "Fast Food",
+          "Casual Dining",
+          "Cafes & Bakeries",
+          "Buffets",
+        ],
       },
       {
         name: "Specialty Food & Drink",
-        subcategories: ["Desserts & Ice Cream", "Juice Bars & Smoothies", "Wineries & Breweries", "Tea Rooms"],
+        subcategories: [
+          "Desserts & Ice Cream",
+          "Juice Bars & Smoothies",
+          "Wineries & Breweries",
+          "Tea Rooms",
+        ],
       },
     ],
   },
@@ -52,19 +69,40 @@ const taxonomyData: TaxonomySector[] = [
     categories: [
       {
         name: "Apparel & Fashion",
-        subcategories: ["Men's Clothing", "Women's Clothing", "Kids & Baby Wear", "Footwear", "Accessories & Jewelry"],
+        subcategories: [
+          "Men's Clothing",
+          "Women's Clothing",
+          "Kids & Baby Wear",
+          "Footwear",
+          "Accessories & Jewelry",
+        ],
       },
       {
         name: "Electronics & Gadgets",
-        subcategories: ["Mobile Phones & Accessories", "Computers & Laptops", "Home Appliances", "Audio & Video"],
+        subcategories: [
+          "Mobile Phones & Accessories",
+          "Computers & Laptops",
+          "Home Appliances",
+          "Audio & Video",
+        ],
       },
       {
         name: "Home & Living",
-        subcategories: ["Furniture", "Home Decor", "Kitchenware", "Bedding & Bath"],
+        subcategories: [
+          "Furniture",
+          "Home Decor",
+          "Kitchenware",
+          "Bedding & Bath",
+        ],
       },
       {
         name: "Beauty & Personal Care",
-        subcategories: ["Cosmetics", "Skincare", "Fragrances", "Hair Care Products"],
+        subcategories: [
+          "Cosmetics",
+          "Skincare",
+          "Fragrances",
+          "Hair Care Products",
+        ],
       },
     ],
   },
@@ -73,11 +111,21 @@ const taxonomyData: TaxonomySector[] = [
     categories: [
       {
         name: "Fitness & Sports",
-        subcategories: ["Gyms & Fitness Centers", "Yoga & Pilates Studios", "Sports Equipment", "Personal Training"],
+        subcategories: [
+          "Gyms & Fitness Centers",
+          "Yoga & Pilates Studios",
+          "Sports Equipment",
+          "Personal Training",
+        ],
       },
       {
         name: "Medical & Pharmacy",
-        subcategories: ["Pharmacies", "Dental Clinics", "Opticians & Eyewear", "Chiropractic & Physical Therapy"],
+        subcategories: [
+          "Pharmacies",
+          "Dental Clinics",
+          "Opticians & Eyewear",
+          "Chiropractic & Physical Therapy",
+        ],
       },
       {
         name: "Spa & Relaxation",
@@ -90,11 +138,20 @@ const taxonomyData: TaxonomySector[] = [
     categories: [
       {
         name: "Amusements & Activities",
-        subcategories: ["Movie Theaters", "Bowling Alleys", "Arcades & Gaming Zones", "Theme Parks"],
+        subcategories: [
+          "Movie Theaters",
+          "Bowling Alleys",
+          "Arcades & Gaming Zones",
+          "Theme Parks",
+        ],
       },
       {
         name: "Arts & Culture",
-        subcategories: ["Museum & Galleries", "Theaters & Concert Halls", "Music & Art Classes"],
+        subcategories: [
+          "Museum & Galleries",
+          "Theaters & Concert Halls",
+          "Music & Art Classes",
+        ],
       },
     ],
   },
@@ -103,11 +160,20 @@ const taxonomyData: TaxonomySector[] = [
     categories: [
       {
         name: "Automotive Services",
-        subcategories: ["Car Wash & Detailing", "Auto Repair & Maintenance", "Tire Shops"],
+        subcategories: [
+          "Car Wash & Detailing",
+          "Auto Repair & Maintenance",
+          "Tire Shops",
+        ],
       },
       {
         name: "Personal Services",
-        subcategories: ["Hair Salons & Barbers", "Nail Salons", "Dry Cleaning & Laundry", "Pet Grooming"],
+        subcategories: [
+          "Hair Salons & Barbers",
+          "Nail Salons",
+          "Dry Cleaning & Laundry",
+          "Pet Grooming",
+        ],
       },
     ],
   },
@@ -151,7 +217,7 @@ async function seedProd() {
         }
 
         for (const subName of catItem.subcategories) {
-          let subCategory = await subCategoryRepo.findOne({
+          const subCategory = await subCategoryRepo.findOne({
             where: { name: subName },
             relations: ["category"],
           });
@@ -171,7 +237,7 @@ async function seedProd() {
     console.log("Seeding participant user...");
     const hashedPassword = await bcrypt.hash("password", 10);
     const userEmail = "user@example.com";
-    let user = await participantRepo.findOne({ where: { email: userEmail } });
+    const user = await participantRepo.findOne({ where: { email: userEmail } });
     if (!user) {
       await participantRepo.save({
         name: "Test User",
@@ -198,7 +264,11 @@ async function seedProd() {
         annual_price: 90,
         qrCodeCount: 5,
         status: "published",
-        features: ["Basic analytics", "1 active campaign", "Up to 100 participants"],
+        features: [
+          "Basic analytics",
+          "1 active campaign",
+          "Up to 100 participants",
+        ],
         configuration: {
           quotas: {
             maxActiveCampaigns: 1,
@@ -238,7 +308,12 @@ async function seedProd() {
         annual_price: 180,
         qrCodeCount: 15,
         status: "published",
-        features: ["Advanced analytics", "5 active campaigns", "Up to 1000 participants", "CRM access"],
+        features: [
+          "Advanced analytics",
+          "5 active campaigns",
+          "Up to 1000 participants",
+          "CRM access",
+        ],
         configuration: {
           quotas: {
             maxActiveCampaigns: 5,
@@ -316,7 +391,13 @@ async function seedProd() {
         annual_price: 270,
         qrCodeCount: -1,
         status: "published",
-        features: ["Premium analytics", "Unlimited campaigns", "Unlimited participants", "CRM & API access", "Priority support"],
+        features: [
+          "Premium analytics",
+          "Unlimited campaigns",
+          "Unlimited participants",
+          "CRM & API access",
+          "Priority support",
+        ],
         configuration: {
           quotas: {
             maxActiveCampaigns: -1,
@@ -384,7 +465,9 @@ async function seedProd() {
     ];
 
     for (const plan of plans) {
-      const existing = await tierRepo.findOne({ where: { name: plan.name } as any });
+      const existing = await tierRepo.findOne({
+        where: { name: plan.name } as any,
+      });
       if (!existing) {
         await tierRepo.save(plan as any);
         console.log(`Created plan: ${plan.name}`);

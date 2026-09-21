@@ -32,7 +32,11 @@ import {
   QrPlaque,
   QrPlaqueStatus,
 } from "../resources/qr-plaques/entities/qr-plaque.entity";
-import { Membership, MembershipStatus, PlanType } from "../resources/membership/entities/membership.entity";
+import {
+  PlanSubscription,
+  PlanSubscriptionStatus,
+  PlanType,
+} from "../resources/plans/entities/plan-subscription.entity";
 import { Tier } from "../resources/tier/entities/tier.entity";
 import { Coupon } from "../resources/coupon/entities/coupon.entity";
 import { RewardType } from "../resources/rewards/enums/reward-type.enum";
@@ -95,8 +99,8 @@ export class SeederService {
     private readonly partnerRepository: Repository<Partner>,
     @InjectRepository(QrPlaque)
     private readonly qrPlaqueRepository: Repository<QrPlaque>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     @InjectRepository(Tier)
     private readonly tierRepository: Repository<Tier>,
     @InjectRepository(Coupon)
@@ -114,11 +118,22 @@ export class SeederService {
         categories: [
           {
             name: "Restaurants & Dining",
-            subcategories: ["Fine Dining", "Fast Food", "Casual Dining", "Cafes & Bakeries", "Buffets"],
+            subcategories: [
+              "Fine Dining",
+              "Fast Food",
+              "Casual Dining",
+              "Cafes & Bakeries",
+              "Buffets",
+            ],
           },
           {
             name: "Specialty Food & Drink",
-            subcategories: ["Desserts & Ice Cream", "Juice Bars & Smoothies", "Wineries & Breweries", "Tea Rooms"],
+            subcategories: [
+              "Desserts & Ice Cream",
+              "Juice Bars & Smoothies",
+              "Wineries & Breweries",
+              "Tea Rooms",
+            ],
           },
         ],
       },
@@ -127,19 +142,40 @@ export class SeederService {
         categories: [
           {
             name: "Apparel & Fashion",
-            subcategories: ["Men's Clothing", "Women's Clothing", "Kids & Baby Wear", "Footwear", "Accessories & Jewelry"],
+            subcategories: [
+              "Men's Clothing",
+              "Women's Clothing",
+              "Kids & Baby Wear",
+              "Footwear",
+              "Accessories & Jewelry",
+            ],
           },
           {
             name: "Electronics & Gadgets",
-            subcategories: ["Mobile Phones & Accessories", "Computers & Laptops", "Home Appliances", "Audio & Video"],
+            subcategories: [
+              "Mobile Phones & Accessories",
+              "Computers & Laptops",
+              "Home Appliances",
+              "Audio & Video",
+            ],
           },
           {
             name: "Home & Living",
-            subcategories: ["Furniture", "Home Decor", "Kitchenware", "Bedding & Bath"],
+            subcategories: [
+              "Furniture",
+              "Home Decor",
+              "Kitchenware",
+              "Bedding & Bath",
+            ],
           },
           {
             name: "Beauty & Personal Care",
-            subcategories: ["Cosmetics", "Skincare", "Fragrances", "Hair Care Products"],
+            subcategories: [
+              "Cosmetics",
+              "Skincare",
+              "Fragrances",
+              "Hair Care Products",
+            ],
           },
         ],
       },
@@ -148,11 +184,21 @@ export class SeederService {
         categories: [
           {
             name: "Fitness & Sports",
-            subcategories: ["Gyms & Fitness Centers", "Yoga & Pilates Studios", "Sports Equipment", "Personal Training"],
+            subcategories: [
+              "Gyms & Fitness Centers",
+              "Yoga & Pilates Studios",
+              "Sports Equipment",
+              "Personal Training",
+            ],
           },
           {
             name: "Medical & Pharmacy",
-            subcategories: ["Pharmacies", "Dental Clinics", "Opticians & Eyewear", "Chiropractic & Physical Therapy"],
+            subcategories: [
+              "Pharmacies",
+              "Dental Clinics",
+              "Opticians & Eyewear",
+              "Chiropractic & Physical Therapy",
+            ],
           },
           {
             name: "Spa & Relaxation",
@@ -165,11 +211,20 @@ export class SeederService {
         categories: [
           {
             name: "Amusements & Activities",
-            subcategories: ["Movie Theaters", "Bowling Alleys", "Arcades & Gaming Zones", "Theme Parks"],
+            subcategories: [
+              "Movie Theaters",
+              "Bowling Alleys",
+              "Arcades & Gaming Zones",
+              "Theme Parks",
+            ],
           },
           {
             name: "Arts & Culture",
-            subcategories: ["Museum & Galleries", "Theaters & Concert Halls", "Music & Art Classes"],
+            subcategories: [
+              "Museum & Galleries",
+              "Theaters & Concert Halls",
+              "Music & Art Classes",
+            ],
           },
         ],
       },
@@ -178,11 +233,20 @@ export class SeederService {
         categories: [
           {
             name: "Automotive Services",
-            subcategories: ["Car Wash & Detailing", "Auto Repair & Maintenance", "Tire Shops"],
+            subcategories: [
+              "Car Wash & Detailing",
+              "Auto Repair & Maintenance",
+              "Tire Shops",
+            ],
           },
           {
             name: "Personal Services",
-            subcategories: ["Hair Salons & Barbers", "Nail Salons", "Dry Cleaning & Laundry", "Pet Grooming"],
+            subcategories: [
+              "Hair Salons & Barbers",
+              "Nail Salons",
+              "Dry Cleaning & Laundry",
+              "Pet Grooming",
+            ],
           },
         ],
       },
@@ -230,7 +294,11 @@ export class SeederService {
         monthly_price: 10,
         quarterly_price: 25,
         annual_price: 90,
-        features: ["Basic analytics", "1 active campaign", "Up to 100 participants"],
+        features: [
+          "Basic analytics",
+          "1 active campaign",
+          "Up to 100 participants",
+        ],
       },
       {
         name: "Silver",
@@ -238,7 +306,11 @@ export class SeederService {
         monthly_price: 20,
         quarterly_price: 50,
         annual_price: 180,
-        features: ["Advanced analytics", "5 active campaigns", "Up to 1000 participants"],
+        features: [
+          "Advanced analytics",
+          "5 active campaigns",
+          "Up to 1000 participants",
+        ],
       },
       {
         name: "Gold",
@@ -246,7 +318,11 @@ export class SeederService {
         monthly_price: 30,
         quarterly_price: 75,
         annual_price: 270,
-        features: ["Premium analytics", "Unlimited campaigns", "Unlimited participants"],
+        features: [
+          "Premium analytics",
+          "Unlimited campaigns",
+          "Unlimited participants",
+        ],
       },
     ]);
 
@@ -275,13 +351,12 @@ export class SeederService {
       })),
     );
 
-    // Assign Memberships and create Payment History
+    // Assign Plan Subscriptions and create Payment History
     for (const [index, business] of businesses.entries()) {
       const tier = tiers[index % tiers.length];
-      const membership = await this.membershipRepository.save({
+      const subscription = await this.planSubscriptionRepository.save({
         business: business,
-        tier: tier,
-        status: MembershipStatus.ACTIVE,
+        status: PlanSubscriptionStatus.ACTIVE,
         plan_type: PlanType.MONTHLY,
         starts_at: this.getDateDaysAgo(30),
         expires_at: this.getDateDaysAgo(-335),
@@ -289,7 +364,7 @@ export class SeederService {
       await this.paymentHistoryRepository.save({
         user: business,
         user_type: "business",
-        membership: membership,
+        subscription: subscription,
         amount: tier.monthly_price,
         payment_provider: PaymentProvider.STRIPE,
         status: PaymentStatus.SUCCEEDED,
@@ -656,11 +731,22 @@ export class SeederService {
         categories: [
           {
             name: "Restaurants & Dining",
-            subcategories: ["Fine Dining", "Fast Food", "Casual Dining", "Cafes & Bakeries", "Buffets"],
+            subcategories: [
+              "Fine Dining",
+              "Fast Food",
+              "Casual Dining",
+              "Cafes & Bakeries",
+              "Buffets",
+            ],
           },
           {
             name: "Specialty Food & Drink",
-            subcategories: ["Desserts & Ice Cream", "Juice Bars & Smoothies", "Wineries & Breweries", "Tea Rooms"],
+            subcategories: [
+              "Desserts & Ice Cream",
+              "Juice Bars & Smoothies",
+              "Wineries & Breweries",
+              "Tea Rooms",
+            ],
           },
         ],
       },
@@ -669,19 +755,40 @@ export class SeederService {
         categories: [
           {
             name: "Apparel & Fashion",
-            subcategories: ["Men's Clothing", "Women's Clothing", "Kids & Baby Wear", "Footwear", "Accessories & Jewelry"],
+            subcategories: [
+              "Men's Clothing",
+              "Women's Clothing",
+              "Kids & Baby Wear",
+              "Footwear",
+              "Accessories & Jewelry",
+            ],
           },
           {
             name: "Electronics & Gadgets",
-            subcategories: ["Mobile Phones & Accessories", "Computers & Laptops", "Home Appliances", "Audio & Video"],
+            subcategories: [
+              "Mobile Phones & Accessories",
+              "Computers & Laptops",
+              "Home Appliances",
+              "Audio & Video",
+            ],
           },
           {
             name: "Home & Living",
-            subcategories: ["Furniture", "Home Decor", "Kitchenware", "Bedding & Bath"],
+            subcategories: [
+              "Furniture",
+              "Home Decor",
+              "Kitchenware",
+              "Bedding & Bath",
+            ],
           },
           {
             name: "Beauty & Personal Care",
-            subcategories: ["Cosmetics", "Skincare", "Fragrances", "Hair Care Products"],
+            subcategories: [
+              "Cosmetics",
+              "Skincare",
+              "Fragrances",
+              "Hair Care Products",
+            ],
           },
         ],
       },
@@ -690,11 +797,21 @@ export class SeederService {
         categories: [
           {
             name: "Fitness & Sports",
-            subcategories: ["Gyms & Fitness Centers", "Yoga & Pilates Studios", "Sports Equipment", "Personal Training"],
+            subcategories: [
+              "Gyms & Fitness Centers",
+              "Yoga & Pilates Studios",
+              "Sports Equipment",
+              "Personal Training",
+            ],
           },
           {
             name: "Medical & Pharmacy",
-            subcategories: ["Pharmacies", "Dental Clinics", "Opticians & Eyewear", "Chiropractic & Physical Therapy"],
+            subcategories: [
+              "Pharmacies",
+              "Dental Clinics",
+              "Opticians & Eyewear",
+              "Chiropractic & Physical Therapy",
+            ],
           },
           {
             name: "Spa & Relaxation",
@@ -707,11 +824,20 @@ export class SeederService {
         categories: [
           {
             name: "Amusements & Activities",
-            subcategories: ["Movie Theaters", "Bowling Alleys", "Arcades & Gaming Zones", "Theme Parks"],
+            subcategories: [
+              "Movie Theaters",
+              "Bowling Alleys",
+              "Arcades & Gaming Zones",
+              "Theme Parks",
+            ],
           },
           {
             name: "Arts & Culture",
-            subcategories: ["Museum & Galleries", "Theaters & Concert Halls", "Music & Art Classes"],
+            subcategories: [
+              "Museum & Galleries",
+              "Theaters & Concert Halls",
+              "Music & Art Classes",
+            ],
           },
         ],
       },
@@ -720,11 +846,20 @@ export class SeederService {
         categories: [
           {
             name: "Automotive Services",
-            subcategories: ["Car Wash & Detailing", "Auto Repair & Maintenance", "Tire Shops"],
+            subcategories: [
+              "Car Wash & Detailing",
+              "Auto Repair & Maintenance",
+              "Tire Shops",
+            ],
           },
           {
             name: "Personal Services",
-            subcategories: ["Hair Salons & Barbers", "Nail Salons", "Dry Cleaning & Laundry", "Pet Grooming"],
+            subcategories: [
+              "Hair Salons & Barbers",
+              "Nail Salons",
+              "Dry Cleaning & Laundry",
+              "Pet Grooming",
+            ],
           },
         ],
       },
@@ -753,11 +888,15 @@ export class SeederService {
             name: catItem.name,
             sector: sector,
           });
-          console.log(`Created Category: ${category.name} in Sector: ${sector.name}`);
+          console.log(
+            `Created Category: ${category.name} in Sector: ${sector.name}`,
+          );
         } else if (category.sector?.id !== sector.id) {
           category.sector = sector;
           category = await this.categoryRepository.save(category);
-          console.log(`Updated Category: ${category.name} to Sector: ${sector.name}`);
+          console.log(
+            `Updated Category: ${category.name} to Sector: ${sector.name}`,
+          );
         }
 
         for (const subName of catItem.subcategories) {
@@ -771,11 +910,15 @@ export class SeederService {
               name: subName,
               category: category,
             });
-            console.log(`Created Subcategory: ${subCategory.name} in Category: ${category.name}`);
+            console.log(
+              `Created Subcategory: ${subCategory.name} in Category: ${category.name}`,
+            );
           } else if (subCategory.category?.id !== category.id) {
             subCategory.category = category;
             subCategory = await this.subCategoryRepository.save(subCategory);
-            console.log(`Updated Subcategory: ${subCategory.name} to Category: ${category.name}`);
+            console.log(
+              `Updated Subcategory: ${subCategory.name} to Category: ${category.name}`,
+            );
           }
         }
       }
@@ -811,7 +954,8 @@ export class SeederService {
       "subcategories",
       "partners",
       "qr_plaques",
-      "membership",
+      "plan_subscriptions",
+      "plan_payments",
       "tier",
       "payment_history",
       "coupon",

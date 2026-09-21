@@ -5,7 +5,8 @@ import {
   forwardRef,
   Logger,
 } from "@nestjs/common";
-import { MembershipService } from "../membership/membership.service";
+import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
+import { PlanType } from "../plans/entities/plan-subscription.entity";
 import { CampaignService } from "../campaign/campaign.service";
 import {
   TierConfig,
@@ -14,7 +15,6 @@ import {
   TrialTierConfig,
 } from "../tier/interfaces/tier-config.interface";
 import { TierType } from "../tier/entities/tier-type.enum";
-import { MembershipStatus } from "../membership/entities/membership.entity";
 import { RewardsService } from "../rewards/services/rewards.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Between } from "typeorm";
@@ -45,7 +45,7 @@ export class CapabilityService {
   private readonly logger = new Logger(CapabilityService.name);
 
   constructor(
-    private readonly membershipService: MembershipService,
+    private readonly planSubscriptionService: PlanSubscriptionService,
     @Inject(forwardRef(() => CampaignService))
     private readonly campaignService: CampaignService,
     private readonly rewardsService: RewardsService,
@@ -68,71 +68,43 @@ export class CapabilityService {
       return; // Super Business has no limitations
     }
 
-    // 1. Fetch User's Active Memberships (LOCAL-FIRST: Rewards DB only,
-    // non-expired ACTIVE rows via MembershipService.findActiveMemberships).
-    const memberships =
-      await this.membershipService.findActiveMemberships(userId);
+    // 1. Fetch User's Active Subscriptions
+    const subscriptions =
+      await this.planSubscriptionService.findActiveSubscriptions(userId);
 
-    // New Plans system: a membership with an active planVariant IS the
-    // standard entitlement (local purchase flow writes planVariantId).
-    const planVariantMembership = memberships.find((m) => m.planVariant);
-    const standardMembership =
-      planVariantMembership ||
-      memberships.find((m) => m.tier && m.tier.type === TierType.STANDARD);
+    const standardSubscription =
+      subscriptions.find((s) => s.plan_type !== PlanType.SEASONAL) ||
+      subscriptions[0];
+    const seasonalSubscriptions = subscriptions.filter(
+      (s) => s.plan_type === PlanType.SEASONAL,
+    );
 
-    // Filter valid seasonal memberships (active dates)
-    const seasonalMemberships = memberships.filter((m) => {
-      if (!m.tier || m.tier.type !== TierType.SEASONAL) return false;
-      const now = new Date();
-      // Use membership dates as primary truth, fallback to tier dates
-      const start = m.starts_at || m.tier.season?.startDate;
-      const end = m.expires_at || m.tier.season?.endDate;
-      // Check if NOW is within [start, end]
-      return (!start || now >= start) && (!end || now <= end);
-    });
-
-    if (!standardMembership && seasonalMemberships.length === 0) {
-      this.logger.warn(`User ${userId} has no active membership.`);
-      throw new ForbiddenException("Active membership required.");
+    if (!standardSubscription && subscriptions.length === 0) {
+      this.logger.warn(`User ${userId} has no active plan subscription.`);
+      throw new ForbiddenException("Active plan subscription required.");
     }
 
     let effectiveConfig: TierConfig = null;
 
-    // New Plans system first: planVariant.configuration is the enforced
-    // capability set (quotas + featureFlags). No Central lookup.
-    if (
-      standardMembership?.planVariant?.configuration &&
-      Object.keys(standardMembership.planVariant.configuration).length > 0
-    ) {
-      effectiveConfig = standardMembership.planVariant
-        .configuration as unknown as TierConfig;
-    }
+    const standardTierConfig =
+      (standardSubscription?.planVariant?.tierLevel as any)?.configuration ||
+      (standardSubscription?.planVariant?.plan as any)?.tierLevel
+        ?.configuration ||
+      standardSubscription?.planVariant?.configuration;
 
-    if (!effectiveConfig && standardMembership?.tier?.configuration) {
-      effectiveConfig = { ...standardMembership.tier.configuration };
-
-      // Progression overrides driven by DB config, not hardcoded
-      const progressionLevel = standardMembership.progression_level;
-      const proConfig = effectiveConfig.pro;
-      const proPlusConfig = effectiveConfig.pro_plus;
-
-      if (progressionLevel === "pro" && proConfig) {
-        effectiveConfig = this.mergeProgressionBenefits(
-          effectiveConfig,
-          proConfig.benefits,
-        );
-      } else if (progressionLevel === "pro_plus" && proPlusConfig) {
-        effectiveConfig = this.mergeProgressionBenefits(
-          effectiveConfig,
-          proPlusConfig.benefits,
-        );
-      }
-      // No trial handling — trials removed, purchase required
+    if (standardTierConfig && Object.keys(standardTierConfig).length > 0) {
+      effectiveConfig = { ...(standardTierConfig as unknown as TierConfig) };
     }
 
     // If no standard, start with first seasonal
-    if (!effectiveConfig && seasonalMemberships.length > 0) {
-      effectiveConfig = { ...seasonalMemberships[0].tier.configuration };
+    if (!effectiveConfig && seasonalSubscriptions.length > 0) {
+      const seaTierConfig =
+        (seasonalSubscriptions[0]?.planVariant?.tierLevel as any)
+          ?.configuration ||
+        seasonalSubscriptions[0]?.planVariant?.configuration;
+      if (seaTierConfig) {
+        effectiveConfig = { ...(seaTierConfig as unknown as TierConfig) };
+      }
     }
 
     if (!effectiveConfig) {
@@ -163,15 +135,20 @@ export class CapabilityService {
     };
 
     // Apply Seasonal Overrides (Overlay on top of Standard or Base Seasonal)
-    for (const seaMem of seasonalMemberships) {
+    for (const seaSub of seasonalSubscriptions) {
       // If we started with this seasonal one, skip
-      if (!standardMembership && seaMem === seasonalMemberships[0]) continue;
+      if (!standardSubscription && seaSub === seasonalSubscriptions[0])
+        continue;
 
-      if (seaMem.tier?.configuration) {
+      const seaTierConfig =
+        (seaSub.planVariant?.tierLevel as any)?.configuration ||
+        seaSub.planVariant?.configuration;
+
+      if (seaTierConfig) {
         // We treat the seasonal tier config as an "override"
         effectiveConfig = this.mergeSeasonalConfig(
           effectiveConfig,
-          seaMem.tier.configuration as any,
+          seaTierConfig as any,
         );
       }
     }

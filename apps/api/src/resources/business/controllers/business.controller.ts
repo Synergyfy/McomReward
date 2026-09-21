@@ -28,16 +28,12 @@ import { RolesGuard } from "../../../common/guards/roles.guard";
 import { SkipMembershipCheck } from "../../../common/decorators/skip-membership-check.decorator";
 import { PointPurchaseConfigDto } from "../dto/point-purchase-config.dto";
 import { ReferralStatsResponseDto } from "../dto/referral-stats-response.dto";
-import { MembershipService } from "../../membership/membership.service";
 
 @ApiTags("Business Lifecycle")
 @Controller("business")
 @ApiBearerAuth()
 export class BusinessController {
-  constructor(
-    private readonly businessService: BusinessService,
-    private readonly membershipService: MembershipService,
-  ) {}
+  constructor(private readonly businessService: BusinessService) {}
 
   @Public()
   @Post("signup")

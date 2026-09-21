@@ -7,7 +7,7 @@ import { BusinessReward } from "./entities/business-reward.entity";
 import { BusinessCampaign } from "../campaign/entities/business-campaign.entity";
 import { PointHistory } from "../participant-campaign-balance/entities/point-history.entity";
 import { Business } from "../business/entities/business.entity";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 import { Sector } from "../sector/entities/sector.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import { CapabilityModule } from "../capability/capability.module";
@@ -23,7 +23,7 @@ import { SubCategory } from "../subcategory/entities/subcategory.entity";
       Reward,
       BusinessReward,
       Business,
-      Membership,
+      PlanSubscription,
       Sector,
       Tier,
       BusinessCampaign,

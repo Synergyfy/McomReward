@@ -1,6 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { PaymentController } from "./payment.controller";
 import { PaymentService } from "./payment.service";
+import { AuthService } from "../../auth/auth.service";
+import { UserService } from "../../user/user.service";
 
 describe("PaymentController", () => {
   let controller: PaymentController;
@@ -11,6 +13,14 @@ describe("PaymentController", () => {
       providers: [
         {
           provide: PaymentService,
+          useValue: {},
+        },
+        {
+          provide: AuthService,
+          useValue: {},
+        },
+        {
+          provide: UserService,
           useValue: {},
         },
       ],

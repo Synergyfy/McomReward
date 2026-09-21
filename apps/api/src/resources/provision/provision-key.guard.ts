@@ -18,7 +18,8 @@ export class ProvisionKeyGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const header = request.headers["x-api-key"] || request.headers.authorization;
+    const header =
+      request.headers["x-api-key"] || request.headers.authorization;
     if (
       typeof header === "string" &&
       header.replace(/^Bearer\s+/i, "") === secret

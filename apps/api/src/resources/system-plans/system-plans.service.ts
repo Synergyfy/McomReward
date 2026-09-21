@@ -153,10 +153,7 @@ export class SystemPlansService {
       await this.clearDefaultFlag();
     }
 
-    const configuration = this.deepMerge(
-      {},
-      dto.configuration || {},
-    );
+    const configuration = this.deepMerge({}, dto.configuration || {});
     if (planType === TierType.TRIAL && dto.trialDuration) {
       configuration.trial = {
         ...configuration.trial,
@@ -201,7 +198,10 @@ export class SystemPlansService {
 
       return this.toExternalResponse(savedTier);
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof BadRequestException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -218,9 +218,10 @@ export class SystemPlansService {
         level === PlanTierLevelEnum.PRO_PLUS
           ? "Pro+"
           : level === PlanTierLevelEnum.PRO
-          ? "Pro"
-          : "Standard";
-      const amount = activePrice?.amount != null ? Number(activePrice.amount) : undefined;
+            ? "Pro"
+            : "Standard";
+      const amount =
+        activePrice?.amount != null ? Number(activePrice.amount) : undefined;
 
       return {
         id: v.id,
@@ -228,7 +229,8 @@ export class SystemPlansService {
         tier: label,
         tierName: label,
         tierLevel: v.tierLevel,
-        durationDays: v.tierLevel?.durationDays || (v.tierLevel?.isCalendarYear ? 365 : 90),
+        durationDays:
+          v.tierLevel?.durationDays || (v.tierLevel?.isCalendarYear ? 365 : 90),
         isCalendarYear: v.tierLevel?.isCalendarYear || false,
         price: amount,
         features: v.features || [],
@@ -244,7 +246,8 @@ export class SystemPlansService {
       };
     });
 
-    const standardVariant = variants.find((v) => v.tier === "Standard") || variants[0];
+    const standardVariant =
+      variants.find((v) => v.tier === "Standard") || variants[0];
     const proVariant = variants.find((v) => v.tier === "Pro");
     const proPlusVariant = variants.find((v) => v.tier === "Pro+");
 
@@ -301,7 +304,9 @@ export class SystemPlansService {
     // 1. Fetch all unified Plans with nested variants
     const unifiedPlans = await this.plansService.findAll();
     if (unifiedPlans && unifiedPlans.length > 0) {
-      return unifiedPlans.map((plan) => this.toExternalUnifiedPlanResponse(plan));
+      return unifiedPlans.map((plan) =>
+        this.toExternalUnifiedPlanResponse(plan),
+      );
     }
 
     // Fallback to legacy tiers if no unified plans exist
@@ -378,9 +383,7 @@ export class SystemPlansService {
       }
     }
 
-    const planType = dto.type
-      ? this.mapTypeToInternal(dto.type)
-      : tier.type;
+    const planType = dto.type ? this.mapTypeToInternal(dto.type) : tier.type;
 
     if (planType === TierType.TRIAL) {
       if (dto.trialDuration !== undefined && dto.trialDuration <= 0) {
@@ -417,19 +420,29 @@ export class SystemPlansService {
 
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.description !== undefined) updateData.description = dto.description;
-    if (dto.monthlyPrice !== undefined) updateData.monthly_price = dto.monthlyPrice;
-    if (dto.quarterlyPrice !== undefined) updateData.quarterly_price = dto.quarterlyPrice;
-    if (dto.annualPrice !== undefined) updateData.annual_price = dto.annualPrice;
+    if (dto.monthlyPrice !== undefined)
+      updateData.monthly_price = dto.monthlyPrice;
+    if (dto.quarterlyPrice !== undefined)
+      updateData.quarterly_price = dto.quarterlyPrice;
+    if (dto.annualPrice !== undefined)
+      updateData.annual_price = dto.annualPrice;
     if (dto.features !== undefined) updateData.features = dto.features;
-    if (dto.isActive !== undefined) updateData.status = this.mapActiveToStatus(dto.isActive);
+    if (dto.isActive !== undefined)
+      updateData.status = this.mapActiveToStatus(dto.isActive);
     if (dto.isDefault !== undefined) updateData.is_default = dto.isDefault;
     if (dto.type !== undefined) updateData.type = planType;
-    if (dto.stripeMonthlyPriceId !== undefined) updateData.stripe_monthly_price_id = dto.stripeMonthlyPriceId;
-    if (dto.stripeQuarterlyPriceId !== undefined) updateData.stripe_quarterly_price_id = dto.stripeQuarterlyPriceId;
-    if (dto.stripeAnnualPriceId !== undefined) updateData.stripe_annual_price_id = dto.stripeAnnualPriceId;
-    if (dto.paypalMonthlyPlanId !== undefined) updateData.paypal_monthly_plan_id = dto.paypalMonthlyPlanId;
-    if (dto.paypalQuarterlyPlanId !== undefined) updateData.paypal_quarterly_plan_id = dto.paypalQuarterlyPlanId;
-    if (dto.paypalAnnualPlanId !== undefined) updateData.paypal_annual_plan_id = dto.paypalAnnualPlanId;
+    if (dto.stripeMonthlyPriceId !== undefined)
+      updateData.stripe_monthly_price_id = dto.stripeMonthlyPriceId;
+    if (dto.stripeQuarterlyPriceId !== undefined)
+      updateData.stripe_quarterly_price_id = dto.stripeQuarterlyPriceId;
+    if (dto.stripeAnnualPriceId !== undefined)
+      updateData.stripe_annual_price_id = dto.stripeAnnualPriceId;
+    if (dto.paypalMonthlyPlanId !== undefined)
+      updateData.paypal_monthly_plan_id = dto.paypalMonthlyPlanId;
+    if (dto.paypalQuarterlyPlanId !== undefined)
+      updateData.paypal_quarterly_plan_id = dto.paypalQuarterlyPlanId;
+    if (dto.paypalAnnualPlanId !== undefined)
+      updateData.paypal_annual_plan_id = dto.paypalAnnualPlanId;
     if (dto.seasonId !== undefined) updateData.season_id = dto.seasonId;
 
     if (dto.configuration !== undefined || dto.trialDuration !== undefined) {
@@ -467,7 +480,10 @@ export class SystemPlansService {
 
       return this.toExternalResponse(updatedTier);
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof BadRequestException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -511,17 +527,51 @@ export class SystemPlansService {
   async getPlanSchema() {
     return {
       quotas: [
-        { key: "maxActiveCampaigns", label: "Max Active Campaigns", type: "number", unlimited: true },
-        { key: "maxActiveRewards", label: "Max Active Rewards", type: "number", unlimited: true },
-        { key: "maxRewardsPerCampaign", label: "Max Rewards Per Campaign", type: "number" },
-        { key: "monthlyPointsAllowance", label: "Monthly Points Allowance", type: "number" },
-        { key: "monthlyStampsAllowance", label: "Monthly Stamps Allowance", type: "number" },
+        {
+          key: "maxActiveCampaigns",
+          label: "Max Active Campaigns",
+          type: "number",
+          unlimited: true,
+        },
+        {
+          key: "maxActiveRewards",
+          label: "Max Active Rewards",
+          type: "number",
+          unlimited: true,
+        },
+        {
+          key: "maxRewardsPerCampaign",
+          label: "Max Rewards Per Campaign",
+          type: "number",
+        },
+        {
+          key: "monthlyPointsAllowance",
+          label: "Monthly Points Allowance",
+          type: "number",
+        },
+        {
+          key: "monthlyStampsAllowance",
+          label: "Monthly Stamps Allowance",
+          type: "number",
+        },
         { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
       ],
       featureFlags: [
-        { key: "canCreateCampaignFromScratch", label: "Create Campaign From Scratch", type: "boolean" },
-        { key: "canEditAdminTemplates", label: "Edit Admin Templates", type: "boolean" },
-        { key: "hasAccessToAdvancedAnalytics", label: "Advanced Analytics", type: "boolean" },
+        {
+          key: "canCreateCampaignFromScratch",
+          label: "Create Campaign From Scratch",
+          type: "boolean",
+        },
+        {
+          key: "canEditAdminTemplates",
+          label: "Edit Admin Templates",
+          type: "boolean",
+        },
+        {
+          key: "hasAccessToAdvancedAnalytics",
+          label: "Advanced Analytics",
+          type: "boolean",
+        },
         { key: "hasAccessToCRM", label: "CRM Access", type: "boolean" },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },
       ],
@@ -538,8 +588,8 @@ export class SystemPlansService {
       const status = isActive
         ? "ACTIVE"
         : s.endDate < now
-        ? "EXPIRED"
-        : "UPCOMING";
+          ? "EXPIRED"
+          : "UPCOMING";
       return {
         id: s.id,
         name: s.name,

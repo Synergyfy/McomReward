@@ -10,7 +10,6 @@ import { Business } from "../../business/entities/business.entity";
 import { BusinessService } from "../../business/services/business.service";
 import { StaffService } from "../../staff/services/staff.service";
 import { PointHistory } from "../../participant-campaign-balance/entities/point-history.entity";
-import { Membership } from "../../membership/entities/membership.entity";
 import { CreateAdminDto } from "../dto/create-admin.dto";
 import { CreateSuperBusinessDto } from "../dto/create-super-business.dto";
 import { HashService } from "../../../common/hash/hash.service";
@@ -25,6 +24,7 @@ import { PaginationResult } from "../../../common/interfaces/pagination-result.i
 import { Staff } from "../../staff/entities/staff.entity";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { Participant } from "../../participant/entities/participant.entity";
+import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
 
 @Injectable()
 export class AdminService {
@@ -48,8 +48,8 @@ export class AdminService {
     private readonly hashService: HashService,
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
   ) {}
 
   async createSuperBusiness(createSuperBusinessDto: CreateSuperBusinessDto) {
@@ -177,27 +177,28 @@ export class AdminService {
   }
 
   private async enrichBusinessRecord(business: Business): Promise<Business> {
-    // 1. Get Latest Membership (Tier)
-    const membership = await this.membershipRepository.findOne({
+    // 1. Get Latest Subscription (Plan / Tier)
+    const subscription = await this.planSubscriptionRepository.findOne({
       where: { business: { id: business.id } },
       order: { created_at: "DESC" },
-      relations: ["tier"],
+      relations: ["planVariant", "planVariant.plan", "planVariant.tierLevel"],
     });
 
-    if (membership) {
-      business.memberships = [membership];
+    if (subscription) {
+      business.subscriptions = [subscription];
     }
 
     // 2. Calculate Remaining Point Balance
     let remainingPointBalance = 0;
-    const tierConfig = membership?.tier?.configuration;
+    const tierConfig = (subscription?.planVariant?.tierLevel as any)
+      ?.configuration;
 
     if (tierConfig) {
-      const monthlyPointsAllowance = tierConfig.quotas.monthlyPointsAllowance;
+      const monthlyPointsAllowance = tierConfig.quotas?.monthlyPointsAllowance;
 
       if (monthlyPointsAllowance === -1) {
         remainingPointBalance = -1; // Unlimited
-      } else {
+      } else if (typeof monthlyPointsAllowance === "number") {
         // Calculate points used this month
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
@@ -234,11 +235,11 @@ export class AdminService {
       (business as any).sector = business.sector.name;
     }
 
-    if (membership && membership.tier) {
-      (business as any).tier = membership.tier.name;
-    } else {
-      (business as any).tier = null;
-    }
+    const tierName =
+      subscription?.planVariant?.tierLevel?.name ||
+      subscription?.planVariant?.plan?.name ||
+      null;
+    (business as any).tier = tierName;
 
     return business;
   }

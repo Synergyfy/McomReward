@@ -28,8 +28,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/role.enum";
 import { ConfirmPointPurchaseDto } from "../business/dto/confirm-point-purchase.dto";
 import { ConfirmPurchaseResponseDto } from "./dto/confirm-purchase-response.dto";
-
-import { MembershipService } from "../membership/membership.service";
+import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
 import { Public } from "../../common/decorators/public.decorator";
 import { SkipMembershipCheck } from "../../common/decorators/skip-membership-check.decorator";
 
@@ -38,7 +37,7 @@ import { SkipMembershipCheck } from "../../common/decorators/skip-membership-che
 export class PointPackageController {
   constructor(
     private readonly pointPackageService: PointPackageService,
-    private readonly membershipService: MembershipService,
+    private readonly planSubscriptionService: PlanSubscriptionService,
   ) {}
 
   @Post("admin")
@@ -101,10 +100,10 @@ export class PointPackageController {
     @Query("limit") limit = 10,
   ) {
     const businessId = req.user.id;
-    const membership =
-      await this.membershipService.findOneByBusinessId(businessId);
+    const hasActive =
+      await this.planSubscriptionService.hasActiveSubscription(businessId);
 
-    if (!membership || !membership.tier) {
+    if (!hasActive) {
       return {
         data: [],
         total: 0,
@@ -116,11 +115,7 @@ export class PointPackageController {
       };
     }
 
-    return this.pointPackageService.getAvailablePackages(
-      membership.tier.id,
-      page,
-      limit,
-    );
+    return this.pointPackageService.findAll(page, limit);
   }
 
   @Post("business/buy")

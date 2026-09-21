@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddBrandingPartnersAndNotificationAdmin1770000000000
-  implements MigrationInterface
-{
+export class AddBrandingPartnersAndNotificationAdmin1770000000000 implements MigrationInterface {
   name = "AddBrandingPartnersAndNotificationAdmin1770000000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -36,9 +34,7 @@ export class AddBrandingPartnersAndNotificationAdmin1770000000000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE "announcements"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."announcements_status_enum"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."announcements_status_enum"`);
     await queryRunner.query(`DROP TABLE "notification_templates"`);
     await queryRunner.query(
       `DROP TYPE "public"."notification_templates_status_enum"`,
@@ -50,8 +46,6 @@ export class AddBrandingPartnersAndNotificationAdmin1770000000000
     await queryRunner.query(
       `DROP TYPE "public"."branding_partners_status_enum"`,
     );
-    await queryRunner.query(
-      `DROP TYPE "public"."branding_partners_type_enum"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."branding_partners_type_enum"`);
   }
 }

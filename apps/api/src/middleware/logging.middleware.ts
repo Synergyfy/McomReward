@@ -7,9 +7,15 @@ function sanitizeData(obj: any): any {
   const copy: Record<string, any> = {};
   for (const key of Object.keys(obj)) {
     if (
-      ["password", "pass", "secret", "token", "access_token", "refresh_token", "client_secret"].includes(
-        key.toLowerCase(),
-      )
+      [
+        "password",
+        "pass",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "client_secret",
+      ].includes(key.toLowerCase())
     ) {
       copy[key] = "***REDACTED***";
     } else if (typeof obj[key] === "object" && obj[key] !== null) {
@@ -54,7 +60,9 @@ export class LoggingMiddleware implements NestMiddleware {
       }
 
       if (body && typeof body === "object" && Object.keys(body).length > 0) {
-        this.logger.log(`  📥 Request Body: ${JSON.stringify(sanitizeData(body))}`);
+        this.logger.log(
+          `  📥 Request Body: ${JSON.stringify(sanitizeData(body))}`,
+        );
       }
 
       if (rawResponseBody !== undefined && rawResponseBody !== null) {
@@ -83,5 +91,3 @@ export class LoggingMiddleware implements NestMiddleware {
     next();
   }
 }
-
-

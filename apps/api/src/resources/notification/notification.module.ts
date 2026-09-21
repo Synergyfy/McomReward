@@ -13,7 +13,11 @@ import {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, NotificationTemplate, Announcement]),
+    TypeOrmModule.forFeature([
+      Notification,
+      NotificationTemplate,
+      Announcement,
+    ]),
   ],
   controllers: [
     NotificationController,

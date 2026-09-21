@@ -3,7 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Escrow, EscrowStatus } from "./entities/escrow.entity";
 import { PayoutRequest, PayoutStatus } from "./entities/payout-request.entity";
-import { PaymentHistory, PaymentStatus, PurchaseType } from "../payment-history/entities/payment-history.entity";
+import {
+  PaymentHistory,
+  PaymentStatus,
+  PurchaseType,
+} from "../payment-history/entities/payment-history.entity";
 import {
   CreateEscrowDto,
   CreatePayoutRequestDto,
@@ -108,7 +112,10 @@ export class FinancialAdminService {
       .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
     const payouts = await this.payoutRepository.find();
-    const totalPayouts = payouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalPayouts = payouts.reduce(
+      (sum, p) => sum + Number(p.amount || 0),
+      0,
+    );
 
     return {
       revenueOverTime,
@@ -120,7 +127,20 @@ export class FinancialAdminService {
   }
 
   private buildMonthlyRevenue(payments: PaymentHistory[]) {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const byMonth: Record<string, number> = {};
     const now = new Date();
     for (let i = 5; i >= 0; i--) {

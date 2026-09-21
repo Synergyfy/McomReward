@@ -13,10 +13,12 @@ import {
 import { BUILT_IN_TEMPLATES } from "./built-in-templates";
 
 const normalize = (template: LoyaltySetupTemplate) => {
-  const rewards = (template.rewards || []).map((r: Record<string, unknown>) => ({
-    id: r.id || r.key,
-    ...r,
-  }));
+  const rewards = (template.rewards || []).map(
+    (r: Record<string, unknown>) => ({
+      id: r.id || r.key,
+      ...r,
+    }),
+  );
   const campaigns = (template.campaigns || []).map(
     (c: Record<string, unknown>) => ({
       id: c.id || c.key,

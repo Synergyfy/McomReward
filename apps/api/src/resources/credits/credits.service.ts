@@ -62,8 +62,16 @@ export class CreditsService {
     userType: CreditsUserType,
   ): Promise<CreditsBalance> {
     const [credits, cashback, levels, pending] = await Promise.all([
-      this.transactionRepository.sum("amount", { userId, userType, unit: CreditsUnit.CREDITS }),
-      this.transactionRepository.sum("amount", { userId, userType, unit: CreditsUnit.GBP }),
+      this.transactionRepository.sum("amount", {
+        userId,
+        userType,
+        unit: CreditsUnit.CREDITS,
+      }),
+      this.transactionRepository.sum("amount", {
+        userId,
+        userType,
+        unit: CreditsUnit.GBP,
+      }),
       this.levelRepository.find({ order: { level: "ASC" } }),
       this.transactionRepository.sum("amount", {
         userId,
@@ -99,7 +107,9 @@ export class CreditsService {
   // --- Unlock a credit level (matching contribution -> cashback) ---
 
   async unlock(userId: string, userType: CreditsUserType, level: number) {
-    const levelConfig = await this.levelRepository.findOne({ where: { level } });
+    const levelConfig = await this.levelRepository.findOne({
+      where: { level },
+    });
     if (!levelConfig) {
       throw new NotFoundException("Credit level not found");
     }
@@ -183,7 +193,9 @@ export class CreditsService {
   }
 
   async createRule(dto: CreateCreditRuleDto) {
-    const eventTypes = Array.isArray(dto.eventType) ? dto.eventType : [dto.eventType];
+    const eventTypes = Array.isArray(dto.eventType)
+      ? dto.eventType
+      : [dto.eventType];
     const rules = eventTypes.map((eventType) =>
       this.ruleRepository.create({
         platform: dto.platform,
@@ -232,7 +244,12 @@ export class CreditsService {
 
   // --- History ---
 
-  async getHistory(userId: string, userType: CreditsUserType, page = 1, limit = 10) {
+  async getHistory(
+    userId: string,
+    userType: CreditsUserType,
+    page = 1,
+    limit = 10,
+  ) {
     const [items, total] = await this.transactionRepository.findAndCount({
       where: { userId, userType },
       order: { created_at: "DESC" },

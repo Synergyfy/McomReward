@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -7,15 +7,15 @@ import { SsoService } from "./sso.service";
 import { McomCentralService } from "./mcom-central.service";
 import { UserModule } from "../../user/user.module";
 import { BusinessModule } from "../business/business.module";
-import { MembershipModule } from "../membership/membership.module";
+import { PlansModule } from "../plans/plans.module";
 import { Business } from "../business/entities/business.entity";
 import { Participant } from "../participant/entities/participant.entity";
 
 @Module({
   imports: [
     UserModule,
-    BusinessModule,
-    MembershipModule,
+    forwardRef(() => BusinessModule),
+    forwardRef(() => PlansModule),
     TypeOrmModule.forFeature([Business, Participant]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -28,6 +28,6 @@ import { Participant } from "../participant/entities/participant.entity";
   ],
   controllers: [SsoController],
   providers: [SsoService, McomCentralService],
-  exports: [SsoService],
+  exports: [SsoService, McomCentralService],
 })
 export class SsoModule {}

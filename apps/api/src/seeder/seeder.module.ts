@@ -19,7 +19,7 @@ import { Staff } from "../resources/staff/entities/staff.entity";
 import { SubCategory } from "../resources/subcategory/entities/subcategory.entity";
 import { Partner } from "../resources/partner/entities/partner.entity";
 import { QrPlaque } from "../resources/qr-plaques/entities/qr-plaque.entity";
-import { Membership } from "../resources/membership/entities/membership.entity";
+import { PlanSubscription } from "../resources/plans/entities/plan-subscription.entity";
 import { Tier } from "../resources/tier/entities/tier.entity";
 import { Coupon } from "../resources/coupon/entities/coupon.entity";
 import { PaymentHistory } from "../resources/payment-history/entities/payment-history.entity";
@@ -45,7 +45,7 @@ import { PaymentHistory } from "../resources/payment-history/entities/payment-hi
       SubCategory,
       Partner,
       QrPlaque,
-      Membership,
+      PlanSubscription,
       Tier,
       Coupon,
       PaymentHistory,

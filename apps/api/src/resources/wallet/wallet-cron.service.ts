@@ -8,9 +8,9 @@ import {
   TransactionType,
 } from "./entities/wallet-transaction.entity";
 import {
-  Membership,
-  MembershipStatus,
-} from "../membership/entities/membership.entity";
+  PlanSubscription,
+  PlanSubscriptionStatus,
+} from "../plans/entities/plan-subscription.entity";
 
 @Injectable()
 export class WalletCronService {
@@ -19,8 +19,8 @@ export class WalletCronService {
   constructor(
     @InjectRepository(BusinessWallet)
     private readonly walletRepository: Repository<BusinessWallet>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -29,20 +29,22 @@ export class WalletCronService {
   async resetMonthlyAllowances() {
     this.logger.log("Starting monthly wallet allowance reset...");
 
-    // Find all active memberships
-    // This could be heavy, in prod we might paginate or use a stream
-    const activeMemberships = await this.membershipRepository.find({
-      where: { status: MembershipStatus.ACTIVE },
-      relations: ["business", "tier"],
+    // Find all active subscriptions
+    const activeSubscriptions = await this.planSubscriptionRepository.find({
+      where: { status: PlanSubscriptionStatus.ACTIVE },
+      relations: ["business", "planVariant"],
     });
 
     let count = 0;
 
-    for (const membership of activeMemberships) {
-      if (!membership.business) continue;
+    for (const subscription of activeSubscriptions) {
+      if (!subscription.business) continue;
 
       const monthlyBudget =
-        membership.tier.configuration?.quotas?.monthlyRewardBudget || 0;
+        subscription.planVariant?.configuration?.quotas?.monthlyRewardBudget ||
+        (subscription.planVariant?.tierLevel as any)?.configuration?.quotas
+          ?.monthlyRewardBudget ||
+        0;
 
       // If budget is 0, we might still want to reset to 0 if they had some left over?
       // Or if they downgraded?
@@ -50,7 +52,7 @@ export class WalletCronService {
       // "Resets monthly" implies set to X.
 
       const wallet = await this.walletRepository.findOne({
-        where: { business: { id: membership.business.id } },
+        where: { business: { id: subscription.business.id } },
       });
 
       if (wallet) {
@@ -78,7 +80,7 @@ export class WalletCronService {
         } catch (e) {
           await queryRunner.rollbackTransaction();
           this.logger.error(
-            `Failed to reset wallet for business ${membership.business.id}`,
+            `Failed to reset wallet for business ${subscription.business.id}`,
             e,
           );
         } finally {

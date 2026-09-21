@@ -23,9 +23,8 @@ import {
   ActionType,
   CapabilityService,
 } from "../../capability/capability.service";
-import { CampaignRewardMode } from "../../campaign/entities/campaign-enums";
 import { TierProgressionService } from "../../tier-progression/tier-progression.service";
-import { MembershipService } from "../../membership/membership.service";
+import { PlanSubscriptionService } from "../../plans/services/plan-subscription.service";
 import { PointPackageService } from "../../point-package/point-package.service";
 import { StampPackageService } from "../../stamp/services/stamp-package.service";
 import { NotificationService } from "../../notification/notification.service";
@@ -33,6 +32,7 @@ import {
   NotificationType,
   NotificationRecipientType,
 } from "../../notification/enums/notification-type.enum";
+import { CampaignRewardMode } from "../../campaign/entities/campaign-enums";
 
 @Injectable()
 export class PointEarningService {
@@ -55,7 +55,7 @@ export class PointEarningService {
     private readonly mailService: MailService,
     private readonly capabilityService: CapabilityService,
     private readonly tierProgressionService: TierProgressionService,
-    private readonly membershipService: MembershipService,
+    private readonly planSubscriptionService: PlanSubscriptionService,
     private readonly pointPackageService: PointPackageService,
     private readonly stampPackageService: StampPackageService,
     private readonly notificationService: NotificationService,
@@ -172,13 +172,15 @@ export class PointEarningService {
         { points },
       );
 
-      const membership = await this.membershipService.findOneByBusinessId(
-        business.id,
-      );
-      if (membership && membership.tier && membership.tier.configuration) {
-        const monthlyAllowance =
-          membership.tier.configuration.quotas.monthlyPointsAllowance;
+      const activeSub =
+        await this.planSubscriptionService.findActiveSubscription(business.id);
+      const monthlyAllowance =
+        activeSub?.planVariant?.configuration?.quotas?.monthlyPointsAllowance ||
+        (activeSub?.planVariant?.tierLevel as any)?.configuration?.quotas
+          ?.monthlyPointsAllowance ||
+        0;
 
+      if (monthlyAllowance > 0) {
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);

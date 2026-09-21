@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddPostalCodeToBusiness1766079576567
-  implements MigrationInterface
-{
+export class AddPostalCodeToBusiness1766079576567 implements MigrationInterface {
   name = "AddPostalCodeToBusiness1766079576567";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

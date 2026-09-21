@@ -62,11 +62,11 @@ import {
   ActionType,
 } from "../capability/capability.service";
 import { TierAnalyticsResponseDto } from "./dto/tier-analytics-response.dto";
-import {
-  Membership,
-  MembershipStatus,
-} from "../membership/entities/membership.entity";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
+import {
+  PlanSubscription,
+  PlanSubscriptionStatus,
+} from "../plans/entities/plan-subscription.entity";
 
 @Injectable()
 export class CampaignService {
@@ -95,8 +95,8 @@ export class CampaignService {
     private readonly tierRepository: Repository<Tier>,
     @InjectRepository(ParticipantCampaignBalance)
     private readonly participantCampaignBalanceRepository: Repository<ParticipantCampaignBalance>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     private readonly mailService: MailService,
     @Inject(forwardRef(() => TierProgressionService))
     private readonly tierProgressionService: TierProgressionService,
@@ -1600,31 +1600,39 @@ export class CampaignService {
     const campaignStats = await this.businessCampaignRepository
       .createQueryBuilder("bc")
       .innerJoin("bc.business", "b")
-      .innerJoin("b.memberships", "m")
-      .innerJoin("m.tier", "t")
+      .innerJoin("b.subscriptions", "s")
+      .innerJoin("s.planVariant", "pv")
+      .leftJoin("pv.tierLevel", "t")
       .where("bc.campaign_id = :campaignId", { campaignId })
-      .andWhere("m.status = :status", { status: MembershipStatus.ACTIVE })
+      .andWhere("s.status = :status", { status: PlanSubscriptionStatus.ACTIVE })
       .select([
-        't.id AS "tierId"',
-        't.name AS "tierName"',
+        'COALESCE(t.id, pv.id) AS "tierId"',
+        'COALESCE(t.name, pv.name) AS "tierName"',
         'COUNT(bc.id) AS "claimsCount"',
         'SUM(bc.total_points_earned) AS "totalPointsEarned"',
         'SUM(bc.total_points_redeemed) AS "totalPointsRedeemed"',
       ])
       .groupBy("t.id")
+      .addGroupBy("pv.id")
       .addGroupBy("t.name")
+      .addGroupBy("pv.name")
       .getRawMany();
 
     const participantStats = await this.participantCampaignBalanceRepository
       .createQueryBuilder("pcb")
       .innerJoin("pcb.businessCampaign", "bc")
       .innerJoin("bc.business", "b")
-      .innerJoin("b.memberships", "m")
-      .innerJoin("m.tier", "t")
+      .innerJoin("b.subscriptions", "s")
+      .innerJoin("s.planVariant", "pv")
+      .leftJoin("pv.tierLevel", "t")
       .where("bc.campaign_id = :campaignId", { campaignId })
-      .andWhere("m.status = :status", { status: MembershipStatus.ACTIVE })
-      .select(['t.id AS "tierId"', 'COUNT(pcb.id) AS "totalParticipants"'])
+      .andWhere("s.status = :status", { status: PlanSubscriptionStatus.ACTIVE })
+      .select([
+        'COALESCE(t.id, pv.id) AS "tierId"',
+        'COUNT(pcb.id) AS "totalParticipants"',
+      ])
       .groupBy("t.id")
+      .addGroupBy("pv.id")
       .getRawMany();
 
     // Map stats by tierId for easy lookup
@@ -1651,22 +1659,24 @@ export class CampaignService {
     });
     if (business && business.isSuperBusiness) return;
 
-    const activeMemberships = await this.membershipRepository.find({
+    const activeSubscriptions = await this.planSubscriptionRepository.find({
       where: {
         business: { id: businessId },
-        status: MembershipStatus.ACTIVE,
+        status: PlanSubscriptionStatus.ACTIVE,
       },
       order: { expires_at: "DESC" },
     });
 
-    if (activeMemberships.length === 0) {
-      throw new BadRequestException("Business has no active tier membership.");
+    if (activeSubscriptions.length === 0) {
+      throw new BadRequestException(
+        "Business has no active plan subscription.",
+      );
     }
 
-    const latestExpiry = activeMemberships[0].expires_at;
-    if (new Date(endDate) > new Date(latestExpiry)) {
+    const latestExpiry = activeSubscriptions[0].expires_at;
+    if (latestExpiry && new Date(endDate) > new Date(latestExpiry)) {
       throw new BadRequestException(
-        `Campaign end date cannot exceed your tier membership expiration date (${latestExpiry.toISOString().split("T")[0]}).`,
+        `Campaign end date cannot exceed your plan subscription expiration date (${new Date(latestExpiry).toISOString().split("T")[0]}).`,
       );
     }
   }

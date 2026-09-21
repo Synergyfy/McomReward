@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateUnifiedPlansAndPayments1770000000010
-  implements MigrationInterface
-{
+export class CreateUnifiedPlansAndPayments1770000000010 implements MigrationInterface {
   name = "CreateUnifiedPlansAndPayments1770000000010";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -137,7 +135,9 @@ export class CreateUnifiedPlansAndPayments1770000000010
       `ALTER TABLE "membership" DROP CONSTRAINT "FK_membership_plan_variant"`,
     );
     await queryRunner.query(`ALTER TABLE "membership" DROP COLUMN "isActive"`);
-    await queryRunner.query(`ALTER TABLE "membership" DROP COLUMN "payment_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "membership" DROP COLUMN "payment_id"`,
+    );
     await queryRunner.query(`ALTER TABLE "membership" DROP COLUMN "price_id"`);
     await queryRunner.query(
       `ALTER TABLE "membership" DROP COLUMN "plan_variant_id"`,
@@ -152,8 +152,6 @@ export class CreateUnifiedPlansAndPayments1770000000010
     await queryRunner.query(`DROP TABLE "plan_variants"`);
     await queryRunner.query(`DROP TABLE "plans"`);
     await queryRunner.query(`DROP TABLE "plan_tier_levels"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."plan_tier_levels_name_enum"`,
-    );
+    await queryRunner.query(`DROP TYPE "public"."plan_tier_levels_name_enum"`);
   }
 }

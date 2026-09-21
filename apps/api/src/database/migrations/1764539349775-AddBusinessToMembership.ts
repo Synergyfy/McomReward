@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddBusinessToMembership1764539349775
-  implements MigrationInterface
-{
+export class AddBusinessToMembership1764539349775 implements MigrationInterface {
   name = "AddBusinessToMembership1764539349775";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

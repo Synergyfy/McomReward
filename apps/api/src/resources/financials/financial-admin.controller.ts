@@ -56,14 +56,20 @@ export class AdminFinancialController {
   @Roles(Role.Admin)
   @ApiOperation({ summary: "Release an escrow (Admin only)" })
   releaseEscrow(@Param("id", ParseUUIDPipe) id: string) {
-    return this.financialAdminService.updateEscrowStatus(id, EscrowStatus.RELEASED);
+    return this.financialAdminService.updateEscrowStatus(
+      id,
+      EscrowStatus.RELEASED,
+    );
   }
 
   @Patch("escrows/:id/refund")
   @Roles(Role.Admin)
   @ApiOperation({ summary: "Refund an escrow (Admin only)" })
   refundEscrow(@Param("id", ParseUUIDPipe) id: string) {
-    return this.financialAdminService.updateEscrowStatus(id, EscrowStatus.REFUNDED);
+    return this.financialAdminService.updateEscrowStatus(
+      id,
+      EscrowStatus.REFUNDED,
+    );
   }
 
   @Get("payout-requests")
@@ -84,13 +90,19 @@ export class AdminFinancialController {
   @Roles(Role.Admin)
   @ApiOperation({ summary: "Approve a payout request (Admin only)" })
   approvePayout(@Param("id", ParseUUIDPipe) id: string) {
-    return this.financialAdminService.updatePayoutStatus(id, PayoutStatus.APPROVED);
+    return this.financialAdminService.updatePayoutStatus(
+      id,
+      PayoutStatus.APPROVED,
+    );
   }
 
   @Patch("payout-requests/:id/reject")
   @Roles(Role.Admin)
   @ApiOperation({ summary: "Reject a payout request (Admin only)" })
   rejectPayout(@Param("id", ParseUUIDPipe) id: string) {
-    return this.financialAdminService.updatePayoutStatus(id, PayoutStatus.REJECTED);
+    return this.financialAdminService.updatePayoutStatus(
+      id,
+      PayoutStatus.REJECTED,
+    );
   }
 }

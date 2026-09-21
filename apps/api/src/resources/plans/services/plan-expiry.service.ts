@@ -39,7 +39,10 @@ export class PlanExpiryService {
     return this.addCalendarYear(start);
   }
 
-  calculateExpiryForTierLevel(tierLevelName: string | PlanTierLevelEnum, start: Date = new Date()): Date {
+  calculateExpiryForTierLevel(
+    tierLevelName: string | PlanTierLevelEnum,
+    start: Date = new Date(),
+  ): Date {
     switch (tierLevelName?.toUpperCase()) {
       case PlanTierLevelEnum.PRO_PLUS:
       case "PRO_PLUS":

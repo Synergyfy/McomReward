@@ -32,7 +32,6 @@ import { AnalyticsModule } from "./resources/analytics/analytics.module";
 import { SeederModule } from "./seeder/seeder.module";
 import { TierModule } from "./resources/tier/tier.module";
 import { CouponModule } from "./resources/coupon/coupon.module";
-import { MembershipModule } from "./resources/membership/membership.module";
 import { PaymentHistoryModule } from "./resources/payment-history/payment-history.module";
 import { PaymentModule } from "./resources/payment/payment.module";
 import { PartnerModule } from "./resources/partner/partner.module";
@@ -110,7 +109,6 @@ import { PlansModule } from "./resources/plans/plans.module";
     AnalyticsModule,
     TierModule,
     CouponModule,
-    MembershipModule,
     PaymentHistoryModule,
     PaymentModule,
     PartnerModule,

@@ -10,10 +10,10 @@ import Stripe from "stripe";
 import { Tier } from "../tier/entities/tier.entity";
 import { TierType } from "../tier/entities/tier-type.enum";
 import {
-  Membership,
-  MembershipStatus,
+  PlanSubscription,
+  PlanSubscriptionStatus,
   PlanType,
-} from "../membership/entities/membership.entity";
+} from "../plans/entities/plan-subscription.entity";
 import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
 import { InitiatePaymentDto } from "./dto/initiate-payment.dto";
 import { VerifyPaymentDto } from "./dto/verify-payment.dto";
@@ -48,8 +48,8 @@ export class PaymentService {
   constructor(
     @InjectRepository(Tier)
     private readonly tierRepository: Repository<Tier>,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     @InjectRepository(PaymentHistory)
     private readonly paymentHistoryRepository: Repository<PaymentHistory>,
     @InjectRepository(Business)
@@ -88,19 +88,16 @@ export class PaymentService {
       }
 
       // Check for overlapping seasonal tiers
-      const activeSeasonal = await this.membershipRepository.find({
+      const activeSeasonal = await this.planSubscriptionRepository.find({
         where: {
           business: { id: user.id },
-          status: MembershipStatus.ACTIVE,
-          tier: { type: TierType.SEASONAL },
+          status: PlanSubscriptionStatus.ACTIVE,
         },
-        relations: ["tier", "tier.season"], // Ensure tier relation is loaded
       });
 
       const overlap = activeSeasonal.some((m) => {
-        // Fallback to tier dates if membership dates are missing (shouldn't happen for valid seasonal)
-        const mStart = m.starts_at || m.tier.season?.startDate;
-        const mEnd = m.expires_at || m.tier.season?.endDate;
+        const mStart = m.starts_at;
+        const mEnd = m.expires_at;
         return tier.season?.startDate <= mEnd && tier.season?.endDate >= mStart;
       });
 
@@ -238,24 +235,24 @@ export class PaymentService {
         );
       }
       // Check for overlapping seasonal tiers
-      const activeSeasonal = await this.membershipRepository.find({
+      const activeSeasonal = await this.planSubscriptionRepository.find({
         where: {
           business: { id: user.id },
-          status: MembershipStatus.ACTIVE,
-          tier: { type: TierType.SEASONAL },
+          status: PlanSubscriptionStatus.ACTIVE,
+          plan_type: PlanType.SEASONAL,
         },
-        relations: ["tier", "tier.season"],
       });
 
-      const overlap = activeSeasonal.some((m) => {
-        const mStart = m.starts_at || m.tier.season?.startDate;
-        const mEnd = m.expires_at || m.tier.season?.endDate;
+      const overlap = activeSeasonal.some((s) => {
+        const mStart = s.starts_at;
+        const mEnd = s.expires_at;
+        if (!mStart || !mEnd) return false;
         return tier.season?.startDate <= mEnd && tier.season?.endDate >= mStart;
       });
 
       if (overlap) {
         throw new BadRequestException(
-          "You cannot purchase a seasonal tier that overlaps with an existing seasonal membership.",
+          "You cannot purchase a seasonal tier that overlaps with an existing seasonal subscription.",
         );
       }
     }
@@ -668,80 +665,48 @@ export class PaymentService {
     isTrial: boolean = false,
     expiresAt: Date,
   ) {
-    let membership: Membership | null = null;
+    let subscription: PlanSubscription | null = null;
     const startsAt =
       tier.type === TierType.SEASONAL && tier.season?.startDate
         ? tier.season.startDate
         : new Date();
-    // For Seasonal, expiresAt passed might be calculated from Annual logic if planType was defaulted.
-    // We should ensure it matches tier info if Seasonal.
     const effectiveExpiresAt =
       tier.type === TierType.SEASONAL && tier.season?.endDate
         ? tier.season.endDate
         : expiresAt;
 
-    if (tier.type === TierType.SEASONAL) {
-      // For Seasonal: Always create new unless updating the EXACT same purchased tier (e.g. repayment?)
-      // Assuming duplicate purchase is blocked at initiate, we create new.
-      // We'll check if one exists just in case to update transaction ID or similar.
-      membership = await this.membershipRepository.findOne({
-        where: { business: { id: user.id }, tier: { id: tier.id } },
-      });
-    } else {
-      // For Standard: Find existing Standard membership to update
-      membership = await this.membershipRepository.findOne({
-        where: {
-          business: { id: user.id },
-          tier: { type: TierType.STANDARD },
-        },
-      });
+    subscription = await this.planSubscriptionRepository.findOne({
+      where: { business: { id: user.id } },
+    });
 
-      // If no Standard found, check if ANY membership exists (legacy fallback)
-      if (!membership) {
-        const anyMembership = await this.membershipRepository.findOne({
-          where: { business: { id: user.id } },
-          relations: ["tier"],
-        });
-        if (
-          anyMembership &&
-          (!anyMembership.tier || anyMembership.tier.type === TierType.STANDARD)
-        ) {
-          membership = anyMembership;
-        }
-        // If existing is Seasonal, we DO NOT overwrite it. We create a NEW Standard.
-      }
-    }
-
-    if (membership) {
-      membership.tier = tier;
-      membership.plan_type = planType;
-      membership.starts_at = startsAt;
-      membership.expires_at = effectiveExpiresAt;
-      membership.status = MembershipStatus.ACTIVE;
-      membership.is_trial = isTrial;
-      if (transactionId) membership.transaction_id = transactionId;
-      if (provider) membership.payment_provider = provider;
-      await this.membershipRepository.save(membership);
+    if (subscription) {
+      subscription.plan_type = planType;
+      subscription.starts_at = startsAt;
+      subscription.expires_at = effectiveExpiresAt;
+      subscription.status = PlanSubscriptionStatus.ACTIVE;
+      subscription.is_trial = isTrial;
+      if (transactionId) subscription.transaction_id = transactionId;
+      if (provider) subscription.payment_provider = provider;
+      await this.planSubscriptionRepository.save(subscription);
     } else {
-      membership = this.membershipRepository.create({
+      subscription = this.planSubscriptionRepository.create({
         business: { id: user.id } as Business,
-        tier,
         plan_type: planType,
         starts_at: startsAt,
         expires_at: effectiveExpiresAt,
-        status: MembershipStatus.ACTIVE,
+        status: PlanSubscriptionStatus.ACTIVE,
         is_trial: isTrial,
         transaction_id: transactionId,
         payment_provider: provider,
       });
-      await this.membershipRepository.save(membership);
+      await this.planSubscriptionRepository.save(subscription);
     }
 
     if (!isTrial) {
       const paymentHistory = this.paymentHistoryRepository.create({
         user: { id: user.id } as Business,
         user_type: user.role,
-        membership,
+        subscription,
         amount,
         payment_provider: provider,
         transaction_id: transactionId,
@@ -952,12 +917,12 @@ export class PaymentService {
             expiresAt,
           );
         } else if (event.type === "invoice.payment_failed") {
-          const membership = await this.membershipRepository.findOne({
+          const subscription = await this.planSubscriptionRepository.findOne({
             where: { business: { id: business.id } },
           });
-          if (membership) {
-            membership.status = MembershipStatus.EXPIRED;
-            await this.membershipRepository.save(membership);
+          if (subscription) {
+            subscription.status = PlanSubscriptionStatus.EXPIRED;
+            await this.planSubscriptionRepository.save(subscription);
           }
         }
       }

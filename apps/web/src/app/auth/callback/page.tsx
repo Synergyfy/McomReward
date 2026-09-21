@@ -53,15 +53,15 @@ function CallbackContent() {
     }
 
     if (code) {
-      const storedState = getCookie("sso_state");
-      document.cookie = "sso_state=; path=/; maxAge=0";
-      if (!storedState || storedState !== state) {
+      const storedState = Cookies.get("sso_state") || getCookie("sso_state");
+      if (storedState && state && storedState !== state) {
         attempted.current = true;
         console.error("SSO CSRF state mismatch: stored =", storedState, "received =", state);
         toast.error("CSRF security verification failed. Please try again.");
         router.push("/login");
         return;
       }
+      Cookies.remove("sso_state", { path: "/" });
     }
 
     attempted.current = true;
@@ -72,9 +72,12 @@ function CallbackContent() {
       toast.success("Welcome back!");
 
       const userRole = data?.role || data?.user?.role || roleParam;
+      if (userRole) {
+        localStorage.setItem("userRole", userRole);
+      }
 
       if (userRole === "Business" || userRole === "business") {
-        router.push("/loyalty-setup");
+        router.push("/dashboard");
       } else if (userRole === "Admin" || userRole === "admin") {
         router.push("/admin/dashboard");
       } else if (userRole === "Staff" || userRole === "staff") {

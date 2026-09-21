@@ -56,7 +56,7 @@ export class CreateBusinessDto {
   @ApiProperty({
     description: "Code for pre-provisioned rewards (e.g. Free Tier Access).",
     example: "PROV-123-XYZ",
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()

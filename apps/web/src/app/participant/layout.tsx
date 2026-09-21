@@ -7,12 +7,15 @@ import { WelcomeWishlistModal } from '@/components/customer/WelcomeWishlistModal
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Button } from '@/components/ui/button';
 import { Eye, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function CustomerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isWelcomeWishlistModalOpen, setIsWelcomeWishlistModalOpen] = useState(false);
   const { isImpersonating, participantId, stopImpersonation } = useImpersonation();
@@ -20,11 +23,23 @@ export default function CustomerLayout({
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   useEffect(() => {
+    const bypassSso = process.env.NEXT_PUBLIC_BYPASS_SSO === 'true';
+    if (bypassSso) return;
+
+    const role = localStorage.getItem('userRole');
+    if (role === 'Business' || role === 'business') {
+      toast.error('Unauthorized Access', {
+        description: 'Customer dashboard is restricted to customer accounts only.',
+      });
+      router.push('/dashboard');
+      return;
+    }
+
     const hasSeenModal = localStorage.getItem('hasSeenWelcomeWishlistModal');
     if (!hasSeenModal) {
       setIsWelcomeWishlistModalOpen(true);
     }
-  }, []);
+  }, [router]);
 
   const handleWelcomeWishlistModalClose = () => {
     setIsWelcomeWishlistModalOpen(false);

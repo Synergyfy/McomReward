@@ -30,7 +30,9 @@ export class PlansController {
   @Post()
   @Roles(Role.Admin)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Create a new plan with 3 atomic variants (Admin only)" })
+  @ApiOperation({
+    summary: "Create a new plan with 3 atomic variants (Admin only)",
+  })
   @ApiResponse({ status: 201, description: "Plan and 3 variants created" })
   create(@Body() createPlanDto: CreatePlanDto) {
     return this.plansService.create(createPlanDto);
@@ -48,7 +50,10 @@ export class PlansController {
   @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get all plans for admin dashboard" })
-  @ApiResponse({ status: 200, description: "Return all plans including inactive" })
+  @ApiResponse({
+    status: 200,
+    description: "Return all plans including inactive",
+  })
   findAllAdmin() {
     return this.plansService.findAllAdmin();
   }
@@ -91,7 +96,10 @@ export class PlansController {
   @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Add versioned price to a variant (Admin only)" })
-  @ApiResponse({ status: 201, description: "New price active, previous price archived" })
+  @ApiResponse({
+    status: 201,
+    description: "New price active, previous price archived",
+  })
   addPrice(
     @Param("variantId") variantId: string,
     @Body() addPriceDto: AddPlanPriceDto,

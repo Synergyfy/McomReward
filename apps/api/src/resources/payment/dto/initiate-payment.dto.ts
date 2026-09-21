@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, IsEnum, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { PlanType } from "../../membership/entities/membership.entity";
+import { PlanType } from "../../plans/entities/plan-subscription.entity";
 
 export class InitiatePaymentDto {
   @ApiProperty({

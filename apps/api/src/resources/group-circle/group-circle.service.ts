@@ -34,9 +34,9 @@ import {
   GroupMessageType,
 } from "./enums/group-circle.enums";
 import {
-  Membership,
-  MembershipStatus,
-} from "../membership/entities/membership.entity";
+  PlanSubscription,
+  PlanSubscriptionStatus,
+} from "../plans/entities/plan-subscription.entity";
 import { PaginationDto } from "../../common/dto/pagination.dto";
 import { StripeService } from "../payment/stripe.service";
 import { PaypalService } from "../payment/paypal.service";
@@ -124,15 +124,15 @@ export class GroupCircleService {
         if (createDto.type === GroupCircleType.SMART_MONEY) {
           await this.validateSmartMoneyRules(createDto, business, manager);
 
-          const membership = await manager.findOne(Membership, {
+          const subscription = await manager.findOne(PlanSubscription, {
             where: {
               business: { id: business.id },
-              status: MembershipStatus.ACTIVE,
+              status: PlanSubscriptionStatus.ACTIVE,
             },
-            relations: ["tier"],
+            relations: ["planVariant"],
           });
 
-          const limits = await this.getSmartMoneyLimits(membership);
+          const limits = await this.getSmartMoneyLimits(subscription);
           if (
             networks.length < limits.minMembers ||
             networks.length > limits.maxMembers
@@ -258,59 +258,19 @@ export class GroupCircleService {
     return ownerNetwork;
   }
 
-  private async getSmartMoneyLimits(membership: Membership) {
-    if (!membership)
+  private async getSmartMoneyLimits(subscription: PlanSubscription) {
+    if (!subscription) {
       throw new BadRequestException(
-        "Active membership required for Smart Money Circle",
+        "Active subscription required for Smart Money Circle",
       );
-
-    // Ensure tier is loaded
-    if (!membership.tier) {
-      // This should ideally not happen if query includes relations, but for safety:
-      throw new InternalServerErrorException("Membership tier data missing");
     }
 
-    let limits = membership.tier.configuration?.smartMoney;
-
-    // Fallback for default tiers if not explicitly configured
-    if (!limits) {
-      const tierName = membership.tier.name
-        ? membership.tier.name.toUpperCase()
-        : "";
-      if (tierName.includes("BRONZE"))
-        limits = {
-          maxDurationDays: 90,
-          maxContributionAmount: 25,
-          minMembers: 6,
-          maxMembers: 12,
-        };
-      else if (tierName.includes("SILVER"))
-        limits = {
-          maxDurationDays: 180,
-          maxContributionAmount: 50,
-          minMembers: 6,
-          maxMembers: 12,
-        };
-      else if (tierName.includes("GOLD"))
-        limits = {
-          maxDurationDays: 270,
-          maxContributionAmount: 75,
-          minMembers: 6,
-          maxMembers: 12,
-        };
-      else if (tierName.includes("PLATINUM"))
-        limits = {
-          maxDurationDays: 360,
-          maxContributionAmount: 100,
-          minMembers: 6,
-          maxMembers: 12,
-        };
-    }
-
-    if (!limits) {
-      throw new BadRequestException("Smart Money not configured for this tier");
-    }
-    return limits;
+    return {
+      maxDurationDays: 365,
+      maxContributionAmount: 5000,
+      minMembers: 2,
+      maxMembers: 50,
+    };
   }
 
   async validateSmartMoneyRules(
@@ -319,16 +279,19 @@ export class GroupCircleService {
     manager?: EntityManager,
   ) {
     const repo = manager || this.circleRepo.manager;
-    const membership = await repo.findOne(Membership, {
-      where: { business: { id: business.id }, status: MembershipStatus.ACTIVE },
-      relations: ["tier"],
+    const subscription = await repo.findOne(PlanSubscription, {
+      where: {
+        business: { id: business.id },
+        status: PlanSubscriptionStatus.ACTIVE,
+      },
+      relations: ["planVariant"],
     });
 
-    const limits = await this.getSmartMoneyLimits(membership);
+    const limits = await this.getSmartMoneyLimits(subscription);
 
     if (dto.duration > limits.maxDurationDays) {
       throw new BadRequestException(
-        `Duration ${dto.duration} exceeds limit for ${membership.tier.name} tier (${limits.maxDurationDays})`,
+        `Duration ${dto.duration} exceeds maximum allowed duration (${limits.maxDurationDays} days)`,
       );
     }
 
@@ -337,7 +300,7 @@ export class GroupCircleService {
       dto.contributionAmount > limits.maxContributionAmount
     ) {
       throw new BadRequestException(
-        `Contribution ${dto.contributionAmount} exceeds limit for ${membership.tier.name} tier (${limits.maxContributionAmount})`,
+        `Contribution ${dto.contributionAmount} exceeds maximum allowed contribution (${limits.maxContributionAmount})`,
       );
     }
   }
@@ -589,14 +552,20 @@ export class GroupCircleService {
     if (!member) throw new NotFoundException("Member not found");
 
     // Optional: Validate amount against limits
-    const membership = await this.circleRepo.manager.findOne(Membership, {
-      where: { business: { id: businessId }, status: MembershipStatus.ACTIVE },
-      relations: ["tier"],
-    });
-    const limits = await this.getSmartMoneyLimits(membership);
+    const subscription = await this.circleRepo.manager.findOne(
+      PlanSubscription,
+      {
+        where: {
+          business: { id: businessId },
+          status: PlanSubscriptionStatus.ACTIVE,
+        },
+        relations: ["planVariant"],
+      },
+    );
+    const limits = await this.getSmartMoneyLimits(subscription);
     if (dto.amount > limits.maxContributionAmount) {
       throw new BadRequestException(
-        `Contribution ${dto.amount} exceeds limit for ${membership.tier.name} tier (${limits.maxContributionAmount})`,
+        `Contribution ${dto.amount} exceeds maximum limit (${limits.maxContributionAmount})`,
       );
     }
 

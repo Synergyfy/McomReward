@@ -1,9 +1,4 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 import { PlanVariant } from "./plan-variant.entity";
@@ -24,7 +19,10 @@ export class PlanPrice extends AbstractBaseEntity {
   @Column({ default: "GBP" })
   currency: string;
 
-  @ApiProperty({ description: "Price amount for the entire duration", example: 49.99 })
+  @ApiProperty({
+    description: "Price amount for the entire duration",
+    example: 49.99,
+  })
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount: number;
 
@@ -36,7 +34,10 @@ export class PlanPrice extends AbstractBaseEntity {
   @Column({ nullable: true })
   paypalPlanId: string;
 
-  @ApiProperty({ description: "Whether this is the currently active price record for the variant" })
+  @ApiProperty({
+    description:
+      "Whether this is the currently active price record for the variant",
+  })
   @Column({ default: true })
   isActive: boolean;
 
@@ -44,7 +45,11 @@ export class PlanPrice extends AbstractBaseEntity {
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
   effectiveFrom: Date;
 
-  @ApiProperty({ description: "Timestamp until which this price was effective (null if currently active)", required: false })
+  @ApiProperty({
+    description:
+      "Timestamp until which this price was effective (null if currently active)",
+    required: false,
+  })
   @Column({ type: "timestamptz", nullable: true })
   effectiveTo: Date | null;
 }

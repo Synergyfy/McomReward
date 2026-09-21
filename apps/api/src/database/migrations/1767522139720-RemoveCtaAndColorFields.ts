@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RemoveCtaAndColorFields1767522139720
-  implements MigrationInterface
-{
+export class RemoveCtaAndColorFields1767522139720 implements MigrationInterface {
   name = "RemoveCtaAndColorFields1767522139720";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

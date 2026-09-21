@@ -10,7 +10,10 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { Plan } from "./entities/plan.entity";
-import { PlanTierLevel, PlanTierLevelEnum } from "./entities/plan-tier-level.entity";
+import {
+  PlanTierLevel,
+  PlanTierLevelEnum,
+} from "./entities/plan-tier-level.entity";
 import { PlanVariant } from "./entities/plan-variant.entity";
 import { PlanPrice } from "./entities/plan-price.entity";
 import { CreatePlanDto } from "./dto/create-plan.dto";
@@ -38,7 +41,9 @@ export class PlansService implements OnModuleInit {
       await this.seedTierLevels();
       await this.seedDefaultPlans();
     } catch (err) {
-      this.logger.warn(`Deferred plan seeding (database may be pending migrations): ${err?.message}`);
+      this.logger.warn(
+        `Deferred plan seeding (database may be pending migrations): ${err?.message}`,
+      );
     }
   }
 
@@ -46,7 +51,9 @@ export class PlansService implements OnModuleInit {
     const existingCount = await this.tierLevelRepository.count();
     if (existingCount > 0) return;
 
-    this.logger.log("Seeding default PlanTierLevels (STANDARD, PRO, PRO_PLUS)...");
+    this.logger.log(
+      "Seeding default PlanTierLevels (STANDARD, PRO, PRO_PLUS)...",
+    );
     const levels = [
       {
         name: PlanTierLevelEnum.STANDARD,
@@ -84,7 +91,8 @@ export class PlansService implements OnModuleInit {
       {
         name: "Starter Plan",
         slug: "starter-plan",
-        description: "Ideal for small businesses initiating their digital loyalty and stamp programs.",
+        description:
+          "Ideal for small businesses initiating their digital loyalty and stamp programs.",
         isActive: true,
         variants: [
           {
@@ -185,7 +193,8 @@ export class PlansService implements OnModuleInit {
       {
         name: "Growth Plan",
         slug: "growth-plan",
-        description: "For expanding retailers and service chains wanting multi-channel customer rewards.",
+        description:
+          "For expanding retailers and service chains wanting multi-channel customer rewards.",
         isActive: true,
         variants: [
           {
@@ -296,7 +305,9 @@ export class PlansService implements OnModuleInit {
 
   private assertExactlyThreeTiers(dto: CreatePlanDto) {
     if (!dto.variants || dto.variants.length !== 3) {
-      throw new BadRequestException("A Plan must be configured with exactly 3 variants (STANDARD, PRO, PRO_PLUS).");
+      throw new BadRequestException(
+        "A Plan must be configured with exactly 3 variants (STANDARD, PRO, PRO_PLUS).",
+      );
     }
 
     const tiers = new Set(dto.variants.map((v) => v.tier));
@@ -305,16 +316,22 @@ export class PlansService implements OnModuleInit {
       !tiers.has(PlanTierLevelEnum.PRO) ||
       !tiers.has(PlanTierLevelEnum.PRO_PLUS)
     ) {
-      throw new BadRequestException("Variants must include STANDARD (90d), PRO (180d), and PRO_PLUS (1yr).");
+      throw new BadRequestException(
+        "Variants must include STANDARD (90d), PRO (180d), and PRO_PLUS (1yr).",
+      );
     }
   }
 
   async create(dto: CreatePlanDto): Promise<Plan> {
     this.assertExactlyThreeTiers(dto);
 
-    const existing = await this.planRepository.findOne({ where: { slug: dto.slug } });
+    const existing = await this.planRepository.findOne({
+      where: { slug: dto.slug },
+    });
     if (existing) {
-      throw new ConflictException(`Plan with slug "${dto.slug}" already exists`);
+      throw new ConflictException(
+        `Plan with slug "${dto.slug}" already exists`,
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -335,7 +352,9 @@ export class PlansService implements OnModuleInit {
       for (const vDto of dto.variants) {
         const tierLevel = tierLevels.find((t) => t.name === vDto.tier);
         if (!tierLevel) {
-          throw new BadRequestException(`Tier level ${vDto.tier} not found in database`);
+          throw new BadRequestException(
+            `Tier level ${vDto.tier} not found in database`,
+          );
         }
 
         const variant = queryRunner.manager.create(PlanVariant, {
@@ -371,22 +390,14 @@ export class PlansService implements OnModuleInit {
   async findAll(): Promise<Plan[]> {
     return this.planRepository.find({
       where: { isActive: true },
-      relations: [
-        "variants",
-        "variants.tierLevel",
-        "variants.prices",
-      ],
+      relations: ["variants", "variants.tierLevel", "variants.prices"],
       order: { created_at: "ASC" },
     });
   }
 
   async findAllAdmin(): Promise<Plan[]> {
     return this.planRepository.find({
-      relations: [
-        "variants",
-        "variants.tierLevel",
-        "variants.prices",
-      ],
+      relations: ["variants", "variants.tierLevel", "variants.prices"],
       order: { created_at: "ASC" },
     });
   }
@@ -394,11 +405,7 @@ export class PlansService implements OnModuleInit {
   async findOne(id: string): Promise<Plan> {
     const plan = await this.planRepository.findOne({
       where: { id },
-      relations: [
-        "variants",
-        "variants.tierLevel",
-        "variants.prices",
-      ],
+      relations: ["variants", "variants.tierLevel", "variants.prices"],
     });
     if (!plan) {
       throw new NotFoundException(`Plan with ID ${id} not found`);
@@ -409,11 +416,7 @@ export class PlansService implements OnModuleInit {
   async findBySlug(slug: string): Promise<Plan> {
     const plan = await this.planRepository.findOne({
       where: { slug },
-      relations: [
-        "variants",
-        "variants.tierLevel",
-        "variants.prices",
-      ],
+      relations: ["variants", "variants.tierLevel", "variants.prices"],
     });
     if (!plan) {
       throw new NotFoundException(`Plan with slug ${slug} not found`);
@@ -421,7 +424,9 @@ export class PlansService implements OnModuleInit {
     return plan;
   }
 
-  async resolveActivePrice(variantIdOrPlanId: string): Promise<{ variant: PlanVariant; price: PlanPrice }> {
+  async resolveActivePrice(
+    variantIdOrPlanId: string,
+  ): Promise<{ variant: PlanVariant; price: PlanPrice }> {
     // 1. First check if ID matches a PlanVariant
     const variant = await this.variantRepository.findOne({
       where: { id: variantIdOrPlanId },
@@ -429,9 +434,12 @@ export class PlansService implements OnModuleInit {
     });
 
     if (variant) {
-      const activePrice = variant.prices?.find((p) => p.isActive) || variant.prices?.[0];
+      const activePrice =
+        variant.prices?.find((p) => p.isActive) || variant.prices?.[0];
       if (!activePrice) {
-        throw new NotFoundException(`No active price configured for variant ${variant.id}`);
+        throw new NotFoundException(
+          `No active price configured for variant ${variant.id}`,
+        );
       }
       return { variant, price: activePrice };
     }
@@ -444,20 +452,29 @@ export class PlansService implements OnModuleInit {
 
     if (plan && plan.variants?.length > 0) {
       const defaultVariant =
-        plan.variants.find((v) => v.tierLevel?.name === PlanTierLevelEnum.STANDARD) ||
-        plan.variants[0];
+        plan.variants.find(
+          (v) => v.tierLevel?.name === PlanTierLevelEnum.STANDARD,
+        ) || plan.variants[0];
       const activePrice =
-        defaultVariant.prices?.find((p) => p.isActive) || defaultVariant.prices?.[0];
+        defaultVariant.prices?.find((p) => p.isActive) ||
+        defaultVariant.prices?.[0];
       if (!activePrice) {
-        throw new NotFoundException(`No active price configured for plan ${plan.id}`);
+        throw new NotFoundException(
+          `No active price configured for plan ${plan.id}`,
+        );
       }
       return { variant: defaultVariant, price: activePrice };
     }
 
-    throw new NotFoundException(`Plan or Variant with ID ${variantIdOrPlanId} not found`);
+    throw new NotFoundException(
+      `Plan or Variant with ID ${variantIdOrPlanId} not found`,
+    );
   }
 
-  async addVariantPrice(variantId: string, dto: AddPlanPriceDto): Promise<PlanPrice> {
+  async addVariantPrice(
+    variantId: string,
+    dto: AddPlanPriceDto,
+  ): Promise<PlanPrice> {
     const variant = await this.variantRepository.findOne({
       where: { id: variantId },
       relations: ["prices"],
@@ -475,7 +492,7 @@ export class PlansService implements OnModuleInit {
       await queryRunner.manager.update(
         PlanPrice,
         { planVariantId: variantId, isActive: true },
-        { isActive: false, effectiveTo: new Date() }
+        { isActive: false, effectiveTo: new Date() },
       );
 
       // 2. Insert new active price row
@@ -512,7 +529,9 @@ export class PlansService implements OnModuleInit {
 
     if (dto.variants && dto.variants.length > 0) {
       for (const vDto of dto.variants) {
-        const variant = plan.variants.find((v) => v.tierLevel?.name === vDto.tier);
+        const variant = plan.variants.find(
+          (v) => v.tierLevel?.name === vDto.tier,
+        );
         if (variant) {
           if (vDto.features) variant.features = vDto.features;
           if (vDto.configuration) {
@@ -525,7 +544,10 @@ export class PlansService implements OnModuleInit {
 
           if (vDto.price !== undefined) {
             const currentActivePrice = variant.prices?.find((p) => p.isActive);
-            if (!currentActivePrice || Number(currentActivePrice.amount) !== Number(vDto.price)) {
+            if (
+              !currentActivePrice ||
+              Number(currentActivePrice.amount) !== Number(vDto.price)
+            ) {
               await this.addVariantPrice(variant.id, { amount: vDto.price });
             }
           }
@@ -546,23 +568,78 @@ export class PlansService implements OnModuleInit {
   async getPlanSchema() {
     return {
       quotas: [
-        { key: "maxActiveCampaigns", label: "Max Active Campaigns", type: "number", unlimited: true },
-        { key: "maxActiveRewards", label: "Max Active Rewards", type: "number", unlimited: true },
-        { key: "maxRewardsPerCampaign", label: "Max Rewards Per Campaign", type: "number", unlimited: true },
-        { key: "monthlyPointsAllowance", label: "Monthly Points Allowance", type: "number" },
-        { key: "monthlyStampsAllowance", label: "Monthly Stamps Allowance", type: "number" },
+        {
+          key: "maxActiveCampaigns",
+          label: "Max Active Campaigns",
+          type: "number",
+          unlimited: true,
+        },
+        {
+          key: "maxActiveRewards",
+          label: "Max Active Rewards",
+          type: "number",
+          unlimited: true,
+        },
+        {
+          key: "maxRewardsPerCampaign",
+          label: "Max Rewards Per Campaign",
+          type: "number",
+          unlimited: true,
+        },
+        {
+          key: "monthlyPointsAllowance",
+          label: "Monthly Points Allowance",
+          type: "number",
+        },
+        {
+          key: "monthlyStampsAllowance",
+          label: "Monthly Stamps Allowance",
+          type: "number",
+        },
         { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
-        { key: "maxGiftCardTemplates", label: "Max Gift Card Templates", type: "number" },
-        { key: "maxCouponTemplates", label: "Max Coupon Templates", type: "number" },
+        {
+          key: "maxGiftCardTemplates",
+          label: "Max Gift Card Templates",
+          type: "number",
+        },
+        {
+          key: "maxCouponTemplates",
+          label: "Max Coupon Templates",
+          type: "number",
+        },
       ],
       featureFlags: [
-        { key: "canCreateCampaignFromScratch", label: "Create Campaign From Scratch", type: "boolean" },
-        { key: "canEditAdminTemplates", label: "Edit Admin Templates", type: "boolean" },
-        { key: "hasAccessToAdvancedAnalytics", label: "Advanced Analytics Dashboard", type: "boolean" },
-        { key: "hasAccessToCRM", label: "Customer CRM Access", type: "boolean" },
+        {
+          key: "canCreateCampaignFromScratch",
+          label: "Create Campaign From Scratch",
+          type: "boolean",
+        },
+        {
+          key: "canEditAdminTemplates",
+          label: "Edit Admin Templates",
+          type: "boolean",
+        },
+        {
+          key: "hasAccessToAdvancedAnalytics",
+          label: "Advanced Analytics Dashboard",
+          type: "boolean",
+        },
+        {
+          key: "hasAccessToCRM",
+          label: "Customer CRM Access",
+          type: "boolean",
+        },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },
-        { key: "priorityInSearch", label: "Priority Placement in Search", type: "boolean" },
-        { key: "allowCustomBranding", label: "Custom Storefront Branding", type: "boolean" },
+        {
+          key: "priorityInSearch",
+          label: "Priority Placement in Search",
+          type: "boolean",
+        },
+        {
+          key: "allowCustomBranding",
+          label: "Custom Storefront Branding",
+          type: "boolean",
+        },
       ],
     };
   }

@@ -18,7 +18,9 @@ export class SystemApiKeyGuard implements CanActivate {
       request.headers["x-mcom-api-key"];
 
     if (!apiKey) {
-      throw new UnauthorizedException("Missing x-mcom-solution-api-key or x-mcom-api-key header");
+      throw new UnauthorizedException(
+        "Missing x-mcom-solution-api-key or x-mcom-api-key header",
+      );
     }
 
     const validApiKey =

@@ -8,11 +8,7 @@ import {
   Param,
   Query,
 } from "@nestjs/common";
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-} from "@nestjs/swagger";
+import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { CreditsService } from "./credits.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../common/interfaces/user.interface";
@@ -63,15 +59,8 @@ export class CreditsController {
   @ApiOperation({
     summary: "Unlock a credit level using a matching contribution",
   })
-  unlock(
-    @CurrentUser() user: User,
-    @Body() dto: UnlockCreditLevelDto,
-  ) {
-    return this.creditsService.unlock(
-      user.id,
-      userTypeFor(user),
-      dto.level,
-    );
+  unlock(@CurrentUser() user: User, @Body() dto: UnlockCreditLevelDto) {
+    return this.creditsService.unlock(user.id, userTypeFor(user), dto.level);
   }
 
   @Get("rules")

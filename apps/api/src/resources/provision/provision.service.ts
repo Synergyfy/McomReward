@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Provision, ProvisionType } from "./entities/provision.entity";
@@ -12,22 +16,30 @@ export class ProvisionService {
   ) {}
 
   async create(createProvisionDto: CreateProvisionDto): Promise<Provision> {
-    const exists = await this.provisionRepository.findOne({ where: { code: createProvisionDto.code } });
+    const exists = await this.provisionRepository.findOne({
+      where: { code: createProvisionDto.code },
+    });
     if (exists) {
-        // If code exists, maybe return it or throw error. For idempotency, we return existing if not redeemed.
-        if (exists.isRedeemed) throw new BadRequestException("Code already exists and is redeemed");
-        return exists;
+      // If code exists, maybe return it or throw error. For idempotency, we return existing if not redeemed.
+      if (exists.isRedeemed)
+        throw new BadRequestException("Code already exists and is redeemed");
+      return exists;
     }
 
     const provision = this.provisionRepository.create({
-        ...createProvisionDto,
-        expiresAt: new Date(createProvisionDto.expiresAt)
+      ...createProvisionDto,
+      expiresAt: new Date(createProvisionDto.expiresAt),
     });
     return this.provisionRepository.save(provision);
   }
 
-  async validateAndMarkRedeemed(code: string, userId: string): Promise<Provision> {
-    const provision = await this.provisionRepository.findOne({ where: { code } });
+  async validateAndMarkRedeemed(
+    code: string,
+    userId: string,
+  ): Promise<Provision> {
+    const provision = await this.provisionRepository.findOne({
+      where: { code },
+    });
     if (!provision) {
       throw new NotFoundException("Invalid redemption code");
     }
@@ -46,8 +58,8 @@ export class ProvisionService {
 
     return this.provisionRepository.save(provision);
   }
-  
+
   async findByCode(code: string): Promise<Provision> {
-      return this.provisionRepository.findOne({ where: { code } });
+    return this.provisionRepository.findOne({ where: { code } });
   }
 }

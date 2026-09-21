@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddRewardPointsAndStampsFields1767009097057
-  implements MigrationInterface
-{
+export class AddRewardPointsAndStampsFields1767009097057 implements MigrationInterface {
   name = "AddRewardPointsAndStampsFields1767009097057";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
-} from "typeorm";
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 import { Plan } from "./plan.entity";
@@ -62,11 +56,16 @@ export class PlanVariant extends AbstractBaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @ApiProperty({ description: "Marketing bullet points for buyers", type: [String] })
+  @ApiProperty({
+    description: "Marketing bullet points for buyers",
+    type: [String],
+  })
   @Column({ type: "jsonb", default: [] })
   features: string[];
 
-  @ApiProperty({ description: "Enforced capability limits (quotas) and feature flags" })
+  @ApiProperty({
+    description: "Enforced capability limits (quotas) and feature flags",
+  })
   @Column({ type: "jsonb", default: {} })
   configuration: PlanVariantConfiguration;
 

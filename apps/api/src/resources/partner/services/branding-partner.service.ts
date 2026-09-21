@@ -36,13 +36,7 @@ export class BrandingPartnerService {
   }
 
   async findAll(filterDto: FilterBrandingPartnerDto) {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      type,
-      status,
-    } = filterDto;
+    const { page = 1, limit = 10, search, type, status } = filterDto;
     const queryBuilder = this.partnerRepository.createQueryBuilder("partner");
 
     if (search) {
@@ -111,7 +105,9 @@ export class BrandingPartnerService {
     await this.partnerRepository.remove(partner);
   }
 
-  private mapDtoToEntity(dto: CreateBrandingPartnerDto | UpdateBrandingPartnerDto): Partial<BrandingPartner> {
+  private mapDtoToEntity(
+    dto: CreateBrandingPartnerDto | UpdateBrandingPartnerDto,
+  ): Partial<BrandingPartner> {
     return {
       name: dto.name,
       type: dto.type,
@@ -125,8 +121,7 @@ export class BrandingPartnerService {
       performance_total_users: dto.performanceMetrics?.totalUsers,
       performance_total_rewards_claimed:
         dto.performanceMetrics?.totalRewardsClaimed,
-      performance_revenue_generated:
-        dto.performanceMetrics?.revenueGenerated,
+      performance_revenue_generated: dto.performanceMetrics?.revenueGenerated,
     };
   }
 }

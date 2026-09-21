@@ -22,9 +22,7 @@ export function IsPasswordMatching(
 }
 
 @ValidatorConstraint({ name: "IsPasswordMatching" })
-export class IsPasswordMatchingConstraint
-  implements ValidatorConstraintInterface
-{
+export class IsPasswordMatchingConstraint implements ValidatorConstraintInterface {
   validate(value: any, args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
     const relatedValue = (args.object as any)[relatedPropertyName];

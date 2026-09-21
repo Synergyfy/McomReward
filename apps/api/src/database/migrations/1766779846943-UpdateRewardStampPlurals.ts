@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class UpdateRewardStampPlurals1766779846943
-  implements MigrationInterface
-{
+export class UpdateRewardStampPlurals1766779846943 implements MigrationInterface {
   name = "UpdateRewardStampPlurals1766779846943";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

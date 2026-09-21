@@ -6,7 +6,10 @@ import { CreditTransaction } from "./entities/credit-transaction.entity";
 import { Participant } from "../participant/entities/participant.entity";
 import { Business } from "../business/entities/business.entity";
 import { CreditsService } from "./credits.service";
-import { CreditsController, AdminCreditsController } from "./credits.controller";
+import {
+  CreditsController,
+  AdminCreditsController,
+} from "./credits.controller";
 
 @Module({
   imports: [

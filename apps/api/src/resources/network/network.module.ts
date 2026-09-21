@@ -9,7 +9,7 @@ import { Sector } from "../sector/entities/sector.entity";
 import { Category } from "../category/entities/category.entity";
 import { SubCategory } from "../subcategory/entities/subcategory.entity";
 import { Tier } from "../tier/entities/tier.entity";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 import { HashModule } from "../../common/hash/hash.module";
 
 @Module({
@@ -22,7 +22,7 @@ import { HashModule } from "../../common/hash/hash.module";
       Category,
       SubCategory,
       Tier,
-      Membership,
+      PlanSubscription,
     ]),
     HashModule,
   ],

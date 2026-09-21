@@ -14,9 +14,7 @@ describe("SsoController", () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SsoController],
-      providers: [
-        { provide: SsoService, useValue: mockSsoService },
-      ],
+      providers: [{ provide: SsoService, useValue: mockSsoService }],
     }).compile();
 
     controller = module.get<SsoController>(SsoController);
@@ -46,17 +44,17 @@ describe("SsoController", () => {
 
     it("should throw UnauthorizedException if token is missing", async () => {
       await expect(controller.ssoLogin(undefined as any)).rejects.toThrow(
-        BadRequestException
+        BadRequestException,
       );
     });
 
     it("should throw UnauthorizedException on SSO login failure", async () => {
       mockSsoService.loginWithSsoToken.mockRejectedValue(
-        new UnauthorizedException("SSO failed")
+        new UnauthorizedException("SSO failed"),
       );
 
       await expect(controller.ssoLogin("invalid-token")).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
     });
   });
@@ -85,17 +83,17 @@ describe("SsoController", () => {
 
     it("should throw BadRequestException if code is missing", async () => {
       await expect(controller.exchangeCode(undefined as any)).rejects.toThrow(
-        BadRequestException
+        BadRequestException,
       );
     });
 
     it("should throw UnauthorizedException on exchange failure", async () => {
       mockSsoService.exchangeCode.mockRejectedValue(
-        new UnauthorizedException("Exchange failed")
+        new UnauthorizedException("Exchange failed"),
       );
 
       await expect(controller.exchangeCode("bad-code")).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
     });
   });

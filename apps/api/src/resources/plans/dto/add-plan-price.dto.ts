@@ -7,7 +7,11 @@ export class AddPlanPriceDto {
   @Min(0)
   amount: number;
 
-  @ApiProperty({ description: "Currency code", default: "GBP", required: false })
+  @ApiProperty({
+    description: "Currency code",
+    default: "GBP",
+    required: false,
+  })
   @IsString()
   @IsOptional()
   currency?: string;

@@ -11,11 +11,15 @@ const getBaseDir = () => {
   return path.resolve(process.cwd(), "src");
 };
 
-const getMigrationsPattern = () => {
-  if (typeof __dirname !== "undefined") {
-    return path.join(__dirname, "./migrations/*{.ts,.js}");
-  }
-  return path.join(process.cwd(), "src/database/migrations/*{.ts,.js}");
+const getMigrationsPatterns = () => {
+  const dir =
+    typeof __dirname !== "undefined"
+      ? path.join(__dirname, "migrations")
+      : path.join(process.cwd(), "src/database/migrations");
+  return [
+    path.join(dir, "*.ts").replace(/\\/g, "/"),
+    path.join(dir, "*.js").replace(/\\/g, "/"),
+  ];
 };
 
 const dataSource = new DataSource({
@@ -25,8 +29,10 @@ const dataSource = new DataSource({
   password: process.env.POSTGRES_PASSWORD || "password",
   database: process.env.POSTGRES_NAME || "dbname",
   host: process.env.POSTGRES_HOST || "localhost",
-  entities: [path.join(getBaseDir(), "**/*.entity{.ts,.js}").replace(/\\/g, "/")],
-  migrations: [getMigrationsPattern().replace(/\\/g, "/")],
+  entities: [
+    path.join(getBaseDir(), "**/*.entity{.ts,.js}").replace(/\\/g, "/"),
+  ],
+  migrations: getMigrationsPatterns(),
   migrationsRun: true,
   synchronize: false,
 });

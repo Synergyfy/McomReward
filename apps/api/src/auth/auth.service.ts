@@ -16,9 +16,9 @@ import { Role } from "../common/role.enum";
 import { BusinessService } from "../resources/business/services/business.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
-  Membership,
-  MembershipStatus,
-} from "../resources/membership/entities/membership.entity";
+  PlanSubscription,
+  PlanSubscriptionStatus,
+} from "../resources/plans/entities/plan-subscription.entity";
 import { Repository } from "typeorm";
 import { PartnerService } from "../resources/partner/partner.service";
 import { Business } from "../resources/business/entities/business.entity";
@@ -42,8 +42,8 @@ export class AuthService {
     @Inject(forwardRef(() => BusinessService))
     private readonly businessService: BusinessService,
     private readonly partnerService: PartnerService,
-    @InjectRepository(Membership)
-    private readonly membershipRepository: Repository<Membership>,
+    @InjectRepository(PlanSubscription)
+    private readonly planSubscriptionRepository: Repository<PlanSubscription>,
     @InjectRepository(Business)
     private readonly businessRepository: Repository<Business>,
     @InjectRepository(Staff)
@@ -139,16 +139,16 @@ export class AuthService {
         // Super businesses don't need subscription checks
         payload.hasActiveSubscription = true;
       } else {
-        const membership = await this.membershipRepository.findOne({
+        const subscription = await this.planSubscriptionRepository.findOne({
           where: { business: { id: user.id } },
           order: { created_at: "DESC" },
         });
 
-        // No trials — active means non-expired ACTIVE membership
+        // No trials — active means non-expired ACTIVE subscription
         const isActive =
-          membership &&
-          membership.status === MembershipStatus.ACTIVE &&
-          new Date(membership.expires_at) > new Date();
+          subscription &&
+          subscription.status === PlanSubscriptionStatus.ACTIVE &&
+          new Date(subscription.expires_at) > new Date();
 
         response.user.subscription = {
           isActive: !!isActive,
@@ -168,8 +168,12 @@ export class AuthService {
     const refreshExpiresIn =
       this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRES_IN") || "7d";
 
-    response.access_token = this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any });
-    response.refresh_token = this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any });
+    response.access_token = this.jwtService.sign(payload, {
+      expiresIn: accessExpiresIn as any,
+    });
+    response.refresh_token = this.jwtService.sign(payload, {
+      expiresIn: refreshExpiresIn as any,
+    });
 
     return response;
   }
@@ -301,15 +305,15 @@ export class AuthService {
     };
 
     if (userType === "business") {
-      const membership = await this.membershipRepository.findOne({
+      const subscription = await this.planSubscriptionRepository.findOne({
         where: { business: { id: user.id } },
         order: { created_at: "DESC" },
       });
 
       const isActive =
-        membership &&
-        membership.status === MembershipStatus.ACTIVE &&
-        new Date(membership.expires_at) > new Date();
+        subscription &&
+        subscription.status === PlanSubscriptionStatus.ACTIVE &&
+        new Date(subscription.expires_at) > new Date();
 
       payload.hasActiveSubscription = !!isActive;
     }
@@ -324,8 +328,12 @@ export class AuthService {
 
     return {
       message: "Email verified successfully",
-      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: accessExpiresIn as any,
+      }),
+      refresh_token: this.jwtService.sign(payload, {
+        expiresIn: refreshExpiresIn as any,
+      }),
     };
   }
 
@@ -372,8 +380,12 @@ export class AuthService {
         name: partner.name,
         role: Role.Partner,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: accessExpiresIn as any,
+      }),
+      refresh_token: this.jwtService.sign(payload, {
+        expiresIn: refreshExpiresIn as any,
+      }),
     };
   }
 
@@ -396,8 +408,12 @@ export class AuthService {
         role: Role.Network,
         email: network.email,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: accessExpiresIn as any,
+      }),
+      refresh_token: this.jwtService.sign(payload, {
+        expiresIn: refreshExpiresIn as any,
+      }),
     };
   }
 
@@ -622,8 +638,12 @@ export class AuthService {
         email: network.email,
         isEmailVerified: network.isEmailVerified,
       },
-      access_token: this.jwtService.sign(payload, { expiresIn: accessExpiresIn as any }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: refreshExpiresIn as any }),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: accessExpiresIn as any,
+      }),
+      refresh_token: this.jwtService.sign(payload, {
+        expiresIn: refreshExpiresIn as any,
+      }),
     };
   }
 }

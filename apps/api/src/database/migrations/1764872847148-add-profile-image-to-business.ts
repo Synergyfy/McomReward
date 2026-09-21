@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddProfileImageToBusiness1764872847148
-  implements MigrationInterface
-{
+export class AddProfileImageToBusiness1764872847148 implements MigrationInterface {
   name = "AddProfileImageToBusiness1764872847148";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

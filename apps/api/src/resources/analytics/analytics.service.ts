@@ -134,7 +134,7 @@ export class AnalyticsService {
     let redemptionRate = 0;
     let averageSpend = 0;
     let customerLtv = 0;
-    let revenueGenerated = 0;
+    const revenueGenerated = 0;
 
     if (businessCampaignIds.length > 0) {
       const businessRewards = await this.businessRewardRepository.find({
@@ -178,15 +178,20 @@ export class AnalyticsService {
     }
 
     if (totalPointsEarned > 0) {
-      redemptionRate = Math.round(
-        (totalPointsRedeemed / totalPointsEarned) * 100 * 10,
-      ) / 10;
+      redemptionRate =
+        Math.round((totalPointsRedeemed / totalPointsEarned) * 100 * 10) / 10;
     }
     if (totalCustomers > 0 && totalPointsEarned > 0) {
-      averageSpend = Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
+      averageSpend =
+        Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
     }
-    if (totalCustomers > 0 && totalPointsEarned > 0 && totalRewardsRedeemed > 0) {
-      customerLtv = Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
+    if (
+      totalCustomers > 0 &&
+      totalPointsEarned > 0 &&
+      totalRewardsRedeemed > 0
+    ) {
+      customerLtv =
+        Math.round((totalPointsEarned / totalCustomers) * 100) / 100;
     }
 
     return {

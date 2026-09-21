@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddMatchingPointsSystem1765208777198
-  implements MigrationInterface
-{
+export class AddMatchingPointsSystem1765208777198 implements MigrationInterface {
   name = "AddMatchingPointsSystem1765208777198";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -14,9 +14,15 @@ function sanitizeData(obj: any): any {
   const copy: Record<string, any> = {};
   for (const key of Object.keys(obj)) {
     if (
-      ["password", "pass", "secret", "token", "access_token", "refresh_token", "client_secret"].includes(
-        key.toLowerCase(),
-      )
+      [
+        "password",
+        "pass",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "client_secret",
+      ].includes(key.toLowerCase())
     ) {
       copy[key] = "***REDACTED***";
     } else if (typeof obj[key] === "object" && obj[key] !== null) {
@@ -62,9 +68,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const status = error.status || error.statusCode || 500;
           const errorResponse = error.response || error.message || error;
 
-          this.logger.error(
-            `<-- ${method} ${url} [${status}] +${delay}ms`,
-          );
+          this.logger.error(`<-- ${method} ${url} [${status}] +${delay}ms`);
           this.logger.error(
             `    Response Error: ${JSON.stringify(sanitizeData(errorResponse))}`,
           );
@@ -73,4 +77,3 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 }
-

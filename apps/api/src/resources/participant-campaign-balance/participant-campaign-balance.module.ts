@@ -18,7 +18,7 @@ import { BusinessCampaign } from "../campaign/entities/business-campaign.entity"
 import { MailModule } from "../../mail/mail.module";
 import { CapabilityModule } from "../capability/capability.module";
 import { TierProgressionModule } from "../tier-progression/tier-progression.module";
-import { MembershipModule } from "../membership/membership.module";
+import { PlansModule } from "../plans/plans.module";
 import { PointPackageModule } from "../point-package/point-package.module";
 import { StampModule } from "../stamp/stamp.module";
 import { WalletModule } from "../wallet/wallet.module";
@@ -40,7 +40,7 @@ import { MallIntegrationModule } from "../mall-integration/mall-integration.modu
     MailModule,
     forwardRef(() => CapabilityModule),
     forwardRef(() => TierProgressionModule),
-    MembershipModule,
+    PlansModule,
     PointPackageModule,
     NotificationModule,
     forwardRef(() => StampModule),

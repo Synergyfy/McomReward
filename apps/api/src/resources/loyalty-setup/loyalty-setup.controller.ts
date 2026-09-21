@@ -7,11 +7,7 @@ import {
   Body,
   Param,
 } from "@nestjs/common";
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-} from "@nestjs/swagger";
+import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { LoyaltySetupService } from "./loyalty-setup.service";
 import {
   CreateLoyaltySetupTemplateDto,

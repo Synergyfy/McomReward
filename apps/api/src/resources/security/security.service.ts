@@ -35,7 +35,9 @@ export class SecurityService {
   }
 
   async updatePermission(id: string, updateDto: UpdatePermissionDto) {
-    const permission = await this.permissionRepository.findOne({ where: { id } });
+    const permission = await this.permissionRepository.findOne({
+      where: { id },
+    });
     if (!permission) {
       throw new NotFoundException(`Permission with ID ${id} not found`);
     }
@@ -44,7 +46,9 @@ export class SecurityService {
   }
 
   async removePermission(id: string) {
-    const permission = await this.permissionRepository.findOne({ where: { id } });
+    const permission = await this.permissionRepository.findOne({
+      where: { id },
+    });
     if (!permission) {
       throw new NotFoundException(`Permission with ID ${id} not found`);
     }
@@ -55,7 +59,9 @@ export class SecurityService {
 
   async createRole(createDto: CreateRoleDto) {
     const permissions = createDto.permissionIds?.length
-      ? await this.permissionRepository.findBy({ id: In(createDto.permissionIds) })
+      ? await this.permissionRepository.findBy({
+          id: In(createDto.permissionIds),
+        })
       : [];
     const role = this.roleRepository.create({
       name: createDto.name,
@@ -132,8 +138,18 @@ export class SecurityService {
     };
   }
 
-  async createAuditLog(userId: string, userName: string, action: string, details: string) {
-    const log = this.auditLogRepository.create({ userId, userName, action, details });
+  async createAuditLog(
+    userId: string,
+    userName: string,
+    action: string,
+    details: string,
+  ) {
+    const log = this.auditLogRepository.create({
+      userId,
+      userName,
+      action,
+      details,
+    });
     return this.auditLogRepository.save(log);
   }
 }

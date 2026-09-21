@@ -34,7 +34,9 @@ import { BrandingPartner } from "../entities/branding-partner.entity";
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("admin/partners")
 export class AdminPartnerController {
-  constructor(private readonly brandingPartnerService: BrandingPartnerService) {}
+  constructor(
+    private readonly brandingPartnerService: BrandingPartnerService,
+  ) {}
 
   @Get()
   @Roles(Role.Admin)

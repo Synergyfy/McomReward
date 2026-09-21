@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddSeasonAndSeasonalTier1767141172121
-  implements MigrationInterface
-{
+export class AddSeasonAndSeasonalTier1767141172121 implements MigrationInterface {
   name = "AddSeasonAndSeasonalTier1767141172121";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

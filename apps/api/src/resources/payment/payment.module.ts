@@ -4,7 +4,8 @@ import { PaymentController } from "./payment.controller";
 import { CashbackController } from "./cashback.controller";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Tier } from "../tier/entities/tier.entity";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
+import { PlanPayment } from "../plans/entities/plan-payment.entity";
 import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
 import { StripeService } from "./stripe.service";
 import { PaypalService } from "./paypal.service";
@@ -27,7 +28,8 @@ import { CentralIntegrationService } from "./central-integration.service";
   imports: [
     TypeOrmModule.forFeature([
       Tier,
-      Membership,
+      PlanSubscription,
+      PlanPayment,
       PaymentHistory,
       Business,
       PointPackage,

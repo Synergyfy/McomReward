@@ -44,11 +44,18 @@ function SsoLoginContent() {
       .then((data) => {
         if (!mountedRef.current) return;
 
+        const userRole = data?.role || data?.user?.role;
+        if (userRole) {
+          localStorage.setItem('userRole', userRole);
+        }
         toast.success("Welcome back!");
-        if (data.user.role === "Business" || data.user.role === "business") {
-          router.push("/loyalty-setup");
-        } else {
+        if (userRole === "Business" || userRole === "business") {
+          router.push("/dashboard");
+        } else if (userRole === "Participant" || userRole === "participant") {
           router.push("/participant");
+        } else {
+          toast.error("Access restricted: only Business and Customer accounts are supported.");
+          router.push("/login");
         }
       })
       .catch((err) => {

@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddSecurityRolesPermissionsAudit1770000000002
-  implements MigrationInterface
-{
+export class AddSecurityRolesPermissionsAudit1770000000002 implements MigrationInterface {
   name = "AddSecurityRolesPermissionsAudit1770000000002";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -42,16 +40,12 @@ export class AddSecurityRolesPermissionsAudit1770000000002
     await queryRunner.query(
       `ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_roles"`,
     );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_audit_logs_action"`,
-    );
+    await queryRunner.query(`DROP INDEX "public"."IDX_audit_logs_action"`);
     await queryRunner.query(`DROP TABLE "audit_logs"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_role_permissions_permissions"`,
     );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_role_permissions_roles"`,
-    );
+    await queryRunner.query(`DROP INDEX "public"."IDX_role_permissions_roles"`);
     await queryRunner.query(`DROP TABLE "role_permissions"`);
     await queryRunner.query(`DROP TABLE "roles"`);
     await queryRunner.query(`DROP TABLE "permissions"`);

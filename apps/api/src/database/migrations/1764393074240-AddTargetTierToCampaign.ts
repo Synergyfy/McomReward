@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddTargetTierToCampaign1764393074240
-  implements MigrationInterface
-{
+export class AddTargetTierToCampaign1764393074240 implements MigrationInterface {
   name = "AddTargetTierToCampaign1764393074240";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

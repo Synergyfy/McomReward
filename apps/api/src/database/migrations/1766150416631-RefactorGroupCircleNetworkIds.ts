@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RefactorGroupCircleNetworkIds1766150416631
-  implements MigrationInterface
-{
+export class RefactorGroupCircleNetworkIds1766150416631 implements MigrationInterface {
   name = "RefactorGroupCircleNetworkIds1766150416631";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -19,7 +19,7 @@ import { MailModule } from "../../mail/mail.module";
 import { CapabilityModule } from "../capability/capability.module";
 import { forwardRef } from "@nestjs/common";
 import { TierProgressionModule } from "../tier-progression/tier-progression.module";
-import { Membership } from "../membership/entities/membership.entity";
+import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 
 @Module({
   imports: [
@@ -36,7 +36,7 @@ import { Membership } from "../membership/entities/membership.entity";
       WishlistItem,
       Tier,
       ParticipantCampaignBalance,
-      Membership,
+      PlanSubscription,
     ]),
     MailModule,
     forwardRef(() => CapabilityModule),

@@ -7,10 +7,11 @@ declare module 'axios' {
   }
 }
 
-export const baseURL =
-  typeof window === 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://mcom-reward-api-one.vercel.app/api/v1')
-    : '/api/v1';
+export const baseURL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:4000/api/v1'
+).replace(/\/$/, '');
 
 const api = axios.create({
   baseURL,

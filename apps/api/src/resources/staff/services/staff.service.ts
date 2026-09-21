@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { nanoid } from "nanoid";
@@ -16,7 +20,7 @@ export class StaffService {
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
     private readonly hashService: HashService,
-  ) { }
+  ) {}
 
   async create(
     createStaffDto: CreateStaffDto,

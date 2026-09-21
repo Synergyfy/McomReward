@@ -20,7 +20,11 @@ export class PlaqueScan extends AbstractBaseEntity {
   plaqueName: string;
 
   @ApiProperty({ enum: PlaqueActivityType })
-  @Column({ type: "enum", enum: PlaqueActivityType, default: PlaqueActivityType.SCAN })
+  @Column({
+    type: "enum",
+    enum: PlaqueActivityType,
+    default: PlaqueActivityType.SCAN,
+  })
   type: PlaqueActivityType;
 
   @ApiProperty()

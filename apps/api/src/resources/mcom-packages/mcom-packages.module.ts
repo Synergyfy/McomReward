@@ -11,8 +11,6 @@ import { McomPackagesService } from "./mcom-packages.service";
 import { PlansModule } from "../plans/plans.module";
 import { JwtModule } from "@nestjs/jwt";
 
-import { LegacyMembershipController } from "./legacy-membership.controller";
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([Business, Tier, PlanSubscription, PlanPayment]),
@@ -20,12 +18,8 @@ import { LegacyMembershipController } from "./legacy-membership.controller";
     PlansModule,
     JwtModule.register({}),
   ],
-  controllers: [
-    McomPackagesController,
-    McomWebhookController,
-    LegacyMembershipController,
-  ],
+  controllers: [McomPackagesController, McomWebhookController],
   providers: [McomPackagesService],
   exports: [McomPackagesService],
 })
-export class McomPackagesModule {}
+export class McomPackagesModule { }

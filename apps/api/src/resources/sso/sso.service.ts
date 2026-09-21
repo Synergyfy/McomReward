@@ -172,7 +172,7 @@ export class SsoService {
 
     const hasActiveSubscription =
       user.role === Role.Business &&
-      this.planSubscriptionService.hasActiveSubscription
+        this.planSubscriptionService.hasActiveSubscription
         ? await this.planSubscriptionService.hasActiveSubscription(user.id)
         : true;
 
@@ -228,25 +228,13 @@ export class SsoService {
   ): Promise<Business | Participant> {
     const email = centralUser.email.toLowerCase().trim();
 
-    const rawRole = (centralUser.role || "").toUpperCase();
-    const isBusiness = rawRole === "BUSINESS" || rawRole === "OWNER";
-    const isCustomer =
-      rawRole === "CUSTOMER" ||
-      rawRole === "PARTICIPANT" ||
-      rawRole === "USER";
-
-    if (!isBusiness && !isCustomer) {
-      throw new UnauthorizedException(
-        `Role "${centralUser.role}" is not permitted to access MCOM Rewards. Only Business Owners and Customers are supported.`,
-      );
-    }
-
     let user = await this.userService.findOne(email);
 
     if (!user) {
       const randomPassword = crypto.randomBytes(32).toString("hex");
+      const role = centralUser.role?.toLowerCase();
 
-      if (isBusiness) {
+      if (role === "owner" || role === "business") {
         const newBusiness = this.businessRepository.create({
           email,
           name:
@@ -290,10 +278,6 @@ export class SsoService {
       }
       if (centralUser.sub && !user.mcomUserId) {
         user.mcomUserId = centralUser.sub;
-        changed = true;
-      }
-      if (!user.isEmailVerified) {
-        user.isEmailVerified = true;
         changed = true;
       }
       if (changed) {

@@ -237,7 +237,7 @@ export const useGetBusinessTierUsage = () => useQuery({ queryKey: ['businessTier
 
 // ------------------- BUSINESS SETUP STATUS -------------------
 const getBusinessSetupStatus = async (): Promise<BusinessSetupStatus> => {
-  const { data } = await api.get('/business/setup/status');
+  const { data } = await api.get('/setup/status');
   return data;
 };
 

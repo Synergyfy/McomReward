@@ -3,6 +3,7 @@
 import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSsoLogin } from "@/services/auth/hook";
+import api from "@/services/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,18 +44,32 @@ function SSOReceiverContent() {
     attempted.current = true;
 
     ssoLogin(ssoToken)
-      .then((data) => {
+      .then(async (data) => {
         if (!mountedRef.current) return;
 
         toast.success("Welcome back!");
 
-        const userRole = data?.role || data?.user?.role || role;
-        if (userRole) {
-          localStorage.setItem("userRole", userRole);
-        }
+        const userRole = data?.user?.role || data?.role || role;
 
         if (userRole === "Business" || userRole === "business") {
-          router.push("/dashboard");
+          try {
+            const { data: status } = await api.get("/setup/status");
+            if (status?.hasReward || status?.hasCampaign) {
+              router.push("/dashboard");
+              return;
+            }
+            const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed?.hasCompletedSetup) {
+                router.push("/dashboard");
+                return;
+              }
+            }
+            router.push("/loyalty-setup");
+          } catch {
+            router.push("/dashboard");
+          }
         } else if (userRole === "Admin") {
           router.push("/admin/dashboard");
         } else if (userRole === "Staff") {

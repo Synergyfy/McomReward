@@ -439,7 +439,7 @@ export default function PaymentModal({
                             <p className="text-xs mt-1 text-red-600">
                               Please check your MCOM Wallet balance at{' '}
                               <a
-                                href="http://localhost:3010/dashboard/wallet"
+                                href={`${(process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000").replace(/\/$/, "")}/dashboard/wallet`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="underline font-semibold"

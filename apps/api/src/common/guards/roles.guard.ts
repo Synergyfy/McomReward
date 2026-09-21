@@ -16,7 +16,7 @@ export class RolesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly moduleRef: ModuleRef,
-  ) {}
+  ) { }
 
   private getSubscriptionService(): PlanSubscriptionService {
     if (!this.subscriptionService) {
@@ -48,20 +48,11 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    const userRole = (user.role || "").toString().trim().toUpperCase();
-    const isRoleAllowed = requiredRoles.some((reqRole) => {
-      const reqUpper = reqRole.toUpperCase();
-      if (reqUpper === userRole) return true;
-      if (reqUpper === "BUSINESS" && (userRole === "BUSINESS" || userRole === "OWNER")) return true;
-      if (
-        reqUpper === "PARTICIPANT" &&
-        (userRole === "PARTICIPANT" || userRole === "CUSTOMER" || userRole === "USER")
-      )
-        return true;
-      return false;
-    });
-
-    if (!isRoleAllowed) {
+    if (
+      user.role === Role.Business &&
+      !user.isEmailVerified &&
+      requiredRoles.includes(Role.Business)
+    ) {
       return false;
     }
 
@@ -72,17 +63,14 @@ export class RolesGuard implements CanActivate {
 
     // Live, cached subscription check — no hardcoding, TTL from Config via PlanSubscriptionService
     // hasActiveSubscription in JWT is stale after purchase; use DB-backed cache instead.
-    const isBusiness = userRole === "BUSINESS" || userRole === "OWNER";
-    const requiresBusiness = requiredRoles.some((r) => r.toUpperCase() === "BUSINESS");
-
     if (
-      isBusiness &&
-      requiresBusiness &&
+      user.role === Role.Business &&
+      requiredRoles.includes(Role.Business) &&
       !skipSubscriptionCheck
     ) {
       // Super business bypass (from JWT, config-driven role)
       if (user.isSuperBusiness) {
-        return true;
+        return requiredRoles.some((role) => user.role === role);
       }
       const hasActive =
         await this.getSubscriptionService().hasActiveSubscription(user.id);
@@ -91,6 +79,6 @@ export class RolesGuard implements CanActivate {
       }
     }
 
-    return true;
+    return requiredRoles.some((role) => user.role === role);
   }
 }

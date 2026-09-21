@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import Cookies from "js-cookie";
+import { getCentralLoginUrl } from "@/lib/sso-utils";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -23,24 +24,8 @@ function LoginForm() {
       const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
       Cookies.set("sso_state", state, { path: "/", sameSite: "lax", expires: 1 / 144, secure: isSecure });
 
-      // 2. Construct OAuth 2.0 Authorization redirect URL
-      const mcomSolutionsUrl = (
-        process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3010"
-      ).replace(/\/$/, "");
-      const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || "mcom-rewards";
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
-      const redirectUri =
-        process.env.NEXT_PUBLIC_MCOM_REDIRECT_URI || `${appUrl}/auth/callback`;
-      const scopes =
-        process.env.NEXT_PUBLIC_MCOM_SCOPES || "profile email business packages membership";
-
-      const authorizeUrl = `${mcomSolutionsUrl}/api/v1/auth/sso/authorize?client_id=${encodeURIComponent(
-        clientId
-      )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(
-        scopes
-      )}&state=${encodeURIComponent(state)}`;
+      // 2. Construct OAuth 2.0 Authorization redirect URL using central helper
+      const authorizeUrl = getCentralLoginUrl("/auth/callback", state);
 
       // 3. Redirect user browser to MCOM Solutions SSO
       window.location.href = authorizeUrl;

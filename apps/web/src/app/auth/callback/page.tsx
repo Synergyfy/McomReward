@@ -3,6 +3,7 @@
 import { useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSsoExchange, useSsoLogin } from "@/services/auth/hook";
+import api from "@/services/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
@@ -66,18 +67,32 @@ function CallbackContent() {
 
     attempted.current = true;
 
-    const handleSuccess = (data: any) => {
+    const handleSuccess = async (data: any) => {
       if (!mountedRef.current) return;
 
       toast.success("Welcome back!");
 
       const userRole = data?.role || data?.user?.role || roleParam;
-      if (userRole) {
-        localStorage.setItem("userRole", userRole);
-      }
 
       if (userRole === "Business" || userRole === "business") {
-        router.push("/dashboard");
+        try {
+          const { data: status } = await api.get("/setup/status");
+          if (status?.hasReward || status?.hasCampaign) {
+            router.push("/dashboard");
+            return;
+          }
+          const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.hasCompletedSetup) {
+              router.push("/dashboard");
+              return;
+            }
+          }
+          router.push("/loyalty-setup");
+        } catch {
+          router.push("/dashboard");
+        }
       } else if (userRole === "Admin" || userRole === "admin") {
         router.push("/admin/dashboard");
       } else if (userRole === "Staff" || userRole === "staff") {

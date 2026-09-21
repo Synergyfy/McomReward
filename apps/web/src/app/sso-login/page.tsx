@@ -3,6 +3,7 @@
 import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSsoLogin } from "@/services/auth/hook";
+import api from "@/services/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,21 +42,32 @@ function SsoLoginContent() {
     attempted.current = true;
 
     ssoLogin(token)
-      .then((data) => {
+      .then(async (data) => {
         if (!mountedRef.current) return;
 
-        const userRole = data?.role || data?.user?.role;
-        if (userRole) {
-          localStorage.setItem('userRole', userRole);
-        }
         toast.success("Welcome back!");
+        const userRole = data?.role || data?.user?.role;
         if (userRole === "Business" || userRole === "business") {
-          router.push("/dashboard");
-        } else if (userRole === "Participant" || userRole === "participant") {
-          router.push("/participant");
+          try {
+            const { data: status } = await api.get("/setup/status");
+            if (status?.hasReward || status?.hasCampaign) {
+              router.push("/dashboard");
+              return;
+            }
+            const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed?.hasCompletedSetup) {
+                router.push("/dashboard");
+                return;
+              }
+            }
+            router.push("/loyalty-setup");
+          } catch {
+            router.push("/dashboard");
+          }
         } else {
-          toast.error("Access restricted: only Business and Customer accounts are supported.");
-          router.push("/login");
+          router.push("/participant");
         }
       })
       .catch((err) => {

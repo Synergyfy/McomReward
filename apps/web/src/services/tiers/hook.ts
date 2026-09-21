@@ -20,9 +20,9 @@ export const useGetTiers = () => {
 };
 
 // Get My Subscription
-const getMySubscription = async (businessId?: string): Promise<any> => {
-    const { data } = await api.get<any>('/mcom/packages/my-package', { params: { businessId } });
-    return data?.membership || data?.subscription || data;
+const getMySubscription = async (businessId?: string): Promise<Subscription> => {
+    const { data } = await api.get<Subscription>('/membership/my-membership', { params: { businessId } });
+    return data;
 };
 
 export const useGetMySubscription = (businessId?: string) => {

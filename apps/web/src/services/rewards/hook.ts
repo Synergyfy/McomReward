@@ -61,6 +61,28 @@ export const useGetRewards = (page: number, limit: number, options?: GetRewardsO
   });
 };
 
+// Get aggregate reward stats (real counts across all rewards)
+export interface RewardsStats {
+  active: number;
+  draft: number;
+  archived: number;
+  total: number;
+  totalRedemptions: number;
+}
+
+const getRewardsStats = async (): Promise<RewardsStats> => {
+  const { data } = await api.get<RewardsStats>('/rewards/admin/rewards/stats');
+  return data;
+};
+
+export const useGetRewardsStats = () => {
+  return useQuery({
+    queryKey: [REWARDS_QUERY_KEY, 'stats'],
+    queryFn: getRewardsStats,
+    staleTime: 60_000,
+  });
+};
+
 // Get Business Rewards
 const getBusinessRewards = async (page: number, limit: number): Promise<GetRewardsResponse> => {
   const { data } = await api.get<GetRewardsResponse>('/rewards/business/rewards', {

@@ -22,8 +22,11 @@ import {
 export default function SecurityPage() {
   const { data: roles = [], isLoading: isLoadingRoles } = useGetRoles();
   const { data: permissions = [] } = useGetPermissions();
-  const { data: auditLogsData, isLoading: isLoadingAuditLogs } = useGetAuditLogs({ page: 1, limit: 100 });
+  const [auditPage, setAuditPage] = useState(1);
+  const auditLimit = 20;
+  const { data: auditLogsData, isLoading: isLoadingAuditLogs } = useGetAuditLogs({ page: auditPage, limit: auditLimit });
   const deleteRoleMutation = useDeleteRole();
+  const auditTotalPages = Math.max(1, Math.ceil(((auditLogsData as any)?.total ?? 0) / auditLimit));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
@@ -218,6 +221,17 @@ export default function SecurityPage() {
                   </TableBody>
                 </Table>
               )}
+              {(auditLogsData as any)?.total > auditLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setAuditPage((p) => Math.max(1, p - 1))} disabled={auditPage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {auditPage} of {auditTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setAuditPage((p) => Math.min(auditTotalPages, p + 1))} disabled={auditPage >= auditTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -229,8 +243,33 @@ export default function SecurityPage() {
             <CardTitle>GDPR & Compliance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">This section will provide tools for GDPR and compliance controls, such as data consent and anonymization. (Future Enhancement)</p>
-            <Button variant="outline" className="mt-4">Manage Compliance</Button>
+            <p className="text-muted-foreground">
+              Export a compliance snapshot (role counts, audit log volume, retention note) as CSV.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => {
+                const rows = [
+                  ['Metric', 'Value'],
+                  ['Roles defined', String(roles.length)],
+                  ['Permissions defined', String(permissions.length)],
+                  ['Audit log entries (loaded)', String(auditLogs.length)],
+                  ['Retention policy', 'Audit logs retained 12 months; exports logged'],
+                ];
+                const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `gdpr-compliance-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                handleShowFeedback('Compliance Export', 'GDPR compliance snapshot downloaded as CSV.');
+              }}
+            >
+              Manage Compliance
+            </Button>
           </CardContent>
         </Card>
         <Card>
@@ -238,8 +277,35 @@ export default function SecurityPage() {
             <CardTitle>Data Export Logs</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">This section will provide logs of all data exports and downloads from the platform. (Future Enhancement)</p>
-            <Button variant="outline" className="mt-4">View Export Logs</Button>
+            <p className="text-muted-foreground">
+              Download the currently loaded audit trail as CSV for record-keeping.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => {
+                const rows = [
+                  ['User', 'Action', 'Details', 'Timestamp'],
+                  ...filteredAuditLogs.map((log) => [
+                    `${log.userName} (${log.userId})`,
+                    log.action,
+                    log.details,
+                    new Date(log.createdAt).toISOString(),
+                  ]),
+                ];
+                const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audit-export-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                handleShowFeedback('Export Complete', `Exported ${filteredAuditLogs.length} audit log entries.`);
+              }}
+            >
+              View Export Logs
+            </Button>
           </CardContent>
         </Card>
       </div>

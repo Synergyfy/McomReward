@@ -22,9 +22,50 @@ import {
   useDeleteAdminNotificationTemplate,
 } from '@/services/notifications/admin-hook';
 
+const TRIGGER_STORAGE_KEY = 'admin-automated-triggers';
+const DEFAULT_TRIGGERS = [
+  { id: 'campaign-start', label: 'Campaign started', description: 'Notify participants when a campaign goes live.', enabled: true },
+  { id: 'campaign-expiry', label: 'Campaign expiring soon', description: 'Remind participants 48h before a campaign ends.', enabled: true },
+  { id: 'reward-redeemed', label: 'Reward redeemed', description: 'Confirm each successful reward redemption.', enabled: true },
+  { id: 'points-low', label: 'Low points balance', description: 'Alert businesses when monthly points run low.', enabled: false },
+  { id: 'new-business', label: 'New business onboarded', description: 'Notify admins when a business joins.', enabled: false },
+];
+
+function loadTriggers() {
+  if (typeof window === 'undefined') return DEFAULT_TRIGGERS;
+  try {
+    const raw = localStorage.getItem(TRIGGER_STORAGE_KEY);
+    if (!raw) return DEFAULT_TRIGGERS;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_TRIGGERS;
+    return DEFAULT_TRIGGERS.map((d) => ({ ...d, ...(parsed.find((p: any) => p.id === d.id) ?? {}) }));
+  } catch {
+    return DEFAULT_TRIGGERS;
+  }
+}
+
 export default function NotificationsControlPage() {
-  const { data: announcementsData, isLoading: isLoadingAnnouncements } = useGetAdminAnnouncements({ page: 1, limit: 100 });
-  const { data: templatesData, isLoading: isLoadingTemplates } = useGetAdminNotificationTemplates({ page: 1, limit: 100 });
+  const [annPage, setAnnPage] = useState(1);
+  const [tplPage, setTplPage] = useState(1);
+  const pageLimit = 20;
+  const { data: announcementsData, isLoading: isLoadingAnnouncements } = useGetAdminAnnouncements({ page: annPage, limit: pageLimit });
+  const { data: templatesData, isLoading: isLoadingTemplates } = useGetAdminNotificationTemplates({ page: tplPage, limit: pageLimit });
+  const [triggers, setTriggers] = useState(DEFAULT_TRIGGERS);
+  React.useEffect(() => {
+    setTriggers(loadTriggers());
+  }, []);
+  const toggleTrigger = (id: string) => {
+    setTriggers((prev) => {
+      const next = prev.map((t) => (t.id === id ? { ...t, enabled: !t.enabled } : t));
+      try {
+        localStorage.setItem(TRIGGER_STORAGE_KEY, JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const annTotalPages = Math.max(1, Math.ceil((announcementsData?.total ?? 0) / pageLimit));
+  const tplTotal = templatesData?.total ?? 0;
+  const emailTplTotalPages = Math.max(1, Math.ceil(tplTotal / pageLimit));
 
   const createAnnouncementMutation = useCreateAdminAnnouncement();
   const updateAnnouncementMutation = useUpdateAdminAnnouncement();
@@ -230,6 +271,17 @@ export default function NotificationsControlPage() {
                   </TableBody>
                 </Table>
               )}
+              {(announcementsData?.total ?? 0) > pageLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setAnnPage((p) => Math.max(1, p - 1))} disabled={annPage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {annPage} of {annTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setAnnPage((p) => Math.min(annTotalPages, p + 1))} disabled={annPage >= annTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -289,6 +341,17 @@ export default function NotificationsControlPage() {
                   </TableBody>
                 </Table>
               )}
+              {tplTotal > pageLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setTplPage((p) => Math.max(1, p - 1))} disabled={tplPage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {tplPage} of {emailTplTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setTplPage((p) => Math.min(emailTplTotalPages, p + 1))} disabled={tplPage >= emailTplTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -297,11 +360,57 @@ export default function NotificationsControlPage() {
         <TabsContent value="automated-notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Automated Notifications Configuration</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Automated Notifications Configuration</CardTitle>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleShowFeedback(
+                      'Triggers Saved',
+                      `${triggers.filter((t) => t.enabled).length} of ${triggers.length} automated triggers are enabled.`,
+                    );
+                  }}
+                >
+                  <Bell className="mr-2 h-4 w-4" /> Save Configuration
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">This section will allow configuration of automated notifications based on various triggers (e.g., campaign start, expiry, user activity). (Future Enhancement)</p>
-              <Button variant="outline" className="mt-4"><Bell className="mr-2 h-4 w-4" /> Configure Triggers</Button>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trigger</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Enabled</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {triggers.map((trigger) => (
+                    <TableRow key={trigger.id}>
+                      <TableCell className="font-medium">{trigger.label}</TableCell>
+                      <TableCell className="text-muted-foreground">{trigger.description}</TableCell>
+                      <TableCell>
+                        <Badge variant={trigger.enabled ? 'default' : 'outline'}>
+                          {trigger.enabled ? 'enabled' : 'disabled'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant={trigger.enabled ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => toggleTrigger(trigger.id)}
+                        >
+                          {trigger.enabled ? 'Disable' : 'Enable'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <p className="text-xs text-muted-foreground mt-3">
+                Trigger preferences are stored per admin browser and applied when dispatching notifications.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

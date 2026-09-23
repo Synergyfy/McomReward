@@ -14,7 +14,7 @@ const removeTokens = () => {
 
 // Admin Login
 const adminSignIn = async (loginData: AdminLoginDto): Promise<AdminLoginResponse> => {
-  const { data } = await api.post<AdminLoginResponse>('/admin/login', loginData);
+  const { data } = await api.post<AdminLoginResponse>('/auth/admin/login', loginData);
   return data;
 };
 
@@ -22,9 +22,19 @@ export const useAdminSignIn = () => {
   return useMutation({
     mutationFn: adminSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
-      setBearerToken(data.accessToken);
+      const accessToken = data.accessToken || data.access_token;
+      const refreshToken = data.refreshToken || data.refresh_token;
+      if (accessToken) {
+        Cookies.set('access', accessToken, { path: '/' });
+        setBearerToken(accessToken);
+        localStorage.setItem('authToken', accessToken);
+      }
+      if (refreshToken) {
+        Cookies.set('refresh', refreshToken, { path: '/' });
+      }
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
     },
   });
 };

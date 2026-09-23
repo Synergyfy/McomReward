@@ -93,6 +93,18 @@ export class RewardsController {
     return this.rewardsService.getRewards({ ...filterDto, includeStats: true });
   }
 
+  @ApiOperation({ summary: "Admin: Get aggregate reward stats" })
+  @ApiResponse({
+    status: 200,
+    description: "Real counts across all rewards (not just current page).",
+  })
+  @Roles(Role.Admin)
+  @ApiBearerAuth()
+  @Get("admin/rewards/stats")
+  async getRewardsStats() {
+    return this.rewardsService.getRewardsStats();
+  }
+
   @ApiOperation({ summary: "Admin: Update a reward" })
   @ApiResponse({
     status: 200,

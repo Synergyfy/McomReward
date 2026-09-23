@@ -73,6 +73,8 @@ export interface WishlistAggregate {
   };
   audienceSize: number;
   targetDates: (string | null)[];
+  priorityDistribution?: string;
+  priorityBreakdown?: { LOW: number; MEDIUM: number; HIGH: number };
 }
 
 export interface Paginated<T> {

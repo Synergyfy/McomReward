@@ -135,11 +135,12 @@ export class DealService {
       search,
       status,
       categoryId,
+      sectorId,
       location,
       minPrice,
       maxPrice,
       type,
-    } = filterDealDto;
+    } = filterDealDto as FilterDealDto & { sectorId?: string };
     const query = this.dealRepository.createQueryBuilder("deal");
 
     query.leftJoinAndSelect("deal.business", "business");
@@ -152,6 +153,10 @@ export class DealService {
 
     if (categoryId) {
       query.andWhere("deal.categoryId = :categoryId", { categoryId });
+    }
+
+    if (sectorId) {
+      query.andWhere("sector.id = :sectorId", { sectorId });
     }
 
     if (search) {

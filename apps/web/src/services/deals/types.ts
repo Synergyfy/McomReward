@@ -56,6 +56,7 @@ export interface FilterDealDto {
   status?: 'pending' | 'approved' | 'declined' | 'flagged';
   search?: string;
   categoryId?: string;
+  sectorId?: string;
   location?: string;
   minPrice?: number;
   maxPrice?: number;

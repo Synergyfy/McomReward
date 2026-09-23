@@ -28,6 +28,26 @@ import { PaginationDto } from "../../../common/dto/pagination.dto";
 
 @Injectable()
 export class AdminAnalyticsService {
+  // Lightweight in-memory cache (avoids adding @nestjs/cache-manager dep).
+  // Dashboard + reporting pages hit these aggregations on every visit.
+  private readonly cache = new Map<string, { expires: number; value: any }>();
+  private readonly TTL_SYSTEM_OVERVIEW = 5 * 60 * 1000;
+  private readonly TTL_TOP = 10 * 60 * 1000;
+  private readonly TTL_GROWTH = 5 * 60 * 1000;
+
+  private getCached<T>(key: string): T | undefined {
+    const entry = this.cache.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expires) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    return entry.value as T;
+  }
+
+  private setCached(key: string, value: any, ttl: number) {
+    this.cache.set(key, { expires: Date.now() + ttl, value });
+  }
   constructor(
     @InjectRepository(Campaign)
     private readonly campaignRepository: Repository<Campaign>,
@@ -50,36 +70,51 @@ export class AdminAnalyticsService {
    * @returns A promise that resolves to an object containing total campaigns, participants, and redemptions.
    */
   async getSystemOverview(): Promise<SystemOverviewDto> {
-    const totalCampaigns = await this.campaignRepository.count();
-    const totalParticipants = await this.participantRepository.count();
-    const totalRedemptions = await this.pointHistoryRepository.count({
-      where: { type: PointHistoryType.REDEEM },
-    });
-    const totalBusiness = await this.businessRepository.count();
-    const { totalBusinessMatchingPoints } = await this.businessRepository
-      .createQueryBuilder("business")
-      .select("SUM(business.matching_points)", "totalBusinessMatchingPoints")
-      .getRawOne();
+    const cacheKey = "system-overview";
+    const cached = this.getCached<SystemOverviewDto>(cacheKey);
+    if (cached) return cached;
 
-    const { totalParticipantMatchingPoints } = await this.participantRepository
-      .createQueryBuilder("participant")
-      .select(
-        "SUM(participant.matching_points)",
-        "totalParticipantMatchingPoints",
-      )
-      .getRawOne();
+    // Parallelise the 6 independent aggregate queries (was sequential)
+    const [
+      totalCampaigns,
+      totalParticipants,
+      totalRedemptions,
+      totalBusiness,
+      bizPoints,
+      partPoints,
+    ] = await Promise.all([
+      this.campaignRepository.count(),
+      this.participantRepository.count(),
+      this.pointHistoryRepository.count({
+        where: { type: PointHistoryType.REDEEM },
+      }),
+      this.businessRepository.count(),
+      this.businessRepository
+        .createQueryBuilder("business")
+        .select("SUM(business.matching_points)", "totalBusinessMatchingPoints")
+        .getRawOne(),
+      this.participantRepository
+        .createQueryBuilder("participant")
+        .select(
+          "SUM(participant.matching_points)",
+          "totalParticipantMatchingPoints",
+        )
+        .getRawOne(),
+    ]);
 
     const totalMatchingPoints =
-      (parseInt(totalBusinessMatchingPoints, 10) || 0) +
-      (parseInt(totalParticipantMatchingPoints, 10) || 0);
+      (parseInt(bizPoints?.totalBusinessMatchingPoints, 10) || 0) +
+      (parseInt(partPoints?.totalParticipantMatchingPoints, 10) || 0);
 
-    return {
+    const result = {
       totalCampaigns,
       totalParticipants,
       totalRedemptions,
       totalBusiness,
       totalMatchingPoints,
     };
+    this.setCached(cacheKey, result, this.TTL_SYSTEM_OVERVIEW);
+    return result;
   }
 
   /**
@@ -87,6 +122,10 @@ export class AdminAnalyticsService {
    * @returns A promise that resolves to a list of the top 10 businesses.
    */
   async getTopBusinesses(): Promise<TopBusinessDto[]> {
+    const cacheKey = "top-businesses";
+    const cached = this.getCached<TopBusinessDto[]>(cacheKey);
+    if (cached) return cached;
+
     const topBusinesses = await this.businessRepository
       .createQueryBuilder("business")
       .select("business.id", "id")
@@ -100,11 +139,13 @@ export class AdminAnalyticsService {
       .limit(10)
       .getRawMany();
 
-    return topBusinesses.map((b) => ({
+    const result = topBusinesses.map((b) => ({
       ...b,
       totalPointsEarned: parseInt(b.totalPointsEarned, 10) || 0,
       totalPointsRedeemed: parseInt(b.totalPointsRedeemed, 10) || 0,
     }));
+    this.setCached(cacheKey, result, this.TTL_TOP);
+    return result;
   }
 
   /**
@@ -113,6 +154,10 @@ export class AdminAnalyticsService {
    * @returns A promise that resolves to a list of the top 10 rewards.
    */
   async getTopRewards(): Promise<TopRewardDto[]> {
+    const cacheKey = "top-rewards";
+    const cached = this.getCached<TopRewardDto[]>(cacheKey);
+    if (cached) return cached;
+
     const topRewards = await this.pointHistoryRepository
       .createQueryBuilder("ph")
       .select("reward.id", "id")
@@ -125,10 +170,12 @@ export class AdminAnalyticsService {
       .limit(10)
       .getRawMany();
 
-    return topRewards.map((r) => ({
+    const result = topRewards.map((r) => ({
       ...r,
       totalRedemptions: parseInt(r.totalRedemptions, 10) || 0,
     }));
+    this.setCached(cacheKey, result, this.TTL_TOP);
+    return result;
   }
 
   /**
@@ -139,6 +186,10 @@ export class AdminAnalyticsService {
   async getGrowthActivityChart(
     dto: GrowthActivityChartDto,
   ): Promise<GrowthActivityResponseDto> {
+    const cacheKey = `growth:${dto.startDate ?? "def"}:${dto.endDate ?? "def"}`;
+    const cached = this.getCached<GrowthActivityResponseDto>(cacheKey);
+    if (cached) return cached;
+
     const startDate = dto.startDate
       ? moment(dto.startDate).startOf("day")
       : moment().subtract(30, "days").startOf("day");
@@ -163,131 +214,91 @@ export class AdminAnalyticsService {
       dataMap.set(date, { registrations: 0, activities: 0 });
     }
 
-    // 1. Registrations: Businesses
-    const newBusinesses = await this.businessRepository
-      .createQueryBuilder("business")
-      .select("TO_CHAR(business.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(business.id)", "count")
-      .where("business.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .groupBy("TO_CHAR(business.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
+    // Run the 6 independent GROUP BY queries in parallel (was 6 sequential awaits)
+    const start = startDate.toDate();
+    const end = endDate.toDate();
+    const [
+      newBusinesses,
+      newParticipants,
+      pointActivities,
+      joinActivities,
+      businessCampaignActivities,
+      directCampaignActivities,
+    ] = await Promise.all([
+      this.businessRepository
+        .createQueryBuilder("business")
+        .select("TO_CHAR(business.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(business.id)", "count")
+        .where("business.created_at BETWEEN :start AND :end", { start, end })
+        .groupBy("TO_CHAR(business.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+      this.participantRepository
+        .createQueryBuilder("participant")
+        .select("TO_CHAR(participant.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(participant.id)", "count")
+        .where("participant.created_at BETWEEN :start AND :end", { start, end })
+        .groupBy("TO_CHAR(participant.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+      this.pointHistoryRepository
+        .createQueryBuilder("ph")
+        .select("TO_CHAR(ph.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(ph.id)", "count")
+        .where("ph.created_at BETWEEN :start AND :end", { start, end })
+        .andWhere("ph.type IN (:...types)", {
+          types: [PointHistoryType.EARN, PointHistoryType.REDEEM],
+        })
+        .groupBy("TO_CHAR(ph.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+      this.participantCampaignBalanceRepository
+        .createQueryBuilder("pcb")
+        .select("TO_CHAR(pcb.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(pcb.id)", "count")
+        .where("pcb.created_at BETWEEN :start AND :end", { start, end })
+        .groupBy("TO_CHAR(pcb.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+      this.businessCampaignRepository
+        .createQueryBuilder("bc")
+        .select("TO_CHAR(bc.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(bc.id)", "count")
+        .where("bc.created_at BETWEEN :start AND :end", { start, end })
+        .groupBy("TO_CHAR(bc.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+      this.campaignRepository
+        .createQueryBuilder("c")
+        .select("TO_CHAR(c.created_at, 'YYYY-MM-DD')", "date")
+        .addSelect("COUNT(c.id)", "count")
+        .where("c.created_at BETWEEN :start AND :end", { start, end })
+        .andWhere("c.business_id IS NOT NULL")
+        .groupBy("TO_CHAR(c.created_at, 'YYYY-MM-DD')")
+        .getRawMany(),
+    ]);
 
-    newBusinesses.forEach((item) => {
+    const bump = (item: any, field: "registrations" | "activities") => {
       if (dataMap.has(item.date)) {
-        dataMap.get(item.date).registrations += parseInt(item.count, 10);
+        dataMap.get(item.date)![field] += parseInt(item.count, 10);
       }
-    });
-
-    // 2. Registrations: Participants
-    const newParticipants = await this.participantRepository
-      .createQueryBuilder("participant")
-      .select("TO_CHAR(participant.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(participant.id)", "count")
-      .where("participant.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .groupBy("TO_CHAR(participant.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
-
-    newParticipants.forEach((item) => {
-      if (dataMap.has(item.date)) {
-        dataMap.get(item.date).registrations += parseInt(item.count, 10);
-      }
-    });
-
-    // 3. Activities: Point History (EARN & REDEEM)
-    const pointActivities = await this.pointHistoryRepository
-      .createQueryBuilder("ph")
-      .select("TO_CHAR(ph.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(ph.id)", "count")
-      .where("ph.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .andWhere("ph.type IN (:...types)", {
-        types: [PointHistoryType.EARN, PointHistoryType.REDEEM],
-      })
-      .groupBy("TO_CHAR(ph.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
-
-    pointActivities.forEach((item) => {
-      if (dataMap.has(item.date)) {
-        dataMap.get(item.date).activities += parseInt(item.count, 10);
-      }
-    });
-
-    // 4. Activities: Joining Campaigns (ParticipantCampaignBalance created)
-    const joinActivities = await this.participantCampaignBalanceRepository
-      .createQueryBuilder("pcb")
-      .select("TO_CHAR(pcb.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(pcb.id)", "count")
-      .where("pcb.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .groupBy("TO_CHAR(pcb.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
-
-    joinActivities.forEach((item) => {
-      if (dataMap.has(item.date)) {
-        dataMap.get(item.date).activities += parseInt(item.count, 10);
-      }
-    });
-
-    // 5. Activities: Campaigns Created by Business (BusinessCampaign)
-    const businessCampaignActivities = await this.businessCampaignRepository
-      .createQueryBuilder("bc")
-      .select("TO_CHAR(bc.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(bc.id)", "count")
-      .where("bc.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .groupBy("TO_CHAR(bc.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
-
-    businessCampaignActivities.forEach((item) => {
-      if (dataMap.has(item.date)) {
-        dataMap.get(item.date).activities += parseInt(item.count, 10);
-      }
-    });
-
-    // 6. Activities: Campaigns Created by Business (Direct Campaign creation)
-    // We check for campaigns where business_id is NOT NULL
-    const directCampaignActivities = await this.campaignRepository
-      .createQueryBuilder("c")
-      .select("TO_CHAR(c.created_at, 'YYYY-MM-DD')", "date")
-      .addSelect("COUNT(c.id)", "count")
-      .where("c.created_at BETWEEN :start AND :end", {
-        start: startDate.toDate(),
-        end: endDate.toDate(),
-      })
-      .andWhere("c.business_id IS NOT NULL")
-      .groupBy("TO_CHAR(c.created_at, 'YYYY-MM-DD')")
-      .getRawMany();
-
-    directCampaignActivities.forEach((item) => {
-      if (dataMap.has(item.date)) {
-        dataMap.get(item.date).activities += parseInt(item.count, 10);
-      }
-    });
+    };
+    newBusinesses.forEach((i) => bump(i, "registrations"));
+    newParticipants.forEach((i) => bump(i, "registrations"));
+    pointActivities.forEach((i) => bump(i, "activities"));
+    joinActivities.forEach((i) => bump(i, "activities"));
+    businessCampaignActivities.forEach((i) => bump(i, "activities"));
+    directCampaignActivities.forEach((i) => bump(i, "activities"));
 
     // Prepare final arrays
     labels.forEach((date) => {
       const data = dataMap.get(date);
-      registrations.push(data.registrations);
-      activities.push(data.activities);
+      registrations.push(data!.registrations);
+      activities.push(data!.activities);
     });
 
-    return {
+    const result = {
       labels,
       registrations,
       activities,
     };
+    this.setCached(cacheKey, result, this.TTL_GROWTH);
+    return result;
   }
 
   /**

@@ -101,21 +101,39 @@ export class FinancialAdminService {
   // --- Analytics ---
 
   async getAnalytics() {
-    const payments = await this.paymentHistoryRepository.find({
-      where: { status: PaymentStatus.SUCCEEDED },
-    });
+    // Aggregate in SQL (GROUP BY month) instead of loading every payment into memory.
+    // Runs 3 lightweight aggregate queries in parallel.
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const revenueOverTime = this.buildMonthlyRevenue(payments);
+    const [monthlyRows, subscriptionRow, payoutRow] = await Promise.all([
+      this.paymentHistoryRepository
+        .createQueryBuilder("ph")
+        .select("TO_CHAR(ph.created_at, 'YYYY-MM')", "month")
+        .addSelect("SUM(ph.amount)", "revenue")
+        .where("ph.status = :status", { status: PaymentStatus.SUCCEEDED })
+        .andWhere("ph.created_at >= :since", { since: sixMonthsAgo })
+        .groupBy("TO_CHAR(ph.created_at, 'YYYY-MM')")
+        .orderBy("month", "DESC")
+        .limit(6)
+        .getRawMany<{ month: string; revenue: string }>(),
+      this.paymentHistoryRepository
+        .createQueryBuilder("ph")
+        .select("COALESCE(SUM(ph.amount), 0)", "total")
+        .where("ph.status = :status", { status: PaymentStatus.SUCCEEDED })
+        .andWhere("ph.purchaseType = :type", { type: PurchaseType.MEMBERSHIP })
+        .getRawOne<{ total: string }>(),
+      this.payoutRepository
+        .createQueryBuilder("p")
+        .select("COALESCE(SUM(p.amount), 0)", "total")
+        .getRawOne<{ total: string }>(),
+    ]);
 
-    const totalSubscriptions = payments
-      .filter((p) => p.purchaseType === PurchaseType.MEMBERSHIP)
-      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
-
-    const payouts = await this.payoutRepository.find();
-    const totalPayouts = payouts.reduce(
-      (sum, p) => sum + Number(p.amount || 0),
-      0,
-    );
+    const revenueOverTime = this.buildMonthlyRevenueFromRows(monthlyRows ?? []);
+    const totalSubscriptions = Number(subscriptionRow?.total) || 0;
+    const totalPayouts = Number(payoutRow?.total) || 0;
 
     return {
       revenueOverTime,
@@ -126,7 +144,9 @@ export class FinancialAdminService {
     };
   }
 
-  private buildMonthlyRevenue(payments: PaymentHistory[]) {
+  private buildMonthlyRevenueFromRows(
+    rows: { month: string; revenue: string }[],
+  ) {
     const monthNames = [
       "Jan",
       "Feb",
@@ -147,11 +167,12 @@ export class FinancialAdminService {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       byMonth[`${d.getFullYear()}-${d.getMonth()}`] = 0;
     }
-    payments.forEach((p) => {
-      const d = new Date(p.created_at);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
+    // rows are { month: 'YYYY-MM', revenue } from SQL
+    rows.forEach((r) => {
+      const [y, m] = r.month.split("-").map(Number);
+      const key = `${y}-${m - 1}`;
       if (key in byMonth) {
-        byMonth[key] += Number(p.amount || 0);
+        byMonth[key] += Number(r.revenue) || 0;
       }
     });
     return Object.keys(byMonth)

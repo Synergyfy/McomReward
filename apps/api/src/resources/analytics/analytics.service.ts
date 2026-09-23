@@ -71,42 +71,51 @@ export class AnalyticsService {
     // Calculate points from PointHistory using business_campaign_id
     let totalPointsEarned = 0;
     let totalPointsRedeemed = 0;
+    let totalRewardsRedeemed = 0;
+    let lastTenActivities: PointHistory[] = [];
 
     if (businessCampaignIds.length > 0) {
-      const earnedResult = await this.pointHistoryRepository
-        .createQueryBuilder("ph")
-        .select("SUM(ph.points)", "total")
-        .where("ph.business_campaign_id IN (:...ids)", {
-          ids: businessCampaignIds,
-        })
-        .andWhere("ph.type IN (:...types)", {
-          types: [PointHistoryType.EARN],
-        })
-        .getRawOne();
-
-      totalPointsEarned = parseInt(earnedResult.total, 10) || 0;
-
-      const redeemedResult = await this.pointHistoryRepository
-        .createQueryBuilder("ph")
-        .select("SUM(ph.points)", "total")
-        .where("ph.business_campaign_id IN (:...ids)", {
-          ids: businessCampaignIds,
-        })
-        .andWhere("ph.type = :type", { type: PointHistoryType.REDEEM })
-        .getRawOne();
-
-      totalPointsRedeemed = parseInt(redeemedResult.total, 10) || 0;
-    }
-
-    const totalRewardsRedeemed =
-      businessCampaignIds.length > 0
-        ? await this.pointHistoryRepository.count({
+      // Parallelise independent aggregate queries (was 4 sequential awaits)
+      const [earnedResult, redeemedResult, rewardsRedeemedCount, recentActivities] =
+        await Promise.all([
+          this.pointHistoryRepository
+            .createQueryBuilder("ph")
+            .select("SUM(ph.points)", "total")
+            .where("ph.business_campaign_id IN (:...ids)", {
+              ids: businessCampaignIds,
+            })
+            .andWhere("ph.type IN (:...types)", {
+              types: [PointHistoryType.EARN],
+            })
+            .getRawOne(),
+          this.pointHistoryRepository
+            .createQueryBuilder("ph")
+            .select("SUM(ph.points)", "total")
+            .where("ph.business_campaign_id IN (:...ids)", {
+              ids: businessCampaignIds,
+            })
+            .andWhere("ph.type = :type", { type: PointHistoryType.REDEEM })
+            .getRawOne(),
+          this.pointHistoryRepository.count({
             where: {
               businessCampaign: { id: In(businessCampaignIds) },
               type: PointHistoryType.REDEEM,
             },
-          })
-        : 0;
+          }),
+          this.pointHistoryRepository.find({
+            where: { businessCampaign: { id: In(businessCampaignIds) } },
+            order: { created_at: "DESC" },
+            take: 10,
+            relations: ["participant", "businessCampaign"],
+          }),
+        ]);
+
+      totalPointsEarned = parseInt(earnedResult?.total, 10) || 0;
+      totalPointsRedeemed = parseInt(redeemedResult?.total, 10) || 0;
+
+      totalRewardsRedeemed = rewardsRedeemedCount;
+      lastTenActivities = recentActivities;
+    }
 
     const activeCampaignsWithCustomerCounts = activeCampaigns.map((bc) => ({
       name: bc.name,
@@ -114,16 +123,6 @@ export class AnalyticsService {
         ? bc.participantCampaignBalances.length
         : 0,
     }));
-
-    const lastTenActivities =
-      businessCampaignIds.length > 0
-        ? await this.pointHistoryRepository.find({
-            where: { businessCampaign: { id: In(businessCampaignIds) } },
-            order: { created_at: "DESC" },
-            take: 10,
-            relations: ["participant", "businessCampaign"],
-          })
-        : [];
 
     const totalMembers = totalCustomers;
     const totalPointsIssued = totalPointsEarned;
@@ -145,34 +144,40 @@ export class AnalyticsService {
       });
       const businessRewardIds = businessRewards.map((r) => r.id);
 
-      if (businessRewardIds.length > 0) {
-        giftCardsIssued = await this.pointHistoryRepository.count({
-          where: {
-            business: { id: businessId },
-            businessReward: { id: In(businessRewardIds) },
-            type: PointHistoryType.REDEEM,
-          },
-        });
-        giftCardsRedeemed = await this.pointHistoryRepository.count({
-          where: {
-            business: { id: businessId },
-            businessReward: { id: In(businessRewardIds) },
-            type: PointHistoryType.EARN,
-          },
-        });
-      }
-
-      const participantsWithMultipleTx = await this.pointHistoryRepository
-        .createQueryBuilder("ph")
-        .select("ph.participant_id")
-        .where("ph.business_id = :businessId", { businessId })
-        .groupBy("ph.participant_id")
-        .having("COUNT(ph.id) > 1")
-        .getRawMany();
+      // Parallelise the three independent queries
+      const [issuedCount, redeemedCount, multiTx] = await Promise.all([
+        businessRewardIds.length > 0
+          ? this.pointHistoryRepository.count({
+              where: {
+                business: { id: businessId },
+                businessReward: { id: In(businessRewardIds) },
+                type: PointHistoryType.REDEEM,
+              },
+            })
+          : Promise.resolve(0),
+        businessRewardIds.length > 0
+          ? this.pointHistoryRepository.count({
+              where: {
+                business: { id: businessId },
+                businessReward: { id: In(businessRewardIds) },
+                type: PointHistoryType.EARN,
+              },
+            })
+          : Promise.resolve(0),
+        this.pointHistoryRepository
+          .createQueryBuilder("ph")
+          .select("ph.participant_id")
+          .where("ph.business_id = :businessId", { businessId })
+          .groupBy("ph.participant_id")
+          .having("COUNT(ph.id) > 1")
+          .getRawMany(),
+      ]);
+      giftCardsIssued = issuedCount;
+      giftCardsRedeemed = redeemedCount;
 
       if (totalCustomers > 0) {
         repeatCustomerRate = Math.round(
-          (participantsWithMultipleTx.length / totalCustomers) * 100,
+          (multiTx.length / totalCustomers) * 100,
         );
       }
     }

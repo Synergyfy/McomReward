@@ -5,6 +5,7 @@ import AdminHeader from '@/components/admin/header';
 import React, { useState } from 'react';
 import { GuideProvider } from '@/context/GuideContext';
 import FloatingGuide from '@/components/Guide/FloatingGuide';
+import { usePathname } from 'next/navigation';
 
 export default function AdminLayout({
   children,
@@ -12,8 +13,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
 
   return (
     <GuideProvider>

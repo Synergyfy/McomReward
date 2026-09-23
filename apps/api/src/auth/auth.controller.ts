@@ -68,6 +68,35 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(LocalAuthGuard)
+  @Post("admin/login")
+  @ApiBody({ type: LoginDto })
+  @ApiOperation({
+    summary: "Dedicated Admin Login - validates credentials and ADMIN role",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "The admin has been successfully logged in.",
+  })
+  @ApiResponse({ status: 401, description: "Unauthorized or not an admin." })
+  async adminLogin(@Request() req, @Body() loginDto: LoginDto) {
+    if (req.user.role !== Role.Admin) {
+      throw new UnauthorizedException(
+        "Access denied. Administrator privileges required.",
+      );
+    }
+    const verified = await this.authService.verifyTurnstile(
+      loginDto.turnstileToken,
+    );
+    if (!verified) {
+      throw new UnauthorizedException(
+        "CAPTCHA verification failed. Please try again.",
+      );
+    }
+    return this.authService.login(req.user);
+  }
+
+  @Public()
   @UseGuards(PartnerLocalAuthGuard)
   @Post("login/partner")
   @ApiBody({ type: LoginDto })

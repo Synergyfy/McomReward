@@ -129,21 +129,26 @@ export class TierService {
 
   async getTierBreakdown() {
     const tiers = await this.tierRepository.find();
-    const breakdown = await Promise.all(
-      tiers.map(async (tier) => {
-        const count = await this.planSubscriptionRepository.count({
-          where: {
-            planVariant: {
-              tierLevel: { id: tier.id },
-            },
-          },
-        });
-        return {
-          ...tier,
-          businessCount: count,
-        };
-      }),
+    if (tiers.length === 0) return [];
+
+    // Single GROUP BY query instead of N+1 per-tier counts
+    const counts = await this.planSubscriptionRepository
+      .createQueryBuilder("sub")
+      .leftJoin("sub.planVariant", "variant")
+      .leftJoin("variant.tierLevel", "tier")
+      .select("tier.id", "tierId")
+      .addSelect("COUNT(sub.id)", "count")
+      .where("tier.id IS NOT NULL")
+      .groupBy("tier.id")
+      .getRawMany<{ tierId: string; count: string }>();
+
+    const countMap = new Map<string, number>(
+      counts.map((c) => [c.tierId, parseInt(c.count, 10) || 0]),
     );
-    return breakdown;
+
+    return tiers.map((tier) => ({
+      ...tier,
+      businessCount: countMap.get(tier.id) ?? 0,
+    }));
   }
 }

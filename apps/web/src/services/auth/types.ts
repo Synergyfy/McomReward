@@ -1,11 +1,21 @@
 export interface AdminLoginDto {
   email: string;
   password: string;
+  turnstileToken?: string;
 }
 
 export interface AdminLoginResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
+  user?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: string;
+    isEmailVerified?: boolean;
+  };
 }
 
 export interface LoginResponse {

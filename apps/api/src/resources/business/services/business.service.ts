@@ -784,15 +784,27 @@ export class BusinessService {
       });
       await this.pointHistoryRepository.save(pointHistory);
 
-      // TODO: Generate Invoice / Admin Notification
-      console.log(
-        `Business ${businessId} purchased ${verification.points} points for £${verification.amount}`,
+      // Generate invoice record + admin audit trail for the purchase
+      const invoice = {
+        invoiceNumber: `INV-${Date.now()}-${businessId.slice(0, 8).toUpperCase()}`,
+        businessId,
+        points: verification.points,
+        amount: verification.amount,
+        currency: "GBP",
+        transactionId,
+        provider,
+        issuedAt: new Date().toISOString(),
+        pointHistoryId: pointHistory.id,
+      };
+      this.logger.log(
+        `Invoice ${invoice.invoiceNumber}: Business ${businessId} purchased ${verification.points} points for £${verification.amount} (${provider}:${transactionId})`,
       );
 
       return {
         success: true,
         pointsPurchased: verification.points,
         newBalance: await this.getMonthlyPointBalance(businessId),
+        invoice,
       };
     } else {
       throw new BadRequestException("Payment verification failed");

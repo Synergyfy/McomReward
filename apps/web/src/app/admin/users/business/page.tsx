@@ -12,13 +12,30 @@ import { useSearchParams } from 'next/navigation';
 import { useGuide } from '@/context/GuideContext';
 import { Suspense, useEffect } from 'react';
 import { useImpersonation } from '@/context/ImpersonationContext';
+import { useQueryClient } from '@tanstack/react-query';
+import api from '@/services/api';
+import Cookies from 'js-cookie';
+import { toast } from 'sonner';
+
+function getAdminIdFromToken(): string {
+  try {
+    const token = Cookies.get('access');
+    if (!token) return 'admin';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || payload.id || payload.adminId || 'admin';
+  } catch {
+    return 'admin';
+  }
+}
 
 function BusinessUsersContent() {
   const router = useRouter();
   const { startImpersonation } = useImpersonation();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data: response, isLoading, isError } = useAdminBusinesses(page, limit);
+  const [suspendingId, setSuspendingId] = useState<string | null>(null);
+  const { data: response, isLoading, isError, refetch } = useAdminBusinesses(page, limit);
 
   const searchParams = useSearchParams();
   const shouldStartTour = searchParams.get('tour') === 'true';
@@ -57,8 +74,23 @@ function BusinessUsersContent() {
     console.log('Adjust points', userId, amount, reason);
   };
 
-  const handleSuspendUser = (userId: string, userType: 'business' | 'consumer') => {
-    console.log('Suspend user', userId);
+  const handleSuspendUser = async (userId: string, userType: 'business' | 'consumer') => {
+    if (userType !== 'business') {
+      toast.info('Suspension is currently supported for business accounts only.');
+      return;
+    }
+    if (!confirm('Suspend / toggle-disable this business?')) return;
+    setSuspendingId(userId);
+    try {
+      await api.patch(`/admin/businesses/${userId}/disable`);
+      toast.success('Business suspension toggled.');
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to suspend business.');
+    } finally {
+      setSuspendingId(null);
+    }
   };
 
   const handleViewDetails = (userId: string) => {
@@ -66,9 +98,7 @@ function BusinessUsersContent() {
   };
 
   const handleImpersonate = (businessId: string) => {
-    // For now we use a placeholder admin ID since we don't have auth context with ID here easily
-    // In a real app, this should come from auth context
-    startImpersonation(businessId, 'admin-user');
+    startImpersonation(businessId, getAdminIdFromToken());
   };
 
   if (isLoading) {

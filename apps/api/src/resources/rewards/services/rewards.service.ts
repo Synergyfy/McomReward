@@ -867,6 +867,41 @@ export class RewardsService {
     };
   }
 
+  async getRewardsStats() {
+    // Real aggregate stats across ALL rewards (not just the current page).
+    const [statusRows, redemptionRow] = await Promise.all([
+      this.rewardRepository
+        .createQueryBuilder("reward")
+        .select("reward.status", "status")
+        .addSelect("COUNT(reward.id)", "count")
+        .groupBy("reward.status")
+        .getRawMany<{ status: string; count: string }>(),
+      this.pointHistoryRepository
+        .createQueryBuilder("ph")
+        .select("COUNT(ph.id)", "count")
+        .where("ph.type IN (:...types)", {
+          types: [PointHistoryType.REDEEM, PointHistoryType.STAMP_REDEEM],
+        })
+        .getRawOne<{ count: string }>(),
+    ]);
+
+    const byStatus = new Map(
+      (statusRows ?? []).map((r) => [r.status, parseInt(r.count, 10) || 0]),
+    );
+    const active = byStatus.get("active") ?? 0;
+    const draft = byStatus.get("draft") ?? 0;
+    const archived = byStatus.get("archived") ?? 0;
+    const total = [...byStatus.values()].reduce((s, c) => s + c, 0);
+
+    return {
+      active,
+      draft,
+      archived,
+      total,
+      totalRedemptions: parseInt(redemptionRow?.count, 10) || 0,
+    };
+  }
+
   async countTotalRewards(businessId: string): Promise<number> {
     return this.businessRewardRepository.count({
       where: { business: { id: businessId } },

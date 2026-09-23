@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 interface AdminHeaderProps {
     onMenuClick: () => void;
@@ -24,12 +25,15 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const notifications = 0;
 
     const handleLogout = () => {
-        // Clear any auth tokens/session data
+        // Clear all auth tokens, cookies, and session data
+        Cookies.remove('access', { path: '/' });
+        Cookies.remove('refresh', { path: '/' });
         localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         sessionStorage.clear();
 
-        // Redirect to login page
-        router.push('/login');
+        // Redirect to dedicated admin login page
+        router.push('/admin/login');
     };
 
     return (

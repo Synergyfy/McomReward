@@ -25,6 +25,11 @@ export class FilterDealDto extends PaginationDto {
   @IsString()
   categoryId?: string;
 
+  @ApiPropertyOptional({ description: "Filter by business sector ID" })
+  @IsOptional()
+  @IsString()
+  sectorId?: string;
+
   @ApiPropertyOptional({ description: "Filter by location" })
   @IsOptional()
   @IsString()

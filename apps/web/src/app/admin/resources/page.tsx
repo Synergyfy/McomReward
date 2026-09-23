@@ -22,14 +22,25 @@ import {
 import { useGetTrainingGuides, useDeleteTrainingGuide } from '@/services/training-guides/hook';
 
 export default function ResourcesPage() {
-  const { data: videoData } = useGetTrainingVideos({ page: 1, limit: 100 });
+  const [videoPage, setVideoPage] = useState(1);
+  const [articlePage, setArticlePage] = useState(1);
+  const [guidePage, setGuidePage] = useState(1);
+  const pageLimit = 20;
+  const { data: videoData } = useGetTrainingVideos({ page: videoPage, limit: pageLimit });
   const deleteVideoMutation = useDeleteTrainingVideo();
 
-  const { data: articlesData } = useGetHelpCenterArticles({ page: 1, limit: 100 });
+  const { data: articlesData } = useGetHelpCenterArticles({ page: articlePage, limit: pageLimit });
   const deleteArticleMutation = useDeleteHelpCenterArticle();
 
-  const { data: guidesData } = useGetTrainingGuides({ page: 1, limit: 100 });
+  const { data: guidesData } = useGetTrainingGuides({ page: guidePage, limit: pageLimit });
   const deleteGuideMutation = useDeleteTrainingGuide();
+
+  const videoTotal = (videoData as any)?.total ?? (videoData?.items?.length ?? 0);
+  const articleTotal = (articlesData as any)?.total ?? 0;
+  const guideTotal = (guidesData as any)?.total ?? 0;
+  const videoTotalPages = Math.max(1, Math.ceil(videoTotal / pageLimit));
+  const articleTotalPages = Math.max(1, Math.ceil(articleTotal / pageLimit));
+  const guideTotalPages = Math.max(1, Math.ceil(guideTotal / pageLimit));
 
   // State for Feedback Dialog
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
@@ -172,6 +183,17 @@ export default function ResourcesPage() {
                   )}
                 </TableBody>
               </Table>
+              {videoTotal > pageLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setVideoPage((p) => Math.max(1, p - 1))} disabled={videoPage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {videoPage} of {videoTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setVideoPage((p) => Math.min(videoTotalPages, p + 1))} disabled={videoPage >= videoTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -218,6 +240,17 @@ export default function ResourcesPage() {
                   )}
                 </TableBody>
               </Table>
+              {articleTotal > pageLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setArticlePage((p) => Math.max(1, p - 1))} disabled={articlePage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {articlePage} of {articleTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setArticlePage((p) => Math.min(articleTotalPages, p + 1))} disabled={articlePage >= articleTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -264,6 +297,17 @@ export default function ResourcesPage() {
                   )}
                 </TableBody>
               </Table>
+              {guideTotal > pageLimit && (
+                <div className="flex items-center justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setGuidePage((p) => Math.max(1, p - 1))} disabled={guidePage <= 1}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {guidePage} of {guideTotalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setGuidePage((p) => Math.min(guideTotalPages, p + 1))} disabled={guidePage >= guideTotalPages}>
+                    Next
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -274,8 +318,47 @@ export default function ResourcesPage() {
           <CardTitle>Completion Progress Monitoring</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">This section will provide tools to monitor the completion progress of learning modules for businesses. (Future Enhancement)</p>
-          <Button variant="outline" className="mt-4">View Progress Reports</Button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-2xl font-bold">{videoTotal}</p>
+              <p className="text-xs text-muted-foreground">Training videos published</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{articleTotal}</p>
+              <p className="text-xs text-muted-foreground">Help center articles</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{guideTotal}</p>
+              <p className="text-xs text-muted-foreground">Learning modules</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{videoTotal + articleTotal + guideTotal}</p>
+              <p className="text-xs text-muted-foreground">Total resources live</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              const rows = [
+                ['Resource Type', 'Count'],
+                ['Training videos', String(videoTotal)],
+                ['Help center articles', String(articleTotal)],
+                ['Learning modules', String(guideTotal)],
+              ];
+              const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `resource-progress-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+              handleShowFeedback('Progress Report', 'Resource completion snapshot downloaded as CSV.');
+            }}
+          >
+            View Progress Reports
+          </Button>
         </CardContent>
       </Card>
 

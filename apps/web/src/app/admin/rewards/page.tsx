@@ -39,7 +39,7 @@ import LoadingSpinner from '@/components/ui/Loading';
 import AdminUnifiedRewardCard from '@/components/admin/rewards/AdminUnifiedRewardCard';
 import AdminRewardTypeSelectionDialog from '@/components/admin/rewards/AdminRewardTypeSelectionDialog';
 import UnifiedRewardWizardModal, { RewardType } from '@/components/admin/rewards/UnifiedRewardWizardModal';
-import { useGetRewards, useDeleteReward } from '@/services/rewards/hook';
+import { useGetRewards, useDeleteReward, useGetRewardsStats } from '@/services/rewards/hook';
 import { RewardResponse } from '@/services/rewards/types';
 
 type ViewMode = 'grid' | 'list';
@@ -100,9 +100,11 @@ export default function AdminRewardsPage() {
   // API Hooks
   const { data, isLoading, isError, refetch } = useGetRewards(page, limit, queryOptions);
   const { mutate: deleteReward, isPending: isDeleting } = useDeleteReward();
+  const { data: rewardsStats } = useGetRewardsStats();
 
   const rewards = data?.data || [];
   const totalRewards = data?.count || 0;
+  const totalPages = (data as any)?.totalPages || Math.max(1, Math.ceil(totalRewards / limit));
 
   // Client-side filtering as fallback or refinement
   const filteredRewards = useMemo(() => {
@@ -147,14 +149,24 @@ export default function AdminRewardsPage() {
     });
   }, [rewards, searchTerm, filterStatus, filterRewardType, filterRedemption]);
 
-  // Statistics (Computed from current page or all if possible - simplified for now)
+  // Statistics: real aggregate counts from GET /admin/rewards/stats.
+  // Falls back to current-page computation only while stats are loading.
   const stats = useMemo(() => {
+    if (rewardsStats) {
+      return {
+        active: rewardsStats.active,
+        draft: rewardsStats.draft,
+        totalRedemptions: rewardsStats.totalRedemptions,
+      };
+    }
     const active = rewards.filter(r => r.status === 'active').length;
     const draft = rewards.filter(r => r.status === 'draft').length;
-    // Mock data for aggregation for now as API doesn't return agg stats object, but we can simulate based on loaded
-    const totalRedemptions = rewards.reduce((sum, r) => sum + (r.quantity - r.remainingQuantity), 0);
+    const totalRedemptions = rewards.reduce(
+      (sum, r) => sum + Math.max(0, (r.quantity ?? 0) - (r.remainingQuantity ?? r.quantity ?? 0)),
+      0,
+    );
     return { active, draft, totalRedemptions };
-  }, [rewards]);
+  }, [rewards, rewardsStats]);
 
   // Handlers
   const handleCreateClick = () => {
@@ -444,12 +456,33 @@ export default function AdminRewardsPage() {
           </div>
         )}
 
-        {/* Pagination info */}
+        {/* Pagination */}
         {filteredRewards.length > 0 && (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-sm text-gray-500">
-              Showing {filteredRewards.length} of {totalRewards} rewards
+              Showing {filteredRewards.length} of {totalRewards} rewards (page {page} of {totalPages})
             </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500">
+                Page {page} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>

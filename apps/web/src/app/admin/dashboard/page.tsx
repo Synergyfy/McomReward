@@ -37,6 +37,10 @@ export default function AdminDashboard() {
   // Notification hook
   const { data: notificationsData, isLoading: isLoadingNotifications, error: notificationsError } = useGetNotifications({ limit: 5 });
 
+  const [globalSearch, setGlobalSearch] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<any[] | null>(null);
+  const [isSearching, setIsSearching] = React.useState(false);
+
   const chartData = React.useMemo(() => {
     if (!growthData) return [];
     return growthData.labels.map((label, index) => ({
@@ -47,18 +51,90 @@ export default function AdminDashboard() {
   }, [growthData]);
 
 
+  const handleGlobalSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = globalSearch.trim();
+    if (!q) {
+      setSearchResults(null);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const api = (await import('@/services/api')).default;
+      const { data } = await api.get('/admin/search', { params: { q } });
+      setSearchResults(Array.isArray(data) ? data : []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleDownloadReport = () => {
+    const rows: string[][] = [
+      ['Metric', 'Value'],
+      ['Total Businesses', String(systemOverview?.totalBusiness ?? '')],
+      ['Active Campaigns', String(systemOverview?.totalCampaigns ?? '')],
+      ['Total Consumers', String(systemOverview?.totalParticipants ?? '')],
+      ['Total Rewards Claimed', String(systemOverview?.totalRedemptions ?? '')],
+      ['Matching Points Issued', String(systemOverview?.totalMatchingPoints ?? '')],
+      [],
+      ['Top Business', 'Points Earned', 'Points Redeemed'],
+      ...(topBusinesses ?? []).map((b) => [b.name, String(b.totalPointsEarned), String(b.totalPointsRedeemed)]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admin-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
         <div className="flex items-center space-x-2">
-          <div className="relative w-full max-w-sm">
+          <form onSubmit={handleGlobalSearch} className="relative w-full max-w-sm">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search by business, user, or campaign..." className="pl-8" />
-          </div>
-          <Button>Download Report</Button>
+            <Input
+              placeholder="Search by business, user, or campaign..."
+              className="pl-8"
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+            />
+          </form>
+          <Button onClick={handleDownloadReport}>Download Report</Button>
         </div>
       </div>
+      {(isSearching || searchResults) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Search results{searchResults ? ` (${searchResults.length})` : ''}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isSearching ? (
+              <p className="text-sm text-muted-foreground">Searching…</p>
+            ) : !searchResults || searchResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No results found.</p>
+            ) : (
+              <div className="space-y-2">
+                {searchResults.slice(0, 10).map((r: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{r.name || r.title || 'Untitled'}</span>
+                    <Badge variant="secondary">{r.tag || 'result'}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button variant="ghost" size="sm" className="mt-2" onClick={() => { setSearchResults(null); setGlobalSearch(''); }}>
+              Clear
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Top Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">

@@ -142,13 +142,7 @@ export class AdminService {
     limit: number,
   ): Promise<PaginationResult<Business>> {
     const result = await this.businessService.findAll(page, limit);
-
-    const enrichedBusinesses = await Promise.all(
-      result.data.map(async (business) => {
-        return this.enrichBusinessRecord(business);
-      }),
-    );
-
+    const enrichedBusinesses = await this.enrichBusinessRecords(result.data);
     return {
       ...result,
       data: enrichedBusinesses,
@@ -163,85 +157,97 @@ export class AdminService {
       page,
       limit,
     );
-
-    const enrichedBusinesses = await Promise.all(
-      result.data.map(async (business) => {
-        return this.enrichBusinessRecord(business);
-      }),
-    );
-
+    const enrichedBusinesses = await this.enrichBusinessRecords(result.data);
     return {
       ...result,
       data: enrichedBusinesses,
     };
   }
 
-  private async enrichBusinessRecord(business: Business): Promise<Business> {
-    // 1. Get Latest Subscription (Plan / Tier)
-    const subscription = await this.planSubscriptionRepository.findOne({
-      where: { business: { id: business.id } },
-      order: { created_at: "DESC" },
-      relations: ["planVariant", "planVariant.plan", "planVariant.tierLevel"],
-    });
+  private async enrichBusinessRecords(
+    businesses: Business[],
+  ): Promise<Business[]> {
+    if (businesses.length === 0) return businesses;
+    const businessIds = businesses.map((b) => b.id);
 
-    if (subscription) {
-      business.subscriptions = [subscription];
-    }
+    // Batch 1: latest subscription per business (single query with DISTINCT ON)
+    const latestSubs = await this.planSubscriptionRepository.query(
+      `SELECT DISTINCT ON (sub.business_id) sub.id AS "subId"
+       FROM plan_subscriptions sub
+       WHERE sub.business_id = ANY($1)
+       ORDER BY sub.business_id, sub.created_at DESC`,
+      [businessIds],
+    );
+    const subIds: string[] = (latestSubs ?? []).map((r: any) => r.subId).filter(Boolean);
 
-    // 2. Calculate Remaining Point Balance
-    let remainingPointBalance = 0;
-    const tierConfig = (subscription?.planVariant?.tierLevel as any)
-      ?.configuration;
-
-    if (tierConfig) {
-      const monthlyPointsAllowance = tierConfig.quotas?.monthlyPointsAllowance;
-
-      if (monthlyPointsAllowance === -1) {
-        remainingPointBalance = -1; // Unlimited
-      } else if (typeof monthlyPointsAllowance === "number") {
-        // Calculate points used this month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const pointsUsed = await this.pointHistoryRepository
-          .createQueryBuilder("pointHistory")
-          .where("pointHistory.business_id = :businessId", {
-            businessId: business.id,
-          })
-          .andWhere("pointHistory.created_at >= :startOfMonth", {
-            startOfMonth,
-          })
-          .andWhere("pointHistory.type IN (:...types)", {
-            types: ["EARN"],
-          })
-          .select("SUM(pointHistory.points)", "total")
-          .getRawOne();
-
-        const totalPointsUsed =
-          pointsUsed && pointsUsed.total ? Number(pointsUsed.total) : 0;
-        remainingPointBalance = Math.max(
-          0,
-          monthlyPointsAllowance - totalPointsUsed,
-        );
+    const subMap = new Map<string, any>();
+    if (subIds.length > 0) {
+      const subs = await this.planSubscriptionRepository
+        .createQueryBuilder("sub")
+        .leftJoinAndSelect("sub.planVariant", "variant")
+        .leftJoinAndSelect("variant.plan", "plan")
+        .leftJoinAndSelect("variant.tierLevel", "tier")
+        .leftJoin("sub.business", "business")
+        .addSelect("business.id")
+        .where("sub.id IN (:...subIds)", { subIds })
+        .getMany();
+      for (const s of subs) {
+        const bid = (s as any).business?.id;
+        if (bid) subMap.set(bid, s);
       }
-    } else {
-      remainingPointBalance = 0;
     }
 
-    business.remainingPointBalance = remainingPointBalance;
+    // Batch 2: points used this month for all businesses in one GROUP BY
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const usageRows = await this.pointHistoryRepository
+      .createQueryBuilder("ph")
+      .select("ph.business_id", "businessId")
+      .addSelect("SUM(ph.points)", "total")
+      .where("ph.business_id IN (:...businessIds)", { businessIds })
+      .andWhere("ph.created_at >= :startOfMonth", { startOfMonth })
+      .andWhere("ph.type IN (:...types)", { types: ["EARN"] })
+      .groupBy("ph.business_id")
+      .getRawMany<{ businessId: string; total: string }>();
+    const usageMap = new Map<string, number>(
+      (usageRows ?? []).map((r) => [r.businessId, Number(r.total) || 0]),
+    );
 
-    if (business.sector) {
-      (business as any).sector = business.sector.name;
-    }
+    return businesses.map((business) => {
+      const subscription = subMap.get(business.id);
+      if (subscription) {
+        business.subscriptions = [subscription];
+      }
 
-    const tierName =
-      subscription?.planVariant?.tierLevel?.name ||
-      subscription?.planVariant?.plan?.name ||
-      null;
-    (business as any).tier = tierName;
+      let remainingPointBalance = 0;
+      const tierConfig = (subscription?.planVariant?.tierLevel as any)?.configuration;
+      if (tierConfig) {
+        const monthlyPointsAllowance = tierConfig.quotas?.monthlyPointsAllowance;
+        if (monthlyPointsAllowance === -1) {
+          remainingPointBalance = -1;
+        } else if (typeof monthlyPointsAllowance === "number") {
+          const used = usageMap.get(business.id) ?? 0;
+          remainingPointBalance = Math.max(0, monthlyPointsAllowance - used);
+        }
+      }
+      business.remainingPointBalance = remainingPointBalance;
 
-    return business;
+      if (business.sector) {
+        (business as any).sector = (business.sector as any).name ?? business.sector;
+      }
+      const tierName =
+        subscription?.planVariant?.tierLevel?.name ||
+        subscription?.planVariant?.plan?.name ||
+        null;
+      (business as any).tier = tierName;
+      return business;
+    });
+  }
+
+  private async enrichBusinessRecord(business: Business): Promise<Business> {
+    const [enriched] = await this.enrichBusinessRecords([business]);
+    return enriched;
   }
 
   async getStaffs(businessId: string, page: number, limit: number) {

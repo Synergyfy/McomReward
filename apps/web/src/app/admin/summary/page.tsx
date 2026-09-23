@@ -103,7 +103,7 @@ export default function AdminControlSummaryPage() {
       count: 'Audit Logs & RBAC',
       link: '/admin/security',
       linkText: 'View Security',
-      disabled: true,
+      disabled: false,
     },
   ];
 

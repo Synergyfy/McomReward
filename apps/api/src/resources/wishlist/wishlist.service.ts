@@ -139,6 +139,55 @@ export class WishlistService {
       },
     });
 
+    // Attach real priority distribution per aggregate with a single GROUP BY
+    // over wishlist_items (matched on normalized itemName + category).
+    if (data.length > 0) {
+      const pairs = data.map((a: any) => ({
+        itemName: String(a.itemName ?? "").trim().toLowerCase(),
+        categoryId: a.category?.id,
+      }));
+      const itemNames = [...new Set(pairs.map((p) => p.itemName))];
+      const categoryIds = [...new Set(pairs.map((p) => p.categoryId).filter(Boolean))];
+
+      let rows: { itemName: string; categoryId: string; priority: string; count: string }[] = [];
+      if (itemNames.length > 0 && categoryIds.length > 0) {
+        rows = await this.wishlistItemRepository
+          .createQueryBuilder("wi")
+          .leftJoin("wi.category", "cat")
+          .select("LOWER(wi.itemName)", "itemName")
+          .addSelect("cat.id", "categoryId")
+          .addSelect("wi.priority", "priority")
+          .addSelect("COUNT(wi.id)", "count")
+          .where("LOWER(wi.itemName) IN (:...itemNames)", { itemNames })
+          .andWhere("cat.id IN (:...categoryIds)", { categoryIds })
+          .groupBy("LOWER(wi.itemName)")
+          .addGroupBy("cat.id")
+          .addGroupBy("wi.priority")
+          .getRawMany();
+      }
+
+      const distMap = new Map<string, Record<string, number>>();
+      for (const r of rows) {
+        const key = `${r.itemName}||${r.categoryId}`;
+        const dist = distMap.get(key) ?? { LOW: 0, MEDIUM: 0, HIGH: 0 };
+        dist[String(r.priority ?? "MEDIUM").toUpperCase()] =
+          (dist[String(r.priority ?? "MEDIUM").toUpperCase()] ?? 0) +
+          (parseInt(r.count, 10) || 0);
+        distMap.set(key, dist);
+      }
+
+      for (const agg of data as any[]) {
+        const key = `${String(agg.itemName ?? "").trim().toLowerCase()}||${agg.category?.id}`;
+        const dist = distMap.get(key) ?? { LOW: 0, MEDIUM: 0, HIGH: 0 };
+        const totalP = (dist.LOW ?? 0) + (dist.MEDIUM ?? 0) + (dist.HIGH ?? 0);
+        agg.priorityDistribution =
+          totalP > 0
+            ? `H:${dist.HIGH ?? 0} / M:${dist.MEDIUM ?? 0} / L:${dist.LOW ?? 0}`
+            : "N/A";
+        agg.priorityBreakdown = dist;
+      }
+    }
+
     return {
       data,
       total,

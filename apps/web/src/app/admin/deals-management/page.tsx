@@ -27,17 +27,13 @@ export default function DealsManagementPage() {
 
   const { data: sectors } = useGetSectors();
 
-  // API Hooks
+  // API Hooks — sectorId is now supported by GET /deals/admin/all
   const { data: dealsData, isLoading, isError } = useGetAdminDeals({
     page,
     limit,
     search: debouncedSearchTerm || undefined,
     status: filterStatus !== 'all' ? (filterStatus as 'pending' | 'approved' | 'declined') : undefined,
-    // Note: Sector filtering might need backend support if not already there, 
-    // or we filter client side if the API doesn't support it yet. 
-    // Based on docs, categoryId is supported, but sector isn't explicitly mentioned in filter params.
-    // Assuming for now we might need to filter client side or just pass it if backend supports it.
-    // For this implementation, I'll stick to what the API docs said: status, search, categoryId.
+    sectorId: filterSector !== 'all' ? filterSector : undefined,
   });
 
   const updateStatusMutation = useUpdateDealStatus();
@@ -159,8 +155,8 @@ export default function DealsManagementPage() {
                   <SelectItem value="declined">Declined</SelectItem>
                 </SelectContent>
               </Select>
-              {/* Sector filter - purely client side visual for now if API doesn't support it directly in this endpoint */}
-              <Select value={filterSector} onValueChange={setFilterSector}>
+              {/* Sector filter — wired to backend via sectorId */}
+              <Select value={filterSector} onValueChange={(v) => { setFilterSector(v); setPage(1); }}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by sector" />
                 </SelectTrigger>
@@ -273,8 +269,30 @@ export default function DealsManagementPage() {
           <CardTitle>B2B Exchange Activities Monitoring</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">This section will provide tools and reports for monitoring B2B exchange activities. (Future Enhancement)</p>
-          <Button variant="outline" className="mt-4">View B2B Reports</Button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-2xl font-bold">{dealsData?.total ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Total deals</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {(dealsData?.data ?? []).filter((d) => d.status === 'approved').length}
+              </p>
+              <p className="text-xs text-muted-foreground">Approved (this page)</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {(dealsData?.data ?? []).filter((d) => d.status === 'pending').length}
+              </p>
+              <p className="text-xs text-muted-foreground">Pending review (this page)</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                £{(dealsData?.data ?? []).reduce((s, d) => s + Number(d.value || 0), 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground">Combined deal value (this page)</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

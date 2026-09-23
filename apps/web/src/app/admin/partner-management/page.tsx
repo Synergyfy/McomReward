@@ -24,14 +24,17 @@ export default function PartnerManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   const { data: partnersData, isLoading } = useGetAdminPartners({
-    page: 1,
-    limit: 100,
+    page,
+    limit,
     search: searchTerm || undefined,
     type: filterType === 'all' ? undefined : (filterType as Partner['type']),
     status: filterStatus === 'all' ? undefined : (filterStatus as Partner['status']),
   });
+  const totalPages = Math.max(1, Math.ceil((partnersData?.total ?? 0) / limit));
   const createPartnerMutation = useCreatePartner();
   const updatePartnerMutation = useUpdatePartner();
   const deletePartnerMutation = useDeletePartner();
@@ -226,6 +229,17 @@ export default function PartnerManagementPage() {
                 )}
               </TableBody>
             </Table>
+          )}
+          {(partnersData?.total ?? 0) > limit && (
+            <div className="flex items-center justify-end gap-2 pt-4">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+                Next
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

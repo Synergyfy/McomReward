@@ -25,7 +25,10 @@ export default function WishlistInsightsPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<WishlistInsight | null>(null);
-  const { data: insightsData, isLoading: loading, error } = useGetWishlistInsights({ page: 1, limit: 100 });
+  const [page, setPage] = useState(1);
+  const limit = 20;
+  const { data: insightsData, isLoading: loading, error } = useGetWishlistInsights({ page, limit });
+  const totalPages = Math.max(1, Math.ceil((insightsData?.total ?? 0) / limit));
 
   if (error) {
       console.error("Failed to fetch admin wishlist insights:", error);
@@ -38,7 +41,7 @@ export default function WishlistInsightsPage() {
         category: item.category.name,
         estimatedCount: item.audienceSize,
         topDates: item.targetDates.filter(Boolean).slice(0, 3).join(', ') || 'N/A', // Show top 3 dates
-        priorityDistribution: 'N/A', // API response doesn't currently include priority breakdown
+        priorityDistribution: item.priorityDistribution ?? 'N/A',
         original: item
     })) || [];
 
@@ -105,6 +108,17 @@ export default function WishlistInsightsPage() {
                     )}
                 </TableBody>
                 </Table>
+            )}
+            {(insightsData?.total ?? 0) > limit && (
+              <div className="flex items-center justify-end gap-2 pt-4">
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+                  Next
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

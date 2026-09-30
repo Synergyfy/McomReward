@@ -50,6 +50,7 @@ export interface CreateGroupCircleDto {
     name: string;
     type: GroupCircleType;
     duration: GroupCircleDuration;
+    interactionLevel?: 'READ' | 'MESSAGE' | 'COLLABORATE';
     contributionAmount: number;
     networkIds: string[];
     referredBusinessIds?: string[];

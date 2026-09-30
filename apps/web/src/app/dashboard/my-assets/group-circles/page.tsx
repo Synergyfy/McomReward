@@ -295,6 +295,7 @@ export default function GroupCirclesPage() {
             name: newCircleData.name,
             type: newCircleData.type,
             duration: numericDuration as GroupCircleDuration,
+            interactionLevel: 'COLLABORATE',
             contributionAmount: Number(newCircleData.contributionAmount) || 0,
             networkIds: newCircleData.networkIds || [],
             referredBusinessIds: newCircleData.referredBusinessIds || []

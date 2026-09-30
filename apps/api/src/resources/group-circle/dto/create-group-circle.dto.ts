@@ -9,7 +9,7 @@ import {
 } from "class-validator";
 import { Type, Transform } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
-import { GroupCircleType } from "../enums/group-circle.enums";
+import { GroupCircleType, InteractionLevel } from "../enums/group-circle.enums";
 
 export class CreateGroupCircleDto {
   @ApiProperty({ description: "Name of the group circle" })
@@ -19,6 +19,16 @@ export class CreateGroupCircleDto {
   @ApiProperty({ enum: GroupCircleType, description: "Type of the circle" })
   @IsEnum(GroupCircleType)
   type: GroupCircleType;
+
+  @ApiProperty({
+    enum: InteractionLevel,
+    description: "Interaction level of the circle",
+    required: false,
+    default: InteractionLevel.COLLABORATE,
+  })
+  @IsOptional()
+  @IsEnum(InteractionLevel)
+  interactionLevel?: InteractionLevel;
 
   @ApiProperty({
     description: "List of network contact IDs to add as initial members",

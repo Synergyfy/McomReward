@@ -32,6 +32,7 @@ import {
   GroupCircleStatus,
   PaymentProvider,
   GroupMessageType,
+  InteractionLevel,
 } from "./enums/group-circle.enums";
 import {
   PlanSubscription,
@@ -150,6 +151,9 @@ export class GroupCircleService {
 
         const circle = manager.create(GroupCircle, {
           ...dtoData,
+          duration: dtoData.duration || 90,
+          interactionLevel:
+            dtoData.interactionLevel || InteractionLevel.COLLABORATE,
           business,
           startDate: new Date(),
           payoutFrequency:

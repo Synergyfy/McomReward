@@ -94,7 +94,7 @@ export default function GroupCirclesPage() {
     const [selectionSearch, setSelectionSearch] = useState("");
 
     const [newCircleData, setNewCircleData] = useState<Partial<CreateGroupCircleDto>>({
-        duration: 'Summer',
+        duration: 90,
         contributionAmount: 0,
         networkIds: [],
         referredBusinessIds: []
@@ -247,7 +247,7 @@ export default function GroupCirclesPage() {
         setIsEditing(false);
         setNewCircleData({
             name: `${name} ${new Date().getFullYear()}`,
-            duration: 'Summer',
+            duration: 90,
             contributionAmount: 0,
             networkIds: [],
             referredBusinessIds: [],
@@ -265,7 +265,7 @@ export default function GroupCirclesPage() {
         setNewCircleData({
             name: apiCircle.name,
             type: apiCircle.type,
-            duration: apiCircle.duration as any,
+            duration: Number(apiCircle.duration) || 90,
             contributionAmount: Number(apiCircle.contributionAmount),
             networkIds: apiCircle.members.map(m => m.network.id),
             referredBusinessIds: []
@@ -280,27 +280,51 @@ export default function GroupCirclesPage() {
             return;
         }
 
+        const seasonMap: Record<string, number> = {
+            Spring: 90,
+            Summer: 180,
+            Autumn: 270,
+            Winter: 360,
+        };
+
+        const numericDuration = typeof newCircleData.duration === 'string'
+            ? (seasonMap[newCircleData.duration] || parseInt(newCircleData.duration, 10) || 90)
+            : (Number(newCircleData.duration) || 90);
+
+        const payload: CreateGroupCircleDto = {
+            name: newCircleData.name,
+            type: newCircleData.type,
+            duration: numericDuration as GroupCircleDuration,
+            contributionAmount: Number(newCircleData.contributionAmount) || 0,
+            networkIds: newCircleData.networkIds || [],
+            referredBusinessIds: newCircleData.referredBusinessIds || []
+        };
+
         try {
             if (isEditing && selectedCircleId) {
                 await updateCircleMutation.mutateAsync({
                     id: selectedCircleId,
-                    data: newCircleData as UpdateGroupCircleDto
+                    data: payload as UpdateGroupCircleDto
                 });
                 toast.success(`${newCircleData.name} updated!`);
             } else {
-                await createCircleMutation.mutateAsync(newCircleData as CreateGroupCircleDto);
+                await createCircleMutation.mutateAsync(payload);
                 toast.success(`${newCircleData.name} created!`);
             }
             setCreateOpen(false);
             setCreateStep(1);
             setNewCircleData({
-                duration: 'Summer',
+                duration: 90,
                 contributionAmount: 0,
                 networkIds: [],
                 referredBusinessIds: []
             });
-        } catch (error) {
-            toast.error(isEditing ? "Failed to update circle" : "Failed to create circle");
+        } catch (error: any) {
+            const apiMessage = error?.response?.data?.message;
+            const message = Array.isArray(apiMessage)
+                ? apiMessage.join(". ")
+                : (apiMessage || error?.message || (isEditing ? "Failed to update circle" : "Failed to create circle"));
+            toast.error(message);
         }
     }, [isEditing, selectedCircleId, newCircleData, updateCircleMutation, createCircleMutation]);
 
@@ -384,7 +408,7 @@ export default function GroupCirclesPage() {
                             setNewCircleData({
                                 name: missingMandatory.length > 0 ? `${missingMandatory[0]} ${new Date().getFullYear()}` : "",
                                 type: initialType as GroupCircleType,
-                                duration: 'Summer',
+                                duration: 90,
                                 contributionAmount: 0,
                                 networkIds: [],
                                 referredBusinessIds: []
@@ -405,7 +429,7 @@ export default function GroupCirclesPage() {
                             setNewCircleData({
                                 name: "",
                                 type: 'SMART_MONEY',
-                                duration: 'Summer',
+                                duration: 90,
                                 contributionAmount: 50,
                                 networkIds: [],
                                 referredBusinessIds: []
@@ -759,7 +783,7 @@ export default function GroupCirclesPage() {
                                         setNewCircleData({
                                             name: missingMandatory.length > 0 ? `${missingMandatory[0]} ${new Date().getFullYear()}` : "",
                                             type: initialType as GroupCircleType,
-                                            duration: 'Summer',
+                                            duration: 90,
                                             contributionAmount: 0,
                                             networkIds: [],
                                             referredBusinessIds: []
@@ -1029,16 +1053,17 @@ export default function GroupCirclesPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="duration">Season / Duration</Label>
                                         <Select
-                                            value={String(newCircleData.duration)}
-                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: val })}
+                                            value={String(newCircleData.duration || 90)}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: Number(val) })}
                                         >
                                             <SelectTrigger id="duration">
                                                 <SelectValue placeholder="Select Duration" />
                                             </SelectTrigger>
                                             <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                                {["Spring", "Summer", "Autumn", "Winter"].map(s => (
-                                                    <SelectItem key={s} value={s}>{s} Season</SelectItem>
-                                                ))}
+                                                <SelectItem value="90">Spring Season (90 Days)</SelectItem>
+                                                <SelectItem value="180">Summer Season (180 Days)</SelectItem>
+                                                <SelectItem value="270">Autumn Season (270 Days)</SelectItem>
+                                                <SelectItem value="360">Winter Season (360 Days)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[10px] text-muted-foreground">Seasonal collaboration cycle.</p>

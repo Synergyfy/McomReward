@@ -72,13 +72,16 @@ export class GroupCircleService {
     ];
 
     if (
+      createDto.type === GroupCircleType.SMART_MONEY &&
       uniqueNetworkIds.length === 0 &&
       uniqueReferredBusinessIds.length === 0
     ) {
       throw new BadRequestException(
-        "At least one network contact or referred business is required",
+        "At least one network contact or referred business is required for Smart Money circles",
       );
     }
+
+    createDto.duration = createDto.duration || 90;
 
     // Validate Networks first
     const networks: Network[] = [];

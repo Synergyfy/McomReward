@@ -1,6 +1,6 @@
-﻿export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
+export type GroupCircleType = 'MARKETING' | 'ADVERTISING' | 'NEARBY' | 'HYPERLOCAL' | 'NATIONAL' | 'GLOBAL' | 'SMART_MONEY';
 
-export type GroupCircleDuration = 90 | 180 | 270 | 360 | string;
+export type GroupCircleDuration = 90 | 180 | 270 | 360 | number | string;
 
 export type GroupCircleStatus = 'ACTIVE' | 'INACTIVE';
 

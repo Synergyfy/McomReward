@@ -1,41 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const brands = [
-  { name: 'Amazon', logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAivVTAvQ1_GqV_dr7iW0m79Y-BR1t2kkFUSb0eXobTt9hRXBs2F0hu_cR1cevnqxLNEkD1xldkNUYXyOxt69siXh3KL_mg0f040kONjnLPSJYTYU3oJF-H_Gf2pyO4olyJM7sYUn0qYBQcHgRRiBtGcOBKgUCX77T2P0_0HfnJZSWEJxE5U44nXBnXRsYHiT-dRmON8u4GNXaUsc_QRq7ZLoESmZiR0hJabV_d-iGF_2nyinNDQZj4yrblpEQZzmVTTb31wlWPYu1b', category: 'Retail & Tech' },
-  { name: 'Uber', logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJZWmbKDgtapuXSFwPnJic0N42gteMRNnsyxKs8gvtgE2pk6XbeHhOBymnw4YG9loBurwA7qu81PtvkFhvsDEd0pzhLIzbmKuLDHOsWUc33h_r9qs75SFb588DURbd5eeW67_2GawGjhR4Iar7ujXQYLI1qY1XUQRMC7DBf1rXsMR8jszfxrWhbETFPX5DO9HVDm-tWw14V48R0J6YoEysJRNqKo-0kBY4Ax8nB2Jlz-fARySvr8phhFI7toYfjYd9iBfrmaqSdu0l', category: 'Travel & Mobility' },
-  { name: 'Netflix', logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCoGqlIRuED0GO8fjmsjsbbcxBRIw57gBdUCqsoTV7YMizjczo-bpemEaPCcEqCdZ-WWBaj4rqOwiYfsVDTkkGizzh9_6qiTRxeKpOZb_qbDeqg5x92Ne6BVyZ6G7gri_u2DBt-b7-pjKQYUDviMGvLO3-NHhKZMDzkDNNWLxFwJxNM0WRG_h5pXgWgT7GdFZQ5BXYJT56ChhOflZd6C4GUjffodGZ5lVDla-Xa1vZ1jpGlDmsAUD9666IZefXkUAebhNsxibabZyiG', category: 'Entertainment' },
-  { name: 'Nike', logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCp48G7lQWvtSKokkqAHV9R8g_aF-TpcLs-7aeg19j2d98-vN5oevc-DSJcPzQ-dhvcooatfVWwiNfJ6dJrUmFFX27T0XApn_1wadHTta5se4Tf4dSzQbsw-lTexbvOdzwgws111mGjrEvKwGHRuZR5h_qXB6BECqRUISS_reOSUic6c903RroU19xddOoz5uArE_9tFhFw5S7rnQsGsOt_BDk_zwTEO3mS-YH7TSbs2KeCeofnayROJijGQFnNzXViFPunR2g74EmD', category: 'Apparel' },
-  { name: 'Starbucks', logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdkmAd7VVkI6d-BJeXPo_t8uBGn7gBj294OFMvuRMFSg5p2R7Dg2yg1Xv5I7MwHfQNZz24rbU-VA-tEztYWdYvw-ydWeHm84gEy4Aj_oW1ZisZn_wD2-zbmsZXYjwT7tuF9bYqnvGy6xZ-GDev8_h81I22CYq5TMvKoJ6My797vdXP-3-m48RhhnAUKIrdXY_rIAt8QpphqWupMutcIfFilORPTyNeVrN-q0Ne246KfoaeuZl7FLxLHwBLhwAGouxc8W62xamOUPvy', category: 'Dining & Cafe' }
-];
-
-const localBusinesses = [
-  {
-    name: "Toby Barbers",
-    offer: "20% Off Haircut + 50 Loyalty Points",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDfH0L5CMIhdwctxa8KLvdIXkl_iq37VwWoRXA-D46LZBtiql6fFU5vMkNhEua7E6IhssskTmXI9ZRs-iD6cGIVv-JEyXWTAl6BZVtk_b0T0408dD9GdjXW94GS0GprthtojA1aBQUn0TQEYz6FIICqnjihlF1KxBITYHxwenEsRwRKt9lYwApGDWFcR32BjSol9-zRbykz7Ou7XlKFsca0wt1s6A2AGS6iU7sf4JErTJ1tSnnZ1AyTaQSi_6uHw7OdNU1MuYgl64lD",
-    location: "London SE16",
-    id: "toby-barbers"
-  },
-  {
-    name: "Artisan Coffee House",
-    offer: "Free Pastry on 5th Coffee stamp",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYl5SedD4uSItVrNNXxIHvMIulMZhx6vIYYXTkWRav22aO_PEiYVK_ryI-IIuz5XHhu_tYnba_OPT5LzyBT9lK0TjvpwwFtPu6ViSIPhzxmerHj1qhITuttbtqhauL72G4m3d6aIcHun0oDqlcUikStuS36Ke5uWhg9Kf-l-BpLF83cYTHcjHRH8EeW_VgL557iTqAP_MouvWqCkZL3ivIpVLg1t1b8g47mltRWRryxl9sxJ-1Ny3GwvQBn382kH_Bro-wG2KjXwXZ",
-    location: "Borough Market",
-    id: "artisan-coffee-house"
-  }
-];
-
-const giftCards = [
-  { category: 'Retail', range: '£10 - £100', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPq7W6DDKBMh_GdxHsdhMuC84VQWTc2Cw0uIML6E0vhUH7VlYDs0dO9IRpQap41fJR4ga0R2MXJOf0lbB8PxEhhbwodFcFguvFgDCVGAcL1Jj70nJTNxAG8khr28U3Bvx1QZVj_7buaSqowoX6mbGq4lwyDtqor1LuVtC8HdtwTpJoPMJU7dS2OkwIOe0FFwpexmgnkru1v9CRp4CVR8vScX49uT3CD-iN4t4a9E7y1I6FYF7yoaWs6qdkHm79ub_wryoSwe0h5Rpe' },
-  { category: 'Travel', range: '£50 - £250', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMXDXm2IoPig_5DMPB_l5KVjwcWRM3vBJ2KY9dXVo86L8x2TXufLdf6O349IXw50lkfr0a5vdURr9SkNJmdJRsm7H4LFVDViSCLQn6U6O6XEmayIw1HCo3feRujmrXf9Z48WgxKsLUqX08enii1xhGMpbzlfVFArkBqPE5VFWteEbkxUNyAaSKP92xIsjIq1kP2icakT6WDk3-HzovVPGqJblidpsqYiijNPaedLecosnPnFk6rSKlZ309EbjeYNDUwtu6UuZmrBRf' },
-  { category: 'Food & Drink', range: '£25 - £150', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAYl5SedD4uSItVrNNXxIHvMIulMZhx6vIYYXTkWRav22aO_PEiYVK_ryI-IIuz5XHhu_tYnba_OPT5LzyBT9lK0TjvpwwFtPu6ViSIPhzxmerHj1qhITuttbtqhauL72G4m3d6aIcHun0oDqlcUikStuS36Ke5uWhg9Kf-l-BpLF83cYTHcjHRH8EeW_VgL557iTqAP_MouvWqCkZL3ivIpVLg1t1b8g47mltRWRryxl9sxJ-1Ny3GwvQBn382kH_Bro-wG2KjXwXZ' },
-  { category: 'Entertainment', range: '£10 - £50', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDWGu5EXBb6MDC-eCMMSvagtYxwpiNpGVJ5D_MLQRyD1-mmfBPSw-li67jFWxT8BDf3qswGhodvKLmLqUEwOZlSDaLSCmoH6_bPp8Hw65Hp08M7xNoApdEUYaaz7F_z27IrJ5v2CJzGcKUhEcnnbzH-QsAsNFSUo12QMhLp6NC5BTBeDJYEywTwK-ZE3QsVtGwvCWrnZNuZO0k1bz-EMZCGvRWhT79ZoxrlgDELHTeFAR1Ixn2boJH38KS_kUCgDVUgJFwvyx_e662U' },
-];
+import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
 
 const tiers = [
   { name: 'Bronze', color: 'text-[#CD7F32]', bg: 'bg-[#CD7F32]/10', benefits: 'Standard rewards access. Scan to earn.' },
@@ -44,33 +12,33 @@ const tiers = [
   { name: 'Platinum', color: 'text-orange-500', bg: 'bg-orange-500/10', benefits: 'VIP early event access. Custom brand details.' },
 ];
 
-const heroSlides = [
-  {
-    title: "Premium Gift Cards",
-    description: "Unlock high-value gift cards from Amazon, Netflix, Nike, and global brands.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCPq7W6DDKBMh_GdxHsdhMuC84VQWTc2Cw0uIML6E0vhUH7VlYDs0dO9IRpQap41fJR4ga0R2MXJOf0lbB8PxEhhbwodFcFguvFgDCVGAcL1Jj70nJTNxAG8khr28U3Bvx1QZVj_7buaSqowoX6mbGq4lwyDtqor1LuVtC8HdtwTpJoPMJU7dS2OkwIOe0FFwpexmgnkru1v9CRp4CVR8vScX49uT3CD-iN4t4a9E7y1I6FYF7yoaWs6qdkHm79ub_wryoSwe0h5Rpe",
-  },
-  {
-    title: "Local Stamp Cards",
-    description: "Support local favorites like Toby Barbers and collect digital stamps automatically.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDfH0L5CMIhdwctxa8KLvdIXkl_iq37VwWoRXA-D46LZBtiql6fFU5vMkNhEua7E6IhssskTmXI9ZRs-iD6cGIVv-JEyXWTAl6BZVtk_b0T0408dD9GdjXW94GS0GprthtojA1aBQUn0TQEYz6FIICqnjihlF1KxBITYHxwenEsRwRKt9lYwApGDWFcR32BjSol9-zRbykz7Ou7XlKFsca0wt1s6A2AGS6iU7sf4JErTJ1tSnnZ1AyTaQSi_6uHw7OdNU1MuYgl64lD",
-  },
-  {
-    title: "Eco Coffee Stamps",
-    description: "Earn rewards and redeem exclusive deals at Artisan Coffee Houses.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYl5SedD4uSItVrNNXxIHvMIulMZhx6vIYYXTkWRav22aO_PEiYVK_ryI-IIuz5XHhu_tYnba_OPT5LzyBT9lK0TjvpwwFtPu6ViSIPhzxmerHj1qhITuttbtqhauL72G4m3d6aIcHun0oDqlcUikStuS36Ke5uWhg9Kf-l-BpLF83cYTHcjHRH8EeW_VgL557iTqAP_MouvWqCkZL3ivIpVLg1t1b8g47mltRWRryxl9sxJ-1Ny3GwvQBn382kH_Bro-wG2KjXwXZ",
-  },
-];
-
 export default function Homepage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { data: campaignsData } = useGetPublicCampaigns(1, 12);
+
+  const campaigns = useMemo(() => campaignsData?.data ?? [], [campaignsData]);
+
+
+
+  const heroSlides = useMemo(() => {
+    const withBanner = campaigns.filter((c) => c.bannerUrl).slice(0, 5);
+    if (withBanner.length === 0) return [];
+    return withBanner.map((c) => ({
+      title: c.name,
+      description: c.campaignMessage || c.business?.name || '',
+      image: c.bannerUrl,
+      campaignId: c.id,
+    }));
+  }, [campaigns]);
+
+  const spotlight = useMemo(() => campaigns.slice(0, 2), [campaigns]);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    setCurrentSlide((prev) => (heroSlides.length === 0 ? 0 : (prev + 1) % heroSlides.length));
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    setCurrentSlide((prev) => (heroSlides.length === 0 ? 0 : (prev - 1 + heroSlides.length) % heroSlides.length));
   };
 
   return (
@@ -124,7 +92,7 @@ export default function Homepage() {
                   <span className="material-symbols-outlined text-4xl text-orange-500">wallet</span>
                   <div>
                     <h4 className="font-bold text-gray-800">Digital Wallet</h4>
-                    <p className="text-xs text-gray-400 mt-0.5">Manage 12+ accounts</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Points and rewards in one place</p>
                   </div>
                 </motion.div>
 
@@ -135,7 +103,7 @@ export default function Homepage() {
                   <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
                   <div>
                     <h4 className="font-bold">Premium Club</h4>
-                    <p className="text-xs opacity-80 mt-0.5">Level: Gold Tier</p>
+                    <p className="text-xs opacity-80 mt-0.5">Unlock higher tiers as you earn</p>
                   </div>
                 </motion.div>
 
@@ -148,7 +116,7 @@ export default function Homepage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-800">Active Rewards</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">4 Gift Cards ready to redeem</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Redeem points for partner rewards</p>
                   </div>
                 </motion.div>
               </div>
@@ -157,6 +125,7 @@ export default function Homepage() {
         </div>
 
         {/* Mobile Full-Card Image Slider (lg:hidden) */}
+        {heroSlides.length > 0 && (
         <div className="lg:hidden w-full relative min-h-[580px] rounded-[32px] overflow-hidden shadow-lg border border-gray-100 flex flex-col justify-between p-6 md:p-10 group">
           
           {/* Background Sliding Images */}
@@ -249,32 +218,11 @@ export default function Homepage() {
           </button>
 
         </div>
+        )}
       </section>
 
 
-      {/* Trusted Brands (AWIN integration & category badging) */}
-      <section className="py-12 border-y border-gray-200/60 max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex flex-col gap-1 text-center md:text-left">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Powered by AWIN</span>
-            <p className="font-bold text-2xl text-gray-800">Shop Top Trusted Brands</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-8 items-center">
-            {brands.map((b) => (
-              <div key={b.name} className="flex flex-col items-center gap-2 group cursor-pointer">
-                <img
-                  className="h-8 md:h-9 object-contain opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-300"
-                  src={b.logo}
-                  alt={b.name}
-                />
-                <span className="text-[10px] font-bold text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  {b.category}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* Discovery Hub (Featured Spotlights & Category Bento) */}
       <section className="py-16 max-w-7xl mx-auto px-6">
@@ -292,25 +240,29 @@ export default function Homepage() {
           
           {/* Featured Local Spotlight Carousel */}
           <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {localBusinesses.map((biz) => (
+            {spotlight.length === 0 ? (
+              <p className="text-sm text-gray-500">No live campaigns yet — check back soon.</p>
+            ) : spotlight.map((biz) => (
               <motion.div
-                key={biz.name}
+                key={biz.id}
                 whileHover={{ y: -4 }}
                 className="group relative overflow-hidden rounded-3xl h-[380px] shadow-sm border border-gray-100/60"
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-10" />
-                <img
-                  className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-100 transition-all duration-500"
-                  src={biz.image}
-                  alt={biz.name}
-                />
+                {biz.bannerUrl && (
+                  <img
+                    className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-100 transition-all duration-500"
+                    src={biz.bannerUrl}
+                    alt={biz.name}
+                  />
+                )}
                 <div className="absolute bottom-0 left-0 p-6 z-20 w-full text-white space-y-2">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-orange-400">location_on</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-orange-300">{biz.location}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-orange-300">{biz.business?.name ?? 'Local business'}</span>
                   </div>
                   <h3 className="text-2xl font-bold">{biz.name}</h3>
-                  <p className="text-sm opacity-90">{biz.offer}</p>
+                  <p className="text-sm opacity-90 line-clamp-2">{biz.campaignMessage}</p>
                   <div className="pt-3 flex gap-2">
                     <Link
                       href={`/merchants/${biz.id}`}
@@ -357,59 +309,57 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* Gift Card Exchange Section */}
-      <section className="py-16 bg-gray-50 border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold font-headline-lg text-gray-900 mb-8">Gift Card Exchange</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {giftCards.map((card, idx) => (
+      {/* How It Works Journey */}
+      <section className="py-16 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-8 md:mb-12">
+          <span className="text-orange-500 font-bold text-xs tracking-widest uppercase bg-orange-50 px-3 py-1 rounded-full inline-block mb-3">
+            5 Simple Steps
+          </span>
+          <h2 className="text-3xl font-bold font-headline-lg text-gray-900">The MCOM Journey</h2>
+          <p className="text-xs text-gray-400 mt-2 md:hidden">Swipe across to explore the steps</p>
+        </div>
+
+        <div className="relative">
+          {/* Connecting line on desktop */}
+          <div className="hidden md:block absolute top-8 left-10 right-10 h-[2px] bg-gradient-to-r from-orange-400 via-orange-200 to-gray-200 -z-10" />
+
+          {/* Steps container: Horizontal snap-scroll on mobile, 5-column grid on desktop */}
+          <div className="flex md:grid md:grid-cols-5 gap-4 md:gap-8 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1 -mx-6 px-6 md:mx-0 md:px-0 md:overflow-visible">
+            {[
+              { step: 'Join', num: '01', icon: 'person_add', desc: 'Create your free digital profile.' },
+              { step: 'Earn', num: '02', icon: 'shopping_cart', desc: 'Shop at partner brands.' },
+              { step: 'Collect', num: '03', icon: 'account_balance_wallet', desc: 'Amass points in your wallet.' },
+              { step: 'Redeem', num: '04', icon: 'redeem', desc: 'Swap points for vouchers.' },
+              { step: 'Enjoy', num: '05', icon: 'celebration', desc: 'Experience the real value.' },
+            ].map((item, idx) => (
               <div
-                key={idx}
-                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:translate-y-[-6px] transition-transform duration-300 flex flex-col"
+                key={item.step}
+                className="snap-start shrink-0 w-[200px] sm:w-[220px] md:w-auto p-4 md:p-0 rounded-2xl md:rounded-none bg-white md:bg-transparent border border-gray-100 md:border-none shadow-sm md:shadow-none flex flex-col items-center text-center group transition-all duration-300"
               >
-                <div className="h-32 rounded-xl overflow-hidden bg-gray-100 mb-4">
-                  <img className="w-full h-full object-cover" src={card.image} alt={card.category} />
+                <div className="relative mb-3 md:mb-4">
+                  <div
+                    className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-full flex items-center justify-center shadow-sm border-2 transition-transform duration-300 group-hover:scale-105 ${
+                      idx === 0
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-orange-500/20'
+                        : 'bg-orange-50/50 md:bg-white text-orange-500 border-orange-200 md:border-orange-100'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[24px] md:text-[26px]">{item.icon}</span>
+                  </div>
+                  <span className="absolute -top-1.5 -right-1.5 md:hidden bg-gray-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+                    {item.num}
+                  </span>
                 </div>
-                <span className="text-xs font-semibold text-gray-400">{card.category}</span>
-                <p className="font-bold text-lg text-gray-800 mt-1 mb-3">{card.range}</p>
-                <Link
-                  href="/gift-cards"
-                  className="mt-auto w-full py-2 bg-gray-50 hover:bg-orange-500 hover:text-white rounded-xl text-center text-xs font-bold text-gray-600 transition-colors"
-                >
-                  Buy / Send
-                </Link>
+                <div className="flex items-center gap-1.5 justify-center">
+                  <span className="hidden md:inline-block text-[11px] font-black text-orange-500/70 tracking-wider">
+                    {item.num}.
+                  </span>
+                  <h5 className="font-bold text-gray-800 text-base">{item.step}</h5>
+                </div>
+                <p className="text-xs text-gray-400 mt-1 max-w-[150px] leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* How It Works Journey */}
-      <section className="py-16 max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-bold font-headline-lg text-center text-gray-900 mb-12">The MCOM Journey</h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
-          
-          <div className="hidden md:block absolute top-8 left-0 w-full h-[2px] bg-gray-100 -z-10" />
-
-          {[
-            { step: 'Join', icon: 'person_add', desc: 'Create your free digital profile.' },
-            { step: 'Earn', icon: 'shopping_cart', desc: 'Shop at partner brands.' },
-            { step: 'Collect', icon: 'account_balance_wallet', desc: 'Amass points in your wallet.' },
-            { step: 'Redeem', icon: 'redeem', desc: 'Swap points for vouchers.' },
-            { step: 'Enjoy', icon: 'celebration', desc: 'Experience the real value.' },
-          ].map((item, idx) => (
-            <div key={item.step} className="flex flex-col items-center text-center group">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-sm border-2 transition-transform duration-300 group-hover:scale-105 ${
-                idx === 0 
-                  ? 'bg-orange-500 text-white border-orange-500' 
-                  : 'bg-white text-orange-500 border-orange-100'
-              }`}>
-                <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
-              </div>
-              <h5 className="font-bold text-gray-800 text-base">{item.step}</h5>
-              <p className="text-xs text-gray-400 mt-1 max-w-[150px]">{item.desc}</p>
-            </div>
-          ))}
         </div>
 
         {/* Business Benefits Integration */}
@@ -478,7 +428,7 @@ export default function Homepage() {
             </span>
             <h3 className="text-3xl font-bold font-headline-lg">Play & Win Rewards</h3>
             <p className="text-sm opacity-70 max-w-sm">
-              Spin the Wheel, Peg-Drop (Ball Drop Pegs), or try custom Scratch Cards to unlock thousands of daily points.
+              Spin the Wheel, Peg-Drop (Ball Drop Pegs), or try custom Scratch Cards to unlock daily points.
             </p>
           </div>
           <Link
@@ -497,7 +447,7 @@ export default function Homepage() {
             </span>
             <h3 className="text-3xl font-bold font-headline-lg text-gray-900">MCOM Rewards Expo</h3>
             <p className="text-sm text-gray-500">
-              Gather with 500+ local businesses. Complete offline quests, claim ticket rewards, and network.
+              Gather with local businesses. Complete offline quests, claim ticket rewards, and network.
             </p>
           </div>
           <div className="flex items-center justify-between mt-6">
@@ -506,7 +456,7 @@ export default function Homepage() {
               <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-400" />
               <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-500" />
               <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-500 flex items-center justify-center text-[10px]">
-                +2k
+                +
               </div>
             </div>
             <Link

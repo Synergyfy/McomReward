@@ -11,12 +11,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from 'next/link';
+import { useGetBusinessProfile } from '@/services/business/hook';
 
 interface HeaderProps {
     onMenuClick: () => void;
 }
 
 export default function PlaqueUserHeader({ onMenuClick }: HeaderProps) {
+    const { data: profile } = useGetBusinessProfile();
     return (
         <header className="flex items-center justify-between p-4 bg-white border-b md:px-8">
             <div className="flex items-center md:hidden">
@@ -31,8 +33,8 @@ export default function PlaqueUserHeader({ onMenuClick }: HeaderProps) {
 
             <div className="flex items-center gap-4">
                 <div className="hidden md:flex flex-col items-end mr-2">
-                    <span className="text-sm font-medium">John Doe</span>
-                    <span className="text-xs text-gray-500">Business Name</span>
+                    <span className="text-sm font-medium">{profile?.name ?? '…'}</span>
+                    <span className="text-xs text-gray-500">{profile?.email ?? ''}</span>
                 </div>
 
                 <DropdownMenu>

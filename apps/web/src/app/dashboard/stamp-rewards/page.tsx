@@ -103,7 +103,7 @@ export default function BusinessStampRewardsPage() {
     const { data: tierUsageData } = useGetBusinessTierUsage();
     const { data: subscription } = useGetMySubscription();
 
-    const plan = subscription?.tier?.name.toLowerCase() || 'starter';
+    const plan = (subscription?.tier?.name || 'starter').toLowerCase();
 
     const pointRewards = pointRewardsData?.data || [];
 
@@ -428,101 +428,97 @@ export default function BusinessStampRewardsPage() {
     const showHybridRewards = activeRewardFilter === 'all' || activeRewardFilter === 'hybrid';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50/30 dark:from-gray-900 dark:to-gray-950 p-6">
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50/30 dark:from-gray-900 dark:to-gray-950 p-3 sm:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="mb-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 sm:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/25 shrink-0">
+                            <Award className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                        </div>
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/25">
-                                    <Award className="h-7 w-7 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-                                        All Rewards
-                                    </h1>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                                        Manage your stamp cards and point rewards for customers
-                                    </p>
-                                </div>
-                            </div>
+                            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+                                All Rewards
+                            </h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
+                                Manage your stamp cards and point rewards for customers
+                            </p>
                         </div>
-                        <div className="flex gap-3">
-                            <Button
-                                onClick={handleOpenClaimModal}
-                                className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Reward
-                            </Button>
-                        </div>
+                    </div>
+                    <div className="flex gap-2 sm:gap-3">
+                        <Button
+                            onClick={handleOpenClaimModal}
+                            className="w-full sm:w-auto gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 h-10 text-sm font-semibold"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Reward
+                        </Button>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-orange-100 dark:bg-orange-900/50 rounded-xl">
-                                    <Award className="h-5 w-5 text-orange-600" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm rounded-xl">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 bg-orange-100 dark:bg-orange-900/50 rounded-xl shrink-0">
+                                    <Award className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalActiveRewards}</p>
-                                    <p className="text-xs text-gray-500">Total Active</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                                    <Users className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.totalCustomers || 0}</p>
-                                    <p className="text-xs text-gray-500">Total Customers</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{totalActiveRewards}</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-500 truncate">Total Active</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
-                                    <BarChart3 className="h-5 w-5 text-amber-600" />
+                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm rounded-xl">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-xl shrink-0">
+                                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalActiveRewards}</p>
-                                    <p className="text-xs text-gray-500">Active Rewards</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-                                    <Stamp className="h-5 w-5 text-purple-600" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{wizardStampRewards.length}</p>
-                                    <p className="text-xs text-gray-500">Stamp Cards</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{analytics?.totalCustomers || 0}</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-500 truncate">Total Customers</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-green-100 dark:bg-green-900/50 rounded-xl">
-                                    <Gift className="h-5 w-5 text-green-600" />
+                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm rounded-xl">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl shrink-0">
+                                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.totalRewardsRedeemed || 0}</p>
-                                    <p className="text-xs text-gray-500">Total Redeemed</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{totalActiveRewards}</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-500 truncate">Active Rewards</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm rounded-xl">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-xl shrink-0">
+                                    <Stamp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{wizardStampRewards.length}</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-500 truncate">Stamp Cards</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm rounded-xl col-span-2 sm:col-span-1">
+                        <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-xl shrink-0">
+                                    <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{analytics?.totalRewardsRedeemed || 0}</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-500 truncate">Total Redeemed</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -530,10 +526,10 @@ export default function BusinessStampRewardsPage() {
                 </div>
 
                 {/* Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <TabsList className="bg-white dark:bg-gray-800 p-1 shadow-lg">
-                            <TabsTrigger value="active" className="gap-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <TabsList className="bg-white dark:bg-gray-800 p-1 shadow-sm rounded-xl w-full sm:w-auto">
+                            <TabsTrigger value="active" className="w-full sm:w-auto gap-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
                                 <Zap className="h-4 w-4" />
                                 Active Rewards
                                 {totalActiveRewards > 0 && (
@@ -542,7 +538,6 @@ export default function BusinessStampRewardsPage() {
                                     </span>
                                 )}
                             </TabsTrigger>
-
                         </TabsList>
 
                         {/* Search */}
@@ -552,25 +547,25 @@ export default function BusinessStampRewardsPage() {
                                 placeholder="Search..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 h-11 bg-white dark:bg-gray-800 shadow-md border-0"
+                                className="pl-10 h-10 sm:h-11 bg-white dark:bg-gray-800 shadow-sm border-0 rounded-xl"
                             />
                         </div>
                     </div>
 
                     {/* Active Rewards Tab */}
-                    <TabsContent value="active" className="mt-6 space-y-6">
+                    <TabsContent value="active" className="mt-4 sm:mt-6 space-y-6">
                         {/* Sub-filter for reward types */}
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                        <div className="w-full overflow-x-auto pb-1 scrollbar-none">
+                            <div className="inline-flex items-center gap-1.5 p-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 min-w-max">
                                 <Button
                                     variant={activeRewardFilter === 'all' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setActiveRewardFilter('all')}
-                                    className={`gap-1.5 text-sm ${activeRewardFilter === 'all' ? 'bg-gray-900 text-white' : ''}`}
+                                    className={`gap-1.5 text-xs sm:text-sm shrink-0 h-8 sm:h-9 ${activeRewardFilter === 'all' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}`}
                                 >
                                     <Filter className="h-3.5 w-3.5" />
                                     All
-                                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                                    <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
                                         {filteredWizardStampRewards.length + filteredWizardPointRewards.length + filteredWizardHybridRewards.length}
                                     </Badge>
                                 </Button>
@@ -578,11 +573,11 @@ export default function BusinessStampRewardsPage() {
                                     variant={activeRewardFilter === 'stamps' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setActiveRewardFilter('stamps')}
-                                    className={`gap-1.5 text-sm ${activeRewardFilter === 'stamps' ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}`}
+                                    className={`gap-1.5 text-xs sm:text-sm shrink-0 h-8 sm:h-9 ${activeRewardFilter === 'stamps' ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}`}
                                 >
                                     <Stamp className="h-3.5 w-3.5" />
                                     Stamp Cards
-                                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                                    <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
                                         {filteredWizardStampRewards.length}
                                     </Badge>
                                 </Button>
@@ -590,11 +585,11 @@ export default function BusinessStampRewardsPage() {
                                     variant={activeRewardFilter === 'points' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setActiveRewardFilter('points')}
-                                    className={`gap-1.5 text-sm ${activeRewardFilter === 'points' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
+                                    className={`gap-1.5 text-xs sm:text-sm shrink-0 h-8 sm:h-9 ${activeRewardFilter === 'points' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
                                 >
                                     <Gift className="h-3.5 w-3.5" />
                                     Point Rewards
-                                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                                    <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
                                         {filteredWizardPointRewards.length}
                                     </Badge>
                                 </Button>
@@ -602,11 +597,11 @@ export default function BusinessStampRewardsPage() {
                                     variant={activeRewardFilter === 'hybrid' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setActiveRewardFilter('hybrid')}
-                                    className={`gap-1.5 text-sm ${activeRewardFilter === 'hybrid' ? 'bg-purple-500 hover:bg-purple-600 text-white' : ''}`}
+                                    className={`gap-1.5 text-xs sm:text-sm shrink-0 h-8 sm:h-9 ${activeRewardFilter === 'hybrid' ? 'bg-purple-500 hover:bg-purple-600 text-white' : ''}`}
                                 >
                                     <Star className="h-3.5 w-3.5" />
                                     Hybrid
-                                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                                    <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
                                         {filteredWizardHybridRewards.length}
                                     </Badge>
                                 </Button>

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, Store, Utensils, Ticket, Plane, Users, Gift, Home, Wallet, Gamepad2, User, ChevronLeft, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Store, Utensils, Ticket, Plane, Users, Gift, ChevronLeft, Sparkles, Loader2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import { useGetPublicRewards } from '@/services/rewards/hook';
 
 export default function GiftCardMarketplace() {
   const [activeTab, setActiveTab] = useState<"buy" | "earn">("buy");
   const [selectedCategory, setSelectedCategory] = useState("View All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
     { name: "View All", icon: Sparkles },
@@ -16,58 +18,54 @@ export default function GiftCardMarketplace() {
     { name: "Travel", icon: Plane }
   ];
 
-  const giftCards = [
-    {
-      id: "sephora",
-      name: "Sephora",
-      category: "Retail",
-      reward: "Earn 8% Back",
-      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGoYRvVqGdOkiEKphOjepvDycP-ObJzvjizOfsmg60gp7GzurUFbgh04bpNIMzZldJv0MzkUSTSsAvDJgT6oWdIQ-adV_2rrefk8804hQ7Y4er8JAgSzTbZ-Ux0ZUA7q6wLOy4h4rSuwLHsgSExJI9GPypbpY_8X_Dpqa_d3dxkO0ta3f1FGZEXfxqq4yCT9OvalkB1gEONroBxC5QpUxzSNawtd4I5xJserfkiRYoWpjaeZnrMhelifG0ZvyG_TYoGnWY4-ScfnE",
-      bgColor: "bg-white border border-gray-150"
-    },
-    {
-      id: "amazon",
-      name: "Amazon",
-      category: "Retail",
-      reward: "Earn 2% Back",
-      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuA5Cq4sp2rif-m8fPCa8WWH1Z1V1Go6iFAvIkIiNOAL_k8ZfNl7_eInyLbUGn8nzuZteFSGqNa4DHI0PvuYRJhbQF-fKW3Hgpg4xuN5wRY7J6_xf9r8DwQj6O6ut5jpjaYLqDx666QVwi0OhjH_WopbBGeEr24Ds5DNWZT58-Y1A2u0h3XShxf7Mk320zbrnucSTSJCbGPE18OM-rSf9H_gR6Wv56lrNOmSlN4212oCpCuULj-oumv0I9ji5pqg8Kh6ODmL7loKO9o",
-      bgColor: "bg-white border border-gray-150"
-    },
-    {
-      id: "starbucks",
-      name: "Starbucks",
-      category: "Dining",
-      reward: "Earn 5% Back",
-      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyaZO-djADzKpAO-j5a4nMY3-OnYHkJ5uLjn3HM6uTYl6Q_qXyjsB-AINkfyBZTXOyJzuj76sZ3eczOBkcUcz49RRV6k3ux9cPb71eA7bF9AtgNatMnN4JG97AHY-LDBbjVj6SaSl8desZOP7ly_fR5MGV1pXa2Gg98ogkVAgJ9TEiw8bIPxH2K7PMlMHmiD0cI1-GJgHYjd9gdF3jm9YWO7fmP8P6w4wKt7-K3uzGmhkqSEI_1gftpq9h3Tqsnp40-A94juWPrVc",
-      bgColor: "bg-[#00704A]/5 border border-[#00704a]/10"
-    },
-    {
-      id: "netflix",
-      name: "Netflix",
-      category: "Entertainment",
-      reward: "Earn 3% Back",
-      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuDFSKhXiPVgm4b_U3WNOIFVZ47EBcGYizeBbp2ETHslsY8NrOYIKNqh2zAzXiiapoWyb0TZdJ-5RztOtpqQHM3Ie_GFsGFBQo8-yOTRY06_kaOnQTMzpHsJtWa7bWl-4UOsSgsKvU0fygEqhS8Y1XhPsa8QsNzrxsAtBkov6emNmCYjRt76jyea87tVQdMLlslz_lAXAPwJYVvoYwp6Cq7tcND7_5r60jd-yU49JlZ5zmi9uf-djZLImomn67IgUp63dd9-1jsY4Jk",
-      bgColor: "bg-black/5 border border-black/10"
-    },
-    {
-      id: "nike",
-      name: "Nike",
-      category: "Retail",
-      reward: "Earn 6% Back",
-      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBPM4KthsNRwU42RoVKdOaiwrcDs0bog4JWEvgsUqFt-v_yO4yQP2M3CxM6o6kdi052c3aG3RSJk6CqyNxabEp_Gy5vCFTkPR3EpVSgn4KFHaUkHLtrgAPrPOmKsEtL0oEvSdjsvkU7t9dKFyJE9Zp3EotjPQ6Zukk23j8b_NYf8MSiYMd-CRlNpZHRp-yfh_g5IsfcP1JDwxnXfjeeOLy8Jl8XvmeE8CM3ayEEGVMuk4dESuxFXpq2Oy8UO1-qj3Mc6yVh1A-cjt0",
-      bgColor: "bg-white border border-gray-150"
-    }
-  ];
+  // Fetch gift cards from DB
+  const { data: rewardsData, isLoading } = useGetPublicRewards(1, 50, {
+    reward_type: "gift card",
+    search: searchQuery ? searchQuery.trim() : undefined,
+  });
 
-  const filteredCards = giftCards.filter(
-    (card) => selectedCategory === "View All" || card.category === selectedCategory
-  );
+  const rawCards = useMemo(() => rewardsData?.data ?? [], [rewardsData]);
+
+  const cards = useMemo(() => {
+    return rawCards.map((r) => {
+      // Guess category from title or description
+      let cat = "Retail";
+      const lower = (r.title + " " + r.description).toLowerCase();
+      if (lower.includes("starbucks") || lower.includes("uber") || lower.includes("dining") || lower.includes("coffee") || lower.includes("food")) {
+        cat = "Dining";
+      } else if (lower.includes("netflix") || lower.includes("ticket") || lower.includes("movie") || lower.includes("entertain")) {
+        cat = "Entertainment";
+      } else if (lower.includes("travel") || lower.includes("flight") || lower.includes("hotel") || lower.includes("airline")) {
+        cat = "Travel";
+      }
+
+      return {
+        id: r.id,
+        name: r.title,
+        category: cat,
+        reward: `${r.max_points ?? 250} Points to Redeem`,
+        value: r.value ? `£${r.value}` : 'Digital Card',
+        logo: r.image && r.image.startsWith('http') && !r.image.includes('placehold.co')
+          ? r.image
+          : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80',
+        description: r.description,
+      };
+    });
+  }, [rawCards]);
+
+  const filteredCards = useMemo(() => {
+    return cards.filter((card) => {
+      const matchesCat = selectedCategory === "View All" || card.category === selectedCategory;
+      const matchesSearch = !searchQuery || card.name.toLowerCase().includes(searchQuery.toLowerCase()) || card.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCat && matchesSearch;
+    });
+  }, [cards, selectedCategory, searchQuery]);
 
   return (
     <div className="bg-[#f9fafb] text-gray-800 min-h-screen pb-32 pt-6 max-w-6xl mx-auto px-4 md:px-8 space-y-8">
       {/* Header */}
       <header className="flex items-center gap-3 py-4 border-b border-gray-100">
-        <Link href="/participant/market" className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm">
+        <Link href="/" className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm">
           <ChevronLeft size={20} />
         </Link>
         <div>
@@ -82,53 +80,47 @@ export default function GiftCardMarketplace() {
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
             style={{
-              backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDexH88mYQ6vMpF1bGEs9pxEbj471iK18lqtQhcQypUMrgWT1iYgI3bNPPliwHmWWIPoHQWEF_g57MkdLoXMGO-JYLaqRCkTRLWS5xp7Qt-SRNFnmpKCYgf5JY6M-LOfMNle_5ERoyPMo6FQbksGhc9OT-IViAxp1-nkVsOy2aptMhC7bpCPaqoxefDcGWbCXuQD7qZAu2u9r7V0_PKtPXVB_qJQvF_7qfvLqqWNwO9CD8BIyz9kQAXq2kavg1UU6VsX-s7WsrgerQ')"
+              backgroundImage: "url('https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=1600&auto=format&fit=crop&q=80')"
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8" />
-          <div className="absolute bottom-0 left-0 p-8 z-20 w-full flex flex-col justify-end text-white space-y-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8" />
+          <div className="absolute bottom-0 left-0 p-6 md:p-8 z-20 w-full flex flex-col justify-end text-white space-y-2">
             <span className="inline-block px-3 py-1 rounded-full bg-orange-600 text-white font-bold text-[9px] uppercase tracking-wider w-fit shadow-sm shadow-orange-600/20">
-              Limited Offer
+              Database Catalog
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">
-              Send Joy, Get 10% Back in Points
+              Digital Brand Gift Cards
             </h2>
             <p className="text-gray-300 text-xs sm:text-sm">
-              Perfect for Starbucks, Sephora & more.
+              Instant delivery to your MCOM digital wallet. Redeemable across top brands.
             </p>
           </div>
         </div>
       </section>
 
       {/* Filters Control Bar */}
-      <section className="flex items-center justify-between gap-4 py-2 border-y border-gray-100">
-        {/* Left Side: Buy / Earn Dropdown */}
-        <div className="relative w-40 sm:w-48 shrink-0">
+      <section className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 border-y border-gray-100">
+        {/* Search Input */}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search gift cards..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-gray-200 rounded-full py-1.5 pl-9 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 shadow-sm"
+          />
+        </div>
+
+        {/* Right Side: Tab switcher */}
+        <div className="relative w-full sm:w-48 shrink-0">
           <select
             value={activeTab}
             onChange={(e) => setActiveTab(e.target.value as "buy" | "earn")}
             className="bg-white border border-gray-250 rounded-full py-1.5 pl-4 pr-10 text-xs font-extrabold text-gray-700 focus:outline-none focus:border-orange-600 appearance-none shadow-sm cursor-pointer w-full"
           >
-            <option value="buy">Buy Gift Cards</option>
+            <option value="buy">Digital Gift Cards</option>
             <option value="earn">Earn Gift Cards</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-            <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
-          </div>
-        </div>
-
-        {/* Right Side: Category selector dropdown on mobile */}
-        <div className="relative shrink-0 block sm:hidden">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-white border border-gray-250 rounded-full py-1.5 pl-4 pr-10 text-xs font-bold text-gray-700 focus:outline-none focus:border-orange-600 appearance-none shadow-sm cursor-pointer"
-          >
-            {categories.map((cat) => (
-              <option key={cat.name} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
             <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
@@ -137,7 +129,7 @@ export default function GiftCardMarketplace() {
       </section>
 
       {/* Desktop Category Pills */}
-      <section className="hidden sm:block overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
+      <section className="overflow-x-auto no-scrollbar py-1">
         <div className="flex gap-2">
           {categories.map((cat) => {
             const Icon = cat.icon;
@@ -160,30 +152,74 @@ export default function GiftCardMarketplace() {
       </section>
 
       {/* Marketplace Grid */}
-      <section className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-6">
-
-        {filteredCards.map((card) => (
-          <div
-            key={card.id}
-            className="bg-white p-3 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-orange-500/20 transition-all duration-300 flex flex-col justify-between group"
-          >
-            <div className="space-y-2 sm:space-y-4">
-              <div className={`w-10 h-10 sm:w-14 sm:h-14 ${card.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center p-1.5 sm:p-2.5 overflow-hidden shadow-sm`}>
-                <img className="w-full h-full object-contain" src={card.logo} alt={card.name} />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-base font-extrabold text-gray-900 group-hover:text-orange-600 transition-colors leading-tight truncate">{card.name}</h3>
-                <p className="text-[10px] sm:text-xs font-bold text-orange-600 mt-1">{card.reward}</p>
-              </div>
-            </div>
-            <Link
-              href={`/gift-cards/${card.id}`}
-              className="mt-4 sm:mt-6 w-full text-center bg-gray-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-500/20 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 active:scale-98"
-            >
-              Buy Card
-            </Link>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">Available Cards ({filteredCards.length})</h2>
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
           </div>
-        ))}
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white p-4 rounded-2xl border border-gray-150 animate-pulse h-48 flex flex-col justify-between">
+                <div className="w-12 h-12 bg-gray-100 rounded-xl" />
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-100 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredCards.length === 0 ? (
+          <div className="bg-white p-12 rounded-3xl border border-gray-200 text-center space-y-3">
+            <CreditCard className="w-10 h-10 text-gray-300 mx-auto" />
+            <p className="text-gray-500 font-semibold">No gift cards match your filter.</p>
+            <button
+              onClick={() => { setSelectedCategory("View All"); setSearchQuery(""); }}
+              className="text-orange-600 font-bold text-xs uppercase hover:underline"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-6">
+            {filteredCards.map((card) => (
+              <div
+                key={card.id}
+                className="bg-white p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-orange-500/20 transition-all duration-300 flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="w-full aspect-video bg-gray-50 rounded-xl sm:rounded-2xl flex items-center justify-center p-2 overflow-hidden shadow-sm border border-gray-150 relative">
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      src={card.logo}
+                      alt={card.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                    <span className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      {card.value}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-orange-600 transition-colors leading-tight line-clamp-1 truncate">{card.name}</h3>
+                    <p className="text-[10px] sm:text-xs font-bold text-orange-600 mt-1">{card.reward}</p>
+                    <p className="text-[10px] text-gray-400 font-medium line-clamp-1 mt-0.5">{card.description}</p>
+                  </div>
+                </div>
+                <Link
+                  href={`/gift-cards/${card.id}`}
+                  className="mt-3 sm:mt-4 w-full text-center bg-gray-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-500/20 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 active:scale-98"
+                >
+                  Buy Card
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Send as Gift CTA */}
@@ -205,32 +241,6 @@ export default function GiftCardMarketplace() {
           </div>
         </div>
       </section>
-
-      {/* BottomNavBar Section */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-white border-t border-gray-150 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl md:hidden">
-        <Link href="/participant" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
-          <span className="material-symbols-outlined text-[20px]">home</span>
-          <span className="text-[10px] font-bold mt-0.5">Home</span>
-        </Link>
-        <Link href="/participant/market" className="flex flex-col items-center justify-center bg-orange-100 text-orange-600 rounded-full px-4 py-1 scale-down duration-200 transition-transform active:scale-90">
-          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
-          <span className="text-[10px] font-bold mt-0.5">Market</span>
-        </Link>
-        <Link href="/participant/wallet" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
-          <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-          <span className="text-[10px] font-bold mt-0.5">Wallet</span>
-        </Link>
-        <Link href="/play-win" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
-          <span className="material-symbols-outlined text-[20px]">casino</span>
-          <span className="text-[10px] font-bold mt-0.5">Games</span>
-        </Link>
-        <Link href="/participant/settings" className="flex flex-col items-center justify-center text-gray-500 hover:text-orange-600 scale-down duration-200 transition-transform active:scale-90">
-          <span className="material-symbols-outlined text-[20px]">person</span>
-          <span className="text-[10px] font-bold mt-0.5">Profile</span>
-        </Link>
-      </nav>
     </div>
   );
 }
-
-

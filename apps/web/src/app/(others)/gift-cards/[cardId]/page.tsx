@@ -81,23 +81,53 @@ const giftCardDetailsData: Record<string, {
   }
 };
 
+import { useGetPublicRewardById } from '@/services/rewards/hook';
+import { Loader2 } from 'lucide-react';
+
 export default function GiftCardDetails({ params }: PageProps) {
   const { cardId } = use(params);
+  const { data: dbReward, isLoading } = useGetPublicRewardById(cardId);
 
-  // Fallback to global-retailer if cardId is not in dataset
-  const card = giftCardDetailsData[cardId] || giftCardDetailsData["global-retailer"];
-  
-  const [denom, setDenom] = useState(card.denominations[Math.min(2, card.denominations.length - 1)]);
+  const fallbackCard = giftCardDetailsData[cardId] || giftCardDetailsData["global-retailer"];
+
+  const card = dbReward ? {
+    name: dbReward.title,
+    category: dbReward.sectors?.[0]?.title || ((dbReward.rewardType || dbReward.reward_type) ? (dbReward.rewardType || dbReward.reward_type)!.toUpperCase() : "GIFT CARD"),
+    tag: dbReward.businessRewards?.[0]?.business?.name ? `${dbReward.businessRewards[0].business.name.toUpperCase()}` : "FEATURED",
+    image: dbReward.image && dbReward.image.startsWith('http') && !dbReward.image.includes('placehold.co')
+      ? dbReward.image
+      : "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80",
+    desc: dbReward.description || "The ultimate shopping freedom. Redeemable for goods, services, and online purchases.",
+    bgColor: "from-orange-600 to-amber-900",
+    pointsReward: `${dbReward.maxPoints ?? dbReward.max_points ?? 250} Points Reward`,
+    denominations: dbReward.value
+      ? Array.from(new Set([10, 25, Number(dbReward.value) || 50, 100])).sort((a, b) => a - b)
+      : [10, 25, 50, 100],
+    features: [
+      { title: "Instant Delivery", desc: "Your digital card arrives in seconds via email or SMS, ready to be redeemed immediately.", icon: "bolt", bg: "bg-blue-100 text-blue-600" },
+      { title: "Earn Potential", desc: "Earn up to 5% back in MCOM points with every gift card purchase for your own wallet.", icon: "trending_up", bg: "bg-indigo-100 text-indigo-600" }
+    ],
+    bonusOffer: { title: "Loyalty Perk", desc: `Redeem with ${dbReward.max_points || 250} points or purchase to earn reward points.`, icon: "redeem" }
+  } : fallbackCard;
+
+  const [selectedDenom, setSelectedDenom] = useState<number | null>(null);
+  const denom = selectedDenom ?? card.denominations[Math.min(2, card.denominations.length - 1)];
   const [scaleCard, setScaleCard] = useState(false);
 
   const handleDenomChange = (val: number) => {
-    setDenom(val);
+    setSelectedDenom(val);
     setScaleCard(true);
     setTimeout(() => setScaleCard(false), 150);
   };
 
   return (
     <div className="bg-surface-bright text-on-surface min-h-screen py-8 max-w-7xl mx-auto px-6 space-y-12">
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs font-semibold text-orange-600">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Loading card details...</span>
+        </div>
+      )}
       {/* Breadcrumbs */}
       <nav className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
         <Link href="/gift-cards" className="hover:text-orange-500 transition-colors">Gift Cards</Link>
@@ -116,6 +146,13 @@ export default function GiftCardDetails({ params }: PageProps) {
             >
               {/* Shine effect */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none opacity-50 mix-blend-overlay"></div>
+              {card.image && (
+                <img
+                  src={card.image}
+                  alt={card.name}
+                  className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 pointer-events-none"
+                />
+              )}
               
               <div className="absolute inset-0 p-8 flex flex-col justify-between text-white">
                 <div className="flex justify-between items-start">

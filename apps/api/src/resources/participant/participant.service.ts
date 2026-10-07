@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -28,6 +29,8 @@ import { ReferralService } from "../referral/referral.service";
 
 @Injectable()
 export class ParticipantService {
+  private readonly logger = new Logger(ParticipantService.name);
+
   constructor(
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
@@ -84,9 +87,9 @@ export class ParticipantService {
     try {
       await this.mailService.sendOtp(savedParticipant.email, otp);
     } catch (mailError) {
-      console.error(
-        `Failed to send signup OTP email to ${savedParticipant.email}:`,
-        mailError,
+      this.logger.error(
+        `Failed to send signup OTP email to ${savedParticipant.email}`,
+        mailError as any,
       );
       savedParticipant.otp = otp;
     }
@@ -200,7 +203,10 @@ export class ParticipantService {
             businessCampaign.signUpPoint || 0,
           );
         } catch (error) {
-          console.error("Failed to send campaign joined email:", error);
+          this.logger.error(
+            `Failed to send campaign joined email to ${participant.email} (campaign ${businessCampaign.id})`,
+            error as any,
+          );
         }
 
         // Trigger Progression Action
@@ -281,7 +287,10 @@ export class ParticipantService {
           campaign.signUpPoint || 0,
         );
       } catch (error) {
-        console.error("Failed to send campaign joined email:", error);
+        this.logger.error(
+          `Failed to send campaign joined email to ${participant.email} (campaign ${campaign.id})`,
+          error as any,
+        );
       }
 
       // Trigger Progression Action

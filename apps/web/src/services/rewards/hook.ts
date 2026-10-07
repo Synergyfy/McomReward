@@ -61,6 +61,38 @@ export const useGetRewards = (page: number, limit: number, options?: GetRewardsO
   });
 };
 
+// Get Public Rewards
+export const getPublicRewards = async (page: number, limit: number, options?: GetRewardsOptions): Promise<GetRewardsResponse> => {
+  const { data } = await api.get<GetRewardsResponse>('/rewards/public', {
+    params: { page, limit, ...options },
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+export const useGetPublicRewards = (page: number, limit: number, options?: GetRewardsOptions) => {
+  return useQuery({
+    queryKey: [REWARDS_QUERY_KEY, 'public', page, limit, options],
+    queryFn: () => getPublicRewards(page, limit, options),
+  });
+};
+
+export const getPublicRewardById = async (rewardId: string): Promise<RewardResponse> => {
+  const { data } = await api.get<RewardResponse>(`/rewards/public/${rewardId}`, {
+    _skipAuthRedirect: true,
+  } as any);
+  return data;
+};
+
+export const useGetPublicRewardById = (rewardId: string) => {
+  return useQuery<RewardResponse, Error>({
+    queryKey: [REWARDS_QUERY_KEY, 'public', rewardId],
+    queryFn: () => getPublicRewardById(rewardId),
+    enabled: !!rewardId,
+  });
+};
+
+
 // Get aggregate reward stats (real counts across all rewards)
 export interface RewardsStats {
   active: number;

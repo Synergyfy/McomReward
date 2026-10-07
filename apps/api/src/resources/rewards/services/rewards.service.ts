@@ -148,7 +148,10 @@ export class RewardsService {
   }
 
   async findOne(id: string): Promise<Reward> {
-    const reward = await this.rewardRepository.findOne({ where: { id } });
+    const reward = await this.rewardRepository.findOne({
+      where: { id },
+      relations: ["sectors", "tiers", "businessRewards", "businessRewards.business"],
+    });
     if (!reward) {
       throw new NotFoundException(`Reward with ID ${id} not found`);
     }
@@ -610,7 +613,12 @@ export class RewardsService {
       includeStats,
     } = filterDto;
 
-    const queryBuilder = this.rewardRepository.createQueryBuilder("reward");
+    const queryBuilder = this.rewardRepository
+      .createQueryBuilder("reward")
+      .leftJoinAndSelect("reward.sectors", "sectors")
+      .leftJoinAndSelect("reward.tiers", "tiers")
+      .leftJoinAndSelect("reward.businessRewards", "businessRewards")
+      .leftJoinAndSelect("businessRewards.business", "business");
 
     if (includeStats) {
       // 1. Business Claim Count
@@ -658,6 +666,18 @@ export class RewardsService {
       }, "total_stamps_redeemed");
     }
 
+    if (filterDto.disabled !== undefined) {
+      queryBuilder.andWhere("reward.disabled = :disabled", {
+        disabled: filterDto.disabled,
+      });
+    }
+
+    if (filterDto.status) {
+      queryBuilder.andWhere("reward.status = :status", {
+        status: filterDto.status,
+      });
+    }
+
     if (search) {
       queryBuilder.andWhere(
         new Brackets((qb) => {
@@ -671,9 +691,7 @@ export class RewardsService {
     }
 
     if (sectorId) {
-      // Assuming rewards are linked to sectors directly or through campaigns
-      // For this implementation, we check the campaign relation if it exists
-      // If reward belongs to a campaign, and campaign belongs to sector.
+      queryBuilder.andWhere("sectors.id = :sectorId", { sectorId });
     }
 
     if (rewardType) {
@@ -687,10 +705,12 @@ export class RewardsService {
     // Sorting
     if (sortBy === SortBy.NEWEST) {
       queryBuilder.orderBy("reward.created_at", "DESC");
+    } else if (sortBy === SortBy.OLDEST) {
+      queryBuilder.orderBy("reward.created_at", "ASC");
     } else if (sortBy === SortBy.POINTS_LOW) {
-      queryBuilder.orderBy("reward.points_required", "ASC");
+      queryBuilder.orderBy("reward.max_points", "ASC");
     } else if (sortBy === SortBy.POINTS_HIGH) {
-      queryBuilder.orderBy("reward.points_required", "DESC");
+      queryBuilder.orderBy("reward.max_points", "DESC");
     }
 
     let data: Reward[];

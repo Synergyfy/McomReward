@@ -10,6 +10,11 @@ export interface Wallet {
   id: string;
   tierBalance: string | number;
   topupBalance: string | number;
+  centralBalance?: number;
+  centralAvailableBalance?: number;
+  centralStatus?: string;
+  centralCurrency?: string;
+  topUpUrl?: string;
   transactions?: WalletTransaction[];
 }
 

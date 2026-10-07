@@ -6,7 +6,7 @@ export function getCentralCustomerSignupUrl(returnPath: string = "/auth/sso"): s
   const solutionsUrl = (process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000").replace(/\/$/, "");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
   const callbackUrl = `${appUrl}${returnPath.startsWith("/") ? returnPath : `/${returnPath}`}`;
-  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-rewards";
+  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-reward";
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -22,7 +22,7 @@ export function getCentralBusinessSignupUrl(returnPath: string = "/auth/sso"): s
   const solutionsUrl = (process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000").replace(/\/$/, "");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
   const callbackUrl = `${appUrl}${returnPath.startsWith("/") ? returnPath : `/${returnPath}`}`;
-  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-rewards";
+  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || process.env.NEXT_PUBLIC_SSO_CLIENT_ID || "mcom-reward";
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -47,7 +47,7 @@ export function getCentralLoginUrl(returnPath: string = "/auth/callback", state?
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3005");
   const callbackUrl = process.env.NEXT_PUBLIC_MCOM_REDIRECT_URI || `${appUrl}${returnPath.startsWith("/") ? returnPath : `/${returnPath}`}`;
-  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || "mcom-rewards";
+  const clientId = process.env.NEXT_PUBLIC_MCOM_CLIENT_ID || "mcom-reward";
   const scopes = process.env.NEXT_PUBLIC_MCOM_SCOPES || "profile email business packages membership";
 
   const params = new URLSearchParams({

@@ -56,18 +56,30 @@ const relatedRewards = [
   }
 ];
 
+import { useGetPublicRewardById } from '@/services/rewards/hook';
+
 export default function RewardDetails({ params }: PageProps) {
   const { rewardId } = use(params);
+  const { data: dbReward, isLoading } = useGetPublicRewardById(rewardId);
 
-  // Fallback to Artisan Espresso Collection if rewardId not explicitly matched
-  const reward = rewardDetailsData[rewardId] || {
-    name: "Artisan Espresso Collection",
-    category: "LUXURY KITCHENWARE",
+  // Dynamic DB reward with fallback to mock if static ID
+  const reward = dbReward ? {
+    name: dbReward.title,
+    category: (dbReward.rewardType || dbReward.reward_type) ? (dbReward.rewardType || dbReward.reward_type)!.toUpperCase() : "PARTNER REWARD",
+    cashback: (dbReward.maxPoints ?? dbReward.max_points) ? `${dbReward.maxPoints ?? dbReward.max_points} PTS` : `${dbReward.value || 10}%`,
+    desc: dbReward.description || "Earn rewards and redeem exclusive benefits with MCOM.",
+    image: dbReward.image && dbReward.image.startsWith('http') && !dbReward.image.includes('placehold.co')
+      ? dbReward.image
+      : "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80",
+    tag: dbReward.status ? dbReward.status.toUpperCase() : "ACTIVE"
+  } : (rewardDetailsData[rewardId] || {
+    name: "Artisan Rewards Collection",
+    category: "EXCLUSIVE REWARD",
     cashback: "20%",
-    desc: "Earn up to £150 in rewards points on your next purchase of Artisan series equipment.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCI-AMmI1oV1oUhJpbWTcoPG8ZSQqCR1PaYPTZ4KN5rntvrE9b_daDkg_KWEyZNxUtlHKKJQD9HNHDHgwZe3TFl74xP1r5PfRHdn--4NtBbIbzkVJVf6dmjlAQ5_TqKuy7BXnw8W_En774iUxTooDk-wkIooZtNjy6B7wU8ZxNA1Ew4G7UvU5nN3QyOrziuT_MJJnXvDc81pA3frkC7Usa-B_stKQYb74LcLw2RBwWMRPIsGyy7VR3do0bu4yOuM0AV6vebUmvwwmsf",
-    tag: "EXCLUSIVE"
-  };
+    desc: "Earn points and rewards on your next purchase.",
+    image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80",
+    tag: "POPULAR"
+  });
 
   return (
     <div className="bg-surface-bright text-on-surface min-h-screen py-8 max-w-7xl mx-auto px-6 space-y-16">

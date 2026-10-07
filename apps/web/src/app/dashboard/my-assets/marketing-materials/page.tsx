@@ -1,19 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Download, Sparkles, Palette, UploadCloud, FileText, ImageIcon, Clapperboard, Mail } from 'lucide-react';
+import { Download, Sparkles, Palette, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const marketingMaterialsData = {
-    downloadCenter: [
-        { id: 'flyer-01', type: 'Flyer', title: 'Grand Opening Flyer', format: 'PDF', icon: FileText },
-        { id: 'poster-01', type: 'Poster', title: 'Summer Sale Poster', format: 'PNG', icon: ImageIcon },
-        { id: 'banner-01', type: 'Digital Banner', title: 'Website Header Banner', format: 'JPG', icon: Clapperboard },
-        { id: 'email-01', type: 'Email Template', title: 'New Customer Welcome Email', format: 'HTML', icon: Mail },
-    ],
-};
+import { useGetMarketingMaterials } from '@/services/marketing-materials/hook';
 
 export default function MarketingMaterialsPage() {
+    const { data, isLoading, isError } = useGetMarketingMaterials();
+    const downloadCenter = data?.downloadCenter ?? [];
+
     return (
         <div className="space-y-8">
             {/* Download Center */}
@@ -21,10 +16,16 @@ export default function MarketingMaterialsPage() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Download Center</h2>
                 <p className="text-gray-600 mb-6">Access pre-designed promotional materials to help you spread the word.</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    {marketingMaterialsData.downloadCenter.map((asset) => (
+                    {isLoading ? (
+                        <p className="text-sm text-gray-500">Loading materials…</p>
+                    ) : isError ? (
+                        <p className="text-sm text-red-600">Could not load materials. Please try again.</p>
+                    ) : downloadCenter.length === 0 ? (
+                        <p className="text-sm text-gray-500">No materials yet. Upload brand assets to generate templates.</p>
+                    ) : downloadCenter.map((asset) => (
                         <div key={asset.id} className="bg-white p-4 rounded-lg shadow group text-center hover:shadow-lg transition-shadow">
                             <div className="bg-gray-100 rounded-md flex items-center justify-center h-32 mb-4">
-                                 <asset.icon className="h-12 w-12 text-gray-400" />
+                                 <Download className="h-12 w-12 text-gray-400" />
                             </div>
                             <h4 className="font-semibold text-gray-800">{asset.title}</h4>
                             <p className="text-sm text-gray-500 mb-4">{asset.type} &bull; {asset.format}</p>

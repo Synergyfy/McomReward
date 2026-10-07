@@ -96,20 +96,20 @@ export default function SubscriptionDashboardPage() {
   /** A card is "current" only when plan AND billed variant match the local membership. */
   const isPlanCurrent = (plan: McomPlan) => {
     if (isExpired) return false;
-    if (currentPlanName.toLowerCase() !== plan.name.toLowerCase()) return false;
+    if ((currentPlanName || '').toLowerCase() !== (plan?.name || '').toLowerCase()) return false;
     return currentLevel === durationTab.toUpperCase();
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50/50 p-3 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               Subscription & Plan Management
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
               Manage your active plan, upgrade quotas, and process billing seamlessly in-app.
             </p>
           </div>
@@ -206,41 +206,52 @@ export default function SubscriptionDashboardPage() {
             </p>
 
             {/* Duration Selector */}
-            <div className="mt-4 inline-flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200">
+            <div className="mt-4 w-full max-w-md mx-auto grid grid-cols-3 p-1.5 rounded-2xl bg-white shadow-sm border border-gray-200 gap-1">
               <button
                 onClick={() => setDurationTab('STANDARD')}
-                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 ${
                   durationTab === 'STANDARD'
                     ? 'bg-gray-900 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                Standard (90d)
+                <span>Standard</span>
+                <span className="text-[10px] font-medium opacity-80">(90d)</span>
               </button>
               <button
                 onClick={() => setDurationTab('PRO')}
-                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
+                className={`py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 ${
                   durationTab === 'PRO'
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                Pro (180d)
-                <span className="ml-1.5 text-[10px] bg-green-100 text-green-700 font-extrabold px-1.5 py-0.5 rounded-md">
-                  Save 15%
+                <div className="flex items-center gap-1">
+                  <span>Pro</span>
+                  <span className="text-[10px] font-medium opacity-80">(180d)</span>
+                </div>
+                <span className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                  durationTab === 'PRO' ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700'
+                }`}>
+                  -15%
                 </span>
               </button>
               <button
                 onClick={() => setDurationTab('PRO_PLUS')}
-                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
+                className={`py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 ${
                   durationTab === 'PRO_PLUS'
                     ? 'bg-amber-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                Pro+ (1yr)
-                <span className="ml-1.5 text-[10px] bg-orange-100 text-orange-700 font-extrabold px-1.5 py-0.5 rounded-md">
-                  Save 25%
+                <div className="flex items-center gap-1">
+                  <span>Pro+</span>
+                  <span className="text-[10px] font-medium opacity-80">(1yr)</span>
+                </div>
+                <span className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                  durationTab === 'PRO_PLUS' ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'
+                }`}>
+                  -25%
                 </span>
               </button>
             </div>

@@ -225,6 +225,9 @@ export class RedemptionService {
         (businessReward?.points_required !== null ||
           reward?.max_points !== null);
 
+      // Pessimistic lock: concurrent redeems serialize here so two
+      // requests cannot both pass the balance check on the same row.
+      // Uses relation where (no raw column names) for naming-strategy safety.
       const participantCampaignBalance = await manager.findOne(
         ParticipantCampaignBalance,
         {
@@ -232,6 +235,7 @@ export class RedemptionService {
             participant: { id: participantId },
             businessCampaign: { id: campaignId },
           },
+          lock: { mode: "pessimistic_write" },
         },
       );
 
@@ -317,8 +321,20 @@ export class RedemptionService {
           if (businessReward.remaining_quantity <= 0) {
             throw new BadRequestException("Reward is out of stock");
           }
+          // Atomic decrement: concurrent redeems cannot oversell stock.
+          const stockResult = await manager
+            .createQueryBuilder()
+            .update(BusinessReward)
+            .set({
+              remaining_quantity: () => "remaining_quantity - 1",
+            })
+            .where("id = :id", { id: businessReward.id })
+            .andWhere("remaining_quantity > 0")
+            .execute();
+          if (!stockResult.affected) {
+            throw new BadRequestException("Reward is out of stock");
+          }
           businessReward.remaining_quantity -= 1;
-          await manager.save(BusinessReward, businessReward);
         } else if (businessReward.quantity !== null) {
           const pastRedemptions = await manager.count(PointHistory, {
             where: {
@@ -365,6 +381,15 @@ export class RedemptionService {
           business.id,
           businessReward.mall_reward_value,
           `Reward Redemption: ${businessReward.title || (reward ? reward.title : "Reward")} (Participant: ${participant.name})`,
+          {
+            category: "PURCHASE",
+            ...(idempotencyKey
+              ? {
+                  idempotencyKey:
+                    `rewards-redeem-${idempotencyKey}`.slice(0, 255),
+                }
+              : {}),
+          },
         );
 
         try {

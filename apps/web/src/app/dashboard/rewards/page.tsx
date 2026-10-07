@@ -203,7 +203,7 @@ export default function BusinessRewardsPage() {
   const { data: tierUsageData } = useGetBusinessTierUsage();
   const { data: subscription } = useGetMySubscription();
 
-  const plan = subscription?.tier?.name.toLowerCase() || 'starter';
+  const plan = (subscription?.tier?.name || 'starter').toLowerCase();
 
   const { mutate: updateBusinessReward } = useUpdateBusinessReward();
   const { mutateAsync: createBusinessReward } = useCreateBusinessReward();

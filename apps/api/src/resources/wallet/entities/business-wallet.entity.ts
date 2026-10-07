@@ -27,4 +27,19 @@ export class BusinessWallet extends AbstractBaseEntity {
 
   @OneToMany(() => WalletTransaction, (transaction) => transaction.wallet)
   transactions: WalletTransaction[];
+
+  @ApiProperty({ required: false })
+  centralBalance?: number;
+
+  @ApiProperty({ required: false })
+  centralAvailableBalance?: number;
+
+  @ApiProperty({ required: false })
+  centralStatus?: string;
+
+  @ApiProperty({ required: false })
+  centralCurrency?: string;
+
+  @ApiProperty({ required: false })
+  topUpUrl?: string;
 }

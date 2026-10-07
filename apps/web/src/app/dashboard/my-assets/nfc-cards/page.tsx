@@ -5,16 +5,13 @@ import { PlusCircle, MoreVertical, Power, Replace, Eye, BarChart2 } from 'lucide
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-
-const nfcCardsData = [
-    { id: 'NFC-001', type: 'Business', status: 'Active', tapCount: 542, linkedPage: '/profile' },
-    { id: 'NFC-002', type: 'Staff', status: 'Active', tapCount: 123, linkedPage: '/staff/john-doe' },
-    { id: 'NFC-003', type: 'Premium', status: 'Inactive', tapCount: 0, linkedPage: null },
-    { id: 'NFC-004', type: 'Business', status: 'Active', tapCount: 890, linkedPage: '/profile' },
-  ];
+import { useGetNfcCards } from '@/services/nfc-cards/hook';
 
 export default function NFCCardsPage() {
     const router = useRouter();
+    const { data, isLoading, isError } = useGetNfcCards();
+    const cards = data?.data ?? [];
+
     return (
         <div className="space-y-6">
             <div className="flex justify-end">
@@ -23,6 +20,13 @@ export default function NFCCardsPage() {
                 </Button>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
+                {isLoading ? (
+                    <p className="p-4 text-sm text-gray-500">Loading NFC cards…</p>
+                ) : isError ? (
+                    <p className="p-4 text-sm text-red-600">Could not load NFC cards. Please try again.</p>
+                ) : cards.length === 0 ? (
+                    <p className="p-4 text-sm text-gray-500">No NFC cards issued yet. Order your first cards to get started.</p>
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[500px]">
                         <thead className="text-left text-sm font-semibold text-gray-600 border-b">
@@ -36,9 +40,9 @@ export default function NFCCardsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {nfcCardsData.map((card) => (
+                            {cards.map((card) => (
                                 <tr key={card.id} className="border-b hover:bg-gray-50">
-                                    <td className="p-4 font-medium whitespace-nowrap">{card.id}</td>
+                                    <td className="p-4 font-medium whitespace-nowrap">{card.id.slice(0, 8).toUpperCase()}</td>
                                     <td className="p-4">{card.type}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
@@ -71,6 +75,7 @@ export default function NFCCardsPage() {
                         </tbody>
                     </table>
                 </div>
+                )}
             </div>
         </div>
     );

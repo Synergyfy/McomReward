@@ -380,7 +380,8 @@ export class SsoService {
       payload.iss &&
       payload.iss !== "mcom-loyalty" &&
       payload.iss !== "mcom-central" &&
-      payload.iss !== "mcom-rewards"
+      payload.iss !== "mcom-rewards" &&
+      payload.iss !== "mcom-reward"
     ) {
       throw new UnauthorizedException("Invalid SSO token issuer");
     }
@@ -390,6 +391,7 @@ export class SsoService {
       payload.aud !== "mcom-mall" &&
       payload.aud !== "mcom-loyalty" &&
       payload.aud !== "mcom-rewards" &&
+      payload.aud !== "mcom-reward" &&
       payload.aud !== "mcom-ecosystem"
     ) {
       throw new UnauthorizedException("Invalid SSO token audience");

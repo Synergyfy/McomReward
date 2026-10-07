@@ -44,7 +44,7 @@ export default function ClaimCampaignModal({
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Available Campaigns</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {claimableCampaigns.map((campaign) => (
-                <Card key={campaign.id} className="flex flex-col hover:shadow-md transition-shadow">
+                <Card key={campaign.id} className="p-0 py-0 gap-0 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                   <CardHeader className="p-0">
                     <div className="relative w-full h-32 bg-gray-200">
                       {(campaign.banner_url || campaign.bannerUrl) ? (

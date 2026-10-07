@@ -14,6 +14,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // Backwards compatible: tokens issued before businessId existed keep working.
+    // Business users fall back to sub as their tenant id; Staff is enriched
+    // lazily by TenantOwnershipGuard via DB lookup (cached).
+    const role = payload.role;
+    let businessId: string | undefined = payload.businessId;
+    if (!businessId && role === "Business") {
+      businessId = payload.sub;
+    }
     return {
       id: payload.sub,
       email: payload.username,
@@ -21,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       isEmailVerified: payload.isEmailVerified,
       hasActiveSubscription: payload.hasActiveSubscription,
       isSuperBusiness: payload.isSuperBusiness,
+      ...(businessId ? { businessId } : {}),
     };
   }
 }

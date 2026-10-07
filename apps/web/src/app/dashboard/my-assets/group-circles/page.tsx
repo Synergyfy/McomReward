@@ -152,16 +152,34 @@ export default function GroupCirclesPage() {
             }));
         }
 
-        // Add locally joined circles
+        // Add locally joined circles (real members only — no synthetic entries)
         joinedCircles.forEach(c => {
+            const realMembers = Array.isArray(c.members) ? c.members.map((m: any, idx: number) => {
+                const network = m.network || {};
+                return {
+                    id: network.id || m.id || `member-${c.id}-${idx}`,
+                    memberId: m.id,
+                    name: network.fullName || network.businessName || "Unknown Member",
+                    email: network.email || "",
+                    role: 'Member',
+                    orbit: 3,
+                    status: 'active',
+                    category: network.businessName || network.relationshipTag || "Partner",
+                    avatar: undefined,
+                    contributions: Number(c.contributionAmount) || 0,
+                    drawDate: m.drawDate,
+                    locationTag: "Unknown",
+                    relationshipTag: network.relationshipTag || "Network"
+                } as Member;
+            }) : [];
             items.push({
                 id: c.id,
                 name: c.name,
                 type: (c.type === 'SMART_MONEY' ? 'SMART_MONEY' : c.type) as any,
-                durationDays: 'Summer',
+                durationDays: typeof c.duration === 'number' ? `${c.duration} days` : (c.durationDays || ''),
                 contributionAmount: c.contributionAmount,
                 members: [
-                    {
+                    ...(c.ownerName ? [{
                         id: 'owner-' + c.id,
                         name: c.ownerName,
                         role: 'Owner',
@@ -169,9 +187,7 @@ export default function GroupCirclesPage() {
                         status: 'active',
                         category: 'Founder',
                         locationTag: 'Nearby',
-                        earnedPoints: 1250,
-                        distributions: 45
-                    },
+                    }] : []),
                     {
                         id: 'me-' + c.id,
                         name: profile?.name || 'My Business',
@@ -181,12 +197,8 @@ export default function GroupCirclesPage() {
                         status: 'active',
                         category: 'Member',
                         locationTag: 'Nearby',
-                        earnedPoints: 850,
-                        distributions: 28
                     },
-                    { id: 'm1-' + c.id, name: 'Growth Partner', role: 'Member', orbit: 3, status: 'active', category: 'Marketing', locationTag: 'Hyperlocal', earnedPoints: 620, distributions: 15 },
-                    { id: 'm2-' + c.id, name: 'Scale Specialist', role: 'Member', orbit: 4, status: 'offline', category: 'Operations', locationTag: 'National', earnedPoints: 120, distributions: 5 },
-                    { id: 'm3-' + c.id, name: 'London Tech', role: 'Member', orbit: 2, status: 'active', category: 'Tech', locationTag: 'Nearby', earnedPoints: 940, distributions: 32 }
+                    ...realMembers
                 ]
             });
         });

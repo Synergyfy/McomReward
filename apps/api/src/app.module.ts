@@ -18,6 +18,7 @@ import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
+import { TenantOwnershipGuard } from "./common/guards/tenant-ownership.guard";
 import { ImpersonationGuard } from "./common/guards/impersonation.guard";
 import { MembershipGuard } from "./common/guards/membership.guard";
 import { CampaignModule } from "./resources/campaign/campaign.module";
@@ -67,6 +68,7 @@ import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
 import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
 import { PlansModule } from "./resources/plans/plans.module";
+import { BusinessAssetsModule } from "./resources/business-assets/business-assets.module";
 
 @Module({
   imports: [
@@ -137,6 +139,7 @@ import { PlansModule } from "./resources/plans/plans.module";
     PlaqueUserModule,
     CreditsModule,
     LoyaltySetupModule,
+    BusinessAssetsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -152,6 +155,10 @@ import { PlansModule } from "./resources/plans/plans.module";
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TenantOwnershipGuard,
     },
     {
       provide: APP_GUARD,

@@ -4,6 +4,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { WalletService } from "./wallet.service";
 import { WalletController } from "./wallet.controller";
 import { WalletCronService } from "./wallet-cron.service";
+import { McomWalletPartnerService } from "./mcom-wallet-partner.service";
 import { BusinessWallet } from "./entities/business-wallet.entity";
 import { WalletTransaction } from "./entities/wallet-transaction.entity";
 import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
@@ -20,7 +21,7 @@ import { Business } from "../business/entities/business.entity";
     ScheduleModule.forRoot(),
   ],
   controllers: [WalletController],
-  providers: [WalletService, WalletCronService],
-  exports: [WalletService],
+  providers: [WalletService, WalletCronService, McomWalletPartnerService],
+  exports: [WalletService, McomWalletPartnerService],
 })
 export class WalletModule {}

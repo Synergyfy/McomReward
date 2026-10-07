@@ -121,6 +121,8 @@ export class AuthService {
     }
 
     if (user.role === Role.Business) {
+      // New claim: tenant scope. Old tokens without it keep working via JwtStrategy fallback.
+      payload.businessId = user.id;
       const business = await this.businessService.findById(user.id, ["sector"]);
       // Graceful fallback if business record is missing but auth user exists (e.g. inconsistency)
       const isSuperBusiness = business?.isSuperBusiness || false;
@@ -156,6 +158,22 @@ export class AuthService {
         };
 
         payload.hasActiveSubscription = !!isActive;
+      }
+    }
+
+    if (user.role === Role.Staff) {
+      // Staff tokens carry parent business id for tenant scoping.
+      // Best-effort: old tokens without it are enriched by TenantOwnershipGuard.
+      try {
+        const staff = await this.staffRepository.findOne({
+          where: { id: user.id },
+          relations: ["business"],
+        });
+        if (staff?.business?.id) {
+          payload.businessId = staff.business.id;
+        }
+      } catch {
+        // Non-fatal: guard will resolve on next request.
       }
     }
 

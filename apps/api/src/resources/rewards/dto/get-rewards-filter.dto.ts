@@ -159,4 +159,12 @@ export class GetRewardsFilterDto {
   @IsBoolean()
   @Type(() => Boolean)
   includeStats?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Filter by whether the reward is disabled",
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  disabled?: boolean;
 }

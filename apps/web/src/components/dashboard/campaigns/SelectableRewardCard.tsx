@@ -16,7 +16,7 @@ export default function SelectableRewardCard({ reward, isSelected, onSelect }: S
   return (
     <Card
       className={cn(
-        "relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl cursor-pointer",
+        "p-0 py-0 gap-0 relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl cursor-pointer",
         isSelected ? "border-2 border-orange-600 shadow-orange-300" : "border border-gray-200"
       )}
       onClick={() => onSelect(reward)} // Pass full reward object

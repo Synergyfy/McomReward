@@ -102,7 +102,7 @@ export default function PlanCard({
         </div>
       )}
 
-      <Card className="h-full flex flex-col border-none shadow-none rounded-3xl bg-transparent">
+      <Card className="p-0 py-0 gap-0 h-full flex flex-col border-none shadow-none rounded-3xl bg-transparent">
         <CardHeader className="pt-9 pb-4 px-6">
           <div className="flex items-center gap-2 mb-2">
             <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">

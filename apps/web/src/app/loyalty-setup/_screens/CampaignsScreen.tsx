@@ -25,7 +25,7 @@ function CampaignCard({ campaign, onEdit, index }: CampaignCardProps) {
   const gradient = gradients[index % gradients.length];
 
   return (
-    <Card className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-0 overflow-hidden group">
+    <Card className="p-0 py-0 gap-0 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-0 overflow-hidden group">
       <CardContent className="p-0">
         <div className={`relative h-32 w-full bg-gradient-to-br ${gradient}`}>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />

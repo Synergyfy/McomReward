@@ -356,108 +356,112 @@ export default function CampaignsListPage() {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-6">
         {campaigns.map(campaign => (
           <Card
             key={campaign.id}
-            className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer"
+            className="p-0 py-0 gap-0 bg-white rounded-xl shadow-sm hover:shadow-md overflow-hidden border border-gray-200 transition-all duration-300 cursor-pointer flex flex-col justify-between"
             onClick={() => router.push(`/dashboard/campaigns/edit/${campaign.id}`)}
           >
-            <div className="relative h-48 w-full overflow-hidden bg-gray-200">
-              {(campaign.banner_url || campaign.bannerUrl) && (
-                <Image
-                  src={campaign.banner_url || campaign.bannerUrl || ''}
-                  alt={campaign.name}
-                  layout="fill"
-                  objectFit="cover"
-                />
-              )}
-              {/* Badges Container */}
-              <div className="absolute top-3 right-3 flex flex-row gap-2 items-center">
-                {getCampaignBadges(campaign).map((badge, idx) => (
-                  <Badge
-                    key={idx}
-                    variant={badge.variant}
-                    className="text-sm px-3 py-1 shadow-sm"
-                  >
-                    {badge.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="relative px-5">
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-white bg-gray-300 shadow-md">
-                  {(campaign.logo_url || campaign.logoUrl) ? (
-                    <Image
-                      src={campaign.logo_url || campaign.logoUrl || ''}
-                      alt={`${campaign.name} Logo`}
-                      layout="fill"
-                      objectFit="cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-500">
-                      <span className="text-xs">Logo</span>
-                    </div>
-                  )}
+            <div>
+              <div className="relative h-28 sm:h-44 w-full overflow-hidden bg-gray-200">
+                {(campaign.banner_url || campaign.bannerUrl) && (
+                  <Image
+                    src={campaign.banner_url || campaign.bannerUrl || ''}
+                    alt={campaign.name}
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                )}
+                {/* Badges Container */}
+                <div className="absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5 flex flex-row gap-1 items-center">
+                  {getCampaignBadges(campaign).map((badge, idx) => (
+                    <Badge
+                      key={idx}
+                      variant={badge.variant}
+                      className="text-[9px] sm:text-xs px-1.5 sm:px-2.5 py-0 sm:py-0.5 shadow-sm font-semibold"
+                    >
+                      {badge.label}
+                    </Badge>
+                  ))}
                 </div>
               </div>
-            </div>
-            <CardContent className="pt-16 p-5 text-center">
-              <h5 className="font-extrabold text-xl text-gray-900 mb-2 truncate">
-                {campaign.name}
-              </h5>
-              <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden text-ellipsis">
-                {campaign.campaign_message}
-              </p>
-
-              <div className="space-y-2 text-sm text-gray-800 my-5 border-t pt-4">
-                {(() => {
-                  const rewardsList = (campaign.businessRewards && campaign.businessRewards.length > 0)
-                    ? campaign.businessRewards
-                    : (campaign.rewards || []);
-
-                  return (
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-gray-600 shrink-0">
-                        {rewardsList.length > 1 ? 'Rewards:' : 'Reward:'}
-                      </span>
-                      <div className="flex flex-col text-right">
-                        {rewardsList.length > 0 ? (
-                          rewardsList.map((reward) => (
-                            <span key={reward.id} className="font-semibold block">
-                              {reward.title}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="font-semibold">N/A</span>
-                        )}
+              <div className="relative px-2 sm:px-4">
+                <div className="absolute -top-7 sm:-top-10 left-1/2 -translate-x-1/2">
+                  <div className="relative h-14 w-14 sm:h-20 sm:w-20 rounded-full overflow-hidden border-2 sm:border-4 border-white bg-gray-300 shadow-md">
+                    {(campaign.logo_url || campaign.logoUrl) ? (
+                      <Image
+                        src={campaign.logo_url || campaign.logoUrl || ''}
+                        alt={`${campaign.name} Logo`}
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-500">
+                        <span className="text-[10px] sm:text-xs">Logo</span>
                       </div>
-                    </div>
-                  );
-                })()}
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-600">
-                    Available:
-                  </span>
-                  <span className="font-semibold text-right">
-                    {campaign.remainingSlots ?? campaign.quantity}
-                  </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <CardContent className="pt-8 sm:pt-12 p-2.5 sm:p-4 text-center">
+                <h5 className="font-extrabold text-xs sm:text-lg text-gray-900 mb-1 truncate">
+                  {campaign.name}
+                </h5>
+                <p className="text-gray-600 text-[10px] sm:text-xs mb-2 h-4 sm:h-8 overflow-hidden line-clamp-1 sm:line-clamp-2">
+                  {campaign.campaign_message}
+                </p>
 
-              {/* Action Buttons Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-2">
+                <div className="space-y-1 text-[10px] sm:text-xs text-gray-800 my-2 sm:my-3 border-t pt-2">
+                  {(() => {
+                    const rewardsList = (campaign.businessRewards && campaign.businessRewards.length > 0)
+                      ? campaign.businessRewards
+                      : (campaign.rewards || []);
+
+                    return (
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="font-medium text-gray-500 shrink-0">
+                          {rewardsList.length > 1 ? 'Rewards:' : 'Reward:'}
+                        </span>
+                        <div className="flex flex-col text-right truncate">
+                          {rewardsList.length > 0 ? (
+                            rewardsList.slice(0, 1).map((reward) => (
+                              <span key={reward.id} className="font-semibold block truncate">
+                                {reward.title}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="font-semibold">N/A</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-500">
+                      Available:
+                    </span>
+                    <span className="font-semibold text-right">
+                      {campaign.remainingSlots ?? campaign.quantity}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+
+            {/* Action Buttons Grid (Single even line of 5 touch buttons) */}
+            <div className="p-2 sm:p-3 pt-0">
+              <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
                 <Button
                   asChild
                   variant="outline"
                   size="icon"
-                  className="w-full border-orange-600 text-orange-600 hover:bg-orange-50"
+                  className="h-7 sm:h-8 w-full border-orange-600 text-orange-600 hover:bg-orange-50 rounded-md"
                   title="View Campaign"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Link href={`/dashboard/campaigns/${campaign.id}`}>
-                    <Eye className="h-4 w-4" />
+                  <Link href={`/dashboard/campaigns/${campaign.id}`} className="flex items-center justify-center">
+                    <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </Link>
                 </Button>
 
@@ -465,19 +469,19 @@ export default function CampaignsListPage() {
                   asChild
                   variant="outline"
                   size="icon"
-                  className="w-full border-orange-600 text-orange-600 hover:bg-orange-50"
+                  className="h-7 sm:h-8 w-full border-orange-600 text-orange-600 hover:bg-orange-50 rounded-md"
                   title="Edit Campaign"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
-                    <Pencil className="h-4 w-4" />
+                  <Link href={`/dashboard/campaigns/edit/${campaign.id}`} className="flex items-center justify-center">
+                    <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </Link>
                 </Button>
 
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-full border-gray-600 text-gray-600 hover:bg-gray-50"
+                  className="h-7 sm:h-8 w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCopyLink(campaign.id);
@@ -485,39 +489,39 @@ export default function CampaignsListPage() {
                   title="Copy Link"
                 >
                   {copiedCampaignId === campaign.id ? (
-                    <span className="text-green-600 font-bold text-xs">✓</span>
+                    <span className="text-green-600 font-bold text-[10px]">✓</span>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   )}
                 </Button>
 
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
+                  className="h-7 sm:h-8 w-full border-purple-600 text-purple-600 hover:bg-purple-50 rounded-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenQRModal(campaign.id, campaign.name);
                   }}
                   title="Generate QR Code"
                 >
-                  <QrCode className="h-4 w-4" />
+                  <QrCode className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </Button>
 
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-full border-red-600 text-red-600 hover:bg-red-50"
+                  className="h-7 sm:h-8 w-full border-red-500 text-red-600 hover:bg-red-50 rounded-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteCampaign(campaign);
                   }}
                   title="Delete Campaign"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </Card>
         ))}
       </div>
@@ -526,18 +530,17 @@ export default function CampaignsListPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-        {/* ... existing header/search content ... */}
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Campaigns</h1>
-              <p className="text-gray-600">Manage and create your loyalty campaigns.</p>
+      <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Campaigns</h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5">Manage and create your loyalty campaigns.</p>
             </div>
             <Button
               onClick={() => setIsClaimModalOpen(true)}
               disabled={hasReachedCampaignLimit}
-              className={hasReachedCampaignLimit ? 'opacity-50 cursor-not-allowed' : ''}
+              className={`w-full sm:w-auto h-10 text-sm font-semibold ${hasReachedCampaignLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {hasReachedCampaignLimit ? (
                 <>
@@ -553,21 +556,21 @@ export default function CampaignsListPage() {
             </Button>
           </div>
 
-          <div className="mb-8">
+          <div>
             <Input
               placeholder="Search campaigns..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full max-w-sm"
+              className="w-full sm:max-w-sm h-10 sm:h-11 bg-white shadow-sm border-gray-200 rounded-xl text-sm"
             />
           </div>
 
           <ClaimableCampaignsTicker />
 
           {isLoadingTierUsage || isLoadingSubscription ? (
-             <div className="mb-8 max-w-md h-24 bg-gray-200 animate-pulse rounded-lg"></div>
+             <div className="max-w-md h-24 bg-gray-200 animate-pulse rounded-xl"></div>
           ) : (tierUsageData || subscriptionData) ? (
-            <div className="mb-8 max-w-md">
+            <div className="max-w-md">
               <UsageCard
                 title="Campaign Usage"
                 usage={profile?.isSuperBusiness ? {
@@ -586,9 +589,13 @@ export default function CampaignsListPage() {
           ) : null}
 
           <Tabs defaultValue="created" className="w-full">
-            <TabsList className="mb-8">
-              <TabsTrigger value="created">My Created Campaigns</TabsTrigger>
-              <TabsTrigger value="claimed">My Claimed Campaigns</TabsTrigger>
+            <TabsList className="mb-6 w-full sm:w-auto grid grid-cols-2 p-1 bg-white shadow-sm rounded-xl">
+              <TabsTrigger value="created" className="text-xs sm:text-sm font-semibold rounded-lg data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+                My Created Campaigns
+              </TabsTrigger>
+              <TabsTrigger value="claimed" className="text-xs sm:text-sm font-semibold rounded-lg data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+                My Claimed Campaigns
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="created">
               {renderCampaigns(filteredCreatedCampaigns, isLoadingCreated)}

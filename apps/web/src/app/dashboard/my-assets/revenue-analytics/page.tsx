@@ -4,6 +4,7 @@ import React from 'react';
 import { PoundSterling, Users, Clock, CircleDollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { useGetRevenueAnalytics } from '@/services/revenue/hook';
 
 const StatCard = ({ title, value, icon: Icon, details }: { title: string, value: string | number, icon: React.ElementType, details?: string }) => (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -20,37 +21,23 @@ const StatCard = ({ title, value, icon: Icon, details }: { title: string, value:
     </div>
   );
 
-const revenueData = {
-    overview: {
-        plaqueSales: 4500,
-        offerRedemptions: 1250,
-        commissions: 850,
-        pendingPayouts: 2300,
-    },
-    earningsChart: [
-        { name: 'Jan', earnings: 1200 },
-        { name: 'Feb', earnings: 1800 },
-        { name: 'Mar', earnings: 1500 },
-        { name: 'Apr', earnings: 2100 },
-        { name: 'May', earnings: 1900 },
-        { name: 'Jun', earnings: 2300 },
-    ],
-    transactions: [
-        { id: 'txn-001', date: '2025-10-28', type: 'Plaque Sale', amount: 25.00, status: 'Completed' },
-        { id: 'txn-002', date: '2025-10-27', type: 'Offer Redemption', amount: 5.50, status: 'Completed' },
-        { id: 'txn-003', date: '2025-10-26', type: 'Commission', amount: 2.50, status: 'Completed' },
-        { id: 'txn-004', date: '2025-10-25', type: 'Payout', amount: -500.00, status: 'Pending' },
-        { id: 'txn-005', date: '2025-10-24', type: 'Plaque Sale', amount: 25.00, status: 'Completed' },
-    ]
-};
-
 export default function RevenueAnalyticsPage() {
+    const { data, isLoading, isError } = useGetRevenueAnalytics();
+    const revenueData = data ?? { overview: { plaqueSales: 0, offerRedemptions: 0, commissions: 0, pendingPayouts: 0 }, earningsChart: [], transactions: [] };
+
+    if (isLoading) {
+        return <p className="p-4 text-sm text-gray-500">Loading revenue analytics…</p>;
+    }
+    if (isError) {
+        return <p className="p-4 text-sm text-red-600">Could not load revenue analytics. Please try again.</p>;
+    }
+
     return (
         <div className="space-y-8">
             {/* Earnings Overview */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Plaque Sales" value={`£${revenueData.overview.plaqueSales.toLocaleString()}`} icon={PoundSterling} />
-                <StatCard title="Offer Redemptions" value={`£${revenueData.overview.offerRedemptions.toLocaleString()}`} icon={CircleDollarSign} />
+                <StatCard title="Offer Redemptions" value={revenueData.overview.offerRedemptions.toLocaleString()} icon={CircleDollarSign} />
                 <StatCard title="Commissions Earned" value={`£${revenueData.overview.commissions.toLocaleString()}`} icon={Users} />
                 <StatCard title="Pending Payouts" value={`£${revenueData.overview.pendingPayouts.toLocaleString()}`} icon={Clock} />
             </div>
@@ -91,24 +78,32 @@ export default function RevenueAnalyticsPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {revenueData.transactions.map((txn) => (
+                        {revenueData.transactions.length === 0 ? (
+                            <tr><td className="p-4 text-sm text-gray-500" colSpan={4}>No transactions yet.</td></tr>
+                        ) : revenueData.transactions.map((txn) => {
+                            const amount = Number(txn.amount) || 0;
+                            const status = String(txn.status || '');
+                            const norm = status.toLowerCase();
+                            const badge = norm === 'completed' || norm === 'paid' || norm === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : norm === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800';
+                            return (
                             <tr key={txn.id} className="border-b hover:bg-gray-50">
-                                <td className="p-4">{new Date(txn.date).toLocaleDateString()}</td>
+                                <td className="p-4">{txn.date ? new Date(txn.date).toLocaleDateString() : '—'}</td>
                                 <td className="p-4">{txn.type}</td>
-                                <td className={`p-4 font-medium ${txn.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {txn.amount > 0 ? `+£${txn.amount.toFixed(2)}` : `-£${Math.abs(txn.amount).toFixed(2)}`}
+                                <td className={`p-4 font-medium ${amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {amount > 0 ? `+£${amount.toFixed(2)}` : `-£${Math.abs(amount).toFixed(2)}`}
                                 </td>
                                 <td className="p-4">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                        txn.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                        txn.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-red-100 text-red-800'
-                                    }`}>
-                                        {txn.status}
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${badge}`}>
+                                        {status}
                                     </span>
                                 </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                     </tbody>
                 </table>
                 </div>

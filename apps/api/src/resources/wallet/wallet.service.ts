@@ -2,6 +2,9 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
+  Optional,
+  HttpException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
@@ -11,9 +14,12 @@ import {
   TransactionType,
 } from "./entities/wallet-transaction.entity";
 import { Business } from "../business/entities/business.entity";
+import { McomWalletPartnerService } from "./mcom-wallet-partner.service";
 
 @Injectable()
 export class WalletService {
+  private readonly logger = new Logger(WalletService.name);
+
   constructor(
     @InjectRepository(BusinessWallet)
     private walletRepository: Repository<BusinessWallet>,
@@ -22,6 +28,7 @@ export class WalletService {
     @InjectRepository(Business)
     private businessRepository: Repository<Business>,
     private dataSource: DataSource,
+    @Optional() private readonly centralWallet?: McomWalletPartnerService,
   ) {}
 
   async createWallet(business: Business): Promise<BusinessWallet> {
@@ -36,9 +43,10 @@ export class WalletService {
   async getWallet(businessId: string): Promise<BusinessWallet> {
     const wallet = await this.walletRepository.findOne({
       where: { business: { id: businessId } },
-      relations: ["transactions"],
+      relations: ["transactions", "business"],
     });
 
+    let result: BusinessWallet;
     if (!wallet) {
       // Lazy creation for existing businesses
       const business = await this.businessRepository.findOne({
@@ -47,9 +55,31 @@ export class WalletService {
       if (!business) {
         throw new NotFoundException("Business not found");
       }
-      return this.createWallet(business);
+      result = await this.createWallet(business);
+    } else {
+      result = wallet;
     }
-    return wallet;
+
+    // Enrich with central source-of-truth balance (best-effort, cached upstream).
+    if (this.centralWallet?.isConfigured()) {
+      try {
+        const business =
+          (result.business as Business | undefined) ??
+          (await this.businessRepository.findOne({ where: { id: businessId } }));
+        if (business?.mcomUserId) {
+          const central = await this.centralWallet.getBalance(business.mcomUserId);
+          (result as any).centralBalance = central.balance;
+          (result as any).centralAvailableBalance = central.availableBalance;
+          (result as any).centralStatus = central.status;
+          (result as any).centralCurrency = central.currency ?? "MCOM";
+          (result as any).topUpUrl = this.centralWallet.topUpUrl();
+        }
+      } catch (e: any) {
+        this.logger.warn(`Central balance enrichment failed: ${e?.message}`);
+      }
+    }
+
+    return result;
   }
 
   async addTierAllocation(businessId: string, amount: number) {
@@ -106,19 +136,73 @@ export class WalletService {
     return this.transactionRepository.save(transaction);
   }
 
+  private centralIdempotencyKey(
+    businessId: string,
+    reference: string,
+    provided?: string,
+  ): string {
+    if (provided) return provided.slice(0, 255);
+    const slug = `${businessId}-${reference}`.replace(/[^A-Za-z0-9-_]/g, "-").slice(0, 200);
+    return `rewards-spend-${slug}-${Date.now()}`;
+  }
+
   /**
    * Deducts funds for a reward. Prioritizes Tier Balance, then Topup Balance.
+   * Central MCOM Wallet is the source of truth when configured; local ledger
+   * is debited as a mirror only after central debit succeeds.
    */
   async spend(
     businessId: string,
     amount: number,
     reference: string,
+    opts?: { idempotencyKey?: string; category?: string },
   ): Promise<boolean> {
+    // Central-first path (no behavior change when disabled/unmapped).
+    if (this.centralWallet?.isConfigured()) {
+      try {
+        const business = await this.businessRepository.findOne({
+          where: { id: businessId },
+        });
+        const centralUserId = business?.mcomUserId;
+        if (centralUserId) {
+          const receipt = await this.centralWallet.debit(
+            centralUserId,
+            Number(amount),
+            {
+              category: opts?.category ?? "PURCHASE",
+              description: reference,
+              reference,
+              metadata: { businessId },
+              idempotencyKey: this.centralIdempotencyKey(
+                businessId,
+                reference,
+                opts?.idempotencyKey,
+              ),
+            },
+          );
+          await this.mirrorCentralDebit(businessId, amount, reference, receipt.transactionId);
+          return true;
+        }
+      } catch (e: any) {
+        // 402 insufficient funds must surface (top-up prompt), not fall back.
+        if (e?.name === "McomWalletError" && e?.httpStatus === 402) {
+          throw new HttpException(
+            {
+              error: "WALLET_INSUFFICIENT_FUNDS",
+              message: e.message,
+              topUpUrl: e.topUpUrl,
+            },
+            402,
+          );
+        }
+        this.logger.warn(
+          `Central debit failed, falling back to local ledger: ${e?.message}`,
+        );
+      }
+    }
+
     const wallet = await this.getWallet(businessId);
     const cost = Number(amount);
-
-    console.log(wallet, "wallet");
-    console.log(cost, "cost");
 
     if (Number(wallet.tier_balance) + Number(wallet.topup_balance) < cost) {
       throw new BadRequestException(
@@ -187,6 +271,47 @@ export class WalletService {
       throw err;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  /**
+   * Mirror a successful central debit into the local ledger.
+   * Best-effort and idempotent by central transaction id: if the mirror
+   * already exists we skip, so central retries never double-count locally.
+   */
+  private async mirrorCentralDebit(
+    businessId: string,
+    amount: number,
+    reference: string,
+    centralTransactionId: string,
+  ): Promise<void> {
+    try {
+      const wallet = await this.getWallet(businessId);
+      const tag = `central:${centralTransactionId}`;
+      const existing = await this.transactionRepository
+        .createQueryBuilder("t")
+        .where("t.reference LIKE :tag", { tag: `${tag}%` })
+        .getOne();
+      if (existing) return;
+      let remaining = Number(amount);
+      const topupAvail = Number(wallet.topup_balance);
+      const topupTake = Math.min(topupAvail, remaining);
+      wallet.topup_balance = topupAvail - topupTake;
+      remaining -= topupTake;
+      if (remaining > 0) {
+        wallet.tier_balance = Number(wallet.tier_balance) - remaining;
+      }
+      await this.walletRepository.save(wallet);
+      const mirror = this.transactionRepository.create({
+        wallet,
+        amount: -Number(amount),
+        type: TransactionType.SPEND_TOPUP,
+        reference: `${tag} ${reference}`.slice(0, 255),
+      });
+      await this.transactionRepository.save(mirror);
+    } catch (e: any) {
+      // Mirror failures must not fail the already-committed central debit.
+      this.logger.error(`Central debit mirror failed for ${businessId}: ${e?.message}`);
     }
   }
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useGetTiers } from '@/services/tiers/hook';
 
 const benefits = [
   {
@@ -40,88 +41,19 @@ const benefits = [
   }
 ];
 
-const tiers = [
-  {
-    name: "Bronze",
-    priceMonthly: 0,
-    priceAnnually: 0,
-    color: "text-amber-700",
-    borderColor: "border-gray-200",
-    features: ["Basic Dashboard", "1 Active Campaign", "Merchant Directory Listing", "QR-Code Scanner App Access"],
-    cta: "Get Started Free"
-  },
-  {
-    name: "Silver",
-    priceMonthly: 99,
-    priceAnnually: 79,
-    color: "text-slate-500",
-    borderColor: "border-gray-200",
-    features: ["Advanced Analytics", "5 Active Campaigns", "Email Marketing Automation", "Standard Customer Support"],
-    cta: "Select Silver"
-  },
-  {
-    name: "Gold",
-    priceMonthly: 299,
-    priceAnnually: 239,
-    color: "text-amber-500",
-    borderColor: "border-orange-500",
-    features: ["AI Recommendations", "Unlimited Campaigns", "SMS Notifications integration", "Priority Phone Support", "Multi-location Management"],
-    cta: "Go Gold",
-    popular: true
-  },
-  {
-    name: "Platinum",
-    priceMonthly: 599,
-    priceAnnually: 479,
-    color: "text-orange-600",
-    borderColor: "border-gray-200",
-    features: ["Custom Loyalty Branding", "API Webhook Access", "Dedicated Success Manager", "24/7 Premium Support", "Stamp Card Customizer"],
-    cta: "Go Platinum"
-  },
-  {
-    name: "Pro",
-    priceMonthly: 999,
-    priceAnnually: 799,
-    color: "text-indigo-600",
-    borderColor: "border-gray-200",
-    features: ["SSO & IAM Integration", "Custom Smart Contracts", "Unlimited Multi-Brands", "White-labeled Mobile App options"],
-    cta: "Go Pro"
-  },
-  {
-    name: "Pro Plus",
-    priceMonthly: "Custom",
-    priceAnnually: "Custom",
-    color: "text-violet-600",
-    borderColor: "border-neutral-900 bg-neutral-900 text-white",
-    features: ["Full Enterprise SLA", "Bespoke System Integrations", "On-Premise Deployment Support", "Tailored Custom Billing Tiers"],
-    cta: "Contact Sales",
-    custom: true
-  }
-];
-
-const testimonials = [
-  {
-    quote: "MCOM transformed our local boutique into a regional destination. Our customer return rate increased by 65% in just three months.",
-    name: "Sarah Jenkins",
-    role: "Founder, Velour Studio",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD-IfebWh8NMbV6Iv3ad_MNZiwDC15LPzpOydA9IwYfDHWUbUMvPW7H91Vebki_PLFcO8RY-esEFCZrf8ZoukWmBrGjZ-KMz5aPFRy1G50buflkAVHsKcUYRYODCsogutz0sC_r1Y_own64CdLor07QIq0m0kFLqP2JNhWwlxHW0BFptLG1fpy193e2iPoQcqst39TQB68KT22_KQkxVnZpx-Du7tOAP2wEmLAfKY6bDAglJvLam8_N8ydKLyV_KL-FW0pbDnkKmimY"
-  },
-  {
-    quote: "The ROI on the Silver tier was instant. The automated campaigns took hours of work off my plate every week.",
-    name: "David Chen",
-    role: "Owner, Hearth & Grain",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLeT0EFxNXfrUMdpSjleMQGpbp_Sw2eS4qPCDd4H_vdt5BE-wnnGz3IGJvjDJTjdwqdrsEis8_d8IIDDP4vrd2pITbxvjUFd30qkWtOilIFKJy6GPDfEDTthd_FkW1pPrRgjJiPC98Q9eZk_4T3FKz7MCfYNAE_V6hwdP1vxjy1uhtXH8dJ-U-GLBYQWrZNGT3ppDUit5ykh2_0xOpEGfpeq9npY1rp2Ep5HrMB_Oex8J5oOle5FeK_uyzwKon_XrmVsf41khMc91p"
-  },
-  {
-    quote: "Scaling our enterprise rewards program was seamless with MCOM Pro Plus. Their API integration is best-in-class.",
-    name: "Marcus Thorne",
-    role: "CTO, Global Retail Corp",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB1BNyJ8J-UlQT16bTLdSzYi2SGxy5fdB0hXHPriwttJxGwGWZT9u0LUVktm869v9d5LYgaQAIz4Q_S8prDCYTOL9H2mv3sXaFJE_DHZqY3D01belu9gyKqGkNqjVp64CDsyXSMWnBgrIkkC9h9I3_H937aKwXxOHKU17tg7QrqCeqtCSbHK-gahHZG4Xo4TNej5Xk37PhiM5ZhMUSs6aaXxM_WpNvl0Zg7wRtJNPpAx-2sU_Lg5wX2Fm-gRbnZtP3UXTQAMMewaiff"
-  }
+const TIER_STYLES = [
+  { color: "text-amber-700", cta: "Get Started" },
+  { color: "text-slate-500", cta: "Select Tier" },
+  { color: "text-amber-500", cta: "Go Gold" },
+  { color: "text-orange-600", cta: "Go Platinum" },
+  { color: "text-indigo-600", cta: "Contact Sales" },
+  { color: "text-violet-600", cta: "Contact Sales" },
 ];
 
 export default function ForBusinesses() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
+  const { data: tiersData, isLoading: tiersLoading, isError: tiersError } = useGetTiers();
+  const tiers = tiersData ?? [];
 
   return (
     <div className="bg-surface-bright text-on-surface min-h-screen py-12 space-y-24">
@@ -211,91 +143,64 @@ export default function ForBusinesses() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6 pt-6 items-stretch">
-          {tiers.map((tier) => {
-            const isCustom = typeof tier.priceMonthly === 'string';
-            const price = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceAnnually;
+          {tiersLoading ? (
+            <p className="text-sm text-gray-500">Loading plans…</p>
+          ) : tiersError || tiers.length === 0 ? (
+            <p className="text-sm text-gray-500">Plans are currently unavailable. Please contact sales.</p>
+          ) : tiers.map((tier, i) => {
+            const monthly = Number(tier.monthlyPrice ?? 0);
+            const annual = Number(tier.annualPrice ?? 0);
+            const price = billingCycle === 'monthly' ? monthly : annual;
+            const style = TIER_STYLES[i % TIER_STYLES.length];
+            const popular = tier.name.toLowerCase().includes('gold');
 
             return (
-              <div 
-                key={tier.name}
-                className={`p-6 rounded-[28px] border flex flex-col justify-between shadow-sm transition-all duration-300 relative ${
-                  tier.popular ? 'border-orange-500 ring-2 ring-orange-500/20 scale-102 bg-white' : 'border-gray-200 bg-white'
-                } ${tier.custom ? 'bg-neutral-950 border-neutral-900 text-white' : ''}`}
+              <div
+                key={tier.id}
+                className={`p-6 rounded-[28px] border flex flex-col justify-between shadow-sm transition-all duration-300 relative bg-white ${
+                  popular ? 'border-orange-500 ring-2 ring-orange-500/20 scale-102' : 'border-gray-200'
+                }`}
               >
-                {tier.popular && (
+                {popular && (
                   <span className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-orange-500 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">
                     Most Popular
                   </span>
                 )}
-                
+
                 <div>
                   <div className="space-y-1 mb-6">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${tier.custom ? 'text-orange-400' : tier.color}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${style.color}`}>
                       {tier.name}
                     </span>
                     <h3 className="text-2xl font-bold font-headline-lg">
-                      {isCustom ? price : `£${price}`}
-                      {!isCustom && <span className="text-[10px] text-gray-400 font-medium">/mo</span>}
+                      {price > 0 ? `£${Number(price).toLocaleString()}` : 'Free'}
+                      {price > 0 && <span className="text-[10px] text-gray-400 font-medium">/mo</span>}
                     </h3>
                   </div>
 
                   <ul className="space-y-2.5 mb-8">
-                    {tier.features.map((feature, idx) => (
+                    {(tier.features ?? []).map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-1.5 text-xs">
                         <span className="material-symbols-outlined text-orange-500 text-sm shrink-0">check_circle</span>
-                        <span className={tier.custom ? 'opacity-90' : 'text-gray-600'}>{feature}</span>
+                        <span className="text-gray-600">{feature}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <Link 
-                  href={tier.custom ? "/contact" : "/business/signup"}
+                <Link
+                  href="/business/signup"
                   className={`w-full py-2.5 rounded-full font-bold text-xs text-center border transition-all active:scale-95 block ${
-                    tier.popular 
-                      ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/10' 
-                      : tier.custom
-                        ? 'bg-white text-neutral-900 border-white hover:bg-gray-100'
-                        : 'border-orange-500 text-orange-600 hover:bg-orange-50'
+                    popular
+                      ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/10'
+                      : 'border-orange-500 text-orange-600 hover:bg-orange-50'
                   }`}
                 >
-                  {tier.cta}
+                  {style.cta}
                 </Link>
               </div>
             );
           })}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="bg-gray-50 border-y border-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
-          <h2 className="text-3xl font-bold font-headline-lg text-center text-gray-900">Trusted by the Best</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t, idx) => (
-              <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6 flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="flex gap-1 text-amber-500">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className="material-symbols-outlined fill-1" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-600 italic leading-relaxed">"{t.quote}"</p>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shrink-0">
-                    <img className="w-full h-full object-cover" src={t.image} alt={t.name} />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-xs text-gray-800">{t.name}</h5>
-                    <p className="text-[10px] text-gray-400 font-semibold">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -305,7 +210,7 @@ export default function ForBusinesses() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
           <h2 className="text-3xl font-bold font-headline-lg">Ready to build your kingdom?</h2>
           <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
-            Join thousands of businesses already winning the loyalty game. Setup your program and reward your first customer today.
+            Setup your program and reward your first customer today.
           </p>
           <Link href="/business/signup" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-bold text-xs shadow-md shadow-orange-500/10 inline-block transition active:scale-95">
             Start Your Free Trial

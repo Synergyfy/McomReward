@@ -20,6 +20,7 @@ import {
     Download,
     Eye,
     Info,
+    ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -278,155 +279,407 @@ export default function CustomerContactPage() {
         setIsViewModalOpen(true);
     };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/30 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-                {/* Premium Header Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 p-8 shadow-xl"
-                >
-                    <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-                    <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-                    <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-600/20 blur-3xl" />
+    if (isAddModalOpen) {
+        return (
+            <div className="w-full space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setIsAddModalOpen(false);
+                            resetForm();
+                        }}
+                        className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 -ml-2 h-9 px-2.5"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm font-medium">Back to Customers</span>
+                    </Button>
+                </div>
 
-                    <div className="relative z-10">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8">
+                    <div className="border-b border-gray-100 pb-3.5 mb-4 sm:mb-6">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Add New Customer</h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                            Add a customer to your network. Fields marked with * are required.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4 py-2 sm:py-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="col-span-1 sm:col-span-2">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium">
+                                        Full Name <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
+                                                <p className="text-xs">Enter the full name of the customer or business owner.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Input
+                                    id="fullName"
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    placeholder="John Doe"
+                                    className="h-9 sm:h-10 text-xs sm:text-sm"
+                                />
+                            </div>
+                            <div className="col-span-1 sm:col-span-2">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="businessName" className="text-xs sm:text-sm font-medium">Business Name</Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
+                                                <p className="text-xs">The official name of the business or company this customer represents.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Input
+                                    id="businessName"
+                                    value={formData.businessName}
+                                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                                    placeholder="ABC Company Ltd"
+                                    className="h-9 sm:h-10 text-xs sm:text-sm"
+                                />
+                            </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                                    Customer Contact
-                                </h1>
-                                <p className="text-orange-100 mt-2 text-lg">
-                                    Manage your customer relationships and grow your network
-                                </p>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="email" className="text-xs sm:text-sm font-medium">Email</Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
+                                                <p className="text-xs">Primary email address for business communications and campaign invitations.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="john@example.com"
+                                    className="h-9 sm:h-10 text-xs sm:text-sm"
+                                />
                             </div>
-                            <div className="flex flex-row gap-3 w-full sm:w-auto">
-                                <Button
-                                    variant="outline"
-                                    className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm flex-1 sm:flex-initial"
-                                    onClick={() => setIsImportModalOpen(true)}
-                                >
-                                    <Upload className="h-4 w-4 mr-2 shrink-0" />
-                                    Import CSV
-                                </Button>
-                                <Button
-                                    className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg hover:shadow-xl transition-all flex-1 sm:flex-initial"
-                                    onClick={() => {
-                                        resetForm();
-                                        setIsAddModalOpen(true);
-                                    }}
-                                >
-                                    <Plus className="h-4 w-4 mr-2 shrink-0" />
-                                    Add Customer
-                                </Button>
+                            <div>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="phone" className="text-xs sm:text-sm font-medium">
+                                        Phone <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
+                                                <p className="text-xs">Contact phone number for direct communication and follow-ups.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Input
+                                    id="phone"
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="+44 20 1234 5678"
+                                    className="h-9 sm:h-10 text-xs sm:text-sm"
+                                />
                             </div>
-                        </div>
-
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-                            <motion.div
-                                whileHover={{ scale: 1.02 }}
-                                className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Users className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="text-white/80 text-sm">Total Customers</p>
-                                        <p className="text-2xl font-bold text-white">{totalCustomers}</p>
-                                    </div>
+                            <div>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="locationTag" className="text-xs sm:text-sm font-medium">Location</Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
+                                                <div className="text-xs space-y-1">
+                                                    <p><strong>Nearby:</strong> {LOCATION_TAG_INFO.nearby}</p>
+                                                    <p><strong>Hyperlocal:</strong> {LOCATION_TAG_INFO.hyperlocal}</p>
+                                                    <p><strong>National:</strong> {LOCATION_TAG_INFO.national}</p>
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 </div>
-                            </motion.div>
-                            <motion.div
-                                whileHover={{ scale: 1.02 }}
-                                className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-400/30 rounded-lg">
-                                        <UserCheck className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="text-white/80 text-sm">Active</p>
-                                        <p className="text-2xl font-bold text-white">{acceptedCount}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                            <motion.div
-                                whileHover={{ scale: 1.02 }}
-                                className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/20"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-amber-400/30 rounded-lg">
-                                        <Clock className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="text-white/80 text-sm">Pending</p>
-                                        <p className="text-2xl font-bold text-white">{pendingCount}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Search and Filters Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-                >
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                            <Input
-                                placeholder="Search customers by name, email, or phone..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                            />
-                        </div>
-                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                 <Select
-                                    value={statusFilter}
-                                    onValueChange={(value: CustomerStatus | 'all') => setStatusFilter(value)}
+                                    value={formData.locationTag}
+                                    onValueChange={(value: LocationTag) =>
+                                        setFormData({ ...formData, locationTag: value })
+                                    }
                                 >
-                                    <SelectTrigger className="w-full sm:w-[160px] h-11">
-                                        <SelectValue placeholder="Status" />
+                                    <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
+                                        <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="accepted">Accepted</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="rejected">Rejected</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Select
-                                    value={sortBy}
-                                    onValueChange={(value: SortOption) => setSortBy(value)}
-                                >
-                                    <SelectTrigger className="w-full sm:w-[160px] h-11">
-                                        <SelectValue placeholder="Sort by" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="newest">Newest First</SelectItem>
-                                        <SelectItem value="oldest">Oldest First</SelectItem>
-                                        <SelectItem value="name">Name A-Z</SelectItem>
+                                    <SelectContent className="z-[9999]">
+                                        <SelectItem value="nearby">Nearby</SelectItem>
+                                        <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
+                                        <SelectItem value="national">National</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                    </div>
-                </motion.div>
+                            <div>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Label htmlFor="relationshipTag" className="text-xs sm:text-sm font-medium">Relationship</Label>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={200}>
+                                            <TooltipTrigger asChild>
+                                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
+                                                <div className="text-xs space-y-1">
+                                                    <p><strong>Partner:</strong> {RELATIONSHIP_TAG_INFO.partner}</p>
+                                                    <p><strong>Supplier:</strong> {RELATIONSHIP_TAG_INFO.supplier}</p>
+                                                    <p><strong>Referral:</strong> {RELATIONSHIP_TAG_INFO.affiliate}</p>
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Select
+                                    value={formData.relationshipTag}
+                                    onValueChange={(value: RelationshipTag) =>
+                                        setFormData({ ...formData, relationshipTag: value })
+                                    }
+                                >
+                                    <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[9999]">
+                                        <SelectItem value="partner">Partner</SelectItem>
+                                        <SelectItem value="supplier">Supplier</SelectItem>
+                                        <SelectItem value="affiliate">Referral</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
-                {/* Customers Table */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100"
-                >
+                        {/* Permission Checkbox */}
+                        <div className="bg-orange-50/80 border border-orange-200/80 rounded-xl p-3 sm:p-4">
+                            <div className="flex items-start gap-2.5 sm:gap-3">
+                                <Checkbox
+                                    id="permission"
+                                    checked={formData.hasPermission}
+                                    onCheckedChange={(checked) =>
+                                        setFormData({ ...formData, hasPermission: checked as boolean })
+                                    }
+                                    className="mt-0.5 shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <Label htmlFor="permission" className="font-semibold text-xs sm:text-sm text-orange-950 cursor-pointer">
+                                            Permission Confirmation <span className="text-red-500">*</span>
+                                        </Label>
+                                        <TooltipProvider>
+                                            <Tooltip delayDuration={200}>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-3.5 w-3.5 text-orange-600 cursor-help shrink-0" />
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
+                                                    <p className="text-xs">You must confirm that you have explicit permission from this customer to store their information and contact them for business purposes. This is required for GDPR compliance.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    <p className="text-xs text-orange-800 mt-1 leading-relaxed">
+                                        I confirm that this customer has given permission to add their details and be contacted for business purposes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 sm:h-10 text-xs sm:text-sm"
+                            onClick={() => {
+                                setIsAddModalOpen(false);
+                                resetForm();
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={handleAddCustomer}
+                            disabled={addCustomer.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
+                            className="bg-orange-600 hover:bg-orange-700 text-white h-9 sm:h-10 text-xs sm:text-sm font-medium px-4"
+                        >
+                            {addCustomer.isPending ? 'Adding...' : 'Add Customer'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full space-y-4 sm:space-y-6">
+            {/* Premium Header Section */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 p-4 sm:p-6 md:p-8 shadow-xl"
+            >
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-600/20 blur-3xl" />
+
+                <div className="relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                                Customer Contact
+                            </h1>
+                            <p className="text-orange-100 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">
+                                Manage your customer relationships and grow your network
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-3 w-full sm:w-auto">
+                            <Button
+                                variant="outline"
+                                className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm h-9 sm:h-10 text-xs sm:text-sm"
+                                onClick={() => setIsImportModalOpen(true)}
+                            >
+                                <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 shrink-0" />
+                                Import CSV
+                            </Button>
+                            <Button
+                                className="bg-white text-orange-600 hover:bg-orange-50 shadow-md hover:shadow-lg transition-all h-9 sm:h-10 text-xs sm:text-sm"
+                                onClick={() => {
+                                    resetForm();
+                                    setIsAddModalOpen(true);
+                                }}
+                            >
+                                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 shrink-0" />
+                                Add Customer
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 mt-5 sm:mt-8">
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="bg-white/15 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-white/80 text-xs sm:text-sm">Total Customers</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-white">{totalCustomers}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="bg-white/15 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-400/30 rounded-lg">
+                                    <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-white/80 text-xs sm:text-sm">Active</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-white">{acceptedCount}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className="bg-white/15 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-400/30 rounded-lg">
+                                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-white/80 text-xs sm:text-sm">Pending</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-white">{pendingCount}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Search and Filters Section */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-3.5 sm:p-6"
+            >
+                <div className="flex flex-col md:flex-row gap-2.5 sm:gap-4">
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                        <Input
+                            placeholder="Search customers by name, email, or phone..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 sm:pl-10 h-9 sm:h-11 text-xs sm:text-sm bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                        <Select
+                            value={statusFilter}
+                            onValueChange={(value: CustomerStatus | 'all') => setStatusFilter(value)}
+                        >
+                            <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-11 text-xs sm:text-sm">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="accepted">Accepted</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={sortBy}
+                            onValueChange={(value: SortOption) => setSortBy(value)}
+                        >
+                            <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-11 text-xs sm:text-sm">
+                                <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="newest">Newest First</SelectItem>
+                                <SelectItem value="oldest">Oldest First</SelectItem>
+                                <SelectItem value="name">Name A-Z</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Customers Table */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            >
                     {isLoading ? (
                         <div className="p-16 text-center">
                             <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600" />
@@ -580,227 +833,8 @@ export default function CustomerContactPage() {
                         </>
                     )}
                 </motion.div>
-            </div>
 
-            {/* Add Customer Modal */}
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl">Add New Customer</DialogTitle>
-                        <DialogDescription>
-                            Add a customer to your network. Fields marked with * are required.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="col-span-1 sm:col-span-2">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="fullName">
-                                        Full Name <span className="text-red-500">*</span>
-                                    </Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <p className="text-sm">Enter the full name of the customer or business owner.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Input
-                                    id="fullName"
-                                    value={formData.fullName}
-                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                    placeholder="John Doe"
-                                />
-                            </div>
-                            <div className="col-span-1 sm:col-span-2">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="businessName">Business Name</Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <p className="text-sm">The official name of the business or company this customer represents.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Input
-                                    id="businessName"
-                                    value={formData.businessName}
-                                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                                    placeholder="ABC Company Ltd"
-                                />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="email">Email</Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <p className="text-sm">Primary email address for business communications and campaign invitations.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="john@example.com"
-                                />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="phone">
-                                        Phone <span className="text-red-500">*</span>
-                                    </Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <p className="text-sm">Contact phone number for direct communication and follow-ups.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+44 20 1234 5678"
-                                />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="locationTag">Location</Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <div className="text-sm space-y-1">
-                                                    <p><strong>Nearby:</strong> {LOCATION_TAG_INFO.nearby}</p>
-                                                    <p><strong>Hyperlocal:</strong> {LOCATION_TAG_INFO.hyperlocal}</p>
-                                                    <p><strong>National:</strong> {LOCATION_TAG_INFO.national}</p>
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Select
-                                    value={formData.locationTag}
-                                    onValueChange={(value: LocationTag) =>
-                                        setFormData({ ...formData, locationTag: value })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="nearby">Nearby</SelectItem>
-                                        <SelectItem value="hyperlocal">Hyperlocal</SelectItem>
-                                        <SelectItem value="national">National</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <Label htmlFor="relationshipTag">Relationship</Label>
-                                    <TooltipProvider>
-                                        <Tooltip delayDuration={200}>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                <div className="text-sm space-y-1">
-                                                    <p><strong>Partner:</strong> {RELATIONSHIP_TAG_INFO.partner}</p>
-                                                    <p><strong>Supplier:</strong> {RELATIONSHIP_TAG_INFO.supplier}</p>
-                                                    <p><strong>Referral:</strong> {RELATIONSHIP_TAG_INFO.affiliate}</p>
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                                <Select
-                                    value={formData.relationshipTag}
-                                    onValueChange={(value: RelationshipTag) =>
-                                        setFormData({ ...formData, relationshipTag: value })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="partner">Partner</SelectItem>
-                                        <SelectItem value="supplier">Supplier</SelectItem>
-                                        <SelectItem value="affiliate">Referral</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
 
-                        {/* Permission Checkbox */}
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                                <Checkbox
-                                    id="permission"
-                                    checked={formData.hasPermission}
-                                    onCheckedChange={(checked) =>
-                                        setFormData({ ...formData, hasPermission: checked as boolean })
-                                    }
-                                    className="mt-1"
-                                />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="permission" className="font-medium text-orange-900 cursor-pointer">
-                                            Permission Confirmation <span className="text-red-500">*</span>
-                                        </Label>
-                                        <TooltipProvider>
-                                            <Tooltip delayDuration={200}>
-                                                <TooltipTrigger asChild>
-                                                    <Info className="h-4 w-4 text-orange-600 cursor-help" />
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top" className="max-w-xs z-[10000]">
-                                                    <p className="text-sm">You must confirm that you have explicit permission from this customer to store their information and contact them for business purposes. This is required for GDPR compliance.</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-                                    <p className="text-sm text-orange-800 mt-1">
-                                        I confirm that this customer has given permission to add their details and be contacted for business purposes.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleAddCustomer}
-                            disabled={addCustomer.isPending || !formData.fullName || !formData.phone || !formData.hasPermission}
-                            className="bg-orange-600 hover:bg-orange-700"
-                        >
-                            {addCustomer.isPending ? 'Adding...' : 'Add Customer'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             {/* CSV Import Modal */}
             <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>

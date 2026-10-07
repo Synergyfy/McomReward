@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useGetCreditsRules, useGetCreditsHistory, useGetCreditsBalance } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -34,15 +34,36 @@ import { Badge } from '@/components/ui/badge';
 export default function MerchantCreditsDashboard() {
   const { data: rulesData } = useGetCreditsRules();
   const { data: balanceData } = useGetCreditsBalance();
-  const { data: historyData } = useGetCreditsHistory(1, 4);
+  const { data: historyData } = useGetCreditsHistory(1, 100);
 
-  const chartData = [
-    { month: 'Feb', issued: 0, redeemed: 0 },
-    { month: 'Mar', issued: 0, redeemed: 0 },
-    { month: 'Apr', issued: 0, redeemed: 0 },
-    { month: 'May', issued: 0, redeemed: 0 },
-    { month: 'Jun', issued: 0, redeemed: 0 },
-  ];
+  const recentActivity = useMemo(() => (historyData?.data ?? []).slice(0, 4), [historyData]);
+
+  // Aggregate real credit history into monthly issued vs converted buckets.
+  const chartData = useMemo(() => {
+    const months: { month: string; issued: number; redeemed: number }[] = [];
+    const now = new Date();
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        month: d.toLocaleString('en-GB', { month: 'short' }),
+        issued: 0,
+        redeemed: 0,
+      });
+    }
+    for (const item of historyData?.data ?? []) {
+      if (!item.createdAt) continue;
+      const created = new Date(item.createdAt);
+      const bucket = months.find((m, idx) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (4 - idx), 1);
+        return d.getFullYear() === created.getFullYear() && d.getMonth() === created.getMonth();
+      });
+      if (!bucket) continue;
+      const amount = Number(item.amount ?? 0);
+      if (amount >= 0) bucket.issued += amount;
+      else bucket.redeemed += Math.abs(amount);
+    }
+    return months;
+  }, [historyData]);
 
   return (
     <div className="min-h-screen bg-slate-50/30 p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto">
@@ -259,7 +280,9 @@ export default function MerchantCreditsDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-slate-50">
-              {historyData?.data.map((item, index) => (
+              {recentActivity.length === 0 ? (
+                <p className="p-6 text-sm text-slate-400">No credit activity yet.</p>
+              ) : recentActivity.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-6 hover:bg-slate-50/80 transition-all border-l-4 border-transparent hover:border-orange-500 group">
                   <div className="flex items-center gap-5">
                     <div className={`p-3 rounded-2xl shadow-sm ${Number(item.amount ?? 0) >= 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400'} group-hover:scale-110 transition-transform`}>

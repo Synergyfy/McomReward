@@ -12,11 +12,11 @@ export default function MyAssetsLayout({
     const isGroupCirclesPage = pathname.includes('/group-circles');
 
     return (
-        <div className="p-6 md:p-8 space-y-8 bg-gray-50 min-h-screen">
+        <div className="space-y-4 sm:space-y-6 w-full">
             {!isGroupCirclesPage && (
-                <h1 className="text-3xl font-bold text-gray-800">My Network</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">My Network</h1>
             )}
-            <div className={isGroupCirclesPage ? "" : "pt-6"}>
+            <div className={isGroupCirclesPage ? "" : "pt-1 sm:pt-2"}>
                 {children}
             </div>
         </div>

@@ -23,8 +23,9 @@ export class WalletController {
   @Get("my-balance")
   @Roles(Role.Business)
   async getMyBalance(@Request() req) {
-    // Assuming req.user.id is the business ID based on JwtStrategy
-    return this.walletService.getWallet(req.user.id);
+    // businessId claim (new tokens) with fallback for pre-claim tokens.
+    const businessId = req.user?.businessId ?? req.user?.id;
+    return this.walletService.getWallet(businessId);
   }
 
   // Admin endpoint to manually top up (for testing or manual ops)

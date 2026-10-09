@@ -11,12 +11,14 @@ import {
 } from "@nestjs/common";
 import { SsoService } from "./sso.service";
 import { Public } from "../../common/decorators/public.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBody,
   ApiQuery,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 
 @ApiTags("sso")
@@ -128,4 +130,15 @@ export class SsoController {
   ) {
     return this.exchangeCode(code, redirectUri);
   }
+
+  @Get("entitlement")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get or introspect user PlatformEntitlement in real-time" })
+  async getEntitlement(@CurrentUser() user: any) {
+    if (!user?.id) {
+      throw new UnauthorizedException("User not authenticated");
+    }
+    return this.ssoService.getOrRefreshEntitlement(user.id);
+  }
 }
+

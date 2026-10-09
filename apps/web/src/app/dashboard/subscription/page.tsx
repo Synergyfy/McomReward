@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   CreditCard,
@@ -12,7 +12,13 @@ import {
   Zap,
   Loader2,
   RefreshCw,
+  Target,
+  Award,
+  Clock,
+  ExternalLink,
+  ListTodo,
 } from 'lucide-react';
+import api from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PlanCard from '@/components/business/subscription/PlanCard';
@@ -23,6 +29,7 @@ import {
   useGetMyPackage,
 } from '@/services/mcom-packages';
 import { toast } from 'sonner';
+
 
 export default function SubscriptionDashboardPage() {
   const [durationTab, setDurationTab] = useState<'STANDARD' | 'PRO' | 'PRO_PLUS'>('STANDARD');
@@ -76,6 +83,14 @@ export default function SubscriptionDashboardPage() {
     (myPackage?.expiresAt ? new Date(myPackage.expiresAt) < new Date() : false);
 
   const isTrial = myPackage?.isTrial || membership?.isTrial || false;
+  const isMembershipBundle =
+    myPackage?.source === 'membership' ||
+    myPackage?.accessType === 'PAID_MEMBERSHIP';
+  const isTrialProgramme =
+    myPackage?.accessType === 'TRIAL_PROGRAMME' || isTrial;
+  const trialTasks = myPackage?.trialTasks || [];
+  const upgradeUrl =
+    myPackage?.upgradeUrl || 'http://localhost:3010/dashboard/memberships';
 
   const expiresAtFormatted = React.useMemo(() => {
     const rawDate = membership?.expiresAt || myPackage?.expiresAt;
@@ -117,10 +132,13 @@ export default function SubscriptionDashboardPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
+            onClick={async () => {
+              try {
+                await api.get('/sso/entitlement');
+              } catch {}
               refetchPlans();
               refetchMyPackage();
-              toast.info('Refreshed subscription status');
+              toast.info('Refreshed subscription and entitlement status');
             }}
             className="gap-2 self-start sm:self-auto"
           >
@@ -134,7 +152,7 @@ export default function SubscriptionDashboardPage() {
           <div className="bg-gradient-to-r from-gray-900 via-slate-900 to-gray-800 p-6 text-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-orange-400">
                     Current Plan
                   </span>
@@ -143,6 +161,16 @@ export default function SubscriptionDashboardPage() {
                       <AlertTriangle size={12} />
                       <span>Expired</span>
                     </span>
+                  ) : isMembershipBundle ? (
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Sparkles size={12} />
+                      <span>MCOM Membership Bundle</span>
+                    </span>
+                  ) : isTrialProgramme ? (
+                    <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Clock size={12} />
+                      <span>£1 Verified Trial</span>
+                    </span>
                   ) : currentTierName === 'Free' ? (
                     <span className="bg-gray-700 text-gray-300 text-xs font-bold px-2.5 py-0.5 rounded-full">
                       Free Plan
@@ -150,7 +178,7 @@ export default function SubscriptionDashboardPage() {
                   ) : (
                     <span className="bg-green-500/20 text-green-300 border border-green-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                       <CheckCircle2 size={12} />
-                      <span>{isTrial ? 'Active Trial' : 'Active Subscription'}</span>
+                      <span>Active Subscription</span>
                     </span>
                   )}
                 </div>
@@ -163,6 +191,10 @@ export default function SubscriptionDashboardPage() {
                 <p className="text-gray-300 text-xs max-w-xl">
                   {isExpired
                     ? 'Your subscription period has ended. Upgrade or renew to restore campaign creation, digital stamps, and customer analytics.'
+                    : isMembershipBundle
+                    ? `Included in your MCOM Central ${myPackage?.membershipTier || 'Global'} Membership. Quotas and renewals are automatically managed.`
+                    : isTrialProgramme
+                    ? 'You are active on a task-gated onboarding trial. Complete your required tasks to unlock ongoing ecosystem benefits.'
                     : currentTierName === 'Free'
                     ? 'You are on the free tier. Upgrade to unlock multiple campaigns, CRM tools, and point allowances.'
                     : 'Your business is fully unlocked with active ecosystem quotas and features.'}
@@ -176,7 +208,7 @@ export default function SubscriptionDashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium">
-                      {isExpired ? 'Expired On' : 'Next Renewal'}
+                      {isExpired ? 'Expired On' : isTrialProgramme ? 'Trial Ends' : 'Next Renewal'}
                     </p>
                     <p className="text-sm font-bold text-white">{expiresAtFormatted}</p>
                   </div>
@@ -184,6 +216,46 @@ export default function SubscriptionDashboardPage() {
               )}
             </div>
           </div>
+
+          {isMembershipBundle && (
+            <div className="bg-gradient-to-r from-amber-950/60 via-amber-900/40 to-slate-900 border-t border-amber-500/20 px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-200 text-xs sm:text-sm">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="text-amber-400 flex-shrink-0" size={18} />
+                <span>
+                  Plan <strong>{currentTierName}</strong> is bundled with your <strong>MCOM {myPackage?.membershipTier || 'Central'} Membership</strong>.
+                </span>
+              </div>
+              <a
+                href={upgradeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-amber-400 hover:bg-amber-300 text-gray-950 font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap self-end sm:self-auto shadow-sm"
+              >
+                <span>Manage on MCOM Central</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
+
+          {isTrialProgramme && (
+            <div className="bg-indigo-950/60 border-t border-indigo-500/25 px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-indigo-200 text-xs sm:text-sm">
+              <div className="flex items-center gap-2.5">
+                <Clock className="text-indigo-400 flex-shrink-0" size={18} />
+                <span>
+                  Task-Gated Trial Active. Complete your required onboarding missions below to earn points and qualify for full activation.
+                </span>
+              </div>
+              <a
+                href={upgradeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap self-end sm:self-auto shadow-sm"
+              >
+                <span>Upgrade to Full Plan</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
 
           {isExpired && (
             <div className="bg-red-50 border-b border-red-100 px-6 py-3.5 flex items-center gap-3 text-red-800 text-sm">
@@ -194,6 +266,81 @@ export default function SubscriptionDashboardPage() {
             </div>
           )}
         </Card>
+
+        {/* Task-Gated Trial Onboarding Missions */}
+        {isTrialProgramme && trialTasks.length > 0 && (
+          <Card id="tasks" className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50 border-b border-indigo-100 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-indigo-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                      MCOM Task Engine
+                    </span>
+                    <span className="text-xs font-semibold text-indigo-700">
+                      Required Onboarding Missions
+                    </span>
+                  </div>
+                  <CardTitle className="text-xl font-black text-gray-900">
+                    Trial Progress & Reward Tasks
+                  </CardTitle>
+                  <p className="text-xs text-gray-600">
+                    Complete these tasks assigned from MCOM Central during your trial to earn reward points and maintain your platform quotas.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto bg-white/90 backdrop-blur-sm border border-indigo-200/80 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-900 shadow-sm">
+                  <ListTodo size={16} className="text-indigo-600" />
+                  <span>
+                    {trialTasks.filter(t => t.status === 'COMPLETED').length} / {trialTasks.length} Completed
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {trialTasks.map((task) => (
+                  <div
+                    key={task.taskId}
+                    className="border border-gray-200/80 rounded-xl p-4 flex flex-col justify-between gap-3 hover:border-indigo-300 hover:shadow-sm transition-all bg-slate-50/50"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-sm text-gray-900">
+                          {task.title}
+                        </h4>
+                        <span
+                          className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md whitespace-nowrap ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : task.status === 'IN_PROGRESS'
+                                ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                                : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}
+                        >
+                          {task.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2">
+                        {task.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200/60 font-medium">
+                      <span className="text-gray-500 flex items-center gap-1">
+                        <Clock size={12} className="text-gray-400" />
+                        <span>Deadline: {task.deadlineDays}d</span>
+                      </span>
+                      <span className="text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded-md">
+                        +{task.rewardPoints} Pts
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Plan Upgrade Selector Section */}
         <div className="space-y-6">

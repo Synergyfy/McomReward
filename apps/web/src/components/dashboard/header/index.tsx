@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Loader2, Bell, Menu, User, Wallet, Coins, Star, Gift, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,19 +87,50 @@ export default function BusinessHeader({
 
   // Check if user is on Free tier (local my-package truth)
   const localPlanName = myPackage?.planName || myPackage?.membershipTier || 'Free';
+  const isTrial = Boolean(
+    myPackage?.isTrial ||
+      subscription?.isTrial ||
+      myPackage?.accessType === 'TRIAL_PROGRAMME',
+  );
+
+  const hasEntitledAccess = Boolean(
+    myPackage?.hasAccess ||
+      isTrial ||
+      myPackage?.accessType === 'PAID_MEMBERSHIP' ||
+      myPackage?.accessType === 'DIRECT_PACKAGE',
+  );
+
   const isFreeTier =
+    !hasEntitledAccess &&
     (localPlanName === 'Free' || myPackage?.membershipStatus === 'expired') &&
     !profile?.isSuperBusiness;
   const isSuperBusiness = profile?.isSuperBusiness;
 
-  // Override tier name for Super Business
-  const displayTierName = isSuperBusiness ? 'Super Business' : tierName;
+  const trialDaysRemaining = useMemo(() => {
+    if (!isTrial) return null;
+    if (myPackage?.daysRemaining !== undefined && myPackage.daysRemaining !== null) {
+      return myPackage.daysRemaining;
+    }
+    const expiry = myPackage?.expiresAt || subscription?.expiresAt;
+    if (!expiry) return 14;
+    const diff = new Date(expiry).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [isTrial, myPackage?.daysRemaining, myPackage?.expiresAt, subscription?.expiresAt]);
+
+  // Override tier name for Super Business or Trial
+  const displayTierName = isSuperBusiness
+    ? 'Super Business'
+    : isTrial
+      ? `14-Day Trial · ${trialDaysRemaining}d Left`
+      : (myPackage?.planName || tierName || 'Standard');
 
   const TierIcon = displayTierName ? (tierIcons[displayTierName as TierName] || Crown) : Crown;
   // Use Platinum style for Super Business or default
   const tierStyle = isSuperBusiness
     ? (tierStyles['Platinum'] || "bg-gray-100 text-gray-700")
-    : (displayTierName && displayTierName !== 'N/A' ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
+    : isTrial
+      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs font-bold"
+      : (displayTierName && displayTierName !== 'N/A' ? (tierStyles[displayTierName as TierName] || "bg-gray-100 text-gray-700") : "");
 
   const handleLogout = () => {
     logoutMutation(undefined, {

@@ -118,6 +118,14 @@ export class McomWebhookController {
     );
 
     switch (event) {
+      case "entitlement.trial_started":
+        await this.handleTrialStarted(data);
+        break;
+
+      case "entitlement.membership_assigned":
+        await this.handleMembershipAssigned(data);
+        break;
+
       case "package.created":
       case "package.renewed":
         await this.handlePackageActive(data);
@@ -145,12 +153,32 @@ export class McomWebhookController {
     return { received: true };
   }
 
+
   private async findBusinessByCentralId(
-    mcomUserId?: string,
+    identifier?: string,
+    email?: string,
   ): Promise<Business | null> {
-    if (!mcomUserId) return null;
-    return this.businessRepository.findOne({ where: { mcomUserId } });
+    if (!identifier && !email) return null;
+    if (identifier) {
+      const byMcomId = await this.businessRepository.findOne({
+        where: { mcomUserId: identifier },
+      });
+      if (byMcomId) return byMcomId;
+
+      const byId = await this.businessRepository.findOne({
+        where: { id: identifier },
+      });
+      if (byId) return byId;
+    }
+    if (email) {
+      const byEmail = await this.businessRepository.findOne({
+        where: { email: email.toLowerCase().trim() },
+      });
+      if (byEmail) return byEmail;
+    }
+    return null;
   }
+
 
   private async handlePackageActive(data: any) {
     const business = await this.findBusinessByCentralId(data.mcomUserId);
@@ -202,4 +230,121 @@ export class McomWebhookController {
       `Webhook: Subscription expired for business ${business.id}, downgraded.`,
     );
   }
+
+  private async handleTrialStarted(data: any) {
+    const business = await this.findBusinessByCentralId(
+      data.mcomUserId || data.userId || data.businessId,
+    );
+    if (!business) {
+      this.logger.warn(
+        `Business not found for trial_started webhook: ${data.mcomUserId}`,
+      );
+      return;
+    }
+
+    business.hasPaidVerificationFee = true;
+    business.entitlementSource = "trial";
+    if (data.programmeTasks) {
+      business.trialTasks = data.programmeTasks;
+    }
+    await this.businessRepository.save(business);
+
+    if (data.entitlement) {
+      business.entitlementData = data.entitlement;
+      await this.businessRepository.save(business);
+      await this.planSubscriptionService.syncFromEntitlement(
+        business.id,
+        data.entitlement,
+      );
+    } else {
+      const trialDays = data.trialAccessDays || 14;
+      const expiresAt =
+        data.trialAccessExpiresAt ||
+        new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+
+      await this.planSubscriptionService.syncFromEntitlement(business.id, {
+        version: "2026-10-01",
+        targetPlatform: {
+          clientId: "mcom-rewards",
+          platformSlug: "rewards",
+          name: "MCOM Rewards",
+        },
+        access: {
+          hasAccess: true,
+          accessType: "TRIAL_PROGRAMME",
+          upgradeUrl: `${this.configService.get("MCOM_SOLUTIONS_URL") || "http://localhost:3010"}/dashboard/memberships`,
+        },
+        plan: {
+          planId: data.planId || "trial_rewards",
+          planName: data.planName || "Trial Programme",
+          source: "trial",
+          status: "trial",
+          expiresAt,
+          quotas: {},
+          limits: {},
+          features: [],
+        },
+        membershipContext: {
+          membershipPlanName: null,
+          membershipLevel: "Trial",
+          membershipStatus: "trial",
+          isIncludedInMembership: false,
+        },
+        trialContext: {
+          isInTrial: true,
+          hasPaidVerificationFee: true,
+          trialExpiresAt: expiresAt,
+          daysRemaining: trialDays,
+          programmeTasks: data.programmeTasks || [],
+        },
+      });
+    }
+
+    this.logger.log(
+      `Webhook applied: Trial started for business ${business.id}`,
+    );
+  }
+
+  private async handleMembershipAssigned(data: any) {
+    const business = await this.findBusinessByCentralId(
+      data.mcomUserId || data.userId || data.businessId,
+    );
+    if (!business) {
+      this.logger.warn(
+        `Business not found for membership_assigned webhook: ${data.mcomUserId}`,
+      );
+      return;
+    }
+
+    business.entitlementSource = "membership";
+    business.membershipLevel =
+      data.membershipLevel || data.membershipPlanName || business.membershipLevel;
+    business.membershipTier =
+      data.membershipPlanName || business.membershipTier;
+    business.membershipStatus = "active";
+
+    if (data.entitlement) {
+      business.entitlementData = data.entitlement;
+      await this.businessRepository.save(business);
+      await this.planSubscriptionService.syncFromEntitlement(
+        business.id,
+        data.entitlement,
+      );
+    } else {
+      await this.businessRepository.save(business);
+      await this.planSubscriptionService.syncFromAppPlan(business.id, {
+        planId: data.planId || data.externalPlanId,
+        planName: data.planName || data.packageName,
+        status: "active",
+        expiresAt: data.expiresAt,
+        source: "membership",
+        membershipPlanName: data.membershipPlanName,
+      });
+    }
+
+    this.logger.log(
+      `Webhook applied: Membership assigned for business ${business.id}`,
+    );
+  }
 }
+

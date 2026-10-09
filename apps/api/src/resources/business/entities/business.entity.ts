@@ -342,6 +342,34 @@ export class Business extends AbstractBaseEntity {
   @Column({ nullable: true })
   membershipStatus?: string;
 
+  @ApiProperty({
+    description: "MCOM Entitlement source (e.g. membership, trial, direct)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  entitlementSource?: string;
+
+  @ApiProperty({
+    description: "Whether business paid the £1 verification fee on MCOM Solutions",
+    default: false,
+  })
+  @Column({ default: false })
+  hasPaidVerificationFee: boolean;
+
+  @ApiProperty({
+    description: "Programme tasks assigned during task-gated trial",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: () => "'[]'" })
+  trialTasks?: any[];
+
+  @ApiProperty({
+    description: "Cached latest PlatformEntitlement object from MCOM Central",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true })
+  entitlementData?: Record<string, any>;
+
   @ManyToMany(
     () => BusinessCampaign,
     (campaign) => campaign.participatingBusinesses,

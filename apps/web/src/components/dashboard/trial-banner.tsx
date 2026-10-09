@@ -2,17 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, CheckCircle2, ListTodo, ExternalLink } from 'lucide-react';
 import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { ProgrammeTask } from '@/services/mcom-packages';
+
 
 interface TrialBannerProps {
     planName: string;
     expiresAt: string;
+    tasks?: ProgrammeTask[];
+    upgradeUrl?: string;
 }
 
-export default function TrialBanner({ planName, expiresAt }: TrialBannerProps) {
+export default function TrialBanner({ planName, expiresAt, tasks = [], upgradeUrl }: TrialBannerProps) {
     const [timeLeft, setTimeLeft] = useState('');
     const [progress, setProgress] = useState(100);
+
+    const completedTasksCount = tasks.filter(t => t.status === 'COMPLETED').length;
+    const hasTasks = tasks.length > 0;
 
     useEffect(() => {
         const calculateTimeLeft = () => {
@@ -26,11 +33,7 @@ export default function TrialBanner({ planName, expiresAt }: TrialBannerProps) {
                 return;
             }
 
-            const totalDuration = 7 * 24 * 60 * 60 * 1000; // 7 days in ms (assuming 7 day trial)
-            // Ideally we'd know the start date too to calculate progress accurately, 
-            // but we can approximate or just use time remaining ratio if we knew the start.
-            // For now, let's just make the progress bar based on 7 days max.
-
+            const totalDuration = 14 * 24 * 60 * 60 * 1000; // up to 14 days
             const timeRemaining = expirationDate.getTime() - now.getTime();
             const calculatedProgress = Math.min(100, Math.max(0, (timeRemaining / totalDuration) * 100));
             setProgress(calculatedProgress);
@@ -52,65 +55,109 @@ export default function TrialBanner({ planName, expiresAt }: TrialBannerProps) {
         return () => clearInterval(timer);
     }, [expiresAt]);
 
+    const targetUpgradeHref = upgradeUrl || '/dashboard/subscription';
+    const isExternalUpgrade = Boolean(upgradeUrl && upgradeUrl.startsWith('http'));
+
     if (timeLeft === 'Expired') {
         return (
             <div className="bg-red-600 text-white px-4 py-3 shadow-md">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Clock className="h-5 w-5 animate-pulse" />
-                        <span className="font-semibold">Your trial has ended. Upgrade to reactivate your account.</span>
+                        <span className="font-semibold">Your trial period has ended. Upgrade to reactivate your account.</span>
                     </div>
-                    <Link
-                        href="/dashboard/subscription"
-                        className="bg-white text-red-600 px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-100 transition-colors whitespace-nowrap"
-                    >
-                        Upgrade Now
-                    </Link>
+                    {isExternalUpgrade ? (
+                        <a
+                            href={targetUpgradeHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white text-red-600 px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center gap-1.5"
+                        >
+                            <span>Upgrade on MCOM Central</span>
+                            <ExternalLink size={14} />
+                        </a>
+                    ) : (
+                        <Link
+                            href="/dashboard/subscription"
+                            className="bg-white text-red-600 px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-100 transition-colors whitespace-nowrap"
+                        >
+                            Upgrade Now
+                        </Link>
+                    )}
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 shadow-md relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 text-white px-4 sm:px-6 py-3.5 shadow-md relative overflow-hidden">
             <div className="absolute top-0 left-0 h-1 bg-white/30 w-full">
                 <div
-                    className="h-full bg-yellow-400 transition-all duration-1000 ease-linear"
+                    className="h-full bg-amber-400 transition-all duration-1000 ease-linear"
                     style={{ width: `${progress}%` }}
                 />
             </div>
 
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-full">
-                        <Zap className="h-5 w-5 text-yellow-300" />
+                    <div className="p-2 bg-white/20 rounded-full flex-shrink-0">
+                        <Zap className="h-5 w-5 text-amber-300" />
                     </div>
                     <div>
-                        <p className="font-semibold text-sm sm:text-base">
-                            You are currently on a 7‑Day Trial of <span className="font-bold text-yellow-300">{planName}</span>
-                        </p>
-                        <p className="text-xs sm:text-sm text-indigo-100 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {timeLeft}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-sm sm:text-base">
+                                Active Trial: <span className="font-bold text-amber-300">{planName}</span>
+                            </p>
+                            {hasTasks && (
+                                <span className="bg-white/20 text-white border border-white/20 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <ListTodo size={12} />
+                                    <span>{completedTasksCount}/{tasks.length} Tasks</span>
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-indigo-100 flex items-center gap-1.5 mt-0.5">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>{timeLeft}</span>
+                            {hasTasks && (
+                                <>
+                                    <span>•</span>
+                                    <span>Complete onboarding tasks to earn reward points</span>
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/dashboard/subscription" // Or a specific features page
-                        className="text-white/80 hover:text-white text-sm font-medium underline decoration-white/30 hover:decoration-white transition-all hidden sm:block"
-                    >
-                        See Full Benefits
-                    </Link>
-                    <Link
-                        href="/dashboard/subscription"
-                        className="bg-white text-indigo-600 px-5 py-2.5 rounded-full font-bold text-sm hover:bg-yellow-300 hover:text-indigo-800 transition-all shadow-lg transform hover:-translate-y-0.5"
-                    >
-                        Upgrade Now
-                    </Link>
+                <div className="flex items-center gap-2.5 self-end md:self-auto">
+                    {hasTasks && (
+                        <Link
+                            href="/dashboard/subscription#tasks"
+                            className="text-white/90 hover:text-white text-xs sm:text-sm font-medium underline decoration-white/40 hover:decoration-white transition-all flex items-center gap-1"
+                        >
+                            <span>View Tasks</span>
+                        </Link>
+                    )}
+                    {isExternalUpgrade ? (
+                        <a
+                            href={targetUpgradeHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white text-indigo-700 px-4 py-2 rounded-full font-bold text-xs sm:text-sm hover:bg-amber-300 hover:text-indigo-900 transition-all shadow-md flex items-center gap-1.5"
+                        >
+                            <span>Upgrade</span>
+                            <ExternalLink size={13} />
+                        </a>
+                    ) : (
+                        <Link
+                            href="/dashboard/subscription"
+                            className="bg-white text-indigo-700 px-4 py-2 rounded-full font-bold text-xs sm:text-sm hover:bg-amber-300 hover:text-indigo-900 transition-all shadow-md"
+                        >
+                            Upgrade Now
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
+

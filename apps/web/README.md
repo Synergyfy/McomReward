@@ -20,6 +20,24 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## File uploads (local vs Cloudinary)
+
+Image/file uploads go through a single flag:
+
+```bash
+# .env.local
+NEXT_PUBLIC_LOCAL_FILE_UPLOAD=true   # store uploads on disk (local dev)
+NEXT_PUBLIC_LOCAL_FILE_UPLOAD=false  # (or unset) upload to Cloudinary
+```
+
+- `true` — files are written to `public/uploads/<folder>/` and the returned
+  URL (`/uploads/<folder>/<file>`) is stored in the database. The folder is
+  gitignored, so uploads are never committed.
+- `false` / unset — the existing Cloudinary flow is used.
+
+Local file storage is intended for development only. On production hosts
+without a persistent disk, keep the flag unset/false and use Cloudinary.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

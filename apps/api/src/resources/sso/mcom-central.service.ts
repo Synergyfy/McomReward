@@ -337,5 +337,42 @@ export class McomCentralService {
       return null;
     }
   }
+
+  /**
+   * Strict variant for callers that must distinguish "not entitled" from
+   * "could not verify" (Central unreachable / 5xx). Unlike
+   * {@link getIntrospectionEntitlementByUserId}, transport errors and 5xx
+   * responses are thrown so the caller can fail closed with a retryable code.
+   *
+   * Returns `{ found: false }` only when Central explicitly reports the
+   * user/business does not exist (400/404).
+   */
+  async introspectEntitlementByUserIdStrict(mcomUserId: string): Promise<{
+    found: boolean;
+    data: any | null;
+  }> {
+    const query = `client_id=${encodeURIComponent(this.clientId)}&user_id=${encodeURIComponent(mcomUserId)}`;
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/auth/sso/entitlement?${query}`,
+      {
+        method: "GET",
+        headers: {
+          "X-API-Key": this.apiKey || this.internalApiSecret,
+          ...this.getHmacHeaders(),
+        },
+      },
+    );
+
+    if (response.status === 400 || response.status === 404) {
+      return { found: false, data: null };
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Central entitlement introspection failed: ${response.status}`,
+      );
+    }
+
+    return { found: true, data: await response.json() };
+  }
 }
 

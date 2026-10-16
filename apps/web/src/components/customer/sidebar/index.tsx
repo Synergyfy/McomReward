@@ -86,6 +86,12 @@ export default function CustomerSidebar({ isOpen, onClose, activePath, basePath 
           </Link>
         </li>
         <li className="mb-2">
+          <Link href={`${basePath}/partner-rewards`} className={linkClasses("/partner-rewards")} onClick={onClose}>
+            <Gift className="mr-3" />
+            Partner Rewards
+          </Link>
+        </li>
+        <li className="mb-2">
           <Link href={`${basePath}/my-campaigns`} className={linkClasses("/my-campaigns")} onClick={onClose}>
             <Megaphone className="mr-3" />
             My Campaigns

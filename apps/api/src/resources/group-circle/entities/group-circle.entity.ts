@@ -35,8 +35,16 @@ export class GroupCircle extends AbstractBaseEntity {
   @Column({ type: "int" })
   duration: GroupCircleDuration;
 
-  @ApiProperty({ enum: InteractionLevel, description: "Interaction level" })
-  @Column({ type: "enum", enum: InteractionLevel })
+  @ApiProperty({
+    enum: InteractionLevel,
+    description: "Interaction level",
+    default: InteractionLevel.COLLABORATE,
+  })
+  @Column({
+    type: "enum",
+    enum: InteractionLevel,
+    default: InteractionLevel.COLLABORATE,
+  })
   interactionLevel: InteractionLevel;
 
   @ApiProperty({ enum: GroupCircleStatus, description: "Status" })

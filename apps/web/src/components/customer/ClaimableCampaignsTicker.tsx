@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Award } from 'lucide-react';
+import { Award, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useGetClaimableCampaigns } from '@/services/campaigns/hook';
@@ -16,16 +16,11 @@ export const ClaimableCampaignsTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="my-12 p-8 bg-gray-100 rounded-2xl">
-        <h3 className="text-3xl font-extrabold text-gray-900 flex items-center mb-6">
-          <Award className="w-10 h-10 text-yellow-400 mr-3 drop-shadow-md" />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
-            Hot Campaigns to Claim
-          </span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="my-4 sm:my-8 p-3 sm:p-6 bg-gray-100/80 rounded-2xl animate-pulse">
+        <div className="h-6 w-48 bg-gray-200 rounded-lg mb-4" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
           {[...Array(campaignsToShow)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-lg h-80 animate-pulse" />
+            <div key={i} className="bg-white rounded-xl h-48 sm:h-64" />
           ))}
         </div>
       </div>
@@ -37,50 +32,60 @@ export const ClaimableCampaignsTicker = () => {
   }
 
   return (
-    <div className="my-12 p-8 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl shadow-inner-lg border border-gray-100">
-      <div className="flex justify-between items-center mb-6">
-          <div>
-              <h3 className="text-3xl font-extrabold text-gray-900 flex items-center">
-              <Award className="w-10 h-10 text-yellow-400 mr-3 drop-shadow-md" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
-                  Hot Campaigns to Claim
-              </span>
-              </h3>
-              <p className="text-gray-600 mt-1">These popular campaigns are available for you to join right now!</p>
-          </div>
+    <div className="my-4 sm:my-8 p-3.5 sm:p-6 bg-gradient-to-r from-orange-50/70 via-rose-50/50 to-purple-50/70 rounded-2xl border border-orange-100/80 shadow-sm">
+      <div className="flex justify-between items-center mb-3 sm:mb-5">
+        <div>
+          <h3 className="text-base sm:text-2xl font-black text-gray-900 flex items-center gap-1.5 sm:gap-2">
+            <Award className="w-5 h-5 sm:w-7 sm:h-7 text-orange-500 shrink-0" />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-600 via-pink-600 to-purple-600">
+              Hot Campaigns to Claim
+            </span>
+            <Sparkles className="w-4 h-4 text-amber-500 shrink-0 hidden sm:inline-block" />
+          </h3>
+          <p className="text-gray-500 text-[11px] sm:text-xs mt-0.5 line-clamp-1">
+            Popular community campaigns ready for your business to join instantly.
+          </p>
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
         {availableCampaigns.slice(0, campaignsToShow).map((campaign) => (
           <Card
             key={campaign.id}
-            className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-0 overflow-hidden group"
+            className="p-0 py-0 gap-0 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col justify-between"
           >
-            <CardContent className="p-0">
-              <div className="relative h-40 w-full">
-                {campaign.banner_url || campaign.bannerUrl ? (
-                  <Image
-                    src={campaign.banner_url || campaign.bannerUrl || ''}
-                    alt={campaign.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300"/>
-                )}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"/>
+            <CardContent className="p-0 flex flex-col h-full justify-between">
+              <div>
+                <div className="relative h-24 sm:h-36 w-full bg-gray-100 overflow-hidden">
+                  {campaign.banner_url || campaign.bannerUrl ? (
+                    <Image
+                      src={campaign.banner_url || campaign.bannerUrl || ''}
+                      alt={campaign.name}
+                      layout="fill"
+                      objectFit="cover"
+                      className="hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center text-orange-400 font-bold text-xs">
+                      MCOM
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                </div>
+                <div className="p-2.5 sm:p-4">
+                  <h4 className="font-bold text-xs sm:text-base text-gray-900 truncate">
+                    {campaign.name}
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 line-clamp-1 sm:line-clamp-2 h-4 sm:h-8">
+                    {campaign.campaign_message || 'Available to claim now.'}
+                  </p>
+                </div>
               </div>
-              <div className="p-5">
-                <h4 className="font-bold text-lg text-gray-800 truncate group-hover:text-purple-600 transition-colors duration-300">
-                  {campaign.name}
-                </h4>
-                <p className="text-sm text-gray-500 mt-1 h-10 overflow-hidden">
-                  {campaign.campaign_message}
-                </p>
+              <div className="p-2.5 sm:p-4 pt-0">
                 <Button
-                  size="lg"
+                  size="sm"
                   asChild
-                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  className="w-full h-7 sm:h-9 text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-bold rounded-lg shadow-sm"
                 >
                   <Link href={`/dashboard/campaigns/preview/${campaign.id}`}>
                     Claim Now

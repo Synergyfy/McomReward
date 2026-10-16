@@ -70,8 +70,63 @@ export interface ConfirmPurchaseDto {
   provider?: string;
 }
 
+export interface ProgrammeTask {
+  taskId: string;
+  title: string;
+  description: string;
+  deadlineDays: number;
+  rewardPoints: number;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED';
+}
+
+export interface PlatformEntitlement {
+  version: '2026-10-01';
+  targetPlatform: {
+    clientId: string;
+    platformSlug: string;
+    name: string;
+  };
+  access: {
+    hasAccess: boolean;
+    accessType: 'PAID_MEMBERSHIP' | 'TRIAL_PROGRAMME' | 'DIRECT_PACKAGE' | 'NONE';
+    reason?:
+      | 'PLATFORM_NOT_IN_MEMBERSHIP'
+      | 'TRIAL_NO_TASKS'
+      | 'TRIAL_EXPIRED'
+      | 'UNVERIFIED'
+      | 'MEMBERSHIP_EXPIRED'
+      | 'NO_ACTIVE_ENTITLEMENT';
+    upgradeUrl: string;
+  };
+  plan: {
+    planId: string;
+    planName: string;
+    source: 'membership' | 'trial' | 'direct';
+    status: 'active' | 'trial' | 'expired';
+    billingCycle?: string | null;
+    expiresAt?: string | null;
+    quotas: Record<string, unknown>;
+    limits: Record<string, unknown>;
+    features: string[];
+  } | null;
+  membershipContext: {
+    membershipPlanName: string | null;
+    membershipLevel: string;
+    membershipStatus: string;
+    isIncludedInMembership: boolean;
+  };
+  trialContext: {
+    isInTrial: boolean;
+    hasPaidVerificationFee: boolean;
+    trialExpiresAt: string | null;
+    daysRemaining: number;
+    programmeTasks: ProgrammeTask[];
+  };
+}
+
 export interface MyPackageResponse {
   membership: any;
+  subscription?: any;
   isLinkedToMcom: boolean;
   mcomUserId: string | null;
   membershipLevel: string;
@@ -82,8 +137,17 @@ export interface MyPackageResponse {
   planVariantId?: string | null;
   isExpired?: boolean;
   isTrial?: boolean;
+  hasAccess?: boolean;
+  accessType?: 'PAID_MEMBERSHIP' | 'TRIAL_PROGRAMME' | 'DIRECT_PACKAGE' | 'NONE';
+  source?: 'membership' | 'trial' | 'direct' | string;
+  entitlement?: PlatformEntitlement | null;
+  trialTasks?: ProgrammeTask[];
+  hasPaidVerificationFee?: boolean;
+  daysRemaining?: number;
+  upgradeUrl?: string;
   expiresAt?: string | null;
 }
+
 
 const MCOM_PACKAGES_KEY = 'mcom-packages';
 
@@ -110,6 +174,19 @@ export const useGetMyPackage = () => {
     queryFn: getMyPackage,
   });
 };
+
+export const getIntrospectionEntitlement = async (): Promise<PlatformEntitlement | null> => {
+  const { data } = await api.get<PlatformEntitlement | null>('/sso/entitlement');
+  return data;
+};
+
+export const useGetIntrospectionEntitlement = () => {
+  return useQuery({
+    queryKey: ['sso', 'entitlement'],
+    queryFn: getIntrospectionEntitlement,
+  });
+};
+
 
 export const initiatePurchase = async (
   payload: InitiatePurchaseDto

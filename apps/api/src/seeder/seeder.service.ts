@@ -277,12 +277,14 @@ export class SeederService {
       }
     }
 
-    const hashedPassword = await bcrypt.hash("password", 10);
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "password";
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     const admins = await this.adminRepository.save([
       {
         name: "Admin User",
-        email: "admin@example.com",
+        email: adminEmail,
         password: hashedPassword,
       },
     ]);

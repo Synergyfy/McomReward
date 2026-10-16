@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
+import { PlatformEntitlement } from "./interfaces/entitlement.interface";
 
 export interface CentralPackage {
   platform: string;
@@ -30,6 +31,7 @@ export class McomCentralService {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly hmacSecret: string;
+  private readonly apiKey: string;
   private readonly internalServiceId: string;
   private readonly internalApiSecret: string;
   private readonly logger = new Logger(McomCentralService.name);
@@ -54,6 +56,11 @@ export class McomCentralService {
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") ||
       this.configService.get<string>("SSO_API_SECRET") ||
+      "";
+
+    this.apiKey =
+      this.configService.get<string>("MCOM_API_KEY") ||
+      this.configService.get<string>("MCOM_SOLUTION_API_KEY") ||
       "";
 
     this.internalServiceId =
@@ -271,4 +278,101 @@ export class McomCentralService {
       return null;
     }
   }
+
+  async getIntrospectionEntitlement(
+    accessToken: string,
+  ): Promise<PlatformEntitlement | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/entitlement`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          ...this.getHmacHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Failed to get entitlement from MCOM Central: ${response.status}`,
+        );
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      this.logger.error(
+        `Error fetching entitlement from MCOM Central: ${error?.message}`,
+        error?.stack,
+      );
+      return null;
+    }
+  }
+
+  async getIntrospectionEntitlementByUserId(
+    mcomUserId: string,
+  ): Promise<PlatformEntitlement | null> {
+    try {
+      const query = `client_id=${encodeURIComponent(this.clientId)}&user_id=${encodeURIComponent(mcomUserId)}`;
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/sso/entitlement?${query}`, {
+        method: "GET",
+        headers: {
+          "X-API-Key": this.apiKey || this.internalApiSecret,
+          ...this.getHmacHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Failed to get entitlement by userId from MCOM Central: ${response.status}`,
+        );
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      this.logger.error(
+        `Error fetching entitlement by userId from MCOM Central: ${error?.message}`,
+        error?.stack,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Strict variant for callers that must distinguish "not entitled" from
+   * "could not verify" (Central unreachable / 5xx). Unlike
+   * {@link getIntrospectionEntitlementByUserId}, transport errors and 5xx
+   * responses are thrown so the caller can fail closed with a retryable code.
+   *
+   * Returns `{ found: false }` only when Central explicitly reports the
+   * user/business does not exist (400/404).
+   */
+  async introspectEntitlementByUserIdStrict(mcomUserId: string): Promise<{
+    found: boolean;
+    data: any | null;
+  }> {
+    const query = `client_id=${encodeURIComponent(this.clientId)}&user_id=${encodeURIComponent(mcomUserId)}`;
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/auth/sso/entitlement?${query}`,
+      {
+        method: "GET",
+        headers: {
+          "X-API-Key": this.apiKey || this.internalApiSecret,
+          ...this.getHmacHeaders(),
+        },
+      },
+    );
+
+    if (response.status === 400 || response.status === 404) {
+      return { found: false, data: null };
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Central entitlement introspection failed: ${response.status}`,
+      );
+    }
+
+    return { found: true, data: await response.json() };
+  }
 }
+

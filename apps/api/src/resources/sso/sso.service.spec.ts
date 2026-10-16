@@ -29,7 +29,12 @@ describe("SsoService", () => {
 
   const mockPlanSubscriptionService = {
     syncFromCentralPackage: jest.fn(),
+    syncFromAppPlan: jest.fn(),
+    syncFromCentralProfile: jest.fn(),
+    syncFromEntitlement: jest.fn(),
+    hasActiveSubscription: jest.fn().mockResolvedValue(true),
   };
+
 
   const mockBusinessRepository = {
     create: jest.fn(),
@@ -199,7 +204,159 @@ describe("SsoService", () => {
       expect(result.name).toBe("Updated Name");
       expect(mockParticipantRepository.save).toHaveBeenCalled();
     });
+
+    it("should process PlatformEntitlement with PAID_MEMBERSHIP and sync plan", async () => {
+      const centralUser = {
+        email: "member@test.com",
+        name: "Member Store",
+        role: "owner",
+      };
+
+      const entitlement = {
+        version: "2026-10-01",
+        targetPlatform: {
+          clientId: "mcom-rewards",
+          platformSlug: "rewards",
+          name: "MCOM Rewards",
+        },
+        access: {
+          hasAccess: true,
+          accessType: "PAID_MEMBERSHIP",
+          upgradeUrl: "http://localhost:3010/dashboard/memberships",
+        },
+        plan: {
+          planId: "rewards-gold",
+          planName: "Gold Rewards Plan",
+          source: "membership",
+          status: "active",
+          quotas: { campaigns: 10 },
+          limits: {},
+          features: ["loyalty", "stamp_cards"],
+        },
+        membershipContext: {
+          membershipPlanName: "Gold",
+          membershipLevel: "Gold",
+          membershipStatus: "active",
+          isIncludedInMembership: true,
+        },
+        trialContext: {
+          isInTrial: false,
+          hasPaidVerificationFee: true,
+          trialExpiresAt: null,
+          daysRemaining: 0,
+          programmeTasks: [],
+        },
+      };
+
+      mockMcomCentralService.exchangeCodeForToken.mockResolvedValue({
+        user: centralUser,
+        entitlement,
+      });
+
+      const existingBusiness = Object.create(Business.prototype, {
+        id: { value: "biz-member-1", writable: true },
+        email: { value: centralUser.email, writable: true },
+        name: { value: centralUser.name, writable: true },
+        role: { value: Role.Business, writable: true },
+      });
+
+      mockUserService.findOne.mockResolvedValue(existingBusiness);
+      mockBusinessRepository.save.mockImplementation(async (b) => b);
+
+      mockJwtService.sign.mockImplementation((payload, opts) => {
+        return `token-${opts?.expiresIn}`;
+      });
+
+      const result = await service.exchangeCode("code-member");
+
+      expect(result.entitlement).toBeDefined();
+      expect(result.entitlement?.access.accessType).toBe("PAID_MEMBERSHIP");
+      expect(mockPlanSubscriptionService.syncFromEntitlement).toHaveBeenCalledWith(
+        "biz-member-1",
+        entitlement,
+      );
+    });
+
+    it("should process PlatformEntitlement with TRIAL_PROGRAMME and store programmeTasks", async () => {
+      const centralUser = {
+        email: "trial@test.com",
+        name: "Trial Store",
+        role: "owner",
+      };
+
+      const tasks = [
+        {
+          taskId: "task-1",
+          title: "Create first loyalty campaign",
+          description: "Launch campaign to engage members",
+          deadlineDays: 7,
+          rewardPoints: 100,
+          status: "PENDING" as const,
+        },
+      ];
+
+      const entitlement = {
+        version: "2026-10-01",
+        targetPlatform: {
+          clientId: "mcom-rewards",
+          platformSlug: "rewards",
+          name: "MCOM Rewards",
+        },
+        access: {
+          hasAccess: true,
+          accessType: "TRIAL_PROGRAMME",
+          upgradeUrl: "http://localhost:3010/dashboard/memberships",
+        },
+        plan: {
+          planId: "trial-plan",
+          planName: "Trial Plan",
+          source: "trial",
+          status: "trial",
+          quotas: {},
+          limits: {},
+          features: [],
+        },
+        membershipContext: {
+          membershipPlanName: null,
+          membershipLevel: "Trial",
+          membershipStatus: "trial",
+          isIncludedInMembership: false,
+        },
+        trialContext: {
+          isInTrial: true,
+          hasPaidVerificationFee: true,
+          trialExpiresAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+          daysRemaining: 14,
+          programmeTasks: tasks,
+        },
+      };
+
+      mockMcomCentralService.exchangeCodeForToken.mockResolvedValue({
+        user: centralUser,
+        entitlement,
+      });
+
+      const existingBusiness = Object.create(Business.prototype, {
+        id: { value: "biz-trial-1", writable: true },
+        email: { value: centralUser.email, writable: true },
+        name: { value: centralUser.name, writable: true },
+        role: { value: Role.Business, writable: true },
+      });
+
+      mockUserService.findOne.mockResolvedValue(existingBusiness);
+      mockBusinessRepository.save.mockImplementation(async (b) => b);
+
+      const result = await service.exchangeCode("code-trial");
+
+      expect(result.entitlement?.access.accessType).toBe("TRIAL_PROGRAMME");
+      expect(result.entitlement?.trialContext.programmeTasks).toHaveLength(1);
+      expect(mockPlanSubscriptionService.syncFromEntitlement).toHaveBeenCalledWith(
+        "biz-trial-1",
+        entitlement,
+      );
+    });
   });
+
 
   describe("loginWithSsoToken", () => {
     it("should throw UnauthorizedException for invalid token", async () => {

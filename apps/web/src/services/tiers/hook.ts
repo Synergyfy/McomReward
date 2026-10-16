@@ -21,7 +21,7 @@ export const useGetTiers = () => {
 
 // Get My Subscription
 const getMySubscription = async (businessId?: string): Promise<Subscription> => {
-    const { data } = await api.get<Subscription>('/membership/my-membership', { params: { businessId } });
+    const { data } = await api.get<Subscription>('/business/subscription', { params: { businessId } });
     return data;
 };
 
@@ -35,7 +35,7 @@ export const useGetMySubscription = (businessId?: string) => {
 
 // Get Billing History
 const getBillingHistory = async (businessId?: string): Promise<BillingHistory[]> => {
-    const { data } = await api.get<BillingHistory[]>('/membership/my-payment-history', { params: { businessId } });
+    const { data } = await api.get<BillingHistory[]>('/business/billing-history', { params: { businessId } });
     return data;
 };
 

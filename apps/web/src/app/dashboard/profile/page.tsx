@@ -43,8 +43,8 @@ export default function BusinessProfilePage() {
   // Initialize form once
   useEffect(() => {
     if (profile && Object.keys(form).length === 0) {
-      const instagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
-      const whatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+      const instagram = profile.socialMedia?.find(s => s.name?.toLowerCase() === 'instagram')?.link || '';
+      const whatsapp = profile.socialMedia?.find(s => s.name?.toLowerCase() === 'whatsapp')?.link || '';
 
       setForm({
         ...profile,
@@ -157,8 +157,8 @@ export default function BusinessProfilePage() {
         payload.subCategory = form.subCategoryId;
       }
 
-      const originalInstagram = profile.socialMedia?.find(s => s.name.toLowerCase() === 'instagram')?.link || '';
-      const originalWhatsapp = profile.socialMedia?.find(s => s.name.toLowerCase() === 'whatsapp')?.link || '';
+      const originalInstagram = profile.socialMedia?.find(s => s.name?.toLowerCase() === 'instagram')?.link || '';
+      const originalWhatsapp = profile.socialMedia?.find(s => s.name?.toLowerCase() === 'whatsapp')?.link || '';
       if (form.instagram !== originalInstagram || form.whatsapp !== originalWhatsapp) {
         const socialMedia = [];
         if (form.whatsapp) socialMedia.push({ name: 'whatsapp', link: form.whatsapp });
@@ -199,7 +199,7 @@ export default function BusinessProfilePage() {
   if (isLoadingProfile || isLoadingSubscription) return <div>Loading...</div>;
   if (isErrorProfile || isErrorSubscription) return <div>Error loading profile data.</div>;
 
-  const plan = subscription?.tier?.name.toLowerCase() || 'starter';
+  const plan = (subscription?.tier?.name || 'starter').toLowerCase();
   const tierName = subscription?.tier?.name as TierName | undefined;
 
   return (

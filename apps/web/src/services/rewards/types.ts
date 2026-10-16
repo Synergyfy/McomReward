@@ -71,6 +71,9 @@ export interface RewardResponse {
   updatedAt: string;
   disabled: boolean;
   rewardType: string;
+  reward_type?: string;
+  sectors?: { id: string; title: string; imageUrl?: string }[];
+  businessRewards?: { id: string; business?: { id: string; name: string } }[];
   type: string;
   status: string;
   expiry: string;

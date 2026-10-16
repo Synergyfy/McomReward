@@ -32,6 +32,7 @@ import {
   GroupCircleStatus,
   PaymentProvider,
   GroupMessageType,
+  InteractionLevel,
 } from "./enums/group-circle.enums";
 import {
   PlanSubscription,
@@ -72,13 +73,16 @@ export class GroupCircleService {
     ];
 
     if (
+      createDto.type === GroupCircleType.SMART_MONEY &&
       uniqueNetworkIds.length === 0 &&
       uniqueReferredBusinessIds.length === 0
     ) {
       throw new BadRequestException(
-        "At least one network contact or referred business is required",
+        "At least one network contact or referred business is required for Smart Money circles",
       );
     }
+
+    createDto.duration = createDto.duration || 90;
 
     // Validate Networks first
     const networks: Network[] = [];
@@ -147,6 +151,9 @@ export class GroupCircleService {
 
         const circle = manager.create(GroupCircle, {
           ...dtoData,
+          duration: dtoData.duration || 90,
+          interactionLevel:
+            dtoData.interactionLevel || InteractionLevel.COLLABORATE,
           business,
           startDate: new Date(),
           payoutFrequency:

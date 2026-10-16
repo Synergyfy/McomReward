@@ -58,7 +58,7 @@ function TemplateCard({ template, isSelected, hasCustomized, onOpenCustomize, se
 
   return (
     <Card
-      className={`group relative flex flex-col hover:shadow-xl transition-all duration-300 border-2 cursor-pointer ${
+      className={`p-0 py-0 gap-0 overflow-hidden group relative flex flex-col hover:shadow-xl transition-all duration-300 border-2 cursor-pointer ${
         isSelected ? "border-orange-500 bg-orange-50/60 shadow-md shadow-orange-100" : "border-gray-200 bg-white hover:border-orange-300"
       }`}
       onClick={() => onOpenCustomize(template)}

@@ -16,6 +16,7 @@ import {
   CentralPackage,
   McomCentralService,
 } from "../../sso/mcom-central.service";
+import { PlatformEntitlement } from "../../sso/interfaces/entitlement.interface";
 import { ConfigService } from "@nestjs/config";
 
 @Injectable()
@@ -258,6 +259,166 @@ export class PlanSubscriptionService {
     this.invalidateSubscriptionCache(businessId);
     return saved;
   }
+
+  async syncFromEntitlement(
+    businessId: string,
+    entitlement: PlatformEntitlement,
+  ): Promise<PlanSubscription | null> {
+    if (!entitlement) return null;
+
+    const access = entitlement.access;
+    const trialContext = entitlement.trialContext;
+    const isTrialUser =
+      access?.accessType === "TRIAL_PROGRAMME" ||
+      trialContext?.isInTrial === true ||
+      trialContext?.hasPaidVerificationFee === true ||
+      access?.reason === "TRIAL_NO_TASKS";
+
+    const hasAccess =
+      access?.hasAccess === true ||
+      (isTrialUser &&
+        access?.reason !== "TRIAL_EXPIRED" &&
+        access?.reason !== "UNVERIFIED");
+
+    if (!hasAccess) {
+      const subscription = await this.subscriptionRepository.findOne({
+        where: { business: { id: businessId } },
+      });
+      if (subscription) {
+        subscription.status = SubscriptionStatus.EXPIRED;
+        subscription.isActive = false;
+        await this.subscriptionRepository.save(subscription);
+        this.invalidateSubscriptionCache(businessId);
+      }
+      return null;
+    }
+
+    const planData = entitlement.plan;
+    const isTrial = access?.accessType === "TRIAL_PROGRAMME" || isTrialUser;
+
+    // Resolve expiry date
+    let expiresAt: Date;
+    if (isTrial && entitlement.trialContext?.trialExpiresAt) {
+      expiresAt = new Date(entitlement.trialContext.trialExpiresAt);
+    } else if (isTrial) {
+      expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    } else if (planData?.expiresAt) {
+      expiresAt = new Date(planData.expiresAt);
+    } else {
+      expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    }
+
+    const isExpired = expiresAt <= new Date();
+    const isActive = !isExpired;
+
+    // Resolve unified plan variant
+    let variant: PlanVariant | null = null;
+    if (planData?.planName) {
+      const plan = await this.planRepository.findOne({
+        where: { name: planData.planName },
+        relations: ["variants", "variants.tierLevel", "variants.prices"],
+      });
+      if (plan && plan.variants?.length > 0) {
+        variant = plan.variants[0];
+      }
+    }
+
+    if (!variant && planData?.planId) {
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          planData.planId,
+        );
+      const plan = await this.planRepository.findOne({
+        where: isUUID
+          ? [{ slug: planData.planId }, { id: planData.planId }]
+          : { slug: planData.planId },
+        relations: ["variants", "variants.tierLevel", "variants.prices"],
+      });
+      if (plan && plan.variants?.length > 0) {
+        variant = plan.variants[0];
+      }
+    }
+
+    if (!variant) {
+      const allPlans = await this.planRepository.find({
+        where: { isActive: true },
+        relations: ["variants", "variants.tierLevel", "variants.prices"],
+      });
+      if (allPlans.length > 0 && allPlans[0].variants?.length > 0) {
+        variant = allPlans[0].variants[0];
+      }
+    }
+
+    let subscription = await this.subscriptionRepository.findOne({
+      where: { business: { id: businessId } },
+      relations: ["planVariant", "price"],
+    });
+
+    const sourceTag =
+      planData?.source ||
+      (isTrial
+        ? "trial"
+        : access.accessType === "PAID_MEMBERSHIP"
+          ? "membership"
+          : "direct");
+
+    const transactionId = `CENTRAL-ENTITLEMENT-${access.accessType}-${planData?.planId || "active"}`;
+
+    if (subscription) {
+      if (variant) {
+        subscription.planVariant = variant;
+        subscription.planVariantId = variant.id;
+        const activePrice =
+          variant.prices?.find((p) => p.isActive) || variant.prices?.[0];
+        if (activePrice) {
+          subscription.price = activePrice;
+          subscription.priceId = activePrice.id;
+        }
+      }
+      subscription.status = isActive
+        ? SubscriptionStatus.ACTIVE
+        : SubscriptionStatus.EXPIRED;
+      subscription.isActive = isActive;
+      subscription.expires_at = expiresAt;
+      subscription.transaction_id = transactionId;
+      subscription.is_trial = isTrial;
+      if (isTrial && entitlement.trialContext?.daysRemaining !== undefined) {
+        subscription.trial_days = entitlement.trialContext.daysRemaining;
+      }
+    } else {
+      const activePrice =
+        variant?.prices?.find((p) => p.isActive) || variant?.prices?.[0];
+      subscription = this.subscriptionRepository.create({
+        business: { id: businessId } as Business,
+        planVariant: variant || undefined,
+        planVariantId: variant?.id,
+        price: activePrice || undefined,
+        priceId: activePrice?.id,
+        plan_type: this.mapPlanType(planData?.planName || "monthly"),
+        starts_at: new Date(),
+        expires_at: expiresAt,
+        status: isActive
+          ? SubscriptionStatus.ACTIVE
+          : SubscriptionStatus.EXPIRED,
+        isActive,
+        is_trial: isTrial,
+        trial_days: isTrial
+          ? (entitlement.trialContext?.daysRemaining || 14)
+          : undefined,
+        transaction_id: transactionId,
+        payment_provider: PaymentProvider.STRIPE,
+      });
+    }
+
+    this.logger.log(
+      `Synced entitlement (type: ${access.accessType}, source: ${sourceTag}, plan: "${planData?.planName || "active"}", active: ${isActive}) for business ${businessId}`,
+    );
+
+    const saved = await this.subscriptionRepository.save(subscription);
+    this.invalidateSubscriptionCache(businessId);
+    return saved;
+  }
+
 
   async syncFromCentralPackage(
     businessId: string,

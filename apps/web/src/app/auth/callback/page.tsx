@@ -70,9 +70,48 @@ function CallbackContent() {
     const handleSuccess = async (data: any) => {
       if (!mountedRef.current) return;
 
+      const entitlement = data?.entitlement;
+      const isTrial =
+        entitlement?.trialContext?.isInTrial === true ||
+        entitlement?.trialContext?.hasPaidVerificationFee === true ||
+        entitlement?.access?.reason === "TRIAL_NO_TASKS" ||
+        entitlement?.access?.accessType === "TRIAL_PROGRAMME";
+
+      const isAccessDenied =
+        entitlement?.access &&
+        entitlement.access.hasAccess === false &&
+        !isTrial;
+
+      if (isAccessDenied) {
+        const upgradeUrl =
+          entitlement.access.upgradeUrl || "http://localhost:3010/dashboard/memberships";
+        const reason = entitlement.access.reason;
+
+        let reasonMessage = "Subscription or verification required to access MCOM Rewards.";
+        if (reason === "PLATFORM_NOT_IN_MEMBERSHIP") {
+          reasonMessage = "Your current MCOM Membership tier does not include MCOM Rewards.";
+        } else if (reason === "TRIAL_EXPIRED") {
+          reasonMessage = "Your trial access period has expired.";
+        } else if (reason === "UNVERIFIED") {
+          reasonMessage = "Verification fee required to access MCOM Rewards.";
+        } else if (reason === "MEMBERSHIP_EXPIRED") {
+          reasonMessage = "Your MCOM Membership has expired.";
+        }
+
+        toast.error("Access Required", {
+          description: `${reasonMessage} Redirecting to MCOM Central to upgrade or verify...`,
+        });
+
+        setTimeout(() => {
+          window.location.href = upgradeUrl;
+        }, 1200);
+        return;
+      }
+
       toast.success("Welcome back!");
 
       const userRole = data?.role || data?.user?.role || roleParam;
+
 
       if (userRole === "Business" || userRole === "business") {
         try {

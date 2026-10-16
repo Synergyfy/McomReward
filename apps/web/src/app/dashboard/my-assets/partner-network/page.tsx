@@ -4,6 +4,7 @@ import React from 'react';
 import { ScanLine, PoundSterling, Users, Eye, Pencil, Trash2, MoreVertical, UserPlus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useGetPartnerNetwork } from '@/services/partner-network/hook';
 
 const StatCard = ({ title, value, icon: Icon, details }: { title: string, value: string | number, icon: React.ElementType, details?: string }) => (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -20,30 +21,26 @@ const StatCard = ({ title, value, icon: Icon, details }: { title: string, value:
     </div>
   );
 
-const partnerNetworkData = {
-    groupOverview: {
-        name: 'Downtown Business Alliance',
-        members: 15,
-        totalScans: 25800,
-        revenueSplit: '70/30',
-    },
-    partners: [
-        { id: 'partner-01', name: 'The Coffee Spot', role: 'Member', status: 'Active', joined: '2023-01-15', commission: 5, scans: 1250, redemptions: 350, plaques: 3 },
-        { id: 'partner-02', name: 'ReadMore Books', role: 'Member', status: 'Active', joined: '2023-02-20', commission: 5, scans: 850, redemptions: 120, plaques: 2 },
-        { id: 'partner-03', name: 'FitLife Gym', role: 'Admin', status: 'Active', joined: '2022-11-01', commission: 10, scans: 3200, redemptions: 800, plaques: 5 },
-        { id: 'partner-04', name: 'Gourmet Grocer', role: 'Pending', status: 'Invited', joined: null, commission: 5, scans: 0, redemptions: 0, plaques: 0 },
-    ]
-};
-
 export default function PartnerNetworkPage() {
+    const { data, isLoading, isError } = useGetPartnerNetwork();
+    const overview = data?.groupOverview;
+    const partners = data?.partners ?? [];
+
+    if (isLoading) {
+        return <p className="p-4 text-sm text-gray-500">Loading partner network…</p>;
+    }
+    if (isError || !overview) {
+        return <p className="p-4 text-sm text-red-600">Could not load partner network. Please try again.</p>;
+    }
+
     return (
         <div className="space-y-8">
             {/* Group Overview */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Group Name" value={partnerNetworkData.groupOverview.name} icon={Users} />
-                <StatCard title="Total Members" value={partnerNetworkData.groupOverview.members} icon={Users} />
-                <StatCard title="Total Scans" value={partnerNetworkData.groupOverview.totalScans.toLocaleString()} icon={ScanLine} />
-                <StatCard title="Revenue Split" value={partnerNetworkData.groupOverview.revenueSplit} icon={PoundSterling} />
+                <StatCard title="Group Name" value={overview.name} icon={Users} />
+                <StatCard title="Total Members" value={overview.members} icon={Users} />
+                <StatCard title="Total Scans" value={overview.totalScans.toLocaleString()} icon={ScanLine} />
+                <StatCard title="Revenue Split" value={overview.revenueSplit || '—'} icon={PoundSterling} />
             </div>
 
             {/* Actions */}
@@ -70,7 +67,9 @@ export default function PartnerNetworkPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {partnerNetworkData.partners.map((partner) => (
+                        {partners.length === 0 ? (
+                            <tr><td className="p-4 text-sm text-gray-500" colSpan={8}>No partners yet. Invite your first partner to grow your network.</td></tr>
+                        ) : partners.map((partner) => (
                             <tr key={partner.id} className="border-b hover:bg-gray-50">
                                 <td className="p-4 font-medium">{partner.name}</td>
                                 <td className="p-4">{partner.role}</td>

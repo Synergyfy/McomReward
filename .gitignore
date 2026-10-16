@@ -35,3 +35,6 @@ coverage/
 # Testing
 playwright-report/
 test-results/
+
+# Local uploads (when NEXT_PUBLIC_LOCAL_FILE_UPLOAD=true)
+apps/web/public/uploads/

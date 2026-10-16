@@ -85,64 +85,69 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
     };
 
     return (
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2 sm:py-3">
             {errorMessage && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert variant="destructive" className="mb-3">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{errorMessage}</AlertDescription>
+                    <AlertTitle className="text-xs sm:text-sm font-semibold">Error</AlertTitle>
+                    <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
                 </Alert>
             )}
 
-            {/* Existing User Question */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Label htmlFor="existing-user" className="text-blue-900 font-medium cursor-pointer">
+            {/* Existing User Question Banner */}
+            <div className="bg-blue-50/90 border border-blue-200/80 rounded-xl p-3 sm:p-3.5">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <Label htmlFor="existing-user" className="text-blue-950 font-medium text-xs sm:text-sm cursor-pointer leading-tight">
                             Does this user already exist in MCOM Mall?
                         </Label>
                         <TooltipProvider>
                             <Tooltip delayDuration={200}>
                                 <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-blue-400 cursor-help" />
+                                    <Info className="h-3.5 w-3.5 text-blue-500 cursor-help shrink-0" />
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="z-[10000]">
-                                    <p className="text-sm">If yes, you only need their email or username to connect.</p>
+                                <TooltipContent side="top" className="z-[10000] max-w-xs">
+                                    <p className="text-xs">If yes, you only need their email or username to connect.</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <Checkbox
                             id="existing-user"
                             checked={isExistingUser}
                             onCheckedChange={(checked) => setIsExistingUser(checked as boolean)}
+                            className="h-4 w-4"
                         />
-                        <span className={isExistingUser ? "text-sm font-bold text-blue-900" : "text-sm text-blue-400"}>Yes</span>
+                        <Label htmlFor="existing-user" className={`text-xs sm:text-sm font-semibold cursor-pointer ${isExistingUser ? "text-blue-900" : "text-blue-500"}`}>
+                            Yes
+                        </Label>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {isExistingUser ? (
                     /* Existing User Flow: Only Email/Username */
-                    <div className="col-span-2 space-y-4">
+                    <div className="col-span-1 sm:col-span-2 space-y-3">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="identifier">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <Label htmlFor="identifier" className="text-xs sm:text-sm font-medium">
                                     User Email or Username <span className="text-red-500">*</span>
                                 </Label>
-                                {isFetching && <span className="text-xs text-orange-600 animate-pulse flex items-center gap-1">
-                                    <div className="h-2 w-2 bg-orange-600 rounded-full animate-bounce" />
-                                    Fetching data from MCOM Mall...
-                                </span>}
+                                {isFetching && (
+                                    <span className="text-[11px] text-orange-600 animate-pulse flex items-center gap-1">
+                                        <div className="h-1.5 w-1.5 bg-orange-600 rounded-full animate-bounce" />
+                                        Fetching data...
+                                    </span>
+                                )}
                                 <TooltipProvider>
                                     <Tooltip delayDuration={200}>
                                         <TooltipTrigger asChild>
-                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                                            <p className="text-sm">Enter the MCOM Mall email or username. We will automatically detect their location.</p>
+                                            <p className="text-xs">Enter the MCOM Mall email or username. We will automatically detect their location.</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -153,7 +158,7 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 onBlur={handleIdentifierBlur}
                                 placeholder="username or email@example.com"
-                                className={contactPostalCode ? "border-green-200 bg-green-50/30" : ""}
+                                className={`h-9 sm:h-10 text-xs sm:text-sm ${contactPostalCode ? "border-green-200 bg-green-50/30" : ""}`}
                             />
                         </div>
 
@@ -161,30 +166,30 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm flex items-center justify-between"
+                                className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex items-center justify-between"
                             >
                                 <div className="space-y-1">
                                     <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">MCOM Mall Profile Found</p>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex flex-wrap items-center gap-3">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-gray-500">Postal Code</span>
-                                            <span className="font-mono font-bold text-gray-900">{contactPostalCode}</span>
+                                            <span className="text-[10px] sm:text-xs text-gray-500">Postal Code</span>
+                                            <span className="font-mono font-bold text-xs sm:text-sm text-gray-900">{contactPostalCode}</span>
                                         </div>
-                                        <div className="h-8 w-[1px] bg-gray-100" />
+                                        <div className="h-6 w-[1px] bg-gray-200" />
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-gray-500">Distance</span>
-                                            <span className="font-bold text-gray-900">{distance?.toFixed(1)} miles</span>
+                                            <span className="text-[10px] sm:text-xs text-gray-500">Distance</span>
+                                            <span className="font-bold text-xs sm:text-sm text-gray-900">{distance?.toFixed(1)} miles</span>
                                         </div>
-                                        <div className="h-8 w-[1px] bg-gray-100" />
+                                        <div className="h-6 w-[1px] bg-gray-200" />
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-gray-500">Detected Location</span>
-                                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 capitalize w-fit">
+                                            <span className="text-[10px] sm:text-xs text-gray-500">Detected Location</span>
+                                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 capitalize text-[10px] sm:text-xs py-0">
                                                 {formData.locationTag}
                                             </Badge>
                                         </div>
                                     </div>
                                 </div>
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
                             </motion.div>
                         )}
                     </div>
@@ -193,8 +198,8 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                     <>
                         {/* Name Fields */}
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="firstName">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                                <Label htmlFor="firstName" className="text-xs sm:text-sm font-medium">
                                     First Name <span className="text-red-500">*</span>
                                 </Label>
                             </div>
@@ -203,11 +208,12 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 value={formData.firstName}
                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                 placeholder="John"
+                                className="h-9 sm:h-10 text-xs sm:text-sm"
                             />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="lastName">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                                <Label htmlFor="lastName" className="text-xs sm:text-sm font-medium">
                                     Last Name <span className="text-red-500">*</span>
                                 </Label>
                             </div>
@@ -216,20 +222,21 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 value={formData.lastName}
                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                 placeholder="Doe"
+                                className="h-9 sm:h-10 text-xs sm:text-sm"
                             />
                         </div>
 
                         {/* Business Name */}
-                        <div className="col-span-2">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="businessName">Business Name</Label>
+                        <div className="col-span-1 sm:col-span-2">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                                <Label htmlFor="businessName" className="text-xs sm:text-sm font-medium">Business Name</Label>
                                 <TooltipProvider>
                                     <Tooltip delayDuration={200}>
                                         <TooltipTrigger asChild>
-                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" sideOffset={5} align="center" className="max-w-xs z-[10000]">
-                                            <p className="text-sm">The official name of the business or company this contact represents.</p>
+                                            <p className="text-xs">The official name of the business or company this contact represents.</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -239,20 +246,21 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 value={formData.businessName || ''}
                                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                                 placeholder="ABC Company Ltd"
+                                className="h-9 sm:h-10 text-xs sm:text-sm"
                             />
                         </div>
 
                         {/* Email */}
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="email">Email</Label>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                                <Label htmlFor="email" className="text-xs sm:text-sm font-medium">Email</Label>
                                 <TooltipProvider>
                                     <Tooltip delayDuration={200}>
                                         <TooltipTrigger asChild>
-                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                                            <p className="text-sm">Primary email address for business communications and campaign invitations.</p>
+                                            <p className="text-xs">Primary email address for business communications and campaign invitations.</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -263,22 +271,23 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 value={formData.email || ''}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="john@example.com"
+                                className="h-9 sm:h-10 text-xs sm:text-sm"
                             />
                         </div>
 
                         {/* Phone */}
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Label htmlFor="phone">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                                <Label htmlFor="phone" className="text-xs sm:text-sm font-medium">
                                     Phone <span className="text-red-500">*</span>
                                 </Label>
                                 <TooltipProvider>
                                     <Tooltip delayDuration={200}>
                                         <TooltipTrigger asChild>
-                                            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                                            <p className="text-sm">Contact phone number for direct communication and follow-ups.</p>
+                                            <p className="text-xs">Contact phone number for direct communication and follow-ups.</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -289,6 +298,7 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 placeholder="+44 20 1234 5678"
+                                className="h-9 sm:h-10 text-xs sm:text-sm"
                             />
                         </div>
                     </>
@@ -296,22 +306,22 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
 
                 {/* Location Tag */}
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="locationTag">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                        <Label htmlFor="locationTag" className="text-xs sm:text-sm font-medium">
                             Location Tag <span className="text-red-500">*</span>
                         </Label>
                         {isExistingUser && contactPostalCode && (
-                            <Badge variant="outline" className="h-4 text-[9px] px-1.5 border-green-200 text-green-700 bg-green-50 animate-in fade-in zoom-in duration-300">
+                            <Badge variant="outline" className="h-4 text-[9px] px-1.5 border-green-200 text-green-700 bg-green-50">
                                 Auto-detected
                             </Badge>
                         )}
                         <TooltipProvider>
                             <Tooltip delayDuration={200}>
                                 <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                    <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                                    <div className="text-sm space-y-1">
+                                    <div className="text-xs space-y-1">
                                         <p><strong>Nearby:</strong> Very close, neighbourhood radius</p>
                                         <p><strong>Hyperlocal:</strong> Wider local area but still nearby</p>
                                         <p><strong>National:</strong> Anywhere within the country</p>
@@ -326,30 +336,30 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                             setFormData({ ...formData, locationTag: value })
                         }
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">
                             <SelectItem value="hyperlocal" textValue="Hyperlocal">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Hyperlocal</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">Hyperlocal</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {LOCATION_TAG_INFO.hyperlocal}
                                     </span>
                                 </div>
                             </SelectItem>
                             <SelectItem value="nearby" textValue="Nearby">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Nearby</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">Nearby</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {LOCATION_TAG_INFO.nearby}
                                     </span>
                                 </div>
                             </SelectItem>
                             <SelectItem value="national" textValue="National">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">National</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">National</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {LOCATION_TAG_INFO.national}
                                     </span>
                                 </div>
@@ -360,17 +370,17 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
 
                 {/* Relationship Tag */}
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="relationshipTag">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                        <Label htmlFor="relationshipTag" className="text-xs sm:text-sm font-medium">
                             Relationship Tag <span className="text-red-500">*</span>
                         </Label>
                         <TooltipProvider>
                             <Tooltip delayDuration={200}>
                                 <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                                    <Info className="h-3.5 w-3.5 text-gray-400 cursor-help shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent side="top" sideOffset={5} align="end" className="max-w-xs z-[10000]">
-                                    <div className="text-sm space-y-1">
+                                    <div className="text-xs space-y-1">
                                         <p><strong>Partner:</strong> Someone you collaborate with</p>
                                         <p><strong>Supplier:</strong> Provides you items or services</p>
                                         <p><strong>Referral:</strong> Promotes your business</p>
@@ -385,30 +395,30 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                             setFormData({ ...formData, relationshipTag: value })
                         }
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">
                             <SelectItem value="partner" textValue="Partner">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Partner</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">Partner</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {RELATIONSHIP_TAG_INFO.partner}
                                     </span>
                                 </div>
                             </SelectItem>
                             <SelectItem value="supplier" textValue="Supplier">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Supplier</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">Supplier</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {RELATIONSHIP_TAG_INFO.supplier}
                                     </span>
                                 </div>
                             </SelectItem>
                             <SelectItem value="affiliate" textValue="Referral">
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-medium">Referral</span>
-                                    <span className="text-xs text-muted-foreground font-normal">
+                                <div className="flex flex-col items-start text-left py-0.5">
+                                    <span className="font-medium text-xs sm:text-sm">Referral</span>
+                                    <span className="text-[11px] text-muted-foreground font-normal">
                                         {RELATIONSHIP_TAG_INFO.affiliate}
                                     </span>
                                 </div>
@@ -419,33 +429,33 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
             </div>
 
             {/* Permission Confirmation */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
+            <div className="bg-orange-50/80 border border-orange-200/80 rounded-xl p-3 sm:p-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                     <Checkbox
                         id="permission"
                         checked={formData.hasPermission}
                         onCheckedChange={(checked) =>
                             setFormData({ ...formData, hasPermission: checked as boolean })
                         }
-                        className="mt-1"
+                        className="mt-0.5 shrink-0"
                     />
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="permission" className="font-semibold text-orange-900 cursor-pointer">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <Label htmlFor="permission" className="font-semibold text-xs sm:text-sm text-orange-950 cursor-pointer">
                                 Permission Confirmation <span className="text-red-500">*</span>
                             </Label>
                             <TooltipProvider>
                                 <Tooltip delayDuration={200}>
                                     <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-orange-600 cursor-help" />
+                                        <Info className="h-3.5 w-3.5 text-orange-600 cursor-help shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent side="top" sideOffset={5} align="start" className="max-w-xs z-[10000]">
-                                        <p className="text-sm">You must confirm that you have explicit permission from this contact to store their information and contact them for business purposes. This is required for GDPR compliance.</p>
+                                        <p className="text-xs">You must confirm that you have explicit permission from this contact to store their information and contact them for business purposes. This is required for GDPR compliance.</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
-                        <p className="text-sm text-orange-800 mt-1">
+                        <p className="text-xs text-orange-800 mt-1 leading-relaxed">
                             I confirm that this business has given permission to add their details to my
                             contact list and that I may contact them for business purposes.
                         </p>
@@ -453,25 +463,26 @@ export default function AddContactForm({ onSuccess, onCancel, initialData }: Add
                 </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 sm:border-0">
                 {onCancel && (
-                    <Button variant="outline" onClick={onCancel} disabled={createContact.isPending}>
+                    <Button variant="outline" size="sm" onClick={onCancel} disabled={createContact.isPending} className="h-9 sm:h-10 text-xs sm:text-sm">
                         Cancel
                     </Button>
                 )}
                 <Button
                     onClick={handleAddContact}
+                    size="sm"
                     disabled={
                         createContact.isPending ||
                         (!isExistingUser && (!formData.firstName || !formData.phone)) ||
                         (isExistingUser && !formData.email) ||
                         !formData.hasPermission
                     }
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-orange-600 hover:bg-orange-700 text-white h-9 sm:h-10 text-xs sm:text-sm font-medium px-4"
                 >
                     {createContact.isPending ? 'Adding...' : 'Add Contact'}
                 </Button>
             </div>
         </div>
     );
-}
+}

@@ -12,6 +12,7 @@ import { useCreateReward } from "@/services/rewards/hook";
 import { CreateRewardRequest } from "@/services/rewards/types";
 import React, { useState, useEffect, useMemo } from "react";
 import { CloudinaryUpload } from "@/components/ui/cloudinary-upload";
+import { useUploadToCloudinary } from "@/services/upload/hook";
 import Image from "next/image";
 
 interface CreateRewardDialogProps {
@@ -32,6 +33,7 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createReward, isPending: isCreatingReward } = useCreateReward();
+  const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
 
   const handleFileSelect = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
@@ -58,34 +60,8 @@ export default function CreateRewardDialog({ isOpen, onClose }: CreateRewardDial
   const uploadImageToCloudinary = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
     try {
-      const paramsToSign = {
-        timestamp: Math.round((new Date).getTime() / 1000),
-      };
-
-      const signatureResponse = await fetch('/api/sign-cloudinary-params', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paramsToSign }),
-      });
-      const { signature } = await signatureResponse.json();
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
-      formData.append('timestamp', paramsToSign.timestamp.toString());
-      formData.append('signature', signature);
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Cloudinary upload failed.');
-      }
-
-      const data = await response.json();
-      return data.secure_url;
+      const { secure_url } = await uploadToCloudinary({ file, folder: 'rewards' });
+      return secure_url;
     } finally {
       setIsUploadingImage(false);
     }

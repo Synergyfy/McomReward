@@ -27,7 +27,7 @@ export default function CampaignPreviewCard({
   rewardValue,
 }: CampaignPreviewCardProps) {
   return (
-    <Card className="overflow-hidden shadow-lg rounded-2xl border-2 border-gray-200">
+    <Card className="p-0 py-0 gap-0 overflow-hidden shadow-lg rounded-2xl border-2 border-gray-200">
       <CardHeader className="p-0 relative h-48 bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center">
         <Image
           src={rewardImage}

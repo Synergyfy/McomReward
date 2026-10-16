@@ -99,13 +99,39 @@ export default function BusinessSidebar({
   const router = useRouter();
   const { mutate: logoutMutation, isPending: isLoggingOut } = useLogout();
 
+  const isTrial = Boolean(
+    myPackage?.isTrial || myPackage?.accessType === 'TRIAL_PROGRAMME',
+  );
+
+  const hasEntitledAccess = Boolean(
+    myPackage?.hasAccess ||
+      isTrial ||
+      myPackage?.accessType === 'PAID_MEMBERSHIP' ||
+      myPackage?.accessType === 'DIRECT_PACKAGE',
+  );
+
   const isFreeTier = useMemo(() => {
     if (profile?.isSuperBusiness) return false;
+    if (hasEntitledAccess) return false;
     const planName = myPackage?.planName || myPackage?.membershipTier || 'Free';
-    return planName === 'Free' || myPackage?.membershipStatus === 'expired';
-  }, [myPackage, profile]);
+    return (
+      (planName === 'Free' || myPackage?.membershipStatus === 'expired' || myPackage?.isExpired) &&
+      !myPackage?.hasAccess
+    );
+  }, [myPackage, profile, hasEntitledAccess]);
 
   const isSuperBusiness = profile?.isSuperBusiness;
+
+  const trialDaysRemaining = useMemo(() => {
+    if (!isTrial) return null;
+    if (myPackage?.daysRemaining !== undefined && myPackage.daysRemaining !== null) {
+      return myPackage.daysRemaining;
+    }
+    const expiry = myPackage?.expiresAt;
+    if (!expiry) return 14;
+    const diff = new Date(expiry).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [isTrial, myPackage?.daysRemaining, myPackage?.expiresAt]);
 
   const enhancedLinkClasses = (path: string, exact: boolean = false) => {
     let classes = linkClasses(path, exact);
@@ -329,6 +355,48 @@ export default function BusinessSidebar({
           <SidebarItem icon={Image} label="Media Library" href="/dashboard/media-library" />
 
           <SidebarItem icon={LifeBuoy} label="Support & Help" href="/dashboard/support" />
+
+          {/* Trial / Membership Indicator Box in Sidebar */}
+          {isTrial && !isCollapsed && (
+            <li className="px-1 py-2">
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3 shadow-xs">
+                <div className="flex items-center justify-between gap-1 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span>14-Day Trial</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-orange-700 bg-orange-100/90 px-2 py-0.5 rounded-full">
+                    {trialDaysRemaining}d left
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800/80 mb-2 leading-tight">
+                  Full dashboard access active.
+                </p>
+                <Link
+                  href="/dashboard/subscription"
+                  className="block text-center text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 py-1.5 px-2 rounded-lg transition-all shadow-xs"
+                >
+                  Upgrade Plan
+                </Link>
+              </div>
+            </li>
+          )}
+
+          {myPackage?.accessType === 'PAID_MEMBERSHIP' && !isCollapsed && (
+            <li className="px-1 py-2">
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200/70 rounded-xl p-3 shadow-xs">
+                <div className="text-xs font-bold text-indigo-950 truncate">
+                  {myPackage.planName || myPackage.membershipTier || 'Member Bundle'}
+                </div>
+                <p className="text-[11px] text-indigo-700 font-medium mt-0.5">
+                  Included with MCOM Membership
+                </p>
+              </div>
+            </li>
+          )}
 
           <li>
             <TooltipProvider>

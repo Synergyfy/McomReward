@@ -3,25 +3,20 @@
 import React from 'react';
 import { PlusCircle, UploadCloud, Eye, Clock, Zap, FileVideo, ImageIcon, Clapperboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const mediaAssetsData = {
-    storefrontVideo: {
-        url: 'https://videos.pexels.com/video-files/2792833/2792833-hd_1280_720_25fps.mp4', // Placeholder video
-        thumbnail: 'https://images.pexels.com/videos/2792833/pictures/preview-0.jpg',
-        analytics: {
-            views: 12345,
-            watchTime: '2m 30s',
-            conversions: 45,
-        }
-    },
-    gallery: [
-        { type: 'video', url: 'https://videos.pexels.com/video-files/2792833/2792833-hd_1280_720_25fps.mp4', thumbnail: 'https://images.pexels.com/videos/2792833/pictures/preview-0.jpg' },
-        { type: 'image', url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80', thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80' },
-        { type: 'logo', url: 'https://images.unsplash.com/photo-1614289371518-722f2615943c?auto=format&fit=crop&w=200&q=80', thumbnail: 'https://images.unsplash.com/photo-1614289371518-722f2615943c?auto=format&fit=crop&w=200&q=80' },
-    ]
-};
+import { useGetStorefrontMedia } from '@/services/storefront-media/hook';
 
 export default function StorefrontMediaPage() {
+    const { data, isLoading, isError } = useGetStorefrontMedia();
+    const video = data?.storefrontVideo;
+    const gallery = data?.gallery ?? [];
+
+    if (isLoading) {
+        return <p className="p-4 text-sm text-gray-500">Loading storefront media…</p>;
+    }
+    if (isError || !data || !video) {
+        return <p className="p-4 text-sm text-red-600">Could not load storefront media. Please try again.</p>;
+    }
+
     return (
         <div className="space-y-8">
             {/* Upload Section */}
@@ -55,25 +50,25 @@ export default function StorefrontMediaPage() {
                     {/* Left Column: Video Player and Analytics */}
                     <div className="lg:col-span-2 space-y-4">
                         <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                            <video controls poster={mediaAssetsData.storefrontVideo.thumbnail} className="w-full h-full object-cover">
-                                <source src={mediaAssetsData.storefrontVideo.url} type="video/mp4" />
+                            <video controls poster={video.thumbnail} className="w-full h-full object-cover">
+                                <source src={video.url} type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center border-t pt-4">
                             <div className="flex flex-col items-center">
                                 <Eye className="h-6 w-6 text-orange-500 mb-1" />
-                                <p className="text-2xl font-bold">{mediaAssetsData.storefrontVideo.analytics.views.toLocaleString()}</p>
+                                <p className="text-2xl font-bold">{video.analytics.views.toLocaleString()}</p>
                                 <p className="text-sm text-gray-500">Views</p>
                             </div>
                             <div className="flex flex-col items-center">
                                 <Clock className="h-6 w-6 text-orange-500 mb-1" />
-                                <p className="text-2xl font-bold">{mediaAssetsData.storefrontVideo.analytics.watchTime}</p>
+                                <p className="text-2xl font-bold">{video.analytics.watchTime}</p>
                                 <p className="text-sm text-gray-500">Avg. Watch Time</p>
                             </div>
                             <div className="flex flex-col items-center">
                                 <Zap className="h-6 w-6 text-orange-500 mb-1" />
-                                <p className="text-2xl font-bold">{mediaAssetsData.storefrontVideo.analytics.conversions}</p>
+                                <p className="text-2xl font-bold">{video.analytics.conversions}</p>
                                 <p className="text-sm text-gray-500">Conversions</p>
                             </div>
                         </div>
@@ -83,7 +78,9 @@ export default function StorefrontMediaPage() {
                     <div className="space-y-4">
                         <h4 className="font-semibold text-gray-700">Your Media</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {mediaAssetsData.gallery.map((asset, index) => (
+                            {gallery.length === 0 ? (
+                                <p className="text-sm text-gray-500">No media uploaded yet.</p>
+                            ) : gallery.map((asset, index) => (
                                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden group shadow-md">
                                     <img src={asset.thumbnail} alt={asset.type} className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

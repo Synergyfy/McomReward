@@ -38,7 +38,7 @@ function EngineCard({ def, config, onToggle, onFieldChange }: {
 
   return (
     <motion.div layout>
-      <Card className={`border transition-all ${engine.enabled ? "border-orange-300 bg-orange-50/30 shadow-sm" : "border-gray-200 bg-white"}`}>
+      <Card className={`p-0 py-0 gap-0 border transition-all ${engine.enabled ? "border-orange-300 bg-orange-50/30 shadow-sm" : "border-gray-200 bg-white"}`}>
         <div className="p-4 flex items-center gap-4">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${engine.enabled ? "bg-orange-100" : "bg-gray-100"}`}>
             <Icon className={`w-5 h-5 ${engine.enabled ? "text-orange-600" : "text-gray-400"}`} />

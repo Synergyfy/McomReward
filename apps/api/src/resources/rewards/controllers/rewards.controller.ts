@@ -32,11 +32,29 @@ import { UseGuards } from "@nestjs/common";
 
 import { AddRewardToBusinessDto } from "../dto/add-reward-to-business.dto";
 import { GetRewardsFilterDto } from "../dto/get-rewards-filter.dto";
+import { Public } from "../../../common/decorators/public.decorator";
 
 @ApiTags("rewards")
 @Controller("rewards")
 export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) {}
+
+  // Public endpoints
+  @Public()
+  @ApiOperation({ summary: "Public: Get all rewards catalog" })
+  @ApiResponse({ status: 200, description: "Return filtered public rewards." })
+  @Get("public")
+  async getPublicRewards(@Query() filterDto: GetRewardsFilterDto) {
+    return this.rewardsService.getRewards({ ...filterDto, disabled: false });
+  }
+
+  @Public()
+  @ApiOperation({ summary: "Public: Get single reward by ID" })
+  @ApiResponse({ status: 200, description: "Return single reward details." })
+  @Get("public/:id")
+  async getPublicRewardById(@Param("id") id: string) {
+    return this.rewardsService.findOne(id);
+  }
 
   // Admin endpoints
   @ApiOperation({ summary: "Admin: Create a new reward" })

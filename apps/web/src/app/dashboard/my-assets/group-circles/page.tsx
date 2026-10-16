@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Plus, ArrowRight, Check, Search, Filter,
@@ -94,7 +94,7 @@ export default function GroupCirclesPage() {
     const [selectionSearch, setSelectionSearch] = useState("");
 
     const [newCircleData, setNewCircleData] = useState<Partial<CreateGroupCircleDto>>({
-        duration: 'Summer',
+        duration: 90,
         contributionAmount: 0,
         networkIds: [],
         referredBusinessIds: []
@@ -152,16 +152,34 @@ export default function GroupCirclesPage() {
             }));
         }
 
-        // Add locally joined circles
+        // Add locally joined circles (real members only — no synthetic entries)
         joinedCircles.forEach(c => {
+            const realMembers = Array.isArray(c.members) ? c.members.map((m: any, idx: number) => {
+                const network = m.network || {};
+                return {
+                    id: network.id || m.id || `member-${c.id}-${idx}`,
+                    memberId: m.id,
+                    name: network.fullName || network.businessName || "Unknown Member",
+                    email: network.email || "",
+                    role: 'Member',
+                    orbit: 3,
+                    status: 'active',
+                    category: network.businessName || network.relationshipTag || "Partner",
+                    avatar: undefined,
+                    contributions: Number(c.contributionAmount) || 0,
+                    drawDate: m.drawDate,
+                    locationTag: "Unknown",
+                    relationshipTag: network.relationshipTag || "Network"
+                } as Member;
+            }) : [];
             items.push({
                 id: c.id,
                 name: c.name,
                 type: (c.type === 'SMART_MONEY' ? 'SMART_MONEY' : c.type) as any,
-                durationDays: 'Summer',
+                durationDays: typeof c.duration === 'number' ? `${c.duration} days` : (c.durationDays || ''),
                 contributionAmount: c.contributionAmount,
                 members: [
-                    {
+                    ...(c.ownerName ? [{
                         id: 'owner-' + c.id,
                         name: c.ownerName,
                         role: 'Owner',
@@ -169,9 +187,7 @@ export default function GroupCirclesPage() {
                         status: 'active',
                         category: 'Founder',
                         locationTag: 'Nearby',
-                        earnedPoints: 1250,
-                        distributions: 45
-                    },
+                    }] : []),
                     {
                         id: 'me-' + c.id,
                         name: profile?.name || 'My Business',
@@ -181,12 +197,8 @@ export default function GroupCirclesPage() {
                         status: 'active',
                         category: 'Member',
                         locationTag: 'Nearby',
-                        earnedPoints: 850,
-                        distributions: 28
                     },
-                    { id: 'm1-' + c.id, name: 'Growth Partner', role: 'Member', orbit: 3, status: 'active', category: 'Marketing', locationTag: 'Hyperlocal', earnedPoints: 620, distributions: 15 },
-                    { id: 'm2-' + c.id, name: 'Scale Specialist', role: 'Member', orbit: 4, status: 'offline', category: 'Operations', locationTag: 'National', earnedPoints: 120, distributions: 5 },
-                    { id: 'm3-' + c.id, name: 'London Tech', role: 'Member', orbit: 2, status: 'active', category: 'Tech', locationTag: 'Nearby', earnedPoints: 940, distributions: 32 }
+                    ...realMembers
                 ]
             });
         });
@@ -224,6 +236,12 @@ export default function GroupCirclesPage() {
         return matchedMember?.id;
     }, [selectedCircle, profile]);
 
+    useEffect(() => {
+        if (!selectedCircleId && circles.length > 0) {
+            setSelectedCircleId(circles[0].id);
+        }
+    }, [circles, selectedCircleId]);
+
     const missingMandatory = useMemo(() => {
         const hasMarketing = circles.some(c => c.type.toLowerCase() === 'marketing');
         const hasAdvertising = circles.some(c => c.type.toLowerCase() === 'advertising');
@@ -240,7 +258,8 @@ export default function GroupCirclesPage() {
 
         setIsEditing(false);
         setNewCircleData({
-            duration: 'Summer',
+            name: `${name} ${new Date().getFullYear()}`,
+            duration: 90,
             contributionAmount: 0,
             networkIds: [],
             referredBusinessIds: [],
@@ -258,7 +277,7 @@ export default function GroupCirclesPage() {
         setNewCircleData({
             name: apiCircle.name,
             type: apiCircle.type,
-            duration: apiCircle.duration as any,
+            duration: Number(apiCircle.duration) || 90,
             contributionAmount: Number(apiCircle.contributionAmount),
             networkIds: apiCircle.members.map(m => m.network.id),
             referredBusinessIds: []
@@ -273,27 +292,52 @@ export default function GroupCirclesPage() {
             return;
         }
 
+        const seasonMap: Record<string, number> = {
+            Spring: 90,
+            Summer: 180,
+            Autumn: 270,
+            Winter: 360,
+        };
+
+        const numericDuration = typeof newCircleData.duration === 'string'
+            ? (seasonMap[newCircleData.duration] || parseInt(newCircleData.duration, 10) || 90)
+            : (Number(newCircleData.duration) || 90);
+
+        const payload: CreateGroupCircleDto = {
+            name: newCircleData.name,
+            type: newCircleData.type,
+            duration: numericDuration as GroupCircleDuration,
+            interactionLevel: 'COLLABORATE',
+            contributionAmount: Number(newCircleData.contributionAmount) || 0,
+            networkIds: newCircleData.networkIds || [],
+            referredBusinessIds: newCircleData.referredBusinessIds || []
+        };
+
         try {
             if (isEditing && selectedCircleId) {
                 await updateCircleMutation.mutateAsync({
                     id: selectedCircleId,
-                    data: newCircleData as UpdateGroupCircleDto
+                    data: payload as UpdateGroupCircleDto
                 });
                 toast.success(`${newCircleData.name} updated!`);
             } else {
-                await createCircleMutation.mutateAsync(newCircleData as CreateGroupCircleDto);
+                await createCircleMutation.mutateAsync(payload);
                 toast.success(`${newCircleData.name} created!`);
             }
             setCreateOpen(false);
             setCreateStep(1);
             setNewCircleData({
-                duration: 'Summer',
+                duration: 90,
                 contributionAmount: 0,
                 networkIds: [],
                 referredBusinessIds: []
             });
-        } catch (error) {
-            toast.error(isEditing ? "Failed to update circle" : "Failed to create circle");
+        } catch (error: any) {
+            const apiMessage = error?.response?.data?.message;
+            const message = Array.isArray(apiMessage)
+                ? apiMessage.join(". ")
+                : (apiMessage || error?.message || (isEditing ? "Failed to update circle" : "Failed to create circle"));
+            toast.error(message);
         }
     }, [isEditing, selectedCircleId, newCircleData, updateCircleMutation, createCircleMutation]);
 
@@ -369,10 +413,19 @@ export default function GroupCirclesPage() {
                     <Button
                         size="sm"
                         className="bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl flex-1 md:flex-none text-xs md:text-sm px-3 md:px-4"
-                        disabled={missingMandatory.length > 0}
                         onClick={() => {
                             setIsEditing(false);
-                            setNewCircleData({ type: 'ADVERTISING', duration: 'Summer', contributionAmount: 0, networkIds: [], referredBusinessIds: [] });
+                            const initialType = missingMandatory.includes("Marketing Circle")
+                                ? 'MARKETING'
+                                : (missingMandatory.includes("Advertising Circle") ? 'ADVERTISING' : 'MARKETING');
+                            setNewCircleData({
+                                name: missingMandatory.length > 0 ? `${missingMandatory[0]} ${new Date().getFullYear()}` : "",
+                                type: initialType as GroupCircleType,
+                                duration: 90,
+                                contributionAmount: 0,
+                                networkIds: [],
+                                referredBusinessIds: []
+                            });
                             setCreateStep(1);
                             setCreateOpen(true);
                         }}
@@ -384,10 +437,16 @@ export default function GroupCirclesPage() {
                         variant="outline"
                         size="sm"
                         className="hidden lg:inline-flex border-zinc-200 rounded-xl"
-                        disabled={missingMandatory.length > 0}
                         onClick={() => {
                             setIsEditing(false);
-                            setNewCircleData({ type: 'SMART_MONEY', duration: 'Summer', contributionAmount: 0, networkIds: [], referredBusinessIds: [] });
+                            setNewCircleData({
+                                name: "",
+                                type: 'SMART_MONEY',
+                                duration: 90,
+                                contributionAmount: 50,
+                                networkIds: [],
+                                referredBusinessIds: []
+                            });
                             setCreateStep(1);
                             setCreateOpen(true);
                         }}
@@ -408,6 +467,36 @@ export default function GroupCirclesPage() {
                 </div>
             </div>
 
+            {/* Mandatory Circles Recommendation Banner */}
+            {missingMandatory.length > 0 && (
+                <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 shrink-0">
+                            <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">Recommended Core Circles Setup</h4>
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                Set up your core network circles to unlock full collaboration: <strong className="font-semibold">{missingMandatory.join(" & ")}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {missingMandatory.map(name => (
+                            <Button
+                                key={name}
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs border-amber-300 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 rounded-xl bg-white/70 dark:bg-zinc-900/50"
+                                onClick={() => handleCreateMandatory(name)}
+                            >
+                                <Plus className="w-3 h-3 mr-1" /> Create {name}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Layer 2: Combined Circle Selector, Toggles & Filters */}
             {(circles.length > 0 || selectedCircle) && (
                 <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 bg-white/50 dark:bg-zinc-900/50 p-1.5 md:p-2 rounded-2xl md:rounded-[2rem] border border-zinc-200/50 backdrop-blur-sm">
@@ -423,7 +512,7 @@ export default function GroupCirclesPage() {
                                 setSelectedCircleId={setSelectedCircleId}
                                 groupCircleTypes={GROUP_CIRCLE_TYPES}
                                 onCreateNew={() => { setCreateStep(1); setCreateOpen(true); }}
-                                disabled={missingMandatory.length > 0}
+                                disabled={false}
                             />
                         )}
 
@@ -689,14 +778,29 @@ export default function GroupCirclesPage() {
                                     <Globe className="w-10 h-10 md:w-16 md:h-16 text-orange-200 animate-pulse" />
                                     <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-200 animate-[spin_10s_linear_infinite]" />
                                 </div>
-                                <h3 className="text-lg md:text-2xl font-bold text-zinc-800 dark:text-zinc-100">Select an Active Circle</h3>
-                                <p className="max-w-xs mt-1 md:mt-2 text-xs md:text-sm text-zinc-500">Pick a circle from the selector above to visualize your collaborative network and start collaborating.</p>
+                                <h3 className="text-lg md:text-2xl font-bold text-zinc-800 dark:text-zinc-100">
+                                    {circles.length === 0 ? "No Active Circles Yet" : "Select an Active Circle"}
+                                </h3>
+                                <p className="max-w-xs mt-1 md:mt-2 text-xs md:text-sm text-zinc-500">
+                                    {circles.length === 0
+                                        ? "Create your first collaborative circle to start mapping and working with your partner network."
+                                        : "Pick a circle from the selector above to visualize your collaborative network and start collaborating."}
+                                </p>
                                 <Button
                                     className="mt-4 md:mt-8 bg-zinc-900 text-white rounded-xl h-9 md:h-11 px-6 md:px-8 text-xs md:text-sm"
-                                    disabled={missingMandatory.length > 0}
                                     onClick={() => {
                                         setIsEditing(false);
-                                        setNewCircleData({ type: 'ADVERTISING', duration: 'Summer', contributionAmount: 0, networkIds: [], referredBusinessIds: [] });
+                                        const initialType = missingMandatory.includes("Marketing Circle")
+                                            ? 'MARKETING'
+                                            : (missingMandatory.includes("Advertising Circle") ? 'ADVERTISING' : 'MARKETING');
+                                        setNewCircleData({
+                                            name: missingMandatory.length > 0 ? `${missingMandatory[0]} ${new Date().getFullYear()}` : "",
+                                            type: initialType as GroupCircleType,
+                                            duration: 90,
+                                            contributionAmount: 0,
+                                            networkIds: [],
+                                            referredBusinessIds: []
+                                        });
                                         setCreateStep(1);
                                         setCreateOpen(true);
                                     }}
@@ -929,31 +1033,53 @@ export default function GroupCirclesPage() {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-4 py-4"
                             >
-                                <div className={cn("grid gap-4", newCircleData.type === 'SMART_MONEY' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
-                                    <div className="space-y-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2 sm:col-span-2">
                                         <Label htmlFor="name">Circle Name</Label>
                                         <Input
                                             id="name"
                                             placeholder="e.g. Summer Campaign Group"
                                             value={newCircleData.name || ""}
                                             onChange={(e) => setNewCircleData({ ...newCircleData, name: e.target.value })}
-                                        /><p className="text-[10px] text-muted-foreground">Give your circle a recognizable name for your partners.</p>
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">Give your circle a recognizable name for your partners.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="circle-type">Circle Type</Label>
+                                        <Select
+                                            value={newCircleData.type || 'MARKETING'}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, type: val as GroupCircleType })}
+                                        >
+                                            <SelectTrigger id="circle-type">
+                                                <SelectValue placeholder="Select Type" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
+                                                {GROUP_CIRCLE_TYPES.map(t => (
+                                                    <SelectItem key={t.id} value={t.id}>
+                                                        {t.name} {t.mandatory ? "(Core)" : ""}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-[10px] text-muted-foreground">Category and purpose of this circle.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="duration">Season / Duration</Label>
                                         <Select
-                                            value={String(newCircleData.duration)}
-                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: val })}
+                                            value={String(newCircleData.duration || 90)}
+                                            onValueChange={(val) => setNewCircleData({ ...newCircleData, duration: Number(val) })}
                                         >
-                                            <SelectTrigger>
+                                            <SelectTrigger id="duration">
                                                 <SelectValue placeholder="Select Duration" />
                                             </SelectTrigger>
                                             <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
-                                                {["Spring", "Summer", "Autumn", "Winter"].map(s => (
-                                                    <SelectItem key={s} value={s}>{s} Season</SelectItem>
-                                                ))}
+                                                <SelectItem value="90">Spring Season (90 Days)</SelectItem>
+                                                <SelectItem value="180">Summer Season (180 Days)</SelectItem>
+                                                <SelectItem value="270">Autumn Season (270 Days)</SelectItem>
+                                                <SelectItem value="360">Winter Season (360 Days)</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <p className="text-[10px] text-muted-foreground">Seasonal collaboration cycle.</p>
                                     </div>
                                 </div>
 

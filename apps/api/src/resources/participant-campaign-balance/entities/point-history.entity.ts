@@ -69,7 +69,7 @@ export class PointHistory extends AbstractBaseEntity {
   @JoinColumn({ name: "business_id" })
   business: Business;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, unique: true })
   actionKey: string;
 
   @Column({ nullable: true })

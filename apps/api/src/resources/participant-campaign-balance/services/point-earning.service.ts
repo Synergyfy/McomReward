@@ -286,6 +286,7 @@ export class PointEarningService {
           ParticipantCampaignBalance,
           {
             where: whereCondition,
+            lock: { mode: "pessimistic_write" },
           },
         );
 
@@ -462,6 +463,7 @@ export class PointEarningService {
 
       const participant = await manager.findOne(Participant, {
         where: { id: participantId },
+        lock: { mode: "pessimistic_write" },
       });
       if (!participant) throw new NotFoundException("Participant not found");
 
@@ -520,6 +522,7 @@ export class PointEarningService {
             participant: { id: participant.id },
             businessCampaign: { id: campaignId },
           },
+          lock: { mode: "pessimistic_write" },
         },
       );
 

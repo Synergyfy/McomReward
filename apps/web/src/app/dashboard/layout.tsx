@@ -52,13 +52,25 @@ export default function DashboardLayout({
     }
 
     // Check if subscription data is loaded and is inactive/expired, but SKIP for Super Business
-    const localPlanName =
-      myPackage?.planName || myPackage?.membershipTier || 'Free';
+    const isTrial = Boolean(
+      myPackage?.isTrial ||
+        mySubscription?.isTrial ||
+        myPackage?.accessType === 'TRIAL_PROGRAMME',
+    );
+
+    const hasEntitledAccess = Boolean(
+      myPackage?.hasAccess === true ||
+        isTrial ||
+        myPackage?.accessType === 'PAID_MEMBERSHIP' ||
+        myPackage?.accessType === 'DIRECT_PACKAGE' ||
+        mySubscription?.status === 'active',
+    );
+
     const isSubInactive =
-      localPlanName === 'Free' ||
-      myPackage?.membershipStatus === 'expired' ||
-      myPackage?.isExpired ||
-      mySubscription?.status === 'expired';
+      !hasEntitledAccess &&
+      (myPackage?.membershipStatus === 'expired' ||
+        myPackage?.isExpired ||
+        mySubscription?.status === 'expired');
 
     if (
       !isMyPackageLoading &&
@@ -117,13 +129,21 @@ export default function DashboardLayout({
             </div>
           )}
 
-          {/* Trial Banner - Show if is trial or for demo purposes if nothing else */}
-          {mySubscription?.isTrial && mySubscription.expiresAt && (
-            <TrialBanner
-              planName={mySubscription.tier?.name || 'Pro'}
-              expiresAt={mySubscription.expiresAt}
-            />
-          )}
+          {/* Trial Banner - Task-Gated Trial from MCOM Central or local subscription trial */}
+          {(myPackage?.isTrial || mySubscription?.isTrial) &&
+            (myPackage?.expiresAt || mySubscription?.expiresAt) && (
+              <TrialBanner
+                planName={
+                  myPackage?.planName ||
+                  mySubscription?.tier?.name ||
+                  'Programme Trial'
+                }
+                expiresAt={(myPackage?.expiresAt || mySubscription?.expiresAt)!}
+                tasks={myPackage?.trialTasks || []}
+                upgradeUrl={myPackage?.upgradeUrl}
+              />
+            )}
+
 
           {/* Header for mobile */}
           <BusinessHeader onMenuClick={toggleSidebar} />

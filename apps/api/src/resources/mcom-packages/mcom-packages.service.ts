@@ -23,6 +23,7 @@ import {
 } from "../plans/entities/plan-payment.entity";
 import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
 import { SsoService } from "../sso/sso.service";
+import { decrypt } from "../../common/utils/crypto.util";
 import {
   InitiatePlatformPurchaseDto,
   PaymentProviderType,
@@ -67,7 +68,7 @@ export class McomPackagesService {
     ).replace(/\/$/, "");
 
     this.platformSlug =
-      this.configService.get<string>("MCOM_PLATFORM_SLUG") || "rewards";
+      this.configService.get<string>("MCOM_PLATFORM_SLUG") || "mcom-reward";
 
     this.webPublicUrl = (
       this.configService.get<string>("WEB_PUBLIC_URL") ||
@@ -179,32 +180,49 @@ export class McomPackagesService {
   }
 
   private async getValidCentralToken(business: Business): Promise<string> {
-    if (!business.mcomAccessToken) {
+    if (!business.mcomAccessToken && !business.mcomRefreshToken) {
       throw new UnauthorizedException(
         "Business is not linked to MCOM Solutions. Please log in via SSO.",
       );
     }
+
+    if (
+      business.mcomAccessToken &&
+      business.mcomTokenExpiresAt &&
+      new Date(business.mcomTokenExpiresAt).getTime() > Date.now() + 60_000
+    ) {
+      try {
+        return decrypt(business.mcomAccessToken);
+      } catch (e) {
+        this.logger.warn(`Failed to decrypt mcomAccessToken: ${e?.message}`);
+      }
+    }
+
     return this.ssoService.refreshCentralToken(business.id);
   }
 
   private walletPartnerHeaders(
     body: object,
-    idempotencyKey: string,
+    idempotencyKey?: string,
   ): Record<string, string> {
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const bodyString = JSON.stringify(body);
-    const signaturePayload = `${this.clientId}:${timestamp}:${bodyString}`;
-    const signature = crypto
-      .createHmac("sha256", this.hmacSecret)
-      .update(signaturePayload)
-      .digest("hex");
+    const bodyString = typeof body === "string" ? body : JSON.stringify(body);
+    const signature =
+      "sha256=" +
+      crypto
+        .createHmac("sha256", this.hmacSecret)
+        .update(bodyString)
+        .digest("hex");
 
     return {
-      "X-Service-Id": this.clientId,
-      "X-Timestamp": timestamp,
-      "X-Signature": signature,
-      "Idempotency-Key": idempotencyKey,
       "Content-Type": "application/json",
+      "X-Mcom-Client-ID": this.clientId,
+      "X-Mcom-Signature": signature,
+      ...(idempotencyKey
+        ? {
+            "X-Idempotency-Key": idempotencyKey,
+            "Idempotency-Key": idempotencyKey,
+          }
+        : {}),
     };
   }
 
@@ -221,18 +239,19 @@ export class McomPackagesService {
     );
     const variantId = variant.id;
 
-    let centralToken = await this.getValidCentralToken(business);
-
     if (dto.provider === PaymentProviderType.WALLET) {
+      if (!business.mcomUserId) {
+        throw new BadRequestException(
+          "Your business profile is not linked to an MCOM account. Please log in via SSO.",
+        );
+      }
       try {
         const idempotencyKey = `mcom-rewards-hold-${business.id}-${Date.now()}`;
         const holdPayload = {
           userId: business.mcomUserId,
           amount: Number(price.amount),
-          currency: price.currency || "GBP",
-          ttlSeconds: 900,
-          reason: `Plan Subscription: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
-          reference: `hold-${business.id}`,
+          reference: `hold-${business.id}-${Date.now()}`,
+          description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
           metadata: {
             platform: this.platformSlug,
             planVariantId: variantId,
@@ -259,6 +278,8 @@ export class McomPackagesService {
         throw new BadRequestException(`Wallet reservation failed: ${errMsg}`);
       }
     }
+
+    let centralToken = await this.getValidCentralToken(business);
 
     const payload = {
       platform: this.platformSlug,
@@ -337,7 +358,6 @@ export class McomPackagesService {
       dto.externalPlanId,
     );
 
-    let centralToken = await this.getValidCentralToken(business);
     let centralResponseData: any = null;
     let transactionId =
       dto.paymentIntentId ||
@@ -352,14 +372,15 @@ export class McomPackagesService {
       if (holdId) {
         try {
           const idempotencyKey = `mcom-rewards-capture-${holdId}`;
+          const capturePayload = {
+            holdId,
+            description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
+            category: "SUBSCRIPTION",
+          };
           const captureRes = await axios.post(
             `${this.centralUrl}/api/v1/wallet/partner/hold/capture`,
-            {
-              holdId,
-              description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
-              category: "SUBSCRIPTION",
-            },
-            { headers: this.walletPartnerHeaders({ holdId }, idempotencyKey) },
+            capturePayload,
+            { headers: this.walletPartnerHeaders(capturePayload, idempotencyKey) },
           );
           centralResponseData = captureRes.data;
           transactionId = holdId;
@@ -372,14 +393,19 @@ export class McomPackagesService {
           );
         }
       } else {
+        if (!business.mcomUserId) {
+          throw new BadRequestException(
+            "Your business profile is not linked to an MCOM account. Please log in via SSO.",
+          );
+        }
         try {
           const idempotencyKey = `mcom-rewards-sub-${business.id}-${Date.now()}`;
           const debitPayload = {
             userId: business.mcomUserId,
             amount: Number(price.amount),
-            currency: price.currency || "GBP",
             category: "SUBSCRIPTION",
             description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
+            reference: `sub-${business.id}-${Date.now()}`,
             metadata: {
               platform: this.platformSlug,
               planVariantId: variant.id,
@@ -402,6 +428,7 @@ export class McomPackagesService {
         }
       }
     } else if (dto.provider === "paypal" && dto.orderId) {
+      let centralToken = await this.getValidCentralToken(business);
       try {
         const res = await axios.post(
           `${this.centralUrl}/api/v1/payment/platform/paypal/capture`,
@@ -430,6 +457,7 @@ export class McomPackagesService {
       }
       transactionId = intentId;
 
+      let centralToken = await this.getValidCentralToken(business);
       try {
         const res = await axios.post(
           `${this.centralUrl}/api/v1/payment/platform/stripe/confirm`,
@@ -653,7 +681,7 @@ export class McomPackagesService {
   }
 
   async getMyActivePackage(userId: string) {
-    const subscription = await this.subscriptionRepository.findOne({
+    let subscription = await this.subscriptionRepository.findOne({
       where: { business: { id: userId } },
       relations: [
         "planVariant",
@@ -669,6 +697,61 @@ export class McomPackagesService {
       where: { id: userId },
     });
 
+    // If subscription is missing, dynamically sync from stored entitlement or trial context
+    if (!subscription && business) {
+      if (business.entitlementData) {
+        subscription = await this.planSubscriptionService.syncFromEntitlement(
+          business.id,
+          business.entitlementData as any,
+        );
+      } else if (
+        business.hasPaidVerificationFee ||
+        business.membershipStatus === "trial"
+      ) {
+        subscription = await this.planSubscriptionService.syncFromEntitlement(
+          business.id,
+          {
+            version: "2026-10-01",
+            targetPlatform: {
+              clientId: "rewards",
+              platformSlug: "rewards",
+              name: "MCOM Rewards",
+            },
+            access: {
+              hasAccess: true,
+              accessType: "TRIAL_PROGRAMME",
+              upgradeUrl: `${this.centralUrl}/dashboard/memberships`,
+            },
+            plan: {
+              planId: "trial",
+              planName: "14-Day Trial",
+              source: "trial",
+              status: "trial",
+              billingCycle: "14 days",
+              quotas: {},
+              limits: {},
+              features: [],
+            },
+            membershipContext: {
+              membershipPlanName: null,
+              membershipLevel: "STANDARD",
+              membershipStatus: "trial",
+              isIncludedInMembership: false,
+            },
+            trialContext: {
+              isInTrial: true,
+              hasPaidVerificationFee: true,
+              trialExpiresAt: new Date(
+                Date.now() + 14 * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+              daysRemaining: 14,
+              programmeTasks: [],
+            },
+          } as any,
+        );
+      }
+    }
+
     const isExpired =
       !subscription ||
       (subscription.expires_at &&
@@ -679,9 +762,38 @@ export class McomPackagesService {
       : isExpired
         ? "expired"
         : subscription.status || "active";
-    const planName = subscription?.planVariant?.plan?.name || "Free";
+    const planName =
+      subscription?.planVariant?.plan?.name ||
+      (subscription?.is_trial ? "14-Day Trial" : "Free");
     const membershipLevel =
       subscription?.planVariant?.tierLevel?.name || "STANDARD";
+
+    const isTrial = subscription?.is_trial || false;
+    const hasAccess =
+      !isExpired &&
+      (effectiveStatus === SubscriptionStatus.ACTIVE ||
+        (effectiveStatus as string) === "active" ||
+        isTrial);
+
+    const accessType = isTrial
+      ? "TRIAL_PROGRAMME"
+      : business?.entitlementSource === "membership"
+        ? "PAID_MEMBERSHIP"
+        : subscription?.isActive
+          ? "DIRECT_PACKAGE"
+          : "NONE";
+
+    const upgradeUrl = `${this.centralUrl}/dashboard/memberships`;
+
+    const now = Date.now();
+    const expiryTimestamp = subscription?.expires_at
+      ? new Date(subscription.expires_at).getTime()
+      : 0;
+    const daysRemaining =
+      isTrial && expiryTimestamp > now
+        ? Math.max(0, Math.ceil((expiryTimestamp - now) / (1000 * 60 * 60 * 24)))
+        : (business?.entitlementData as any)?.trialContext?.daysRemaining ??
+          (isTrial ? 14 : 0);
 
     return {
       subscription: subscription || null,
@@ -695,10 +807,19 @@ export class McomPackagesService {
         subscription?.planVariant?.id || subscription?.planVariantId || null,
       membershipStatus: effectiveStatus,
       isExpired,
-      isTrial: subscription?.is_trial || false,
+      isTrial,
+      hasAccess,
+      accessType,
+      source: business?.entitlementSource || (isTrial ? "trial" : "direct"),
+      entitlement: business?.entitlementData || null,
+      trialTasks: business?.trialTasks || [],
+      hasPaidVerificationFee: business?.hasPaidVerificationFee || false,
+      daysRemaining,
+      upgradeUrl,
       expiresAt: subscription?.expires_at
         ? new Date(subscription.expires_at).toISOString()
         : null,
     };
   }
 }
+

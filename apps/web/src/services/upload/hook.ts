@@ -11,6 +11,28 @@ interface UploadParams {
   folder: string;
 }
 
+// When true, uploads are sent to the server route (/api/upload/<folder>) which
+// stores them on the local filesystem instead of Cloudinary. Intended for local dev.
+const LOCAL_FILE_UPLOAD = process.env.NEXT_PUBLIC_LOCAL_FILE_UPLOAD === 'true';
+
+const uploadToServer = async ({ file, folder }: UploadParams): Promise<UploadResponse> => {
+  const cleanFolder = folder.replace(/^\/+|\/+$/g, '');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`/api/upload/${cleanFolder}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Upload failed');
+  }
+
+  return response.json();
+};
+
 const uploadImageDirect = async ({ file, folder }: UploadParams): Promise<UploadResponse> => {
   // 1. Get Signature
   const timestamp = Math.round((new Date()).getTime() / 1000);
@@ -47,8 +69,12 @@ const uploadImageDirect = async ({ file, folder }: UploadParams): Promise<Upload
   return response.json();
 };
 
+const uploadFile = (params: UploadParams): Promise<UploadResponse> => {
+  return LOCAL_FILE_UPLOAD ? uploadToServer(params) : uploadImageDirect(params);
+};
+
 export const useUploadToCloudinary = () => {
   return useMutation({
-    mutationFn: uploadImageDirect,
+    mutationFn: uploadFile,
   });
 };

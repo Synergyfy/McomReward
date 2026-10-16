@@ -69,6 +69,8 @@ import { SystemPlansModule } from "./resources/system-plans/system-plans.module"
 import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
 import { PlansModule } from "./resources/plans/plans.module";
 import { BusinessAssetsModule } from "./resources/business-assets/business-assets.module";
+import { ServiceMeshModule } from "./resources/service-mesh/service-mesh.module";
+import { PartnerRewardsModule } from "./resources/partner-rewards/partner-rewards.module";
 
 @Module({
   imports: [
@@ -140,6 +142,8 @@ import { BusinessAssetsModule } from "./resources/business-assets/business-asset
     CreditsModule,
     LoyaltySetupModule,
     BusinessAssetsModule,
+    ServiceMeshModule,
+    PartnerRewardsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -158,6 +162,10 @@ import { BusinessAssetsModule } from "./resources/business-assets/business-asset
     },
     {
       provide: APP_GUARD,
+      useClass: MembershipGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: TenantOwnershipGuard,
     },
     {
@@ -168,6 +176,6 @@ import { BusinessAssetsModule } from "./resources/business-assets/business-asset
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggingMiddleware).forRoutes("*");
+    consumer.apply(LoggingMiddleware).forRoutes("{*path}");
   }
 }

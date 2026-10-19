@@ -189,7 +189,10 @@ export class PaymentController {
 
   @Post("wallet/initiate")
   @Roles(Role.Business)
-  @ApiOperation({ summary: "Initiate a wallet top-up" })
+  @ApiOperation({
+    summary: "Deprecated — wallet top-ups are handled by MCOM Central",
+    deprecated: true,
+  })
   @ApiBody({ type: InitiateWalletTopupDto })
   @ApiResponse({
     status: 201,
@@ -208,7 +211,10 @@ export class PaymentController {
 
   @Post("wallet/verify")
   @Roles(Role.Business)
-  @ApiOperation({ summary: "Verify a wallet top-up" })
+  @ApiOperation({
+    summary: "Deprecated — wallet top-ups are handled by MCOM Central",
+    deprecated: true,
+  })
   @ApiBody({ type: VerifyWalletTopupDto })
   @ApiResponse({
     status: 201,

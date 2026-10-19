@@ -1,69 +1,17 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useGetWallet, useInitiateWalletTopup, useVerifyWalletTopup } from '@/services/wallet/hook';
+import { useGetWallet } from '@/services/wallet/hook';
 import { useGetCashbackBalance } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { toast } from 'sonner';
-import { Loader2, CreditCard, Wallet, History, Coins, Stamp, Star, Ticket, Eye, Gift, ExternalLink, ShieldCheck, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, Wallet, History, Coins, Stamp, Star, Ticket, Eye, Gift, ExternalLink, ShieldCheck, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from 'date-fns';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
-
-function StripePaymentForm({ onSuccess, onClose }: { onSuccess: (id: string) => void, onClose: () => void }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-    setIsProcessing(true);
-    setErrorMessage(null);
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: window.location.href },
-      redirect: "if_required",
-    });
-    if (error) {
-      setErrorMessage(error.message || "An unexpected error occurred.");
-      setIsProcessing(false);
-    } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      onSuccess(paymentIntent.id);
-    } else {
-      setErrorMessage("Payment status could not be determined.");
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      {errorMessage && <div className="text-red-500 text-sm">{errorMessage}</div>}
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" type="button" onClick={onClose} disabled={isProcessing}>Cancel</Button>
-        <Button type="submit" disabled={!stripe || isProcessing}>
-          {isProcessing ? <Loader2 className="animate-spin mr-2" /> : null}
-          Pay Now
-        </Button>
-      </div>
-    </form>
-  );
-}
 
 function CustomerPreviewTab() {
   return (
@@ -162,82 +110,19 @@ function WalletPageContent() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const { data: wallet, isLoading: isWalletLoading, refetch: refetchWallet, isRefetching } = useGetWallet();
   const { data: cashback, isLoading: isCashbackLoading } = useGetCashbackBalance();
-  const { mutate: initiateTopup, isPending: isInitiating } = useInitiateWalletTopup();
-  const { mutate: verifyTopup } = useVerifyWalletTopup();
-
-  const [amount, setAmount] = useState<string>('10');
-  const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [isStripeDialogOpen, setIsStripeDialogOpen] = useState(false);
-  const [showLegacyTopup, setShowLegacyTopup] = useState(false);
 
   const hasCentralWallet = wallet?.centralBalance !== undefined || wallet?.centralAvailableBalance !== undefined;
-  const centralTopUpUrl = wallet?.topUpUrl || 'http://localhost:3010/dashboard/wallet';
+  const centralUnavailable = Boolean(wallet?.centralConfigured) && !hasCentralWallet;
+  const centralFallbackUrl = `${(process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/wallet`;
+  const centralTopUpUrl = wallet?.topUpUrl || centralFallbackUrl;
 
-  const handleInitiate = () => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error("Please enter a valid amount.");
-      return;
-    }
-
-    initiateTopup({ amount: numAmount, provider }, {
-      onSuccess: (data) => {
-        if (provider === 'stripe' && data.clientSecret) {
-          setClientSecret(data.clientSecret);
-          setIsStripeDialogOpen(true);
-        }
-      },
-      onError: (err) => {
-        toast.error(`Failed to initiate top-up: ${err.message}`);
-      }
-    });
-  };
-
-  const handleStripeSuccess = (paymentIntentId: string) => {
-    setIsStripeDialogOpen(false);
-    verifyTopup({ transaction_id: paymentIntentId, provider: 'stripe' }, {
-      onSuccess: (data) => {
-        toast.success(`Successfully topped up £${data.amount}!`);
-        setClientSecret(null);
-        refetchWallet();
-      },
-      onError: (err) => {
-        toast.error(`Verification failed: ${err.message}`);
-      }
-    });
-  };
-
-  const createPayPalOrder = async () => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error("Invalid amount");
-      throw new Error("Invalid amount");
-    }
-
-    return new Promise<string>((resolve, reject) => {
-      initiateTopup({ amount: numAmount, provider: 'paypal' }, {
-        onSuccess: (data) => {
-          if (data.orderId) resolve(data.orderId);
-          else reject("No Order ID returned");
-        },
-        onError: (err) => reject(err)
-      });
-    });
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onPayPalApprove = async (data: any) => {
-    verifyTopup({ transaction_id: data.orderID, provider: 'paypal' }, {
-      onSuccess: (res) => {
-        toast.success(`Successfully topped up £${res.amount}!`);
-        refetchWallet();
-      },
-      onError: (err) => {
-        toast.error(`Verification failed: ${err.message}`);
-      }
-    });
-  };
+  // Top-up happens in the Central Hub (often a new tab). Refresh the central
+  // balance as soon as the user comes back to this tab.
+  useEffect(() => {
+    const onFocus = () => refetchWallet();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [refetchWallet]);
 
   if (isWalletLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
@@ -262,6 +147,20 @@ function WalletPageContent() {
         </Button>
       </div>
 
+      {wallet?.centralError && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <AlertCircle className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold">MCOM Central wallet unavailable</p>
+            <p className="mt-0.5">{wallet.centralError}</p>
+            <p className="mt-1 text-xs text-amber-800/80">
+              The balance shown below is not the central wallet balance. Retry the
+              sync, or open the MCOM Central wallet to check it directly.
+            </p>
+          </div>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="business" className="gap-2"><Wallet className="w-4 h-4" />Business Wallet</TabsTrigger>
@@ -279,9 +178,16 @@ function WalletPageContent() {
                   <ShieldCheck className="h-5 w-5 text-indigo-400" />
                   <CardTitle className="text-sm font-semibold text-indigo-200">MCOM Central Wallet</CardTitle>
                 </div>
-                {hasCentralWallet && (
-                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] px-2 py-0.5">
-                    {wallet?.centralStatus || 'ACTIVE'}
+                {wallet?.centralConfigured && (
+                  <Badge
+                    variant="outline"
+                    className={
+                      hasCentralWallet
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] px-2 py-0.5'
+                        : 'bg-amber-500/20 text-amber-200 border-amber-500/30 text-[10px] px-2 py-0.5'
+                    }
+                  >
+                    {hasCentralWallet ? (wallet?.centralStatus || 'ACTIVE') : 'UNAVAILABLE'}
                   </Badge>
                 )}
               </CardHeader>
@@ -289,11 +195,15 @@ function WalletPageContent() {
                 <div className="text-3xl font-black tracking-tight text-white">
                   {hasCentralWallet
                     ? `${Number(wallet?.centralAvailableBalance ?? wallet?.centralBalance ?? 0).toFixed(2)} ${wallet?.centralCurrency || 'MCOM'}`
-                    : `£${Number(wallet?.topupBalance || 0).toFixed(2)}`}
+                    : centralUnavailable
+                      ? '—'
+                      : `£${Number(wallet?.topupBalance || 0).toFixed(2)}`}
                 </div>
                 <p className="text-xs text-indigo-200/80 mt-1">
                   {hasCentralWallet ? (
                     <>Total Balance: {Number(wallet?.centralBalance || 0).toFixed(2)} {wallet?.centralCurrency || 'MCOM'}</>
+                  ) : centralUnavailable ? (
+                    'Unable to load the central balance'
                   ) : (
                     'Central unified balance'
                   )}
@@ -347,7 +257,7 @@ function WalletPageContent() {
           </div>
 
           {/* Central Top Up Guidance Banner & Actions */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-1">
             <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-white">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -361,6 +271,9 @@ function WalletPageContent() {
               <CardContent className="space-y-4 text-sm text-slate-600">
                 <p>
                   Funds added to your MCOM Central Wallet are instantly usable across all registered applications with automatic distributed ledger reconciliation.
+                </p>
+                <p>
+                  Card and PayPal top-ups are completed securely in MCOM Central — this app never stores your card details.
                 </p>
                 <div className="bg-indigo-50/80 border border-indigo-100 p-3.5 rounded-lg flex items-start gap-3">
                   <Sparkles className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
@@ -380,78 +293,6 @@ function WalletPageContent() {
                   </a>
                 </div>
               </CardContent>
-            </Card>
-
-            {/* Direct / Fallback Top-Up Option */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Direct Card / PayPal Top Up</CardTitle>
-                    <CardDescription>Add funds directly to your rewards account.</CardDescription>
-                  </div>
-                  {!showLegacyTopup && (
-                    <Button variant="ghost" size="sm" onClick={() => setShowLegacyTopup(true)} className="text-xs">
-                      Show Form
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              {showLegacyTopup ? (
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (£)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="Enter amount"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      min="1"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Payment Method</Label>
-                    <RadioGroup value={provider} onValueChange={(v) => setProvider(v as 'stripe' | 'paypal')} className="flex gap-4">
-                      <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
-                        <RadioGroupItem value="stripe" id="r1" />
-                        <Label htmlFor="r1" className="cursor-pointer flex items-center gap-2">
-                          <CreditCard className="w-4 h-4" /> Card (Stripe)
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 border p-3 rounded-md cursor-pointer hover:bg-muted/50 w-full">
-                        <RadioGroupItem value="paypal" id="r2" />
-                        <Label htmlFor="r2" className="cursor-pointer flex items-center gap-2">
-                          <span className="font-bold text-blue-700 italic">Pay</span><span className="font-bold text-blue-500 italic">Pal</span>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {provider === 'stripe' ? (
-                    <Button className="w-full" onClick={handleInitiate} disabled={isInitiating}>
-                      {isInitiating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Proceed to Pay £{amount}
-                    </Button>
-                  ) : (
-                    <div className="mt-4 z-0 relative">
-                      <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb", currency: "GBP" }}>
-                        <PayPalButtons
-                          style={{ layout: "vertical" }}
-                          createOrder={createPayPalOrder}
-                          onApprove={onPayPalApprove}
-                          forceReRender={[amount]}
-                        />
-                      </PayPalScriptProvider>
-                    </div>
-                  )}
-                </CardContent>
-              ) : (
-                <CardContent className="py-6 text-center text-sm text-muted-foreground space-y-2">
-                  <p>Central wallet top-up is recommended. If you need to make a local direct top-up via card or PayPal, click &quot;Show Form&quot; above.</p>
-                </CardContent>
-              )}
             </Card>
           </div>
 
@@ -516,26 +357,6 @@ function WalletPageContent() {
           <CustomerPreviewTab />
         </TabsContent>
       </Tabs>
-
-      {/* Stripe Dialog */}
-      <Dialog open={isStripeDialogOpen} onOpenChange={setIsStripeDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Complete Payment</DialogTitle>
-            <DialogDescription>
-              Enter your card details to top up £{amount}.
-            </DialogDescription>
-          </DialogHeader>
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <StripePaymentForm
-                onSuccess={handleStripeSuccess}
-                onClose={() => setIsStripeDialogOpen(false)}
-              />
-            </Elements>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
-import Cookies from 'js-cookie';
+import { setAuthTokens } from '@/lib/auth-cookies';
 import {
   Tier,
   StripeInitiateRequest,
@@ -72,8 +72,7 @@ export const useStripeVerify = () => {
     mutationFn: verifyStripePayment,
     onSuccess: (data) => {
       // Update tokens in cookies after successful payment
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
     },
   });
@@ -101,8 +100,7 @@ export const usePayPalVerify = () => {
     mutationFn: verifyPayPalPayment,
     onSuccess: (data) => {
       // Update tokens in cookies after successful payment
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
     },
   });

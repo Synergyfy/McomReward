@@ -3,7 +3,6 @@
 import React, { Suspense, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Cookies from "js-cookie";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -22,6 +21,11 @@ import { Label } from "@/components/ui/label";
 import Turnstile from "@/components/ui/turnstile";
 import { useAdminSignIn } from "@/services/auth/hook";
 import { getCentralLoginUrl } from "@/lib/sso-utils";
+import {
+  clearAuthCookies,
+  getAccessToken,
+  setSsoState,
+} from "@/lib/auth-cookies";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -36,7 +40,7 @@ function AdminLoginForm() {
 
   // If already logged in as Admin, redirect straight to dashboard
   useEffect(() => {
-    const token = Cookies.get("access");
+    const token = getAccessToken();
     if (token) {
       try {
         const storedUser = localStorage.getItem("user");
@@ -71,8 +75,7 @@ function AdminLoginForm() {
       const userRole = response?.user?.role;
       if (userRole && userRole !== "Admin" && userRole !== "admin") {
         // Clear tokens immediately if user is not an administrator
-        Cookies.remove("access", { path: "/" });
-        Cookies.remove("refresh", { path: "/" });
+        clearAuthCookies();
         localStorage.removeItem("authToken");
         localStorage.removeItem("user");
         setErrorMessage(
@@ -106,14 +109,7 @@ function AdminLoginForm() {
       const state = Array.from(array, (byte) =>
         byte.toString(16).padStart(2, "0")
       ).join("");
-      const isSecure =
-        typeof window !== "undefined" && window.location.protocol === "https:";
-      Cookies.set("sso_state", state, {
-        path: "/",
-        sameSite: "lax",
-        expires: 1 / 144,
-        secure: isSecure,
-      });
+      setSsoState(state);
 
       const authorizeUrl = getCentralLoginUrl("/auth/callback", state);
       window.location.href = authorizeUrl;

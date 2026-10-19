@@ -29,6 +29,15 @@ export class BusinessWallet extends AbstractBaseEntity {
   transactions: WalletTransaction[];
 
   @ApiProperty({ required: false })
+  centralConfigured?: boolean;
+
+  @ApiProperty({ required: false })
+  centralLinked?: boolean;
+
+  @ApiProperty({ required: false })
+  centralError?: string;
+
+  @ApiProperty({ required: false })
   centralBalance?: number;
 
   @ApiProperty({ required: false })

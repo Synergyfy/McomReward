@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-import Cookies from "js-cookie";
 import { getCentralLoginUrl } from "@/lib/sso-utils";
+import { setSsoState } from "@/lib/auth-cookies";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -21,8 +21,7 @@ function LoginForm() {
       const array = new Uint8Array(32);
       crypto.getRandomValues(array);
       const state = Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
-      const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
-      Cookies.set("sso_state", state, { path: "/", sameSite: "lax", expires: 1 / 144, secure: isSecure });
+      setSsoState(state);
 
       // 2. Construct OAuth 2.0 Authorization redirect URL using central helper
       const authorizeUrl = getCentralLoginUrl("/auth/callback", state);

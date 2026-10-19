@@ -245,6 +245,42 @@ export class AuthService {
   async refreshToken(token: string) {
     try {
       const payload = this.jwtService.verify(token);
+
+      // Network and Partner accounts live in their own tables and are not
+      // resolved by UserService.findOne, so handle them explicitly. Without
+      // this their refresh tokens were always rejected after the 1h access
+      // token expired, forcing a logout.
+      if (payload.role === Role.Network) {
+        const network = payload.sub
+          ? await this.networkRepository.findOne({
+              where: { id: payload.sub },
+            })
+          : payload.username
+            ? await this.networkRepository.findOne({
+                where: { email: payload.username },
+              })
+            : null;
+
+        if (!network) {
+          throw new UnauthorizedException("Invalid token");
+        }
+
+        return this.loginNetworkUser(network);
+      }
+
+      if (payload.role === Role.Partner) {
+        const partner =
+          (payload.sub && (await this.partnerService.findById(payload.sub))) ||
+          (payload.username &&
+            (await this.partnerService.findByEmail(payload.username)));
+
+        if (!partner) {
+          throw new UnauthorizedException("Invalid token");
+        }
+
+        return this.loginPartner(partner);
+      }
+
       const user = await this.userService.findOne(payload.username);
       if (!user) {
         throw new UnauthorizedException("Invalid token");

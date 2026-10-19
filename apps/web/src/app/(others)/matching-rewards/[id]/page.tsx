@@ -4,7 +4,7 @@ import React, { use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { hasAuthSession } from '@/lib/auth-cookies';
 import { useGetPublicMatchingRewardById, useRedeemMatchingReward } from '@/services/matching-points/hook';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ interface PageProps {
 export default function MatchingRewardDetailPage({ params }: PageProps) {
     const { id } = use(params);
     const router = useRouter();
-    const isLoggedIn = !!Cookies.get('access');
+    const isLoggedIn = hasAuthSession();
 
     const { data: reward, isLoading, error } = useGetPublicMatchingRewardById(id);
     const redeemMutation = useRedeemMatchingReward();

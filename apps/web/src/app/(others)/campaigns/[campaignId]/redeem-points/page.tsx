@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Trophy } from "lucide-react";
 import Image from 'next/image';
-import Cookies from 'js-cookie';
+import { hasAuthSession } from '@/lib/auth-cookies';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 import { RedemptionSuccessDialog } from '@/components/customer/RedemptionSuccessDialog';
@@ -34,7 +34,7 @@ export default function RedeemPointsPage({ params }: PageProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<{ title: string } | null>(null);
 
-    const isAuthenticated = !!Cookies.get('access');
+    const isAuthenticated = hasAuthSession();
 
     const handleRedeemClick = (reward: RewardResponse) => {
         if (!isAuthenticated) {

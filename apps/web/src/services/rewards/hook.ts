@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api, { setBearerToken } from '../api';
+import api from '../api';
 import { AddRewardToBusinessRequest, CreateRewardRequest, GetRewardsResponse, RewardResponse, UpdateRewardRequest } from './types';
-import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 
@@ -16,7 +15,6 @@ const createReward = async (rewardData: CreateRewardRequest): Promise<RewardResp
 
 export const useCreateReward = () => {
   const queryClient = useQueryClient();
-  setBearerToken(Cookies.get('access') || '');
 
   return useMutation({
     mutationFn: createReward,

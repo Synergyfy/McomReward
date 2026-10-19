@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, Suspense, useCallback } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSsoExchange, useSsoLogin } from "@/services/auth/hook";
 import api from "@/services/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
+import {
+  clearSsoState,
+  getSsoState,
+  hasAuthSession,
+} from "@/lib/auth-cookies";
 
 const processedCodes = new Set<string>();
 
@@ -31,12 +35,6 @@ function CallbackContent() {
     };
   }, []);
 
-  const getCookie = useCallback((name: string): string | null => {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[1]) : null;
-  }, []);
-
   useEffect(() => {
     if (attempted.current) return;
 
@@ -54,7 +52,7 @@ function CallbackContent() {
     }
 
     if (code) {
-      const storedState = Cookies.get("sso_state") || getCookie("sso_state");
+      const storedState = getSsoState();
       if (storedState && state && storedState !== state) {
         attempted.current = true;
         console.error("SSO CSRF state mismatch: stored =", storedState, "received =", state);
@@ -62,7 +60,7 @@ function CallbackContent() {
         router.push("/login");
         return;
       }
-      Cookies.remove("sso_state", { path: "/" });
+      clearSsoState();
     }
 
     attempted.current = true;
@@ -145,7 +143,7 @@ function CallbackContent() {
       if (!mountedRef.current) return;
 
       console.error("SSO Authentication Error:", err);
-      if (Cookies.get("access")) {
+      if (hasAuthSession()) {
         router.push("/loyalty-setup");
         return;
       }
@@ -175,7 +173,7 @@ function CallbackContent() {
         .then(handleSuccess)
         .catch(handleError);
     }
-  }, [code, state, ssoToken, roleParam, error, router, ssoExchange, ssoLogin, getCookie]);
+  }, [code, state, ssoToken, roleParam, error, router, ssoExchange, ssoLogin]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">

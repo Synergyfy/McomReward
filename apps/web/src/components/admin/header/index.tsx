@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useGetNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from '@/services/notifications/hook';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { clearAuthCookies } from '@/lib/auth-cookies';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -32,6 +33,7 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
   const handleLogout = () => {
     // Clear any auth tokens/session data
+    clearAuthCookies();
     localStorage.removeItem('authToken');
     sessionStorage.clear();
 

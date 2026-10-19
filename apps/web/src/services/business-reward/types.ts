@@ -21,6 +21,13 @@ export interface Reward {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  mall_target_scope?: 'SPECIFIC' | 'ALL';
+  mall_target_product_ids?: string[];
+  mall_target_service_ids?: string[];
+  mall_discount_type?: 'percentage' | 'fixed';
+  mall_discount_value?: number;
+  mall_max_discount?: number;
+  mall_min_spend?: number;
   createdAt: string;
   updatedAt: string;
   expiry_datetime?: string;
@@ -77,6 +84,13 @@ export interface BusinessReward {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  mall_target_scope?: 'SPECIFIC' | 'ALL';
+  mall_target_product_ids?: string[];
+  mall_target_service_ids?: string[];
+  mall_discount_type?: 'percentage' | 'fixed';
+  mall_discount_value?: number;
+  mall_max_discount?: number;
+  mall_min_spend?: number;
   totalRedemptions?: number;
   totalPointsRedeemed?: number;
   stamp_emoji?: string;
@@ -137,6 +151,13 @@ export interface CreateBusinessRewardDto {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  mall_target_scope?: 'SPECIFIC' | 'ALL';
+  mall_target_product_ids?: string[];
+  mall_target_service_ids?: string[];
+  mall_discount_type?: 'percentage' | 'fixed';
+  mall_discount_value?: number;
+  mall_max_discount?: number;
+  mall_min_spend?: number;
   stamp_emoji?: string;
   image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
   emoji?: string;
@@ -164,7 +185,49 @@ export interface UpdateBusinessRewardDto {
   is_mall_integrated?: boolean;
   mall_reward_type?: 'VOUCHER' | 'GIFT_CARD' | 'COUPON';
   mall_reward_value?: number;
+  mall_target_scope?: 'SPECIFIC' | 'ALL';
+  mall_target_product_ids?: string[];
+  mall_target_service_ids?: string[];
+  mall_discount_type?: 'percentage' | 'fixed';
+  mall_discount_value?: number;
+  mall_max_discount?: number;
+  mall_min_spend?: number;
   stamp_emoji?: string;
   image_source_type?: 'BUSINESS_LOGO' | 'LIBRARY_ASSET' | 'EMOJI' | 'CUSTOM_URL';
   emoji?: string;
+}
+
+// ─── MCOM Mall catalog (for mall-discount targeting) ──────────────────────────
+
+export interface MallCatalogProduct {
+  id: string;
+  title: string;
+  sku: string | null;
+  price: number;
+  salePrice: number | null;
+  productType: string | null;
+  status: string | null;
+  image: string | null;
+}
+
+export interface MallCatalogService {
+  id: string;
+  name: string;
+  category: string | null;
+  pricingModel: string;
+  fixedPrice: number | null;
+  basePrice: number | null;
+  status: string | null;
+  image: string | null;
+}
+
+export interface MallCatalogBusiness {
+  business: {
+    id: string;
+    name: string;
+    email: string | null;
+    mcomUserId: string | null;
+  };
+  products: MallCatalogProduct[];
+  services: MallCatalogService[];
 }

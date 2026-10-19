@@ -222,6 +222,17 @@ export class RewardsController {
     return this.rewardsService.getUnaddedRewards(user.id, page, limit, search);
   }
 
+  @ApiOperation({
+    summary:
+      "Business: Resolve this business in MCOM Mall (products/services for discount targeting)",
+  })
+  @Roles(Role.Business)
+  @ApiBearerAuth()
+  @Get("business/mall-catalog")
+  async getMallCatalog(@CurrentUser() user: any) {
+    return this.rewardsService.getMallCatalogForBusiness(user.id);
+  }
+
   @ApiOperation({ summary: "Business: Create a new reward" })
   @ApiResponse({
     status: 201,

@@ -1,9 +1,22 @@
 export type PartnerRewardStatus =
   | 'ISSUED'
+  | 'RESERVED'
   | 'REDEEMED'
   | 'EXPIRED'
   | 'REVOKED'
   | 'FAILED';
+
+export interface PartnerMallTargets {
+  scope?: 'SPECIFIC' | 'ALL';
+  businessMcomUserId?: string;
+  businessId?: string;
+  productIds?: string[];
+  serviceIds?: string[];
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  maxDiscount?: number;
+  minSpend?: number;
+}
 
 export interface PartnerRewardRecipient {
   email: string;

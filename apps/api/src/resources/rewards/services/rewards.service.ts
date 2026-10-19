@@ -37,6 +37,8 @@ import { LibraryAsset } from "../../library-assets/entities/library-asset.entity
 import { ImageSourceType } from "../enums/image-source-type.enum";
 import { Category } from "../../category/entities/category.entity";
 import { SubCategory } from "../../subcategory/entities/subcategory.entity";
+import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
+import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
 
 @Injectable()
 export class RewardsService {
@@ -65,6 +67,8 @@ export class RewardsService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(SubCategory)
     private readonly subCategoryRepository: Repository<SubCategory>,
+    private readonly mallIntegration: MallIntegrationService,
+    private readonly partnerIssuance: PartnerIssuanceMetricsService,
   ) {}
 
   async createReward(createRewardDto: CreateRewardDto): Promise<Reward> {
@@ -415,6 +419,28 @@ export class RewardsService {
     return saved;
   }
 
+  /**
+   * Resolve the logged-in business in MCOM Mall and return its products and
+   * services for the mall-discount targeting picker. The mall business is
+   * keyed on the owner's Central user id.
+   */
+  async getMallCatalogForBusiness(businessId: string): Promise<any> {
+    const business = await this.businessRepository.findOne({
+      where: { id: businessId },
+    });
+    if (!business) {
+      throw new NotFoundException(`Business with ID ${businessId} not found`);
+    }
+    if (!business.mcomUserId) {
+      throw new BadRequestException(
+        "Business is not linked to an MCOM Central user, so it cannot be resolved in MCOM Mall",
+      );
+    }
+    return this.mallIntegration.getBusiness({
+      mcomUserId: business.mcomUserId,
+    });
+  }
+
   async updateBusinessReward(
     businessId: string,
     rewardId: string,
@@ -481,6 +507,8 @@ export class RewardsService {
       take: limit,
     });
 
+    await this.attachRedemptionCounts(data);
+
     const totalPages = Math.ceil(total / limit);
     const next = page < totalPages ? Number(page) + 1 : null;
     const previous = page > 1 ? Number(page) - 1 : null;
@@ -494,6 +522,50 @@ export class RewardsService {
       next,
       previous,
     };
+  }
+
+  /**
+   * Attach per-reward redemption totals, merging in-app `point_history`
+   * redemptions with reward grants delivered through an ecosystem partner
+   * (e.g. FundOrDonate), which are recorded in `reward_issuance` only.
+   */
+  private async attachRedemptionCounts(
+    rewards: BusinessReward[],
+  ): Promise<void> {
+    if (!rewards || rewards.length === 0) return;
+
+    const ids = rewards.map((r) => r.id);
+    const [partnerCounts, inAppRows] = await Promise.all([
+      this.partnerIssuance.getCountsByBusinessReward(ids),
+      this.pointHistoryRepository
+        .createQueryBuilder("ph")
+        .select("ph.business_reward_id", "businessRewardId")
+        .addSelect("COUNT(ph.id)", "count")
+        .addSelect("COALESCE(SUM(ph.points), 0)", "points")
+        .where("ph.business_reward_id IN (:...ids)", { ids })
+        .andWhere("ph.type IN (:...types)", {
+          types: [PointHistoryType.REDEEM, PointHistoryType.STAMP_REDEEM],
+        })
+        .groupBy("ph.business_reward_id")
+        .getRawMany<{ businessRewardId: string; count: string; points: string }>(),
+    ]);
+
+    const inAppMap = new Map(
+      inAppRows.map((row) => [
+        row.businessRewardId,
+        {
+          count: parseInt(row.count, 10) || 0,
+          points: parseInt(row.points, 10) || 0,
+        },
+      ]),
+    );
+
+    for (const reward of rewards) {
+      const partner = partnerCounts.get(reward.id) ?? { count: 0, points: 0 };
+      const inApp = inAppMap.get(reward.id) ?? { count: 0, points: 0 };
+      reward.total_redemptions = partner.count + inApp.count;
+      reward.total_points_redeemed = partner.points + inApp.points;
+    }
   }
 
   async getMallRewardHistory(
@@ -749,6 +821,12 @@ export class RewardsService {
         .getManyAndCount();
     }
 
+    // Fold partner-issued grants (e.g. FundOrDonate) into the per-reward
+    // redemption totals — they live only in `reward_issuance`.
+    if (includeStats && data.length > 0) {
+      await this.attachGlobalRewardPartnerCounts(data);
+    }
+
     return {
       data,
       total,
@@ -758,6 +836,37 @@ export class RewardsService {
       next: page * limit < total ? Number(page) + 1 : null,
       previous: page > 1 ? Number(page) - 1 : null,
     };
+  }
+
+  /** Add live partner-issuance counts to global catalogue reward stats. */
+  private async attachGlobalRewardPartnerCounts(
+    rewards: Reward[],
+  ): Promise<void> {
+    const businessRewardIds = rewards.flatMap(
+      (reward) => reward.businessRewards?.map((br) => br.id) ?? [],
+    );
+    if (businessRewardIds.length === 0) return;
+
+    const partnerCounts =
+      await this.partnerIssuance.getCountsByBusinessReward(businessRewardIds);
+
+    for (const reward of rewards) {
+      let count = 0;
+      let points = 0;
+      for (const br of reward.businessRewards ?? []) {
+        const c = partnerCounts.get(br.id);
+        if (c) {
+          count += c.count;
+          points += c.points;
+        }
+      }
+      if (count > 0 || points > 0) {
+        reward.total_redemptions_count =
+          Number(reward.total_redemptions_count || 0) + count;
+        reward.total_points_redeemed =
+          Number(reward.total_points_redeemed || 0) + points;
+      }
+    }
   }
 
   async removeRewardFromBusiness(
@@ -792,18 +901,28 @@ export class RewardsService {
   }
 
   async getMallRewardStats(businessId: string) {
-    const history = await this.pointHistoryRepository
-      .createQueryBuilder("ph")
-      .leftJoinAndSelect("ph.businessReward", "businessReward")
-      .where("ph.business_id = :businessId", { businessId })
-      .andWhere("(ph.type = :redeem OR ph.type = :stampRedeem)", {
-        redeem: PointHistoryType.REDEEM,
-        stampRedeem: PointHistoryType.STAMP_REDEEM,
-      })
-      .andWhere("businessReward.is_mall_integrated = :isIntegrated", {
-        isIntegrated: true,
-      })
-      .getMany();
+    const [history, mallRewards] = await Promise.all([
+      this.pointHistoryRepository
+        .createQueryBuilder("ph")
+        .leftJoinAndSelect("ph.businessReward", "businessReward")
+        .where("ph.business_id = :businessId", { businessId })
+        .andWhere("(ph.type = :redeem OR ph.type = :stampRedeem)", {
+          redeem: PointHistoryType.REDEEM,
+          stampRedeem: PointHistoryType.STAMP_REDEEM,
+        })
+        .andWhere("businessReward.is_mall_integrated = :isIntegrated", {
+          isIntegrated: true,
+        })
+        .getMany(),
+      this.businessRewardRepository.find({
+        where: { business: { id: businessId }, is_mall_integrated: true },
+      }),
+    ]);
+
+    // Partner-issued grants (e.g. FundOrDonate) are not in `point_history`.
+    const partnerValues = await this.partnerIssuance.getValueByBusinessReward(
+      mallRewards.map((r) => r.id),
+    );
 
     const stats = history.reduce(
       (acc, item) => {
@@ -835,6 +954,27 @@ export class RewardsService {
         couponsValue: 0,
       },
     );
+
+    for (const reward of mallRewards) {
+      const partner = partnerValues.get(reward.id);
+      if (!partner) continue;
+
+      const value =
+        Number(partner.value) || Number(reward.mall_reward_value || 0);
+      stats.totalValue += value;
+      stats.totalCount += partner.count;
+
+      if (reward.mall_reward_type === "GIFT_CARD") {
+        stats.giftCardsCount += partner.count;
+        stats.giftCardsValue += value;
+      } else if (reward.mall_reward_type === "VOUCHER") {
+        stats.vouchersCount += partner.count;
+        stats.vouchersValue += value;
+      } else if (reward.mall_reward_type === "COUPON") {
+        stats.couponsCount += partner.count;
+        stats.couponsValue += value;
+      }
+    }
 
     return stats;
   }
@@ -889,7 +1029,7 @@ export class RewardsService {
 
   async getRewardsStats() {
     // Real aggregate stats across ALL rewards (not just the current page).
-    const [statusRows, redemptionRow] = await Promise.all([
+    const [statusRows, redemptionRow, partnerSummary] = await Promise.all([
       this.rewardRepository
         .createQueryBuilder("reward")
         .select("reward.status", "status")
@@ -903,6 +1043,7 @@ export class RewardsService {
           types: [PointHistoryType.REDEEM, PointHistoryType.STAMP_REDEEM],
         })
         .getRawOne<{ count: string }>(),
+      this.partnerIssuance.getGlobalSummary(),
     ]);
 
     const byStatus = new Map(
@@ -918,7 +1059,8 @@ export class RewardsService {
       draft,
       archived,
       total,
-      totalRedemptions: parseInt(redemptionRow?.count, 10) || 0,
+      totalRedemptions:
+        (parseInt(redemptionRow?.count, 10) || 0) + partnerSummary.count,
     };
   }
 

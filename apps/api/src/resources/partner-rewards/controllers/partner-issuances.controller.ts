@@ -21,6 +21,11 @@ import { AuthenticatedServiceRequest } from "../../service-mesh/interfaces/authe
 import { RewardIssuanceService } from "../services/reward-issuance.service";
 import { ListIssuancesDto } from "../dto/list-issuances.dto";
 import {
+  CommitIssuanceDto,
+  ReleaseIssuanceDto,
+  ReserveIssuanceDto,
+} from "../dto/reserve-issuance.dto";
+import {
   RedeemIssuanceDto,
   RevokeIssuanceDto,
 } from "../dto/redeem-issuance.dto";
@@ -77,6 +82,49 @@ export class PartnerIssuancesController {
       id,
       req.serviceCaller,
     );
+  }
+
+  @Post(":id/reserve")
+  @RequireServiceScopes(SERVICE_SCOPE_REWARDS_ISSUE)
+  @ApiOperation({
+    summary: "Partner: reserve an issuance for a checkout attempt (ISSUED→RESERVED)",
+  })
+  reserve(
+    @Param("id") id: string,
+    @Body() dto: ReserveIssuanceDto,
+    @Req() req: AuthenticatedServiceRequest,
+  ) {
+    return this.issuanceService.reserve(
+      req.serviceCaller.callerAppId,
+      id,
+      dto,
+    );
+  }
+
+  @Post(":id/commit")
+  @RequireServiceScopes(SERVICE_SCOPE_REWARDS_ISSUE)
+  @ApiOperation({
+    summary: "Partner: commit a reservation after payment (RESERVED→REDEEMED)",
+  })
+  commit(
+    @Param("id") id: string,
+    @Body() dto: CommitIssuanceDto,
+    @Req() req: AuthenticatedServiceRequest,
+  ) {
+    return this.issuanceService.commit(req.serviceCaller.callerAppId, id, dto);
+  }
+
+  @Post(":id/release")
+  @RequireServiceScopes(SERVICE_SCOPE_REWARDS_ISSUE)
+  @ApiOperation({
+    summary: "Partner: release a reservation (RESERVED→ISSUED)",
+  })
+  release(
+    @Param("id") id: string,
+    @Body() dto: ReleaseIssuanceDto,
+    @Req() req: AuthenticatedServiceRequest,
+  ) {
+    return this.issuanceService.release(req.serviceCaller.callerAppId, id, dto);
   }
 
   @Post(":id/redeem")

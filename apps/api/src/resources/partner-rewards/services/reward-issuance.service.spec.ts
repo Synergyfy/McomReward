@@ -44,6 +44,7 @@ describe("RewardIssuanceService", () => {
   let mallIntegration: any;
   let partnerEntitlement: any;
   let notifier: any;
+  let dataSource: any;
   let service: RewardIssuanceService;
 
   beforeEach(() => {
@@ -82,6 +83,12 @@ describe("RewardIssuanceService", () => {
         email: "donor@example.com",
         name: "Donor",
       }),
+      // Default: echo back the local identity the caller logged in with.
+      resolveIdentity: jest.fn(async ({ userId, email }: any) => ({
+        userId,
+        mcomUserId: undefined,
+        email: email?.toLowerCase().trim(),
+      })),
     };
     pointsGateway = { awardPoints: jest.fn() };
     mallIntegration = {
@@ -100,6 +107,11 @@ describe("RewardIssuanceService", () => {
       }),
     };
     notifier = { notify: jest.fn() };
+    dataSource = {
+      transaction: jest.fn(async (cb: any) =>
+        cb({ getRepository: () => issuanceRepo }),
+      ),
+    };
 
     service = new RewardIssuanceService(
       issuanceRepo,
@@ -110,6 +122,7 @@ describe("RewardIssuanceService", () => {
       mallIntegration,
       partnerEntitlement,
       notifier,
+      dataSource,
     );
   });
 
@@ -636,6 +649,40 @@ describe("RewardIssuanceService", () => {
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(notifier.notify).not.toHaveBeenCalled();
     });
+
+    it("claims a reward stored against the user's central MCOM id (cross-app identity)", async () => {
+      // The reward was issued on a partner app (FundOrDonate) against the
+      // central user id only — the local id and email differ.
+      recipientResolver.resolveIdentity.mockResolvedValueOnce({
+        userId: "business-1",
+        mcomUserId: "central-1",
+        email: "owner@example.com",
+      });
+      issuanceRepo.findOne.mockResolvedValue({
+        id: "issuance-2",
+        issuer_client_id: "fundordonate",
+        status: RewardIssuanceStatus.ISSUED,
+        recipient_email: "different-donor@example.com",
+        recipient_mcom_user_id: "central-1",
+        recipient_user_id: null,
+        code: null,
+        value: 20,
+        reward: null,
+      });
+
+      const result = await service.claimForUser(
+        { id: "business-1", email: "owner@example.com" },
+        "issuance-2",
+        {} as any,
+      );
+
+      expect(result.status).toBe(RewardIssuanceStatus.REDEEMED);
+      expect(notifier.notify).toHaveBeenCalledWith(
+        "fundordonate",
+        PartnerRewardEvent.REDEEMED,
+        expect.any(Object),
+      );
+    });
   });
 
   describe("maximum unit cap", () => {
@@ -1075,5 +1122,236 @@ describe("RewardIssuanceService", () => {
       expect(stockQb.setParameter).toHaveBeenCalledWith("amt", 3);
       expect(stockQb.execute).toHaveBeenCalled();
     });
+  });
+});
+
+describe("RewardIssuanceService — reservation lifecycle & peer access", () => {
+  let issuanceRepo: any;
+  let service: RewardIssuanceService;
+  let notifier: any;
+
+  const makeIssuance = (overrides: Record<string, any> = {}) => ({
+    id: "issuance-1",
+    issuer_client_id: "fundordonate",
+    status: RewardIssuanceStatus.ISSUED,
+    reward: { id: "reward-1" },
+    metadata: {},
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    issuanceRepo = {
+      findOne: jest.fn(),
+      save: jest.fn(async (entity: any) => entity),
+      find: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+    notifier = { notify: jest.fn().mockResolvedValue(true) };
+    const dataSource: any = {
+      transaction: jest.fn(async (cb: any) =>
+        cb({ getRepository: () => issuanceRepo }),
+      ),
+    };
+    service = new RewardIssuanceService(
+      issuanceRepo,
+      { findOne: jest.fn() } as any,
+      { findOne: jest.fn() } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      notifier,
+      dataSource,
+    );
+  });
+
+  it("reserves an ISSUED issuance and records the order ref", async () => {
+    issuanceRepo.findOne.mockResolvedValue(makeIssuance());
+
+    const result = await service.reserve("mcom-mall", "issuance-1", {
+      orderRef: "mall-order-1",
+      idempotencyKey: "mall-order-1:issuance-1",
+    } as any);
+
+    expect(result.status).toBe(RewardIssuanceStatus.RESERVED);
+    expect(issuanceRepo.save).toHaveBeenCalled();
+    const saved = issuanceRepo.save.mock.calls[0][0];
+    expect(saved.reservation_ref).toBe("mall-order-1");
+    expect(saved.reserved_at).toBeInstanceOf(Date);
+  });
+
+  it("is idempotent on replay for the same orderRef", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({
+        status: RewardIssuanceStatus.RESERVED,
+        reservation_ref: "mall-order-1",
+      }),
+    );
+
+    const result = await service.reserve("mcom-mall", "issuance-1", {
+      orderRef: "mall-order-1",
+      idempotencyKey: "mall-order-1:issuance-1",
+    } as any);
+
+    expect(result.status).toBe(RewardIssuanceStatus.RESERVED);
+    expect(issuanceRepo.save).not.toHaveBeenCalled();
+  });
+
+  it("rejects reserving an issuance held for a different order (double-spend)", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({
+        status: RewardIssuanceStatus.RESERVED,
+        reservation_ref: "mall-order-OTHER",
+      }),
+    );
+
+    await expect(
+      service.reserve("mcom-mall", "issuance-1", {
+        orderRef: "mall-order-1",
+        idempotencyKey: "mall-order-1:issuance-1",
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("marks an expired issuance EXPIRED and rejects the reservation", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({ expires_at: new Date(Date.now() - 1000) }),
+    );
+
+    await expect(
+      service.reserve("mcom-mall", "issuance-1", {
+        orderRef: "mall-order-1",
+        idempotencyKey: "mall-order-1:issuance-1",
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    const saved = issuanceRepo.save.mock.calls[0][0];
+    expect(saved.status).toBe(RewardIssuanceStatus.EXPIRED);
+  });
+
+  it("commits a reservation to REDEEMED and emits reward.redeemed", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({
+        status: RewardIssuanceStatus.RESERVED,
+        reservation_ref: "mall-order-1",
+      }),
+    );
+
+    const result = await service.commit("mcom-mall", "issuance-1", {
+      orderRef: "mall-order-1",
+    } as any);
+
+    expect(result.status).toBe(RewardIssuanceStatus.REDEEMED);
+    expect(notifier.notify).toHaveBeenCalledWith(
+      "mcom-mall",
+      PartnerRewardEvent.REDEEMED,
+      expect.objectContaining({ id: "issuance-1" }),
+    );
+  });
+
+  it("treats a commit on an already-REDEEMED issuance as an idempotent no-op", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({ status: RewardIssuanceStatus.REDEEMED }),
+    );
+
+    const result = await service.commit("mcom-mall", "issuance-1", {} as any);
+
+    expect(result.status).toBe(RewardIssuanceStatus.REDEEMED);
+    expect(issuanceRepo.save).not.toHaveBeenCalled();
+    expect(notifier.notify).not.toHaveBeenCalled();
+  });
+
+  it("releases a reservation back to ISSUED", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({
+        status: RewardIssuanceStatus.RESERVED,
+        reservation_ref: "mall-order-1",
+        reserved_at: new Date(),
+      }),
+    );
+
+    const result = await service.release("mcom-mall", "issuance-1", {
+      orderRef: "mall-order-1",
+      reason: "payment_failed",
+    } as any);
+
+    expect(result.status).toBe(RewardIssuanceStatus.ISSUED);
+    const saved = issuanceRepo.save.mock.calls[0][0];
+    expect(saved.reservation_ref).toBeNull();
+    expect(saved.reserved_at).toBeNull();
+  });
+
+  it("never releases a REDEEMED issuance", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({ status: RewardIssuanceStatus.REDEEMED }),
+    );
+
+    await expect(
+      service.release("mcom-mall", "issuance-1", {
+        orderRef: "mall-order-1",
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("lets a permitted peer read an issuance it did not issue", async () => {
+    issuanceRepo.findOne.mockResolvedValue(makeIssuance());
+
+    const result = await service.findOne("mcom-mall", "issuance-1", {
+      callerAppId: "mcom-mall",
+      isDelegated: false,
+      scopes: ["rewards:read"],
+      payload: {},
+    } as any);
+
+    expect(result.id).toBe("issuance-1");
+  });
+
+  it("keeps delegated-token isolation (fails closed with 404)", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({ recipient_email: "owner@example.com" }),
+    );
+
+    await expect(
+      service.findOne("mcom-mall", "issuance-1", {
+        callerAppId: "mcom-mall",
+        isDelegated: true,
+        userId: "someone-else",
+        email: "intruder@example.com",
+        scopes: ["rewards:read"],
+        payload: {},
+      } as any),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it("sweeps stale reservations back to ISSUED", async () => {
+    issuanceRepo.find.mockResolvedValue([
+      makeIssuance({ status: RewardIssuanceStatus.RESERVED, reserved_at: new Date(0) }),
+    ]);
+
+    const released = await service.releaseStaleReservations();
+
+    expect(released).toBe(1);
+    const saved = issuanceRepo.save.mock.calls[0][0];
+    expect(saved.status).toBe(RewardIssuanceStatus.ISSUED);
+    expect(saved.reservation_ref).toBeNull();
+  });
+
+  it("refuses to commit an issuance that expired while reserved", async () => {
+    issuanceRepo.findOne.mockResolvedValue(
+      makeIssuance({
+        status: RewardIssuanceStatus.RESERVED,
+        reservation_ref: "mall-order-1",
+        expires_at: new Date(Date.now() - 1000),
+      }),
+    );
+
+    await expect(
+      service.commit("mcom-mall", "issuance-1", {
+        orderRef: "mall-order-1",
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    const saved = issuanceRepo.save.mock.calls[0][0];
+    expect(saved.status).toBe(RewardIssuanceStatus.EXPIRED);
   });
 });

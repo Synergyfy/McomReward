@@ -16,6 +16,8 @@ import { TierProgressionModule } from "../tier-progression/tier-progression.modu
 import { LibraryAsset } from "../library-assets/entities/library-asset.entity";
 import { Category } from "../category/entities/category.entity";
 import { SubCategory } from "../subcategory/entities/subcategory.entity";
+import { MallIntegrationModule } from "../mall-integration/mall-integration.module";
+import { PartnerIssuanceMetricsModule } from "../partner-rewards/partner-issuance-metrics.module";
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { SubCategory } from "../subcategory/entities/subcategory.entity";
     ]),
     forwardRef(() => CapabilityModule),
     forwardRef(() => TierProgressionModule),
+    MallIntegrationModule,
+    PartnerIssuanceMetricsModule,
   ],
   controllers: [RewardsController],
   providers: [RewardsService],

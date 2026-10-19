@@ -29,7 +29,7 @@ const getReferralStats = async (): Promise<ReferralStatsResponseDto> => {
 export const useGetReferralStats = () => useQuery({ queryKey: ['referralStats'], queryFn: getReferralStats });
 
 import { SectorResponse } from '@/services/sectors/types';
-import Cookies from 'js-cookie';
+import { setAuthTokens } from '@/lib/auth-cookies';
 import { useMutation, useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
@@ -66,8 +66,7 @@ export const useAuth = () => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
       localStorage.setItem('isOnboarded', String(data.user.isOnboarded));
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
 
       if (data.user.role === 'Business' && !data.user.isEmailVerified) {
@@ -102,8 +101,7 @@ export const useBusinessSignIn = (options?: { skipRedirect?: boolean }) => {
     onSuccess: async (data, variables) => {
       localStorage.setItem('userRole', data.user.role);
       localStorage.setItem('userName', data.user.name);
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
 
       // Only redirect if skipRedirect is not true

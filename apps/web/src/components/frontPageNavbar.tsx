@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import Cookies from 'js-cookie';
+import { clearAuthCookies, hasAuthSession } from '@/lib/auth-cookies';
 import { Menu, X, CircleUserRound, User, Settings, CreditCard, LayoutDashboard, ChevronDown } from 'lucide-react';
 import Image from "next/image";
 import { useGetBusinessProfile } from '@/services/business/hook';
@@ -36,7 +36,7 @@ const FrontPageNavbar = () => {
   }, []);
 
   useEffect(() => {
-    setIsAuthenticated(!!Cookies.get('access'));
+    setIsAuthenticated(hasAuthSession());
     setUserRole(localStorage.getItem('userRole'));
   }, []);
 
@@ -54,8 +54,7 @@ const FrontPageNavbar = () => {
       },
       onError: () => {
         // Fallback to client-side cleanup
-        Cookies.remove('access', { path: '/' });
-        Cookies.remove('refresh', { path: '/' });
+        clearAuthCookies();
         localStorage.removeItem('userRole');
         localStorage.removeItem('userName');
         router.push('/login');

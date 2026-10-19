@@ -9,7 +9,7 @@ import ChangePasswordModal from '@/components/dashboard/account/ChangePasswordMo
 import DeactivateAccountModal from '@/components/dashboard/account/DeactivateAccountModal';
 import { useGetBusinessProfile } from '@/services/business/hook'; // Import the hook
 import { useRouter } from 'next/navigation'; // Import useRouter
-import Cookies from 'js-cookie'; // Import Cookies
+import { clearAuthCookies } from '@/lib/auth-cookies';
 
 export default function AccountPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -22,8 +22,7 @@ export default function AccountPage() {
     // Clear any auth tokens/session data
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    Cookies.remove('access', { path: '/' });
-    Cookies.remove('refresh', { path: '/' });
+    clearAuthCookies();
     sessionStorage.clear();
 
     // Redirect to login page

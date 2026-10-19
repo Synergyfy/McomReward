@@ -14,12 +14,12 @@ import { Suspense, useEffect } from 'react';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
-import Cookies from 'js-cookie';
+import { getAccessToken } from '@/lib/auth-cookies';
 import { toast } from 'sonner';
 
 function getAdminIdFromToken(): string {
   try {
-    const token = Cookies.get('access');
+    const token = getAccessToken();
     if (!token) return 'admin';
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.sub || payload.id || payload.adminId || 'admin';

@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
 import { CampaignMembershipProvider } from '@/context/CampaignMembershipContext';
 import { ImpersonationProvider } from '@/context/ImpersonationContext';
+import { AuthBootstrap } from '@/components/auth-bootstrap';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthBootstrap />
       <ImpersonationProvider>
         <CampaignMembershipProvider>
           {children}

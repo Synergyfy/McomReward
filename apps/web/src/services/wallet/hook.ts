@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { Wallet, InitiateWalletTopupResponse, VerifyWalletTopupResponse, PaginatedPointHistory, PointHistoryRecord } from './types';
+import { Wallet, PaginatedPointHistory, PointHistoryRecord } from './types';
 
 const WALLET_QUERY_KEY = 'wallet';
 const POINT_HISTORY_QUERY_KEY = 'pointHistory';
@@ -11,28 +11,6 @@ export const useGetWallet = () => {
     queryFn: async () => {
       const { data } = await api.get('/wallet/my-balance');
       return data;
-    },
-  });
-};
-
-export const useInitiateWalletTopup = () => {
-  return useMutation<InitiateWalletTopupResponse, Error, { amount: number; provider: 'stripe' | 'paypal' }>({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/payment/wallet/initiate', payload);
-      return data;
-    },
-  });
-};
-
-export const useVerifyWalletTopup = () => {
-  const queryClient = useQueryClient();
-  return useMutation<VerifyWalletTopupResponse, Error, { transaction_id: string; provider: 'stripe' | 'paypal' }>({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/payment/wallet/verify', payload);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [WALLET_QUERY_KEY] });
     },
   });
 };

@@ -61,21 +61,38 @@ export class WalletService {
     }
 
     // Enrich with central source-of-truth balance (best-effort, cached upstream).
-    if (this.centralWallet?.isConfigured()) {
+    // Local balances are only a mirror — never present them as the central
+    // balance when central is configured but unavailable.
+    const centralConfigured = this.centralWallet?.isConfigured() ?? false;
+    (result as any).centralConfigured = centralConfigured;
+
+    if (centralConfigured) {
+      (result as any).topUpUrl = this.centralWallet!.topUpUrl();
       try {
         const business =
           (result.business as Business | undefined) ??
           (await this.businessRepository.findOne({ where: { id: businessId } }));
-        if (business?.mcomUserId) {
-          const central = await this.centralWallet.getBalance(business.mcomUserId);
+
+        if (!business?.mcomUserId) {
+          (result as any).centralLinked = false;
+          (result as any).centralError =
+            "This business is not linked to an MCOM account. Sign in with MCOM SSO to link it.";
+        } else {
+          (result as any).centralLinked = true;
+          const central = await this.centralWallet!.getBalance(
+            business.mcomUserId,
+          );
           (result as any).centralBalance = central.balance;
           (result as any).centralAvailableBalance = central.availableBalance;
           (result as any).centralStatus = central.status;
           (result as any).centralCurrency = central.currency ?? "MCOM";
-          (result as any).topUpUrl = this.centralWallet.topUpUrl();
         }
       } catch (e: any) {
-        this.logger.warn(`Central balance enrichment failed: ${e?.message}`);
+        (result as any).centralError =
+          e?.message || "Unable to load the MCOM Central wallet balance.";
+        this.logger.warn(
+          `Central balance enrichment failed for business ${businessId}: ${e?.message}`,
+        );
       }
     }
 

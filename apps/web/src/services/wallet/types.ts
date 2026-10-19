@@ -10,23 +10,15 @@ export interface Wallet {
   id: string;
   tierBalance: string | number;
   topupBalance: string | number;
+  centralConfigured?: boolean;
+  centralLinked?: boolean;
+  centralError?: string;
   centralBalance?: number;
   centralAvailableBalance?: number;
   centralStatus?: string;
   centralCurrency?: string;
   topUpUrl?: string;
   transactions?: WalletTransaction[];
-}
-
-export interface InitiateWalletTopupResponse {
-  clientSecret?: string; // Stripe
-  orderId?: string; // PayPal
-}
-
-export interface VerifyWalletTopupResponse {
-  status: string;
-  amount: number;
-  transactionId: string;
 }
 
 export interface PointHistoryRecord {

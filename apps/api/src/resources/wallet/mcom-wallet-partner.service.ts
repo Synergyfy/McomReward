@@ -3,7 +3,6 @@ import {
   Logger,
   BadRequestException,
   HttpException,
-  HttpStatus,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
@@ -66,17 +65,31 @@ export class McomWalletPartnerService {
       this.configService.get<string>("MCOM_CLIENT_ID") || "mcom-rewards";
     this.hmacSecret =
       this.configService.get<string>("MCOM_HMAC_SECRET") || "";
-    this.enabled =
-      (this.configService.get<string>("MCOM_WALLET_ENABLED") || "").toLowerCase() ===
-      "true";
+    // Central wallet is the source of truth. Treat it as enabled whenever the
+    // app is configured for HMAC, unless it was explicitly switched off.
+    // Previously this required MCOM_WALLET_ENABLED="true", which meant an
+    // unset flag silently fell back to the empty local mirror.
+    const walletFlag = (
+      this.configService.get<string>("MCOM_WALLET_ENABLED") || ""
+    )
+      .trim()
+      .toLowerCase();
+    this.enabled = walletFlag !== "false";
   }
 
   isConfigured(): boolean {
     return this.enabled && !!this.hmacSecret;
   }
 
+  /**
+   * Public URL of the central wallet UI (NOT the API host).
+   * MCOM_CENTRAL_WEB_URL should point at the central frontend, e.g.
+   * http://localhost:3000 in development.
+   */
   topUpUrl(): string {
     const rawBase =
+      this.configService.get<string>("MCOM_CENTRAL_WEB_URL") ||
+      this.configService.get<string>("NEXT_PUBLIC_MCOM_SOLUTIONS_URL") ||
       this.configService.get<string>("MCOM_SOLUTIONS_URL") ||
       "https://api.centralhubsolution.com";
     return `${rawBase.replace(/\/$/, "")}${TOP_UP_PATH}`;
@@ -102,22 +115,39 @@ export class McomWalletPartnerService {
     };
   }
 
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    timeoutMs = 5000,
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async getBalance(userId: string): Promise<CentralBalance> {
     // GET -> sign empty string per guide
-    const res = await fetch(
+    const res = await this.fetchWithTimeout(
       `${this.base}/balance/${encodeURIComponent(userId)}`,
       { headers: this.headers("") as any },
     );
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      this.logger.warn(`Central balance failed ${res.status}: ${text}`);
-      throw new McomWalletError("BALANCE_ERROR", text || "Balance check failed", res.status);
+      throw new McomWalletError(
+        "BALANCE_ERROR",
+        text || `Central balance check failed (${res.status})`,
+        res.status,
+      );
     }
     return res.json();
   }
 
   async getTransactions(userId: string): Promise<any[]> {
-    const res = await fetch(
+    const res = await this.fetchWithTimeout(
       `${this.base}/transactions/${encodeURIComponent(userId)}`,
       { headers: this.headers("") as any },
     );

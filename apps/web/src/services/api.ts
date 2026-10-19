@@ -1,5 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import Cookies from 'js-cookie';
+import {
+  clearAuthCookies,
+  getAccessToken,
+  getRefreshToken,
+  setAuthTokens,
+} from '@/lib/auth-cookies';
 
 declare module 'axios' {
   export interface InternalAxiosRequestConfig {
@@ -67,7 +72,7 @@ api.interceptors.request.use((config) => {
   // Read auth token from cookie fresh on every request
   // This is robust against module re-evaluation (SSR, HMR, page navigation)
   if (typeof window !== 'undefined') {
-    const token = Cookies.get('access');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -129,15 +134,83 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
   failedQueue = [];
 };
 
+// Single-flight refresh so the boot-time check and concurrent 401s share one
+// refresh request instead of racing each other.
+let refreshPromise: Promise<string> | null = null;
+
+export const refreshAuthTokens = async (): Promise<string> => {
+  const refreshTokenValue = getRefreshToken();
+  if (!refreshTokenValue) {
+    throw new Error('No refresh token available');
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const response = await axios.post(
+          `${baseURL}/auth/refresh-token`,
+          { refreshToken: refreshTokenValue },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        const accessToken = response.data.accessToken || response.data.access_token;
+        const refreshToken = response.data.refreshToken || response.data.refresh_token;
+
+        if (!accessToken) {
+          throw new Error('Refresh response did not include an access token');
+        }
+
+        // If the session was cleared (e.g. logout) while this request was in
+        // flight, do not resurrect it.
+        if (!getRefreshToken()) {
+          throw new Error('Session cleared during refresh');
+        }
+
+        setAuthTokens(accessToken, refreshToken);
+        setBearerToken(accessToken);
+
+        return accessToken as string;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+
+  return refreshPromise;
+};
+
+/** Redirect to login unless in bypass mode, already there, or opted out. */
+const redirectToLogin = (originalRequest: InternalAxiosRequestConfig) => {
+  if (typeof window === 'undefined') return;
+
+  const isBypassSso = localStorage.getItem('mcom_bypass_sso') === 'true';
+  const isAlreadyOnLoginPage = window.location.pathname.includes('/login');
+
+  if (!isBypassSso && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
+    window.location.href = '/login';
+  }
+};
+
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    const isLoginRequest = originalRequest?.url?.includes('/login') ||
-      originalRequest?.url?.includes('/auth/login') ||
-      originalRequest?.url?.includes('/participant/login') ||
-      originalRequest?.url?.includes('/admin/login');
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    const isLoginRequest = originalRequest.url?.includes('/login') ||
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/participant/login') ||
+      originalRequest.url?.includes('/admin/login');
 
     // If error is 401, not a login request, and we haven't tried to refresh yet
     if (error.response?.status === 401 && !isLoginRequest && !originalRequest._retry) {
@@ -160,50 +233,20 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshTokenValue = Cookies.get('refresh');
-
-      if (!refreshTokenValue) {
+      if (!getRefreshToken()) {
         // No refresh token, clear everything
-        Cookies.remove('access', { path: '/' });
-        Cookies.remove('refresh', { path: '/' });
+        clearAuthCookies();
         removeBearerToken();
         processQueue(error, null);
         isRefreshing = false;
-
-        // Skip redirect in bypass mode
-        const isBypassSso = typeof window !== 'undefined' && localStorage.getItem('mcom_bypass_sso') === 'true';
-        if (!isBypassSso) {
-          // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
-          const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
-          if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
-            window.location.href = '/login';
-          }
-        }
+        redirectToLogin(originalRequest);
 
         return Promise.reject(error);
       }
 
       try {
         // Attempt to refresh the token
-        const response = await axios.post(
-          `${baseURL}/auth/refresh-token`,
-          { refreshToken: refreshTokenValue },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        const accessToken = response.data.accessToken || response.data.access_token;
-        const refreshToken = response.data.refreshToken || response.data.refresh_token;
-
-        // Update tokens in cookies
-        Cookies.set('access', accessToken, { path: '/' });
-        Cookies.set('refresh', refreshToken, { path: '/' });
-
-        // Update bearer token
-        setBearerToken(accessToken);
+        const accessToken = await refreshAuthTokens();
 
         // Process queued requests
         processQueue(null, accessToken);
@@ -215,21 +258,22 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear everything
-        Cookies.remove('access', { path: '/' });
-        Cookies.remove('refresh', { path: '/' });
-        removeBearerToken();
+        const status = (refreshError as AxiosError)?.response?.status;
+        // Only discard the session when the refresh token itself is rejected.
+        // Network errors, API restarts and 5xx responses must not log the user
+        // out; the next request can try to refresh again.
+        const isAuthError = status === 400 || status === 401 || status === 403;
+
+        if (isAuthError) {
+          clearAuthCookies();
+          removeBearerToken();
+        }
+
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
 
-        // Skip redirect in bypass mode
-        const isBypassSsoRefresh = typeof window !== 'undefined' && localStorage.getItem('mcom_bypass_sso') === 'true';
-        if (!isBypassSsoRefresh) {
-          // Redirect to login page if in browser AND not skipping auth redirect AND not already on login page
-          const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes('/login');
-          if (typeof window !== 'undefined' && !originalRequest._skipAuthRedirect && !isAlreadyOnLoginPage) {
-            window.location.href = '/login';
-          }
+        if (isAuthError) {
+          redirectToLogin(originalRequest);
         }
 
         return Promise.reject(refreshError);

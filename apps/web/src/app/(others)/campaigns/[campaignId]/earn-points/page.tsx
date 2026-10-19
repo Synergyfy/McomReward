@@ -4,7 +4,7 @@ import React, { useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, Hash, Hand, User } from "lucide-react";
-import Cookies from 'js-cookie';
+import { hasAuthSession } from '@/lib/auth-cookies';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -45,7 +45,7 @@ export default function EarnPointsPage({ params }: PageProps) {
       title: 'QR Code',
       description: 'Present your unique QR code to the merchant for scanning.',
       action: () => {
-        if (!Cookies.get('access')) {
+        if (!hasAuthSession()) {
           router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
           return;
         }
@@ -57,7 +57,7 @@ export default function EarnPointsPage({ params }: PageProps) {
       title: 'Enter Code',
       description: 'Enter a code provided by the merchant to earn points.',
       action: () => {
-        if (!Cookies.get('access')) {
+        if (!hasAuthSession()) {
           router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
           return;
         }
@@ -69,7 +69,7 @@ export default function EarnPointsPage({ params }: PageProps) {
       title: 'Merchant Enters Code',
       description: 'Allow the merchant to enter a secure code on your device.',
       action: () => {
-        if (!Cookies.get('access')) {
+        if (!hasAuthSession()) {
           router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
           return;
         }
@@ -81,7 +81,7 @@ export default function EarnPointsPage({ params }: PageProps) {
       title: 'Customer Number',
       description: 'Provide your customer number to the merchant to add points.',
       action: () => {
-        if (!Cookies.get('access')) {
+        if (!hasAuthSession()) {
           router.push(`/login?campaignId=${campaignId}&redirect=/campaigns/${campaignId}/earn-points`);
           return;
         }

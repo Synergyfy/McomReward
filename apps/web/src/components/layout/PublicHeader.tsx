@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { clearAuthCookies, hasAuthSession } from '@/lib/auth-cookies';
 import { toast } from 'sonner';
 import { CircleUserRound, User, Settings, CreditCard, LayoutDashboard, ChevronDown, Menu, X, ArrowLeft } from 'lucide-react';
 import { useGetBusinessProfile } from '@/services/business/hook';
@@ -33,7 +33,7 @@ export default function PublicHeader() {
   }, []);
 
   useEffect(() => {
-    setIsAuthenticated(!!Cookies.get('access'));
+    setIsAuthenticated(hasAuthSession());
     setUserRole(localStorage.getItem('userRole'));
   }, [pathname]);
 
@@ -50,8 +50,7 @@ export default function PublicHeader() {
         router.push('/login');
       },
       onError: () => {
-        Cookies.remove('access', { path: '/' });
-        Cookies.remove('refresh', { path: '/' });
+        clearAuthCookies();
         localStorage.removeItem('userRole');
         localStorage.removeItem('userName');
         router.push('/login');

@@ -1,12 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken, removeBearerToken } from '../api';
 import { AdminLoginDto, AdminLoginResponse, RefreshTokenResponse, ParticipantLoginDto, ParticipantLoginResponse, VerifyEmailDto, VerifyEmailResponse, ResendOtpDto } from './types';
-import Cookies from 'js-cookie';
+import { clearAuthCookies, getRefreshToken, setAuthTokens } from '@/lib/auth-cookies';
 
 // Helper to remove tokens
 const removeTokens = () => {
-  Cookies.remove('access', { path: '/' });
-  Cookies.remove('refresh', { path: '/' });
+  clearAuthCookies();
   localStorage.removeItem('authToken'); // Assuming this was also a token storage
   sessionStorage.clear(); // Clear any session storage
   removeBearerToken(); // Clear bearer token from API instance
@@ -25,12 +24,9 @@ export const useAdminSignIn = () => {
       const accessToken = data.accessToken || data.access_token;
       const refreshToken = data.refreshToken || data.refresh_token;
       if (accessToken) {
-        Cookies.set('access', accessToken, { path: '/' });
+        setAuthTokens(accessToken, refreshToken);
         setBearerToken(accessToken);
         localStorage.setItem('authToken', accessToken);
-      }
-      if (refreshToken) {
-        Cookies.set('refresh', refreshToken, { path: '/' });
       }
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -49,8 +45,7 @@ export const useParticipantLogin = () => {
   return useMutation({
     mutationFn: participantSignIn,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
     },
   });
@@ -58,7 +53,7 @@ export const useParticipantLogin = () => {
 
 // Refresh Token
 const refreshToken = async (): Promise<RefreshTokenResponse> => {
-  const refreshTokenValue = Cookies.get('refresh');
+  const refreshTokenValue = getRefreshToken();
   if (!refreshTokenValue) {
     throw new Error('No refresh token available');
   }
@@ -76,8 +71,7 @@ export const useRefreshToken = () => {
       const accessToken = data.accessToken || data.access_token || '';
       const refreshTokenValue = data.refreshToken || data.refresh_token || '';
       // Update tokens in cookies
-      Cookies.set('access', accessToken, { path: '/' });
-      Cookies.set('refresh', refreshTokenValue, { path: '/' });
+      setAuthTokens(accessToken, refreshTokenValue);
       // Update bearer token for subsequent requests
       setBearerToken(accessToken);
     },
@@ -86,7 +80,7 @@ export const useRefreshToken = () => {
 
 // Logout
 const logout = async (): Promise<void> => {
-  const refreshTokenValue = Cookies.get('refresh');
+  const refreshTokenValue = getRefreshToken();
   if (refreshTokenValue) {
     // Attempt to invalidate token on the server
     try {
@@ -124,8 +118,7 @@ export const useVerifyEmail = () => {
     mutationFn: verifyEmail,
     onSuccess: (data) => {
       // Update tokens in cookies
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       // Update bearer token for subsequent requests
       setBearerToken(data.accessToken);
     },
@@ -154,8 +147,7 @@ export const useSsoLogin = () => {
   return useMutation({
     mutationFn: ssoLogin,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
     },
   });
@@ -174,8 +166,7 @@ export const useSsoExchange = () => {
   return useMutation({
     mutationFn: ssoExchange,
     onSuccess: (data) => {
-      Cookies.set('access', data.accessToken, { path: '/' });
-      Cookies.set('refresh', data.refreshToken, { path: '/' });
+      setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
     },
   });

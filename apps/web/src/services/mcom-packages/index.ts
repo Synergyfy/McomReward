@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api, { setBearerToken } from '../api';
-import Cookies from 'js-cookie';
+import { setAuthTokens } from '@/lib/auth-cookies';
 
 export interface PlanVariantDto {
   id: string;
@@ -213,8 +213,7 @@ export const confirmPurchase = async (
   const accessToken = (data as any)?.access_token;
   const refreshToken = (data as any)?.refresh_token;
   if (typeof window !== 'undefined' && accessToken) {
-    Cookies.set('access', accessToken, { path: '/' });
-    if (refreshToken) Cookies.set('refresh', refreshToken, { path: '/' });
+    setAuthTokens(accessToken, refreshToken);
     setBearerToken(accessToken);
   }
   return data;

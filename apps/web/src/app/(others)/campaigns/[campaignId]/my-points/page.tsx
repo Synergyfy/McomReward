@@ -34,7 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import Cookies from 'js-cookie';
+import { hasAuthSession } from '@/lib/auth-cookies';
 
 
 
@@ -52,7 +52,7 @@ export default function MyPointsPage({ params }: PageProps) {
   const router = useRouter();
 
   const isMember = !!joinStatus?.isJoined;
-  const isAuthenticated = !!Cookies.get('access');
+  const isAuthenticated = hasAuthSession();
 
   const pointBalance = balance?.balance || 0;
 

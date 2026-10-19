@@ -33,4 +33,8 @@ export class PartnerService {
   async findByEmail(email: string) {
     return this.partnerRepository.findOne({ where: { email } });
   }
+
+  async findById(id: string) {
+    return this.partnerRepository.findOne({ where: { id } });
+  }
 }

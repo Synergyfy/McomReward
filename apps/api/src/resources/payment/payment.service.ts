@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -37,6 +38,7 @@ import { MatchingPointService } from "../matching-point/services/matching-point.
 import { MatchingPointActivityType } from "../matching-point/entities/matching-point-config.entity";
 import { UserType } from "../matching-point/entities/matching-point-redemption.entity";
 import { WalletService } from "../wallet/wallet.service";
+import { McomWalletPartnerService } from "../wallet/mcom-wallet-partner.service";
 import { ReferralService } from "../referral/referral.service";
 import { CentralIntegrationService } from "./central-integration.service";
 import { CashbackEvent } from "../../common/enums/cashback-event.enum";
@@ -67,6 +69,8 @@ export class PaymentService {
     private readonly walletService: WalletService,
     private readonly referralService: ReferralService,
     private readonly centralIntegrationService: CentralIntegrationService,
+    @Optional()
+    private readonly centralWallet?: McomWalletPartnerService,
   ) {}
 
   async initiateStripePayment(
@@ -1073,7 +1077,23 @@ export class PaymentService {
     }
   }
 
+  /**
+   * Wallet balances live in MCOM Central. When central is configured, local
+   * card/PayPal top-ups are disabled so balances can never split-brain.
+   */
+  private assertCentralWalletTopUpOnly(): void {
+    if (this.centralWallet?.isConfigured()) {
+      throw new BadRequestException({
+        error: "WALLET_TOPUP_CENTRAL_ONLY",
+        message:
+          "Wallet top-ups are handled by MCOM Central. Open the central wallet to add funds.",
+        topUpUrl: this.centralWallet.topUpUrl(),
+      });
+    }
+  }
+
   async initiateWalletTopup(user: any, amount: number, provider: string) {
+    this.assertCentralWalletTopUpOnly();
     if (provider === "paypal") {
       const order = await this.paypalService.createOrder(
         amount,
@@ -1097,6 +1117,7 @@ export class PaymentService {
   }
 
   async verifyWalletTopup(user: any, transactionId: string, provider: string) {
+    this.assertCentralWalletTopUpOnly();
     if (provider === "paypal") {
       const capture = await this.paypalService.capturePayment(transactionId);
       const result = capture.result as any;

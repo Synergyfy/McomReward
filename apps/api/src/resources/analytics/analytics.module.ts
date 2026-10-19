@@ -10,6 +10,8 @@ import { BusinessReward } from "../rewards/entities/business-reward.entity";
 import { BusinessCampaign } from "../campaign/entities/business-campaign.entity";
 import { ParticipantCampaignBalance } from "../participant-campaign-balance/entities/participant-campaign-balance.entity";
 
+import { PartnerIssuanceMetricsModule } from "../partner-rewards/partner-issuance-metrics.module";
+
 import { AnalyticsController } from "./analytics.controller";
 import { AnalyticsService } from "./analytics.service";
 
@@ -30,6 +32,7 @@ import { PointHistoryService } from "./services/point-history.service";
       BusinessCampaign,
       ParticipantCampaignBalance,
     ]),
+    PartnerIssuanceMetricsModule,
   ],
   controllers: [AnalyticsController, AdminAnalyticsController],
   providers: [AnalyticsService, AdminAnalyticsService, PointHistoryService],

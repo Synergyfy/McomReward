@@ -254,6 +254,10 @@ export class ServiceMeshService {
   /**
    * Resolve a peer's base URL from the ecosystem registry and call it DIRECTLY.
    * Convenience wrapper around {@link callPeer} for event/notification pushes.
+   *
+   * Falls back to an env override when the peer is not in the registry yet (or
+   * for local development): the generic `MCOM_<PEER>_BASE_URL`, plus the
+   * documented `MALL_API_URL` alias for the mall peer.
    */
   async callPeerByClientId<T = any>(
     targetClientId: string,
@@ -262,12 +266,47 @@ export class ServiceMeshService {
     scope?: string,
   ): Promise<T> {
     const service = await this.findService(targetClientId);
-    const base = service?.baseUrl || service?.appUrl;
+    const base =
+      service?.baseUrl ||
+      service?.appUrl ||
+      this.getPeerBaseUrlOverride(targetClientId);
     if (!base) {
       throw new Error(
         `No registered base URL for peer "${targetClientId}" in the ecosystem registry`,
       );
     }
     return this.callPeer<T>(base, targetClientId, path, options, scope);
+  }
+
+  /**
+   * Env base-URL override for a peer, used only when the registry has none.
+   * e.g. `mcom-mall` → `MCOM_MALL_BASE_URL` or `MALL_API_URL`.
+   */
+  private getPeerBaseUrlOverride(targetClientId: string): string | undefined {
+    const envKey = `MCOM_${targetClientId
+      .replace(/^mcom[-_]?/i, "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "_")}_BASE_URL`;
+
+    const candidates = [envKey];
+    if (targetClientId.replace(/^mcom[-_]?/i, "") === "mall") {
+      candidates.push("MALL_API_URL");
+    }
+
+    for (const key of candidates) {
+      const value = this.configService.get<string>(key);
+      if (value) {
+        return this.normaliseBaseUrl(value);
+      }
+    }
+    return undefined;
+  }
+
+  /** Strip trailing slashes and a trailing `/api/v1` so paths never double up. */
+  private normaliseBaseUrl(url: string): string {
+    return url
+      .trim()
+      .replace(/\/+$/, "")
+      .replace(/\/api\/v1$/i, "");
   }
 }

@@ -71,4 +71,17 @@ describe("PartnerEventNotifier", () => {
       notifier.notify("fundordonate", PartnerRewardEvent.EXPIRED, {}),
     ).resolves.toBe(false);
   });
+
+  it("requests mall:write when pushing events to the mall peer", async () => {
+    await notifier.notify("mcom-mall", PartnerRewardEvent.ISSUED, {
+      id: "issuance-9",
+    });
+
+    expect(mesh.callPeerByClientId).toHaveBeenCalledWith(
+      "mcom-mall",
+      "/api/v1/partner/events",
+      expect.objectContaining({ method: "POST" }),
+      "mall:write",
+    );
+  });
 });

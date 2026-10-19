@@ -54,6 +54,7 @@ import {
 import { WishlistAggregate } from "../wishlist/entities/wishlist-aggregate.entity";
 import { WishlistItem } from "../wishlist/entities/wishlist-item.entity";
 import { MailService } from "../../mail/mail.service";
+import { PartnerIssuanceMetricsService } from "../partner-rewards/services/partner-issuance-metrics.service";
 import { CreateCampaignFromWishlistDto } from "./dto/create-campaign-from-wishlist.dto";
 import { Tier } from "../tier/entities/tier.entity";
 import { TierProgressionService } from "../tier-progression/tier-progression.service";
@@ -102,6 +103,7 @@ export class CampaignService {
     private readonly tierProgressionService: TierProgressionService,
     @Inject(forwardRef(() => CapabilityService))
     private readonly capabilityService: CapabilityService,
+    private readonly partnerIssuance: PartnerIssuanceMetricsService,
   ) {}
 
   async create(
@@ -1378,16 +1380,65 @@ export class CampaignService {
         topRewardsQuery,
       ]);
 
+    // Partner-issued grants (e.g. FundOrDonate) of a reward that belongs to
+    // this campaign are not in `point_history`; attribute them by reward
+    // membership so the campaign's redemption totals include them.
+    const linkedCampaign = await this.businessCampaignRepository.findOne({
+      where: { id: campaignId, business: { id: businessId } },
+      relations: ["businessRewards"],
+    });
+    const partnerIssuances = await this.partnerIssuance.getSummary({
+      businessRewardIds:
+        linkedCampaign?.businessRewards?.map((r) => r.id) ?? [],
+    });
+
+    const mergedAnalytics = {
+      ...analytics,
+      total_redemptions:
+        (Number(analytics.total_redemptions) || 0) + partnerIssuances.count,
+      total_rewards_redeemed:
+        (Number(analytics.total_rewards_redeemed) || 0) + partnerIssuances.count,
+      total_points_redeemed:
+        (Number(analytics.total_points_redeemed) || 0) + partnerIssuances.points,
+    };
+
+    // Fold partner grants into the 7-day chart.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const weekly = new Map(
+      weeklyChartData.map((row) => [row.date, { ...row }]),
+    );
+    partnerIssuances.byDate
+      .filter((row) => row.date >= sevenDaysAgo)
+      .forEach((row) => {
+        const existing = weekly.get(row.date);
+        if (existing) {
+          existing.points_redeemed =
+            (Number(existing.points_redeemed) || 0) + row.points;
+        } else {
+          weekly.set(row.date, {
+            date: row.date,
+            points_earned: 0,
+            points_redeemed: row.points,
+          });
+        }
+      });
+    const mergedWeeklyChartData = [...weekly.values()].sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+    );
+
     const redemptionRate =
-      analytics.total_participants > 0
-        ? (analytics.total_rewards_redeemed / analytics.total_participants) *
+      mergedAnalytics.total_participants > 0
+        ? (mergedAnalytics.total_rewards_redeemed /
+            mergedAnalytics.total_participants) *
           100
         : 0;
 
     return {
-      ...analytics,
+      ...mergedAnalytics,
       redemption_rate: redemptionRate,
-      weekly_chart_data: weeklyChartData,
+      weekly_chart_data: mergedWeeklyChartData,
       ranked_participants: rankedParticipants,
       top_rewards: topRewards,
     };

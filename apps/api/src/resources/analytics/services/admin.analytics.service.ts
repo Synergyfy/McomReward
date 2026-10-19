@@ -18,6 +18,7 @@ import {
 } from "../dto/admin_analytics.dto";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
 import { ParticipantCampaignBalance } from "../../participant-campaign-balance/entities/participant-campaign-balance.entity";
+import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
 import {
   GrowthActivityChartDto,
   GrowthActivityResponseDto,
@@ -63,6 +64,7 @@ export class AdminAnalyticsService {
     private readonly businessCampaignRepository: Repository<BusinessCampaign>,
     @InjectRepository(ParticipantCampaignBalance)
     private readonly participantCampaignBalanceRepository: Repository<ParticipantCampaignBalance>,
+    private readonly partnerIssuance: PartnerIssuanceMetricsService,
   ) {}
 
   /**
@@ -82,6 +84,7 @@ export class AdminAnalyticsService {
       totalBusiness,
       bizPoints,
       partPoints,
+      partnerSummary,
     ] = await Promise.all([
       this.campaignRepository.count(),
       this.participantRepository.count(),
@@ -100,6 +103,7 @@ export class AdminAnalyticsService {
           "totalParticipantMatchingPoints",
         )
         .getRawOne(),
+      this.partnerIssuance.getGlobalSummary(),
     ]);
 
     const totalMatchingPoints =
@@ -109,7 +113,9 @@ export class AdminAnalyticsService {
     const result = {
       totalCampaigns,
       totalParticipants,
-      totalRedemptions,
+      // Include reward grants delivered through ecosystem partners
+      // (e.g. FundOrDonate), which never create a `point_history` row.
+      totalRedemptions: totalRedemptions + partnerSummary.count,
       totalBusiness,
       totalMatchingPoints,
     };

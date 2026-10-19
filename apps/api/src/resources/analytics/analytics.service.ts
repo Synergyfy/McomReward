@@ -9,6 +9,7 @@ import {
 } from "../participant-campaign-balance/entities/point-history.entity";
 import { Participant } from "../participant/entities/participant.entity";
 import { BusinessReward } from "../rewards/entities/business-reward.entity";
+import { PartnerIssuanceMetricsService } from "../partner-rewards/services/partner-issuance-metrics.service";
 import { GeneralAnalyticsDto } from "./dto/general-analytics.dto";
 import { User } from "../../common/interfaces/user.interface";
 import { ChartResponseDto, ChartData } from "./dto/chart-analytics.dto";
@@ -26,6 +27,7 @@ export class AnalyticsService {
     private readonly businessCampaignRepository: Repository<BusinessCampaign>,
     @InjectRepository(BusinessReward)
     private readonly businessRewardRepository: Repository<BusinessReward>,
+    private readonly partnerIssuance: PartnerIssuanceMetricsService,
   ) {}
 
   async getGeneralAnalytics(user: User): Promise<GeneralAnalyticsDto> {
@@ -54,18 +56,17 @@ export class AnalyticsService {
     const businessCampaignIds = businessCampaigns.map((bc) => bc.id);
 
     let totalCustomers = 0;
+    const uniqueCustomers = new Set<string>();
     if (businessCampaigns.length > 0) {
-      const uniqueParticipants = new Set<string>();
       businessCampaigns.forEach((bc) => {
         if (bc.participantCampaignBalances) {
           bc.participantCampaignBalances.forEach((pcb) => {
             if (pcb.participant) {
-              uniqueParticipants.add(pcb.participant.id);
+              uniqueCustomers.add(pcb.participant.id);
             }
           });
         }
       });
-      totalCustomers = uniqueParticipants.size;
     }
 
     // Calculate points from PointHistory using business_campaign_id
@@ -116,6 +117,18 @@ export class AnalyticsService {
       totalRewardsRedeemed = rewardsRedeemedCount;
       lastTenActivities = recentActivities;
     }
+
+    // Reward grants delivered through an ecosystem partner (e.g. FundOrDonate)
+    // never create a `point_history` row, so fold them in from the issuance
+    // ledger. Live grants (issued/reserved/redeemed) count; revoked/expired do
+    // not. Recipients also contribute to the customer count.
+    const partnerIssuances = await this.partnerIssuance.getSummary({
+      businessId,
+    });
+    totalRewardsRedeemed += partnerIssuances.count;
+    totalPointsRedeemed += partnerIssuances.points;
+    partnerIssuances.recipientKeys.forEach((key) => uniqueCustomers.add(key));
+    totalCustomers = uniqueCustomers.size;
 
     const activeCampaignsWithCustomerCounts = activeCampaigns.map((bc) => ({
       name: bc.name,
@@ -253,29 +266,39 @@ export class AnalyticsService {
     });
     const campaignIds = campaigns.map((c) => c.id);
 
-    if (campaignIds.length === 0) {
+    // Partner-issued grants (e.g. FundOrDonate) are not in `point_history`.
+    const partnerIssuances = await this.partnerIssuance.getSummary({
+      businessId,
+      from: startDate,
+    });
+
+    if (campaignIds.length === 0 && partnerIssuances.count === 0) {
       return { data: [] };
     }
 
-    const earnedPoints = await this.pointHistoryRepository
-      .createQueryBuilder("ph")
-      .select("DATE(ph.created_at) as date, SUM(ph.points) as points")
-      .where("ph.campaign_id IN (:...campaignIds)", { campaignIds })
-      .andWhere("ph.type = :type", { type: PointHistoryType.EARN })
-      .andWhere("ph.created_at >= :startDate", { startDate })
-      .groupBy("DATE(ph.created_at)")
-      .orderBy("DATE(ph.created_at)", "ASC")
-      .getRawMany();
+    const earnedPoints = campaignIds.length
+      ? await this.pointHistoryRepository
+          .createQueryBuilder("ph")
+          .select("DATE(ph.created_at) as date, SUM(ph.points) as points")
+          .where("ph.campaign_id IN (:...campaignIds)", { campaignIds })
+          .andWhere("ph.type = :type", { type: PointHistoryType.EARN })
+          .andWhere("ph.created_at >= :startDate", { startDate })
+          .groupBy("DATE(ph.created_at)")
+          .orderBy("DATE(ph.created_at)", "ASC")
+          .getRawMany()
+      : [];
 
-    const redeemedPoints = await this.pointHistoryRepository
-      .createQueryBuilder("ph")
-      .select("DATE(ph.created_at) as date, SUM(ph.points) as points")
-      .where("ph.campaign_id IN (:...campaignIds)", { campaignIds })
-      .andWhere("ph.type = :type", { type: PointHistoryType.REDEEM })
-      .andWhere("ph.created_at >= :startDate", { startDate })
-      .groupBy("DATE(ph.created_at)")
-      .orderBy("DATE(ph.created_at)", "ASC")
-      .getRawMany();
+    const redeemedPoints = campaignIds.length
+      ? await this.pointHistoryRepository
+          .createQueryBuilder("ph")
+          .select("DATE(ph.created_at) as date, SUM(ph.points) as points")
+          .where("ph.campaign_id IN (:...campaignIds)", { campaignIds })
+          .andWhere("ph.type = :type", { type: PointHistoryType.REDEEM })
+          .andWhere("ph.created_at >= :startDate", { startDate })
+          .groupBy("DATE(ph.created_at)")
+          .orderBy("DATE(ph.created_at)", "ASC")
+          .getRawMany()
+      : [];
 
     const data: { [key: string]: ChartData } = {};
 
@@ -295,6 +318,19 @@ export class AnalyticsService {
       data[date].pointsRedeemed = parseInt(row.points, 10);
     });
 
-    return { data: Object.values(data) };
+    // Fold partner grants into the redemption series (points only — voucher
+    // and coupon grants carry no points).
+    partnerIssuances.byDate.forEach((row) => {
+      if (!data[row.date]) {
+        data[row.date] = { date: row.date, pointsEarned: 0, pointsRedeemed: 0 };
+      }
+      data[row.date].pointsRedeemed += row.points;
+    });
+
+    return {
+      data: Object.values(data).sort((a, b) =>
+        a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+      ),
+    };
   }
 }

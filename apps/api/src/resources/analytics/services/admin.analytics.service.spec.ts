@@ -12,6 +12,7 @@ import { Business } from "../../business/entities/business.entity";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
 import { ParticipantCampaignBalance } from "../../participant-campaign-balance/entities/participant-campaign-balance.entity";
+import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
 import { PaginationDto } from "../../../common/dto/pagination.dto";
 import { PointLogFilterDto } from "../dto/point-log-filter.dto";
 
@@ -66,6 +67,23 @@ describe("AdminAnalyticsService", () => {
             createQueryBuilder: jest.fn(),
           },
         },
+        {
+          provide: PartnerIssuanceMetricsService,
+          useValue: {
+            getGlobalSummary: jest
+              .fn()
+              .mockResolvedValue({ count: 0, points: 0 }),
+            getSummary: jest.fn().mockResolvedValue({
+              count: 0,
+              points: 0,
+              recipientKeys: [],
+              byDate: [],
+            }),
+            getCountsByBusinessReward: jest
+              .fn()
+              .mockResolvedValue(new Map()),
+          },
+        },
       ],
     }).compile();
 
@@ -93,7 +111,7 @@ describe("AdminAnalyticsService", () => {
           participant: { name: "John Doe", email: "john@example.com" },
         },
         {
-          type: PointHistoryType.MATCHING,
+          type: PointHistoryType.REDEEM,
           points: 50,
           created_at: new Date(),
           participant: { name: "Jane Doe", email: "jane@example.com" },
@@ -148,15 +166,15 @@ describe("AdminAnalyticsService", () => {
             email: "john@example.com",
             points: 100,
             description: PointHistoryType.EARN,
-            type: "Regular",
+            type: PointHistoryType.EARN,
             date: mockPointHistory[0].created_at,
           },
           {
             name: "Jane Doe",
             email: "jane@example.com",
             points: 50,
-            description: PointHistoryType.EARN, // Matching mapped to EARN
-            type: "Matching",
+            description: PointHistoryType.REDEEM,
+            type: PointHistoryType.REDEEM,
             date: mockPointHistory[1].created_at,
           },
         ],
@@ -197,7 +215,7 @@ describe("AdminAnalyticsService", () => {
 
       expect(result.data[0].name).toBe("Unknown");
       expect(result.data[0].email).toBe("Unknown");
-      expect(result.data[0].type).toBe("Regular");
+      expect(result.data[0].type).toBe(PointHistoryType.REDEEM);
       expect(result.data[0].description).toBe(PointHistoryType.REDEEM);
     });
 

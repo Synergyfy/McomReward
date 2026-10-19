@@ -27,6 +27,7 @@ import {
 import { Tier } from "../tier/entities/tier.entity";
 import { TierProgressionService } from "../tier-progression/tier-progression.service";
 import { CapabilityService } from "../capability/capability.service";
+import { PartnerIssuanceMetricsService } from "../partner-rewards/services/partner-issuance-metrics.service";
 
 describe("CampaignService", () => {
   let service: CampaignService;
@@ -216,6 +217,17 @@ describe("CampaignService", () => {
         {
           provide: CapabilityService,
           useValue: mockCapabilityService,
+        },
+        {
+          provide: PartnerIssuanceMetricsService,
+          useValue: {
+            getSummary: jest.fn().mockResolvedValue({
+              count: 0,
+              points: 0,
+              recipientKeys: [],
+              byDate: [],
+            }),
+          },
         },
       ],
     }).compile();

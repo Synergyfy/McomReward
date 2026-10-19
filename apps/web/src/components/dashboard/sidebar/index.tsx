@@ -309,6 +309,8 @@ export default function BusinessSidebar({
 
           <SidebarItem icon={Ticket} label="Mall Rewards" href="/dashboard/mall-rewards" />
 
+          <SidebarItem icon={Gift} label="Partner Rewards" href="/dashboard/partner-rewards" />
+
           <SidebarItem icon={Heart} label="Wishlist Insights" href="/dashboard/wishlist-insights" />
 
 

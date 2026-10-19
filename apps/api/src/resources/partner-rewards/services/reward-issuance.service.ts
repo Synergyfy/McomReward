@@ -6,14 +6,23 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Brackets, Repository, SelectQueryBuilder } from "typeorm";
+import {
+  Brackets,
+  DataSource,
+  LessThan,
+  Repository,
+  SelectQueryBuilder,
+} from "typeorm";
 import { nanoid } from "nanoid";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { BusinessReward } from "../../rewards/entities/business-reward.entity";
 import { RewardType } from "../../rewards/enums/reward-type.enum";
 import { RewardStatus } from "../../rewards/enums/reward-status.enum";
 import { RewardSource } from "../../rewards/enums/reward-source.enum";
-import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
+import {
+  MallInstrument,
+  MallIntegrationService,
+} from "../../mall-integration/mall-integration.service";
 import { RewardIssuance } from "../entities/reward-issuance.entity";
 import {
   PartnerRewardEvent,
@@ -23,6 +32,11 @@ import { IssueRewardDto } from "../dto/issue-reward.dto";
 import { IssueBusinessRewardDto } from "../dto/issue-business-reward.dto";
 import { GiftRewardDto } from "../dto/gift-reward.dto";
 import { ListIssuancesDto } from "../dto/list-issuances.dto";
+import {
+  CommitIssuanceDto,
+  ReleaseIssuanceDto,
+  ReserveIssuanceDto,
+} from "../dto/reserve-issuance.dto";
 import {
   RedeemIssuanceDto,
   RevokeIssuanceDto,
@@ -66,6 +80,8 @@ interface PersistIssuanceParams {
   entitlement?: BusinessEntitlementSnapshot | null;
   /** Set for platform-sponsored gifts (no business sponsor). */
   sponsor?: Record<string, any> | null;
+  /** Mall discount targeting, copied into `metadata.mallTargets`. */
+  mallTargets?: Record<string, any> | null;
 }
 
 /**
@@ -91,6 +107,7 @@ export class RewardIssuanceService {
     private readonly mallIntegration: MallIntegrationService,
     private readonly partnerEntitlement: PartnerEntitlementService,
     private readonly notifier: PartnerEventNotifier,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -283,6 +300,10 @@ export class RewardIssuanceService {
         email: businessReward.business.email ?? null,
       },
       entitlement,
+      mallTargets: this.buildMallTargets(
+        businessReward,
+        businessReward.business.mcomUserId ?? null,
+      ),
     });
   }
 
@@ -386,7 +407,7 @@ export class RewardIssuanceService {
     id: string,
     caller?: ServiceCallerContext,
   ): Promise<any> {
-    return this.toDto(await this.getOwned(callerClientId, id, caller));
+    return this.toDto(await this.getReadable(callerClientId, id, caller));
   }
 
   async list(
@@ -441,7 +462,13 @@ export class RewardIssuanceService {
       qb.andWhere("issuance.status = :status", { status });
     }
 
-    this.applyRecipientIdentity(qb, { email: user.email, userId: user.id });
+    this.applyRecipientIdentity(
+      qb,
+      await this.recipientResolver.resolveIdentity({
+        userId: user.id,
+        email: user.email,
+      }),
+    );
 
     qb.orderBy("issuance.created_at", "DESC")
       .skip((page - 1) * limit)
@@ -477,10 +504,22 @@ export class RewardIssuanceService {
       recipientUserId,
     } = query;
 
+    // A permitted peer (app-level token) may list by recipient across issuers:
+    // mall is usually not the issuer of campaign/business rewards. Delegated
+    // (user-bound) tokens keep the strict issuer + identity scope.
+    const isPeerRecipientQuery =
+      !caller?.isDelegated &&
+      Boolean(recipientEmail || recipientMcomUserId || recipientUserId);
+
     const qb = this.issuanceRepository
       .createQueryBuilder("issuance")
-      .leftJoinAndSelect("issuance.reward", "reward")
-      .where("issuance.issuer_client_id = :callerClientId", { callerClientId });
+      .leftJoinAndSelect("issuance.reward", "reward");
+
+    if (!isPeerRecipientQuery) {
+      qb.where("issuance.issuer_client_id = :callerClientId", {
+        callerClientId,
+      });
+    }
 
     if (externalRef) {
       qb.andWhere("issuance.external_ref = :externalRef", { externalRef });
@@ -543,7 +582,9 @@ export class RewardIssuanceService {
     dto: RedeemIssuanceDto,
     caller?: ServiceCallerContext,
   ): Promise<any> {
-    const issuance = await this.getOwned(callerClientId, id, caller);
+    // A permitted peer (e.g. mall) may redeem an issuance it did not issue.
+    // Peer legitimacy is enforced by ServiceAuthGuard's allowedCallers check.
+    const issuance = await this.getReadable(callerClientId, id, caller);
     await this.applyRedemption(issuance, dto);
 
     await this.notifier.notify(
@@ -553,6 +594,199 @@ export class RewardIssuanceService {
     );
 
     return this.toDto(issuance);
+  }
+
+  // ─── Reservation lifecycle (reserve → commit/release) ───────────────────────
+
+  /**
+   * Temporarily lock an issuance to a checkout attempt so it cannot be
+   * double-spent. Idempotent on `(issuanceId, orderRef)`; runs under a row lock
+   * (`SELECT … FOR UPDATE`) to prevent reserve races.
+   */
+  async reserve(
+    callerClientId: string,
+    id: string,
+    dto: ReserveIssuanceDto,
+  ): Promise<any> {
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(RewardIssuance);
+      const issuance = await repo.findOne({
+        where: { id },
+        relations: ["reward"],
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!issuance) {
+        throw new NotFoundException(`Issuance ${id} not found`);
+      }
+
+      // Idempotent replay for the same order.
+      if (
+        issuance.status === RewardIssuanceStatus.RESERVED &&
+        issuance.reservation_ref === dto.orderRef
+      ) {
+        return this.toDto(issuance);
+      }
+
+      if (issuance.status !== RewardIssuanceStatus.ISSUED) {
+        throw new BadRequestException(
+          `Cannot reserve an issuance in status ${issuance.status}`,
+        );
+      }
+
+      if (issuance.expires_at && new Date(issuance.expires_at) < new Date()) {
+        issuance.status = RewardIssuanceStatus.EXPIRED;
+        await repo.save(issuance);
+        throw new BadRequestException("Issuance has expired");
+      }
+
+      issuance.status = RewardIssuanceStatus.RESERVED;
+      issuance.reserved_at = new Date();
+      issuance.reservation_ref = dto.orderRef;
+      issuance.metadata = {
+        ...(issuance.metadata || {}),
+        mallOrderRef: dto.orderRef,
+        mallReservation: dto.metadata ?? null,
+        reservedBy: callerClientId,
+      };
+      await repo.save(issuance);
+      return this.toDto(issuance);
+    });
+  }
+
+  /**
+   * Finalise a reservation after successful payment (RESERVED → REDEEMED).
+   * Idempotent; also accepts a commit straight from ISSUED (legacy mall builds).
+   */
+  async commit(
+    callerClientId: string,
+    id: string,
+    dto: CommitIssuanceDto,
+  ): Promise<any> {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(RewardIssuance);
+      const issuance = await repo.findOne({
+        where: { id },
+        relations: ["reward"],
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!issuance) {
+        throw new NotFoundException(`Issuance ${id} not found`);
+      }
+
+      // Idempotent: an already-redeemed issuance is a no-op.
+      if (issuance.status === RewardIssuanceStatus.REDEEMED) {
+        return { alreadyCommitted: true, dto: this.toDto(issuance) };
+      }
+      if (
+        issuance.status !== RewardIssuanceStatus.RESERVED &&
+        issuance.status !== RewardIssuanceStatus.ISSUED
+      ) {
+        throw new BadRequestException(
+          `Cannot commit an issuance in status ${issuance.status}`,
+        );
+      }
+
+      // An issuance that expired while reserved must not be committed.
+      if (issuance.expires_at && new Date(issuance.expires_at) < new Date()) {
+        issuance.status = RewardIssuanceStatus.EXPIRED;
+        await repo.save(issuance);
+        throw new BadRequestException("Issuance has expired");
+      }
+
+      issuance.status = RewardIssuanceStatus.REDEEMED;
+      issuance.redeemed_at = new Date();
+      issuance.committed_at = new Date();
+      issuance.metadata = {
+        ...(issuance.metadata || {}),
+        mallOrderRef: dto.orderRef ?? issuance.reservation_ref ?? null,
+        commitNote: dto.note ?? null,
+      };
+      await repo.save(issuance);
+      return { alreadyCommitted: false, dto: this.toDto(issuance) };
+    });
+
+    if (!result.alreadyCommitted) {
+      // Emit `reward.redeemed` to the caller (mall updates its mirror).
+      await this.notifier.notify(
+        callerClientId,
+        PartnerRewardEvent.REDEEMED,
+        result.dto,
+      );
+    }
+
+    return result.dto;
+  }
+
+  /**
+   * Undo a reservation when payment fails / the checkout is abandoned
+   * (RESERVED → ISSUED). Idempotent; never releases a REDEEMED issuance.
+   */
+  async release(
+    callerClientId: string,
+    id: string,
+    dto: ReleaseIssuanceDto,
+  ): Promise<any> {
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(RewardIssuance);
+      const issuance = await repo.findOne({
+        where: { id },
+        relations: ["reward"],
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!issuance) {
+        throw new NotFoundException(`Issuance ${id} not found`);
+      }
+
+      // Idempotent: releasing an un-reserved issuance is a no-op.
+      if (issuance.status === RewardIssuanceStatus.ISSUED) {
+        return this.toDto(issuance);
+      }
+      if (issuance.status !== RewardIssuanceStatus.RESERVED) {
+        throw new BadRequestException(
+          `Cannot release an issuance in status ${issuance.status}`,
+        );
+      }
+
+      issuance.status = RewardIssuanceStatus.ISSUED;
+      issuance.reserved_at = null;
+      issuance.reservation_ref = null;
+      issuance.metadata = {
+        ...(issuance.metadata || {}),
+        releaseReason: dto.reason ?? null,
+        releasedBy: callerClientId,
+      };
+      await repo.save(issuance);
+      return this.toDto(issuance);
+    });
+  }
+
+  /**
+   * Backstop sweeper: release reservations older than `olderThanMs`. Mall
+   * already releases stale reservations at 30 min; this catches missed
+   * releases. Returns the number released.
+   */
+  async releaseStaleReservations(olderThanMs = 60 * 60 * 1000): Promise<number> {
+    const cutoff = new Date(Date.now() - olderThanMs);
+    const stale = await this.issuanceRepository.find({
+      where: {
+        status: RewardIssuanceStatus.RESERVED,
+        reserved_at: LessThan(cutoff),
+      },
+      take: 200,
+    });
+
+    for (const issuance of stale) {
+      issuance.status = RewardIssuanceStatus.ISSUED;
+      issuance.reserved_at = null;
+      issuance.reservation_ref = null;
+      issuance.metadata = {
+        ...(issuance.metadata || {}),
+        releaseReason: "stale_reservation_sweep",
+      };
+      await this.issuanceRepository.save(issuance);
+    }
+
+    return stale.length;
   }
 
   /**
@@ -710,6 +944,7 @@ export class RewardIssuanceService {
       businessMeta,
       entitlement,
       sponsor,
+      mallTargets,
     } = params;
 
     const issuance = this.issuanceRepository.create({
@@ -734,6 +969,7 @@ export class RewardIssuanceService {
         business: businessMeta,
         ...(entitlement ? { entitlement } : {}),
         ...(sponsor ? { sponsor } : {}),
+        ...(mallTargets ? { mallTargets } : {}),
         ...(businessRewardSnapshot
           ? { businessReward: businessRewardSnapshot }
           : {}),
@@ -853,6 +1089,31 @@ export class RewardIssuanceService {
   }
 
   /**
+   * Load an issuance a caller is allowed to act on. App-level
+   * (client_credentials) peers — already gated by `allowedCallers` — may read
+   * any issuance (mall is usually not the issuer). Delegated (user-bound) tokens
+   * keep the strict issuer + end-user scope.
+   */
+  private async getReadable(
+    callerClientId: string,
+    id: string,
+    caller?: ServiceCallerContext,
+  ): Promise<RewardIssuance> {
+    if (caller?.isDelegated) {
+      return this.getOwned(callerClientId, id, caller);
+    }
+
+    const issuance = await this.issuanceRepository.findOne({
+      where: { id },
+      relations: ["reward"],
+    });
+    if (!issuance) {
+      throw new NotFoundException(`Issuance ${id} not found`);
+    }
+    return issuance;
+  }
+
+  /**
    * Load an issuance for a first-party (logged-in) user, failing closed with a
    * 404 when it does not belong to them — never leaks another user's reward.
    */
@@ -865,10 +1126,20 @@ export class RewardIssuanceService {
       relations: ["reward"],
     });
 
-    const email = user.email?.toLowerCase();
+    // Match against every identifier the partner could have stored: the local
+    // id, the central MCOM user id, and the email. A reward earned on a peer
+    // (e.g. FundOrDonate) is usually stored against the central user id.
+    const identity = await this.recipientResolver.resolveIdentity({
+      userId: user.id,
+      email: user.email,
+    });
+    const email = identity.email ?? user.email?.toLowerCase();
     const matches =
       !!issuance &&
       ((!!email && issuance.recipient_email?.toLowerCase() === email) ||
+        (!!identity.userId && issuance.recipient_user_id === identity.userId) ||
+        (!!identity.mcomUserId &&
+          issuance.recipient_mcom_user_id === identity.mcomUserId) ||
         issuance.recipient_user_id === user.id ||
         issuance.recipient_mcom_user_id === user.id);
 
@@ -1089,14 +1360,20 @@ export class RewardIssuanceService {
         issuance.code = `${CODE_PREFIX}-${nanoid(10).toUpperCase()}`;
 
         try {
+          // Pass the rewards-generated code so both apps show one code; store
+          // the mall instrument id as the mall reference (handbook §13).
           const mallPayload = {
             amount: Number(ctx.value) || 0,
             recipientEmail: issuance.recipient_email,
             recipientName: issuance.recipient_name,
             message: ctx.description,
             businessName: "MCOM Rewards",
+            code: issuance.code,
+            expiresAt: issuance.expires_at
+              ? new Date(issuance.expires_at).toISOString()
+              : undefined,
           };
-          let mallResponse: any;
+          let mallResponse: MallInstrument;
           if (ctx.rewardType === RewardType.GIFT_CARD) {
             mallResponse =
               await this.mallIntegration.createGiftCard(mallPayload);
@@ -1106,7 +1383,12 @@ export class RewardIssuanceService {
             mallResponse =
               await this.mallIntegration.createVoucher(mallPayload);
           }
-          issuance.mall_reference = this.extractMallReference(mallResponse);
+          // Keep the shared code the mall actually persisted (idempotent on it).
+          if (mallResponse?.code) {
+            issuance.code = mallResponse.code;
+          }
+          issuance.mall_reference =
+            mallResponse?.id ?? this.extractMallReference(mallResponse);
         } catch (err) {
           this.logger.warn(
             `Mall delivery skipped for issuance ${issuance.id}: ${(err as Error).message}`,
@@ -1141,6 +1423,51 @@ export class RewardIssuanceService {
     return candidate ? String(candidate) : null;
   }
 
+  /**
+   * Build the `metadata.mallTargets` block from a business reward's targeting
+   * columns. Returns null unless the reward carries a valid discount config —
+   * mall evaluates (and re-validates) this server-side.
+   */
+  private buildMallTargets(
+    businessReward: BusinessReward,
+    businessMcomUserId: string | null,
+  ): Record<string, any> | null {
+    const discountType = businessReward.mall_discount_type;
+    const discountValue = Number(businessReward.mall_discount_value) || 0;
+
+    if (
+      !discountType ||
+      (discountType !== "percentage" && discountType !== "fixed") ||
+      discountValue <= 0
+    ) {
+      return null;
+    }
+
+    const targets: Record<string, any> = {
+      scope: businessReward.mall_target_scope ?? "ALL",
+      discountType,
+      discountValue,
+    };
+
+    if (businessMcomUserId) {
+      targets.businessMcomUserId = businessMcomUserId;
+    }
+    if (businessReward.mall_target_product_ids?.length) {
+      targets.productIds = businessReward.mall_target_product_ids;
+    }
+    if (businessReward.mall_target_service_ids?.length) {
+      targets.serviceIds = businessReward.mall_target_service_ids;
+    }
+    if (businessReward.mall_max_discount !== null && businessReward.mall_max_discount !== undefined) {
+      targets.maxDiscount = Number(businessReward.mall_max_discount);
+    }
+    if (businessReward.mall_min_spend !== null && businessReward.mall_min_spend !== undefined) {
+      targets.minSpend = Number(businessReward.mall_min_spend);
+    }
+
+    return targets;
+  }
+
   private toDto(issuance: RewardIssuance): Record<string, any> {
     return {
       id: issuance.id,
@@ -1171,6 +1498,9 @@ export class RewardIssuanceService {
       expiresAt: issuance.expires_at,
       redeemedAt: issuance.redeemed_at,
       revokedAt: issuance.revoked_at,
+      reservationRef: issuance.reservation_ref ?? null,
+      reservedAt: issuance.reserved_at ?? null,
+      committedAt: issuance.committed_at ?? null,
       metadata: issuance.metadata,
       createdAt: issuance.created_at,
       updatedAt: issuance.updated_at,

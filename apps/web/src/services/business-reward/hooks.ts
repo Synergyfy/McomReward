@@ -8,7 +8,25 @@ import {
   UpdateBusinessRewardDto,
   GetMallRewardHistoryResponse,
   MallRewardStats,
+  MallCatalogBusiness,
 } from './types';
+
+const fetchMallCatalog = async (): Promise<MallCatalogBusiness> => {
+  const { data } = await api.get<MallCatalogBusiness>(
+    `/rewards/business/mall-catalog`
+  );
+  return data;
+};
+
+/** Resolve the logged-in business in MCOM Mall for discount targeting. */
+export const useGetMallCatalog = (enabled = true) => {
+  return useQuery({
+    queryKey: ['businessMallCatalog'],
+    queryFn: fetchMallCatalog,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 const fetchMallRewardHistory = async (page: number, limit: number) => {
   const { data } = await api.get<GetMallRewardHistoryResponse>(

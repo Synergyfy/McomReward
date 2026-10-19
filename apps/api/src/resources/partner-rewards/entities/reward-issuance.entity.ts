@@ -90,6 +90,16 @@ export class RewardIssuance extends AbstractBaseEntity {
   @Column({ type: "timestamp", nullable: true })
   revoked_at: Date;
 
+  /** orderRef the issuance is currently reserved against (RESERVED only). */
+  @Column({ nullable: true })
+  reservation_ref: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  reserved_at: Date;
+
+  @Column({ type: "timestamp", nullable: true })
+  committed_at: Date;
+
   @Column({ type: "jsonb", nullable: true })
   metadata: Record<string, any>;
 }

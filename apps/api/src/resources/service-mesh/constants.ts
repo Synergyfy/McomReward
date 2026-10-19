@@ -16,9 +16,19 @@ export const SERVICE_TOKEN_SAFETY_MARGIN_MS = 60_000;
 /** Fallback TTL if Central does not return `expires_in`. */
 export const DEFAULT_SERVICE_TOKEN_TTL_SECONDS = 300;
 
-// ─── Partner API scopes ──────────────────────────────────────────────────────
+// ─── Partner API scopes (scopes THIS app serves) ─────────────────────────────
 export const SERVICE_SCOPE_REWARDS_READ = "rewards:read";
 export const SERVICE_SCOPE_REWARDS_ISSUE = "rewards:issue";
+
+// ─── Mall peer scopes (scopes THIS app requests from Central) ────────────────
+// Declared on `mcom-rewards` in the Central Console and mirrored by the mall
+// app, which serves the partner catalog (`mall:read`) and events/instruments
+// (`mall:write`). See the MCOM Rewards ⇄ MCOM Mall integration handbook §4/D.
+export const SERVICE_SCOPE_MALL_READ = "mall:read";
+export const SERVICE_SCOPE_MALL_WRITE = "mall:write";
+
+/** Default ecosystem clientId for the MCOM Mall peer. */
+export const DEFAULT_MALL_CLIENT_ID = "mcom-mall";
 
 /**
  * Admin-level gifting: lets a peer admin (e.g. FundOrDonate's back office)

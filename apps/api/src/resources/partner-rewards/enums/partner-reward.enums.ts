@@ -1,6 +1,8 @@
 export enum RewardIssuanceStatus {
   /** Issued and awaiting redemption. */
   ISSUED = "ISSUED",
+  /** Temporarily locked to a checkout attempt (reserve → commit/release). */
+  RESERVED = "RESERVED",
   /** Redeemed by the recipient (or marked redeemed by the calling partner). */
   REDEEMED = "REDEEMED",
   /** Passed its expiry without redemption. */

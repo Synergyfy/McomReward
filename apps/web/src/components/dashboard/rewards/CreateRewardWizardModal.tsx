@@ -14,6 +14,8 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Reward } from '@/services/business-reward/types';
+import { useGetMallCatalog } from '@/services/business-reward/hooks';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useUploadToCloudinary } from '@/services/upload/hook';
 import { useGetBusinessProfile } from '@/services/business/hook';
 import { toast } from 'sonner';
@@ -92,6 +94,14 @@ export default function CreateRewardWizardModal({
   const [isMallIntegrated, setIsMallIntegrated] = useState<boolean>(reward?.is_mall_integrated ?? true); // Default ON
   const [mallRewardType, setMallRewardType] = useState<string>(reward?.mall_reward_type || 'VOUCHER');
   const [mallRewardValue, setMallRewardValue] = useState<number | string>(reward?.mall_reward_value || 0);
+  // Mall discount targeting (rewardType === 'MallDiscount')
+  const [mallTargetScope, setMallTargetScope] = useState<'SPECIFIC' | 'ALL'>(reward?.mall_target_scope || 'ALL');
+  const [mallProductIds, setMallProductIds] = useState<string[]>(reward?.mall_target_product_ids || []);
+  const [mallServiceIds, setMallServiceIds] = useState<string[]>(reward?.mall_target_service_ids || []);
+  const [mallDiscountType, setMallDiscountType] = useState<'percentage' | 'fixed'>(reward?.mall_discount_type || 'percentage');
+  const [mallDiscountValue, setMallDiscountValue] = useState<number | string>(reward?.mall_discount_value || 0);
+  const [mallMaxDiscount, setMallMaxDiscount] = useState<number | string>(reward?.mall_max_discount ?? '');
+  const [mallMinSpend, setMallMinSpend] = useState<number | string>(reward?.mall_min_spend ?? '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(reward?.image || null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
@@ -110,6 +120,22 @@ export default function CreateRewardWizardModal({
   const [mcomAssetType, setMcomAssetType] = useState<'sector' | 'category'>('sector');
 
   const { data: profile } = useGetBusinessProfile();
+
+  const isMallDiscount = useMemo(() => rewardType === 'MallDiscount', [rewardType]);
+  const {
+    data: mallCatalog,
+    isLoading: isMallCatalogLoading,
+    isError: isMallCatalogError,
+  } = useGetMallCatalog(isMallDiscount);
+
+  const toggleProduct = (id: string) =>
+    setMallProductIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  const toggleService = (id: string) =>
+    setMallServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
 
   const businessEmojis = ['☕', '🍔', '💰', '📦', '🚜', '🍕', '🛍️', '🎁', '🚀', '⭐'];
 
@@ -153,6 +179,13 @@ export default function CreateRewardWizardModal({
     setIsMallIntegrated(reward?.is_mall_integrated ?? true); // Default ON
     setMallRewardType(reward?.mall_reward_type || 'VOUCHER');
     setMallRewardValue(reward?.mall_reward_value || 0);
+    setMallTargetScope(reward?.mall_target_scope || 'ALL');
+    setMallProductIds(reward?.mall_target_product_ids || []);
+    setMallServiceIds(reward?.mall_target_service_ids || []);
+    setMallDiscountType(reward?.mall_discount_type || 'percentage');
+    setMallDiscountValue(reward?.mall_discount_value || 0);
+    setMallMaxDiscount(reward?.mall_max_discount ?? '');
+    setMallMinSpend(reward?.mall_min_spend ?? '');
     setSelectedFile(null);
     setImagePreviewUrl(reward?.image || null);
     setGalleryFiles([]);
@@ -289,10 +322,23 @@ export default function CreateRewardWizardModal({
       newErrors.mallRewardValue = 'Reward Value is required for Vouchers, Gift Cards, and Coupons.';
     }
 
+    if (isMallDiscount) {
+      if (Number(mallDiscountValue) <= 0) {
+        newErrors.mallDiscountValue = 'Discount value must be greater than 0.';
+      }
+      if (
+        mallTargetScope === 'SPECIFIC' &&
+        mallProductIds.length === 0 &&
+        mallServiceIds.length === 0
+      ) {
+        newErrors.mallTargets = 'Select at least one product or service.';
+      }
+    }
+
     if (!readonlyImage && !isEditMode && !selectedFile && !imagePreviewUrl) newErrors.image = 'Image is required.';
 
     setErrors(newErrors);
-  }, [name, description, pointsRequired, stampsRequired, maxPoints, selectedFile, imagePreviewUrl, isEditMode, isPointsExceedingMax, isPointsEnabled, isStampsEnabled, isVoucherType, mallRewardValue, readonlyImage]);
+  }, [name, description, pointsRequired, stampsRequired, maxPoints, selectedFile, imagePreviewUrl, isEditMode, isPointsExceedingMax, isPointsEnabled, isStampsEnabled, isVoucherType, mallRewardValue, readonlyImage, isMallDiscount, mallDiscountValue, mallTargetScope, mallProductIds, mallServiceIds]);
 
   const isStep1Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
@@ -413,13 +459,27 @@ export default function CreateRewardWizardModal({
         is_stamps_enabled: isStampsEnabled,
         rewardType,
         disabled,
-        is_mall_integrated: isMallIntegrated,
+        is_mall_integrated: isMallDiscount ? false : isMallIntegrated,
         mall_reward_type: mallRewardType as 'VOUCHER' | 'GIFT_CARD' | 'COUPON',
-        mall_reward_value: Number(mallRewardValue),
+        mall_reward_value: isMallDiscount ? 0 : Number(mallRewardValue),
         stamp_emoji: finalStampEmoji,
         status: 'active',
         expiry_datetime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // Default to 1 year from now
       };
+
+      if (isMallDiscount) {
+        rewardData.mall_target_scope = mallTargetScope;
+        rewardData.mall_target_product_ids =
+          mallTargetScope === 'SPECIFIC' ? mallProductIds : [];
+        rewardData.mall_target_service_ids =
+          mallTargetScope === 'SPECIFIC' ? mallServiceIds : [];
+        rewardData.mall_discount_type = mallDiscountType;
+        rewardData.mall_discount_value = Number(mallDiscountValue);
+        rewardData.mall_max_discount =
+          mallMaxDiscount === '' ? null : Number(mallMaxDiscount);
+        rewardData.mall_min_spend =
+          mallMinSpend === '' ? null : Number(mallMinSpend);
+      }
 
       if (reward?.id) {
         rewardData.id = reward.id;
@@ -506,6 +566,7 @@ export default function CreateRewardWizardModal({
                       <SelectItem value="coupon">Coupon</SelectItem>
                       <SelectItem value="point offer">Point Offer</SelectItem>
                       <SelectItem value="physical product">Physical Product</SelectItem>
+                      <SelectItem value="MallDiscount">Mall Discount</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500 mt-1">Select the category of your reward.</p>
@@ -550,6 +611,135 @@ export default function CreateRewardWizardModal({
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.mallRewardValue}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Mall Discount Targeting */}
+              {isMallDiscount && (
+                <div className="border p-4 rounded-lg space-y-4 bg-gradient-to-r from-indigo-50/50 to-blue-50/50 dark:from-indigo-900/10 dark:to-blue-900/10">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Mall Targets</label>
+                    <Select value={mallTargetScope} onValueChange={(val: any) => setMallTargetScope(val)}>
+                      <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Select targets" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Whole business</SelectItem>
+                        <SelectItem value="SPECIFIC">Specific products/services</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {mallTargetScope === 'SPECIFIC' && (
+                    <div className="space-y-4">
+                      {isMallCatalogLoading && (
+                        <p className="text-xs text-gray-500">Loading mall catalogue…</p>
+                      )}
+                      {isMallCatalogError && (
+                        <p className="text-xs text-red-500">Could not load your mall catalogue.</p>
+                      )}
+                      {mallCatalog && (
+                        <>
+                          {mallCatalog.products.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Products</p>
+                              <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                                {mallCatalog.products.map((p) => (
+                                  <label key={p.id} className="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-white/60">
+                                    <Checkbox
+                                      checked={mallProductIds.includes(p.id)}
+                                      onCheckedChange={() => toggleProduct(p.id)}
+                                    />
+                                    <span className="flex-1">{p.title}</span>
+                                    <span className="text-xs text-gray-500">£{Number(p.salePrice ?? p.price).toFixed(2)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {mallCatalog.services.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Services</p>
+                              <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                                {mallCatalog.services.map((s) => (
+                                  <label key={s.id} className="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-white/60">
+                                    <Checkbox
+                                      checked={mallServiceIds.includes(s.id)}
+                                      onCheckedChange={() => toggleService(s.id)}
+                                    />
+                                    <span className="flex-1">{s.name}</span>
+                                    <span className="text-xs text-gray-500">
+                                      {s.fixedPrice != null ? `£${Number(s.fixedPrice).toFixed(2)}` : s.basePrice != null ? `from £${Number(s.basePrice).toFixed(2)}` : ''}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {mallCatalog.products.length === 0 && mallCatalog.services.length === 0 && (
+                            <p className="text-xs text-gray-500">No products or services found in mall.</p>
+                          )}
+                        </>
+                      )}
+                      {shouldShowError('mallTargets') && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.mallTargets}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Discount Type</label>
+                      <Select value={mallDiscountType} onValueChange={(val: any) => setMallDiscountType(val)}>
+                        <SelectTrigger className="w-full bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage (%)</SelectItem>
+                          <SelectItem value="fixed">Fixed (£)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Value <span className="text-red-500">*</span></label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={mallDiscountValue}
+                        onChange={(e) => setMallDiscountValue(e.target.value)}
+                        className={shouldShowError('mallDiscountValue') ? 'border-red-500' : ''}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Max Discount (£)</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={mallMaxDiscount}
+                        onChange={(e) => setMallMaxDiscount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Min Spend (£)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={mallMinSpend}
+                      onChange={(e) => setMallMinSpend(e.target.value)}
+                    />
+                  </div>
+
+                  {shouldShowError('mallDiscountValue') && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.mallDiscountValue}
                     </p>
                   )}
                 </div>
@@ -868,7 +1058,8 @@ export default function CreateRewardWizardModal({
                 </div>
               )}
 
-              {/* Mall Integration - Default ON */}
+              {/* Mall Integration - Default ON (spend-like rewards only) */}
+              {!isMallDiscount && (
               <div className="border p-4 rounded-lg space-y-4 bg-gradient-to-r from-orange-50/50 to-amber-50/50 dark:from-orange-900/10 dark:to-amber-900/10">
                 <div className="flex items-center justify-between">
                   <div>
@@ -922,6 +1113,7 @@ export default function CreateRewardWizardModal({
                   </div>
                 )}
               </div>
+              )}
 
               {/* Image Upload */}
               <div ref={imageRef}>

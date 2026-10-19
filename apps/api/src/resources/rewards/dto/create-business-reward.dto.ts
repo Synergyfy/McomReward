@@ -195,4 +195,43 @@ export class CreateBusinessRewardDto {
   @IsEnum(RewardAudience)
   @IsOptional()
   audience?: RewardAudience;
+
+  // ─── Mall discount targeting ────────────────────────────────────────────────
+
+  @ApiProperty({ enum: ["SPECIFIC", "ALL"], required: false })
+  @IsString()
+  @IsOptional()
+  mall_target_scope?: "SPECIFIC" | "ALL";
+
+  @ApiProperty({ type: [String], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mall_target_product_ids?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mall_target_service_ids?: string[];
+
+  @ApiProperty({ enum: ["percentage", "fixed"], required: false })
+  @IsString()
+  @IsOptional()
+  mall_discount_type?: "percentage" | "fixed";
+
+  @ApiProperty({ required: false, example: 20 })
+  @IsNumber()
+  @IsOptional()
+  mall_discount_value?: number;
+
+  @ApiProperty({ required: false, example: 15 })
+  @IsNumber()
+  @IsOptional()
+  mall_max_discount?: number;
+
+  @ApiProperty({ required: false, example: 25 })
+  @IsNumber()
+  @IsOptional()
+  mall_min_spend?: number;
 }

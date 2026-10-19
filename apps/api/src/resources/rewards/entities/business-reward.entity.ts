@@ -88,6 +88,35 @@ export class BusinessReward extends AbstractBaseEntity {
   })
   mall_reward_type: "VOUCHER" | "GIFT_CARD" | "COUPON";
 
+  // ─── Mall discount targeting (metadata.mallTargets at issue time) ──────────
+  // Populated when `reward_type = MallDiscount`. Mirrored into
+  // `reward_issuance.metadata.mallTargets` when the reward is issued.
+
+  /** SPECIFIC = only the listed ids; ALL = whole business (or ecosystem). */
+  @Column({ nullable: true })
+  mall_target_scope: "SPECIFIC" | "ALL";
+
+  /** Mall product ids (scope = SPECIFIC). */
+  @Column({ type: "jsonb", nullable: true })
+  mall_target_product_ids: string[];
+
+  /** Mall service ids (scope = SPECIFIC). */
+  @Column({ type: "jsonb", nullable: true })
+  mall_target_service_ids: string[];
+
+  /** "percentage" | "fixed". */
+  @Column({ nullable: true })
+  mall_discount_type: "percentage" | "fixed";
+
+  @Column({ type: "decimal", precision: 12, scale: 2, nullable: true })
+  mall_discount_value: number;
+
+  @Column({ type: "decimal", precision: 12, scale: 2, nullable: true })
+  mall_max_discount: number;
+
+  @Column({ type: "decimal", precision: 12, scale: 2, nullable: true })
+  mall_min_spend: number;
+
   @ManyToOne(() => Business)
   @JoinColumn({ name: "business_id" })
   business: Business;

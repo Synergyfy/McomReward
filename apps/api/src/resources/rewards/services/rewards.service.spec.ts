@@ -14,6 +14,8 @@ import { SubCategory } from "../../subcategory/entities/subcategory.entity";
 import { LibraryAsset } from "../../library-assets/entities/library-asset.entity";
 import { TierProgressionService } from "../../tier-progression/tier-progression.service";
 import { PointHistory } from "../../participant-campaign-balance/entities/point-history.entity";
+import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
+import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
 import { CreateRewardDto } from "../dto/create-reward.dto";
 import { RewardType } from "../enums/reward-type.enum";
 import { BadgeLevel } from "../enums/badge-level.enum";
@@ -38,6 +40,7 @@ describe("RewardsService", () => {
 
   const mockBusinessRewardRepository = {
     findOne: jest.fn(),
+    findAndCount: jest.fn(),
     save: jest.fn(),
     create: jest.fn(),
   };
@@ -79,6 +82,12 @@ describe("RewardsService", () => {
     createQueryBuilder: jest.fn(),
     count: jest.fn(),
     getMany: jest.fn(),
+  };
+
+  const mockPartnerIssuance = {
+    getCountsByBusinessReward: jest.fn().mockResolvedValue(new Map()),
+    getValueByBusinessReward: jest.fn().mockResolvedValue(new Map()),
+    getGlobalSummary: jest.fn().mockResolvedValue({ count: 0, points: 0 }),
   };
 
   beforeEach(async () => {
@@ -123,6 +132,14 @@ describe("RewardsService", () => {
         {
           provide: getRepositoryToken(PointHistory),
           useValue: mockPointHistoryRepository,
+        },
+        {
+          provide: MallIntegrationService,
+          useValue: { getBusiness: jest.fn(), listProducts: jest.fn(), listServices: jest.fn() },
+        },
+        {
+          provide: PartnerIssuanceMetricsService,
+          useValue: mockPartnerIssuance,
         },
       ],
     }).compile();
@@ -274,7 +291,7 @@ describe("RewardsService", () => {
 
       expect(mockBusinessRewardRepository.findOne).toHaveBeenCalledWith({
         where: { id: rewardId, business: { id: businessId } },
-        relations: ["reward"],
+        relations: ["reward", "business"],
       });
       expect(mockBusinessRewardRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -307,6 +324,36 @@ describe("RewardsService", () => {
           stamps_required: 11,
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("getBusinessRewards", () => {
+    it("merges partner-issued grants into per-reward redemption counts", async () => {
+      mockBusinessRewardRepository.findAndCount.mockResolvedValue([
+        [{ id: "br1" }],
+        1,
+      ]);
+      mockPartnerIssuance.getCountsByBusinessReward.mockResolvedValue(
+        new Map([["br1", { count: 2, points: 0 }]]),
+      );
+
+      const phQb: any = {
+        select: jest.fn(() => phQb),
+        addSelect: jest.fn(() => phQb),
+        where: jest.fn(() => phQb),
+        andWhere: jest.fn(() => phQb),
+        groupBy: jest.fn(() => phQb),
+        getRawMany: jest.fn().mockResolvedValue([
+          { businessRewardId: "br1", count: "1", points: "10" },
+        ]),
+      };
+      mockPointHistoryRepository.createQueryBuilder.mockReturnValue(phQb);
+
+      const result = await service.getBusinessRewards("biz-1", 1, 10);
+
+      // 1 in-app + 2 partner-issued = 3.
+      expect(result.data[0].total_redemptions).toBe(3);
+      expect(result.data[0].total_points_redeemed).toBe(10);
     });
   });
 });

@@ -684,7 +684,11 @@ export class RewardIssuanceService {
       const issuance = await repo.findOne({
         where: { id },
         relations: ["reward"],
-        lock: { mode: "pessimistic_write" },
+        // Only lock the issuance row. `reward_id` is nullable, so a plain
+        // FOR UPDATE would also try to lock the nullable side of the LEFT JOIN
+        // (Postgres rejects that with "FOR UPDATE cannot be applied to the
+        // nullable side of an outer join").
+        lock: { mode: "pessimistic_write", tables: ["reward_issuance"] },
       });
       if (!issuance) {
         throw new NotFoundException(`Issuance ${id} not found`);
@@ -738,7 +742,11 @@ export class RewardIssuanceService {
       const issuance = await repo.findOne({
         where: { id },
         relations: ["reward"],
-        lock: { mode: "pessimistic_write" },
+        // Only lock the issuance row. `reward_id` is nullable, so a plain
+        // FOR UPDATE would also try to lock the nullable side of the LEFT JOIN
+        // (Postgres rejects that with "FOR UPDATE cannot be applied to the
+        // nullable side of an outer join").
+        lock: { mode: "pessimistic_write", tables: ["reward_issuance"] },
       });
       if (!issuance) {
         throw new NotFoundException(`Issuance ${id} not found`);
@@ -802,7 +810,11 @@ export class RewardIssuanceService {
       const issuance = await repo.findOne({
         where: { id },
         relations: ["reward"],
-        lock: { mode: "pessimistic_write" },
+        // Only lock the issuance row. `reward_id` is nullable, so a plain
+        // FOR UPDATE would also try to lock the nullable side of the LEFT JOIN
+        // (Postgres rejects that with "FOR UPDATE cannot be applied to the
+        // nullable side of an outer join").
+        lock: { mode: "pessimistic_write", tables: ["reward_issuance"] },
       });
       if (!issuance) {
         throw new NotFoundException(`Issuance ${id} not found`);

@@ -12,6 +12,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   ArrowLeft,
   Gift,
   Copy,
@@ -21,11 +28,13 @@ import {
   HandCoins,
   Store,
   ExternalLink,
+  ListChecks,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useClaimPartnerReward,
   useGetMyPartnerRewards,
+  useGetPartnerRewardMallTargets,
 } from '@/services/partner-rewards/hook';
 import {
   PartnerMallTargets,
@@ -79,6 +88,12 @@ export default function PartnerRewardsView({
   });
   const claimReward = useClaimPartnerReward();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [targetsRewardId, setTargetsRewardId] = useState<string | null>(null);
+  const {
+    data: targetDetails,
+    isLoading: targetsLoading,
+    isError: targetsError,
+  } = useGetPartnerRewardMallTargets(targetsRewardId);
 
   const handleGoToMall = async () => {
     try {
@@ -245,6 +260,16 @@ export default function PartnerRewardsView({
                   <p className="text-xs text-orange-700/80">
                     This discount is applied automatically at MCOM Mall checkout.
                   </p>
+                  {mallTargets.scope === 'SPECIFIC' && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-200 bg-white text-orange-700 hover:bg-orange-100 hover:text-orange-800"
+                      onClick={() => setTargetsRewardId(reward.id)}
+                    >
+                      <ListChecks className="w-4 h-4 mr-2" />
+                      See selected items
+                    </Button>
+                  )}
                   <Button
                     className="w-full bg-orange-600 hover:bg-orange-700"
                     onClick={handleGoToMall}
@@ -270,6 +295,108 @@ export default function PartnerRewardsView({
           );
         })}
       </div>
+
+      <Dialog
+        open={!!targetsRewardId}
+        onOpenChange={(open) => {
+          if (!open) setTargetsRewardId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Selected items</DialogTitle>
+            <DialogDescription>
+              This discount applies only to the following items in MCOM Mall.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] space-y-5 overflow-y-auto pr-1">
+            {targetsLoading && (
+              <p className="py-6 text-center text-sm text-gray-500">
+                Loading selected items…
+              </p>
+            )}
+
+            {targetsError && (
+              <p className="py-6 text-center text-sm text-red-600">
+                Could not load the selected items. The discount will still be
+                applied automatically at checkout.
+              </p>
+            )}
+
+            {!targetsLoading && !targetsError && targetDetails && (
+              <>
+                {targetDetails.business?.name && (
+                  <p className="text-sm text-gray-500">
+                    {targetDetails.business.name}
+                  </p>
+                )}
+
+                {targetDetails.products.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Products
+                    </h4>
+                    {targetDetails.products.map((product) => {
+                      const price = product.salePrice ?? product.price;
+                      return (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                        >
+                          <span className="text-sm font-medium text-gray-800">
+                            {product.title}
+                          </span>
+                          {price != null && (
+                            <span className="shrink-0 text-sm text-gray-500">
+                              £{Number(price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {targetDetails.services.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Services
+                    </h4>
+                    {targetDetails.services.map((service) => {
+                      const price = service.fixedPrice ?? service.basePrice;
+                      return (
+                        <div
+                          key={service.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                        >
+                          <span className="text-sm font-medium text-gray-800">
+                            {service.name}
+                          </span>
+                          {price != null && (
+                            <span className="shrink-0 text-sm text-gray-500">
+                              {service.fixedPrice == null ? 'from ' : ''}£{Number(price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {targetDetails.products.length === 0 &&
+                  targetDetails.services.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-500">
+                      The selected item names aren’t available right now, but
+                      the discount will still be applied automatically at
+                      checkout.
+                    </p>
+                  )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

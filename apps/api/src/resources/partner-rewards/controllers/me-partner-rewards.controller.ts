@@ -47,6 +47,20 @@ export class MePartnerRewardsController {
     );
   }
 
+  @Get(":id/mall-targets")
+  @ApiOperation({
+    summary: "Get the Mall products/services a partner reward applies to",
+  })
+  mallTargets(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return this.issuanceService.getMallTargetDetailsForUser(
+      { id: user.id, email: user.email },
+      id,
+    );
+  }
+
   @Post(":id/claim")
   @ApiOperation({ summary: "Claim one of my partner-issued rewards" })
   claim(

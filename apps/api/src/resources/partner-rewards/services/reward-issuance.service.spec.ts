@@ -95,6 +95,7 @@ describe("RewardIssuanceService", () => {
       createVoucher: jest.fn(),
       createGiftCard: jest.fn(),
       createCoupon: jest.fn(),
+      getBusiness: jest.fn(),
     };
     partnerEntitlement = {
       assertBusinessEntitled: jest.fn().mockResolvedValue({
@@ -607,6 +608,79 @@ describe("RewardIssuanceService", () => {
         "issuance.status != :revoked",
         expect.objectContaining({ revoked: RewardIssuanceStatus.REVOKED }),
       );
+    });
+
+    it("resolves the selected Mall products/services for the logged-in user", async () => {
+      issuanceRepo.findOne.mockResolvedValue({
+        id: "issuance-1",
+        recipient_email: "me@example.com",
+        recipient_user_id: "participant-1",
+        metadata: {
+          mallTargets: {
+            scope: "SPECIFIC",
+            businessMcomUserId: "biz-central-1",
+            productIds: ["prod-1", "prod-2"],
+            serviceIds: ["svc-1"],
+            discountType: "percentage",
+            discountValue: 20,
+          },
+        },
+      });
+      mallIntegration.getBusiness.mockResolvedValue({
+        business: { id: "biz-1", name: "Acme" },
+        products: [
+          { id: "prod-1", title: "Coffee" },
+          { id: "prod-2", title: "Cake" },
+          { id: "prod-3", title: "Other" },
+        ],
+        services: [
+          { id: "svc-1", name: "Repair" },
+          { id: "svc-2", name: "Other" },
+        ],
+      });
+
+      const result = await service.getMallTargetDetailsForUser(
+        user,
+        "issuance-1",
+      );
+
+      expect(mallIntegration.getBusiness).toHaveBeenCalledWith({
+        mcomUserId: "biz-central-1",
+      });
+      expect(result.products.map((product: any) => product.id)).toEqual([
+        "prod-1",
+        "prod-2",
+      ]);
+      expect(result.services.map((svc: any) => svc.id)).toEqual(["svc-1"]);
+    });
+
+    it("falls back to target ids when the Mall catalogue is unavailable", async () => {
+      issuanceRepo.findOne.mockResolvedValue({
+        id: "issuance-1",
+        recipient_email: "me@example.com",
+        recipient_user_id: "participant-1",
+        metadata: {
+          mallTargets: {
+            scope: "SPECIFIC",
+            businessMcomUserId: "biz-central-1",
+            productIds: ["prod-1"],
+            serviceIds: [],
+            discountType: "fixed",
+            discountValue: 10,
+          },
+        },
+      });
+      mallIntegration.getBusiness.mockRejectedValue(
+        new Error("mall unavailable"),
+      );
+
+      const result = await service.getMallTargetDetailsForUser(
+        user,
+        "issuance-1",
+      );
+
+      expect(result.products).toEqual([]);
+      expect(result.productIds).toEqual(["prod-1"]);
     });
 
     it("claims a reward issued to the logged-in user and notifies the issuer", async () => {

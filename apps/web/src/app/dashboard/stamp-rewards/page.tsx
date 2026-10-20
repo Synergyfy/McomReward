@@ -219,11 +219,35 @@ export default function BusinessStampRewardsPage() {
             gallery: businessReward.gallery,
             value: businessReward.value,
             disabled: businessReward.disabled,
-            pointsRequired: businessReward.pointRequired,
-            stampsRequired: businessReward.stampsRequired,
+            pointsRequired:
+                businessReward.points_required ??
+                businessReward.pointsRequired ??
+                businessReward.pointRequired,
+            stampsRequired: businessReward.stamps_required ?? businessReward.stampsRequired,
+            rewardType: businessReward.reward_type ?? businessReward.rewardType,
             is_points_enabled: businessReward.is_points_enabled || businessReward.isPointsEnabled,
             is_stamps_enabled: businessReward.is_stamps_enabled || businessReward.isStampsEnabled,
             quantity: businessReward.quantity || 0,
+            is_mall_integrated:
+                businessReward.isMallIntegrated ?? businessReward.is_mall_integrated,
+            mall_reward_type:
+                businessReward.mallRewardType ?? businessReward.mall_reward_type,
+            mall_reward_value:
+                businessReward.mallRewardValue ?? businessReward.mall_reward_value,
+            mall_target_scope:
+                businessReward.mallTargetScope ?? businessReward.mall_target_scope,
+            mall_target_product_ids:
+                businessReward.mallTargetProductIds ?? businessReward.mall_target_product_ids,
+            mall_target_service_ids:
+                businessReward.mallTargetServiceIds ?? businessReward.mall_target_service_ids,
+            mall_discount_type:
+                businessReward.mallDiscountType ?? businessReward.mall_discount_type,
+            mall_discount_value:
+                businessReward.mallDiscountValue ?? businessReward.mall_discount_value,
+            mall_max_discount:
+                businessReward.mallMaxDiscount ?? businessReward.mall_max_discount,
+            mall_min_spend:
+                businessReward.mallMinSpend ?? businessReward.mall_min_spend,
             image_source_type: businessReward.image_source_type,
             stamp_emoji: businessReward.stamp_emoji,
             emoji: businessReward.emoji,
@@ -332,10 +356,17 @@ export default function BusinessStampRewardsPage() {
                         gallery: rewardData.gallery,
                         quantity: rewardData.quantity,
                         disabled: rewardData.disabled,
-                        reward_type: rewardData.reward_type || 'Voucher',
+                        reward_type: rewardData.rewardType ?? rewardData.reward_type ?? 'Voucher',
                         is_mall_integrated: rewardData.is_mall_integrated,
                         mall_reward_type: rewardData.mall_reward_type,
                         mall_reward_value: rewardData.mall_reward_value,
+                        mall_target_scope: rewardData.mall_target_scope,
+                        mall_target_product_ids: rewardData.mall_target_product_ids,
+                        mall_target_service_ids: rewardData.mall_target_service_ids,
+                        mall_discount_type: rewardData.mall_discount_type,
+                        mall_discount_value: rewardData.mall_discount_value,
+                        mall_max_discount: rewardData.mall_max_discount,
+                        mall_min_spend: rewardData.mall_min_spend,
                         image_source_type: rewardData.image_source_type,
                         stamp_emoji: rewardData.stamp_emoji,
                         emoji: rewardData.emoji,
@@ -375,10 +406,17 @@ export default function BusinessStampRewardsPage() {
                     gallery: rewardData.gallery,
                     quantity: rewardData.quantity,
                     disabled: rewardData.disabled,
-                    reward_type: rewardData.reward_type || 'Voucher',
+                    reward_type: rewardData.rewardType ?? rewardData.reward_type ?? 'Voucher',
                     is_mall_integrated: rewardData.is_mall_integrated,
                     mall_reward_type: rewardData.mall_reward_type,
                     mall_reward_value: rewardData.mall_reward_value,
+                    mall_target_scope: rewardData.mall_target_scope,
+                    mall_target_product_ids: rewardData.mall_target_product_ids,
+                    mall_target_service_ids: rewardData.mall_target_service_ids,
+                    mall_discount_type: rewardData.mall_discount_type,
+                    mall_discount_value: rewardData.mall_discount_value,
+                    mall_max_discount: rewardData.mall_max_discount,
+                    mall_min_spend: rewardData.mall_min_spend,
                     image_source_type: rewardData.image_source_type,
                     stamp_emoji: rewardData.stamp_emoji,
                     emoji: rewardData.emoji,

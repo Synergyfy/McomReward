@@ -436,6 +436,77 @@ export class RewardIssuanceService {
   }
 
   /**
+   * Resolve the Mall products/services a discount issuance targets. The
+   * issuance only snapshots ids at issue time; names are looked up live in the
+   * Mall catalogue so the participant can see what the discount applies to.
+   */
+  async getMallTargetDetailsForUser(
+    user: { id: string; email?: string },
+    id: string,
+  ): Promise<any> {
+    const issuance = await this.getOwnedByUser(user, id);
+    const targets = issuance.metadata?.mallTargets;
+
+    if (!targets) {
+      throw new BadRequestException(
+        "This reward has no mall discount targeting",
+      );
+    }
+
+    const productIds: string[] = Array.isArray(targets.productIds)
+      ? targets.productIds
+      : [];
+    const serviceIds: string[] = Array.isArray(targets.serviceIds)
+      ? targets.serviceIds
+      : [];
+
+    const base = {
+      scope: targets.scope ?? "ALL",
+      discountType: targets.discountType ?? null,
+      discountValue: targets.discountValue ?? null,
+      maxDiscount: targets.maxDiscount ?? null,
+      minSpend: targets.minSpend ?? null,
+      productIds,
+      serviceIds,
+      business: null as Record<string, any> | null,
+      products: [] as Record<string, any>[],
+      services: [] as Record<string, any>[],
+    };
+
+    if (
+      base.scope !== "SPECIFIC" ||
+      (!productIds.length && !serviceIds.length) ||
+      !targets.businessMcomUserId
+    ) {
+      return base;
+    }
+
+    try {
+      const catalog = await this.mallIntegration.getBusiness({
+        mcomUserId: targets.businessMcomUserId,
+      });
+
+      return {
+        ...base,
+        business: catalog.business ?? null,
+        products: (catalog.products ?? []).filter((product) =>
+          productIds.includes(product.id),
+        ),
+        services: (catalog.services ?? []).filter((service) =>
+          serviceIds.includes(service.id),
+        ),
+      };
+    } catch (err) {
+      // The discount still applies at checkout even if the catalogue is
+      // temporarily unavailable; return the ids so the UI can fall back.
+      this.logger.warn(
+        `Failed to resolve mall targets for issuance ${issuance.id}: ${(err as Error).message}`,
+      );
+      return base;
+    }
+  }
+
+  /**
    * First-party listing for a logged-in MCOM Rewards participant: every reward
    * any ecosystem partner has issued to them, regardless of issuer.
    *

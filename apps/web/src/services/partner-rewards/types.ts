@@ -18,6 +18,40 @@ export interface PartnerMallTargets {
   minSpend?: number;
 }
 
+export interface PartnerMallTargetProduct {
+  id: string;
+  title: string;
+  price?: number | null;
+  salePrice?: number | null;
+  image?: string | null;
+}
+
+export interface PartnerMallTargetService {
+  id: string;
+  name: string;
+  fixedPrice?: number | null;
+  basePrice?: number | null;
+  image?: string | null;
+}
+
+export interface PartnerMallTargetDetails {
+  scope: 'SPECIFIC' | 'ALL';
+  discountType?: 'percentage' | 'fixed' | null;
+  discountValue?: number | null;
+  maxDiscount?: number | null;
+  minSpend?: number | null;
+  productIds?: string[];
+  serviceIds?: string[];
+  business?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    mcomUserId?: string | null;
+  } | null;
+  products: PartnerMallTargetProduct[];
+  services: PartnerMallTargetService[];
+}
+
 export interface PartnerRewardRecipient {
   email: string;
   mcomUserId: string | null;

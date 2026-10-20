@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import api from '@/services/api';
 import {
   PaginatedPartnerRewards,
+  PartnerMallTargetDetails,
   PartnerReward,
   PartnerRewardsQuery,
 } from './types';
@@ -28,6 +29,25 @@ export const useGetMyPartnerRewards = (
     queryFn: () => getMyPartnerRewards(params),
     staleTime: 30_000,
     placeholderData: (previousData) => previousData,
+  });
+};
+
+// Resolve the Mall products/services a specific reward's discount applies to.
+const getPartnerRewardMallTargets = async (
+  id: string,
+): Promise<PartnerMallTargetDetails> => {
+  const { data } = await api.get<PartnerMallTargetDetails>(
+    `/me/partner-rewards/${id}/mall-targets`,
+  );
+  return data;
+};
+
+export const useGetPartnerRewardMallTargets = (id: string | null) => {
+  return useQuery<PartnerMallTargetDetails>({
+    queryKey: ['partner-reward-mall-targets', id],
+    queryFn: () => getPartnerRewardMallTargets(id!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

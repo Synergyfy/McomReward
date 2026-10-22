@@ -1,99 +1,67 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# @mcom/api — MCOM Rewards backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS 11 + TypeORM + PostgreSQL API for the MCOM Rewards platform. All routes
+are served under **`/api/v1`**; Swagger is at **`/api-docs`**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+For monorepo setup, shared prerequisites, SSO/M2M details, and the full env
+reference, see the [root README](../../README.md).
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Quick start
 
 ```bash
-$ npm install
+# From the repository root
+pnpm install
+cp apps/api/.env.example apps/api/.env   # add the remaining keys (root README §5)
+createdb mcom_rewards
+
+pnpm --filter @mcom/api dev              # nest start --watch, http://localhost:4000
 ```
 
-## Compile and run the project
+The API auto-runs pending migrations on startup (`migrationsRun: true`). Ensure
+`POSTGRES_*` and `JWT_SECRET` are set before starting.
 
-```bash
-# development
-$ npm run start
+## Useful scripts
 
-# watch mode
-$ npm run start:dev
+| Command | Purpose |
+| --- | --- |
+| `pnpm --filter @mcom/api dev` | Watch mode (`nest start --watch`) |
+| `pnpm --filter @mcom/api build` | Compile to `dist/` |
+| `pnpm --filter @mcom/api start:prod` | Run `node dist/main` |
+| `pnpm --filter @mcom/api lint` | ESLint with `--fix` |
+| `pnpm --filter @mcom/api format` | Prettier write |
+| `pnpm --filter @mcom/api test` | Jest unit tests |
+| `pnpm --filter @mcom/api test:e2e` | Jest e2e (needs `.env.test`) |
+| `pnpm --filter @mcom/api test:cov` | Coverage |
+| `pnpm --filter @mcom/api migration:run` | Apply migrations |
+| `pnpm --filter @mcom/api migration:generate src/database/migrations/Name` | Generate migration |
+| `pnpm --filter @mcom/api migration:revert` | Revert last migration |
+| `pnpm --filter @mcom/api migration:run:prod` | Apply using `.env.prod` |
+| `pnpm --filter @mcom/api seed` | ⚠️ Destructive demo seed |
+| `pnpm --filter @mcom/api seed:taxonomy` | Taxonomy only |
+| `pnpm --filter @mcom/api seed:prod` / `seed:plans-prod` | Production reference data |
 
-# production mode
-$ npm run start:prod
-```
+## Layout
 
-## Run tests
+- `src/main.ts` — bootstrap (CORS, global prefix, validation, Swagger).
+- `src/app.module.ts` — root module and global guards.
+- `src/resources/*` — feature modules (controllers, services, entities, DTOs).
+- `src/auth/` — JWT/local/partner auth, refresh tokens.
+- `src/common/` — guards, decorators, filters, enums, utils.
+- `src/database/` — data sources, entities, ~100 migrations.
+- `src/seeder/`, `src/seed*.ts` — seeding entrypoints.
+- `test/` — Jest e2e specs; helpers TRUNCATE all tables.
+- `docs/` — endpoint, workflow, and partner-integration documentation.
 
-```bash
-# unit tests
-$ npm run test
+## Auth notes
 
-# e2e tests
-$ npm run test:e2e
+`JwtAuthGuard` is global; use `@Public()` for open routes. Roles are `Admin`,
+`Business`, `Staff`, `Participant`, `Partner`, `Network`. Access tokens live for
+1 hour and are refreshed with `POST /auth/refresh-token`. M2M partners use
+RS256 service tokens from MCOM Central (see `docs/partner-rewards-m2m.md`).
 
-# test coverage
-$ npm run test:cov
-```
+## Conventions
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Validate all input with DTOs (`class-validator`); unknown fields are rejected.
+- New schema changes require a migration — `synchronize` is disabled.
+- Responses are camelCased by the global interceptor.
+- No `any` types (see `GEMINI.md`).

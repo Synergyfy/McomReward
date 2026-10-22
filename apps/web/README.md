@@ -1,54 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# @mcom/web — MCOM Rewards frontend
 
-## Getting Started
+Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4. Runs on
+**http://localhost:3005** and talks to the API at
+`http://localhost:4000/api/v1`.
 
-First, run the development server:
+For monorepo setup, the full env reference, and backend details, see the
+[root README](../../README.md).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## File uploads (local vs Cloudinary)
-
-Image/file uploads go through a single flag:
+## Quick start
 
 ```bash
-# .env.local
-NEXT_PUBLIC_LOCAL_FILE_UPLOAD=true   # store uploads on disk (local dev)
-NEXT_PUBLIC_LOCAL_FILE_UPLOAD=false  # (or unset) upload to Cloudinary
+# From the repository root
+pnpm install
+pnpm --filter @mcom/web dev      # next dev -p 3005
 ```
 
-- `true` — files are written to `public/uploads/<folder>/` and the returned
-  URL (`/uploads/<folder>/<file>`) is stored in the database. The folder is
-  gitignored, so uploads are never committed.
-- `false` / unset — the existing Cloudinary flow is used.
+Create `apps/web/.env.local` before starting (see root README §6). Minimum:
 
-Local file storage is intended for development only. On production hosts
-without a persistent disk, keep the flag unset/false and use Cloudinary.
+```dotenv
+NEXT_PUBLIC_APP_URL=http://localhost:3005
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1
+NEXT_PUBLIC_BYPASS_SSO=false
+NEXT_PUBLIC_LOCAL_FILE_UPLOAD=true
+```
 
-## Learn More
+`NEXT_PUBLIC_*` values are inlined at build time — restart `next dev` after
+changing them.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Purpose |
+| --- | --- |
+| `pnpm --filter @mcom/web dev` | Dev server on port 3005 |
+| `pnpm --filter @mcom/web build` | Production build |
+| `pnpm --filter @mcom/web start` | Serve the production build |
+| `pnpm --filter @mcom/web lint` | ESLint |
+| `pnpm --filter @mcom/web test:e2e` | Playwright (auto-starts dev server) |
+| `pnpm --filter @mcom/web test:e2e:ui` | Playwright UI mode |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Install browsers once: `pnpm --filter @mcom/web exec playwright install`.
 
-## Deploy on Vercel
+## Layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/app/` — App Router routes:
+  - `(others)/` public marketing site, checkout, legal
+  - `dashboard/` business dashboard
+  - `admin/` platform admin
+  - `participant/` customer portal
+  - `plaque-user/`, `staff/` role dashboards
+  - `auth/`, `sso/`, `sso-login/`, `login/`, `signup/`, `onboarding/`
+  - `api/` route handlers for uploads and Cloudinary signing
+- `src/components/` — shared and feature UI (`ui/` = shadcn/Radix primitives).
+- `src/services/` — Axios client (`api.ts`) plus per-domain services/hooks.
+- `src/lib/` — auth cookies, SSO URL helpers, utilities.
+- `src/context/`, `src/hooks/`, `src/types/`.
+- `src/proxy.ts` — protects `/dashboard/*` (Next 16 proxy convention).
+- `e2e/` — Playwright specs.
+- `public/uploads/` — local upload destination (gitignored).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Auth & uploads
+
+- Tokens live in `mcom_rewards_access` / `mcom_rewards_refresh` cookies; the
+  Axios interceptor refreshes them on `401`, and `AuthBootstrap` restores the
+  session on load.
+- `NEXT_PUBLIC_BYPASS_SSO=true` disables frontend SSO redirects only; API calls
+  still require a valid JWT.
+- `NEXT_PUBLIC_LOCAL_FILE_UPLOAD=true` stores files in `public/uploads`;
+  otherwise uploads go to Cloudinary (`CLOUDINARY_*` + `NEXT_PUBLIC_CLOUDINARY_*`).

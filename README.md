@@ -146,6 +146,11 @@ The API **runs pending migrations automatically on boot** (`migrationsRun: true`
 in `src/database/data-source.ts`). If the database does not exist or credentials
 are wrong, the API will fail during startup.
 
+A brand-new empty database is fully provisioned by the migration chain — no
+dump or manual SQL is required. The chain starts with
+`1764182062300-BaselineSchema.ts`, which creates the schema that predates the
+migration history (see §7).
+
 Optional demo data (⚠️ **wipes existing data first**):
 
 ```bash
@@ -166,6 +171,7 @@ the task.
 | `pnpm build` | Builds API (`nest build`) and web (`next build`) |
 | `pnpm lint` | ESLint for both workspaces |
 | `pnpm test` | Runs `test` in workspaces that define it (currently the API/Jest) |
+| `pnpm verify:migrations` | Builds a throwaway database from migrations and asserts the schema matches the entities |
 | `pnpm format` | Prettier write (API; web has no format script) |
 
 Target one app with pnpm filters:
@@ -358,6 +364,36 @@ Guidelines:
 - Never edit an already-applied migration; add a new one.
 - Keep migrations runnable on a fresh database (CI/e2e depend on this).
 - Because migrations auto-run on API boot, a broken migration blocks startup.
+
+#### Baseline and existing databases
+
+The original schema was created outside TypeORM (synchronize / an earlier
+codebase), so migrations from `1764182062301` onward assumed tables such as
+`categories`, `participants`, `businesses`, `payment_history` already existed.
+`1764182062300-BaselineSchema.ts` supplies that starting point, and
+`1770000000022-SyncSchemaDrift.ts` reconciles the index/constraint naming drift
+that pre-existing databases accumulated from synchronize runs.
+
+**Databases created before these files were added already contain the schema**,
+so the baseline must be recorded as applied instead of executed. Run this once
+per existing environment (dev/staging/prod) before the next deploy:
+
+```sql
+INSERT INTO migrations (timestamp, name)
+VALUES (1764182062300, 'BaselineSchema1764182062300');
+```
+
+Then apply the remaining migrations normally (`migration:run` or
+`migration:run:prod`). Databases created after this change need no manual step.
+
+Verify that a clean database can still be built from scratch:
+
+```bash
+pnpm verify:migrations
+```
+
+This creates a throwaway database, runs every migration, asserts that
+`schema:log` is empty, and drops the database.
 
 ### Seeders
 

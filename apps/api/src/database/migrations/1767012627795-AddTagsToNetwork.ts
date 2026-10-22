@@ -1,31 +1,19 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
+/**
+ * Duplicate of AddTagsToNetwork1767012420291 (same statements, different
+ * timestamp). Both cannot run against a fresh database because the first one
+ * already creates the enum types and columns. Existing databases recorded both
+ * as applied, so this one is kept as a no-op to preserve migration history.
+ */
 export class AddTagsToNetwork1767012627795 implements MigrationInterface {
   name = "AddTagsToNetwork1767012627795";
 
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `CREATE TYPE "public"."networks_locationtag_enum" AS ENUM('nearby', 'hyperlocal', 'national')`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "networks" ADD "locationTag" "public"."networks_locationtag_enum"`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."networks_relationshiptag_enum" AS ENUM('partner', 'customer', 'supplier', 'affiliate')`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "networks" ADD "relationshipTag" "public"."networks_relationshiptag_enum"`,
-    );
+  public async up(_queryRunner: QueryRunner): Promise<void> {
+    // superseded by AddTagsToNetwork1767012420291
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "networks" DROP COLUMN "relationshipTag"`,
-    );
-    await queryRunner.query(
-      `DROP TYPE "public"."networks_relationshiptag_enum"`,
-    );
-    await queryRunner.query(`ALTER TABLE "networks" DROP COLUMN "locationTag"`);
-    await queryRunner.query(`DROP TYPE "public"."networks_locationtag_enum"`);
+  public async down(_queryRunner: QueryRunner): Promise<void> {
+    // nothing to revert
   }
 }

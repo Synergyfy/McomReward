@@ -149,11 +149,15 @@ export class StampPackageService {
     businessId: string,
     transactionId: string,
     provider: string,
+    checkoutId?: string,
+    chargeId?: string,
   ) {
     const verification = await this.paymentService.verifyPackagePurchase(
       { id: businessId },
       transactionId,
       provider,
+      checkoutId,
+      chargeId,
     );
 
     const pkg = await this.findOne(verification.packageId);

@@ -2,18 +2,19 @@
 
 import { FormEvent, useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { useStripeVerify } from '@/services/payment/hook';
-import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 interface StripePaymentFormProps {
-  onSuccess: (transactionId: string) => void;
+  onSuccess: (paymentIntentId: string) => void;
 }
 
+/**
+ * Stripe Elements form for MCOM Pay charges. The parent owns the charge and
+ * calls the confirm endpoint with the returned PaymentIntent id.
+ */
 const StripePaymentForm = ({ onSuccess }: StripePaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
-  const { mutate: verifyStripe, isPending: isVerifying } = useStripeVerify();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
@@ -21,11 +22,10 @@ const StripePaymentForm = ({ onSuccess }: StripePaymentFormProps) => {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements) {
-      return;
-    }
+    if (!stripe || !elements) return;
 
     setIsLoading(true);
+    setErrorMessage(undefined);
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -39,24 +39,16 @@ const StripePaymentForm = ({ onSuccess }: StripePaymentFormProps) => {
     }
 
     if (paymentIntent && paymentIntent.status === 'succeeded') {
-      verifyStripe(
-        { transaction_id: paymentIntent.id },
-        {
-          onSuccess: () => {
-            onSuccess(paymentIntent.id);
-          },
-          onError: (error) => {
-            console.error('Stripe verification failed:', error);
-            toast.error('Failed to verify Stripe payment. Please contact support.');
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
-        }
-      );
-    } else {
-      setIsLoading(false);
+      onSuccess(paymentIntent.id);
+      return;
     }
+
+    setErrorMessage(
+      paymentIntent
+        ? `Payment is not complete (status: ${paymentIntent.status}).`
+        : 'Payment could not be completed.',
+    );
+    setIsLoading(false);
   };
 
   return (

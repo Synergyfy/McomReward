@@ -1,62 +1,42 @@
-import { Module, forwardRef } from "@nestjs/common";
-import { PaymentService } from "./payment.service";
-import { PaymentController } from "./payment.controller";
-import { CashbackController } from "./cashback.controller";
+import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Tier } from "../tier/entities/tier.entity";
-import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
-import { PlanPayment } from "../plans/entities/plan-payment.entity";
-import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
-import { StripeService } from "./stripe.service";
-import { PaypalService } from "./paypal.service";
 import { ConfigModule } from "@nestjs/config";
-import { CouponModule } from "../coupon/coupon.module";
+import { PaymentService } from "./payment.service";
+import { CashbackController } from "./cashback.controller";
+import { McomPaymentWebhookController } from "./mcom-payment-webhook.controller";
+import { PaymentCheckoutController } from "./payment-checkout.controller";
 import { Business } from "../business/entities/business.entity";
-import { QrPlaquesModule } from "../qr-plaques/qr-plaques.module";
-import { AuthModule } from "../../auth/auth.module";
-import { UserModule } from "../../user/user.module";
-import { ReferralModule } from "../referral/referral.module";
-
-import { PointPackage } from "../point-package/entities/point-package.entity";
-import { BusinessPointPackage } from "../point-package/entities/business-point-package.entity";
-import { StampPackage } from "../stamp/entities/stamp-package.entity";
-import { BusinessStampPackage } from "../stamp/entities/business-stamp-package.entity";
-import { WalletModule } from "../wallet/wallet.module";
+import { PaymentCheckout } from "./entities/payment-checkout.entity";
 import { CentralIntegrationService } from "./central-integration.service";
+import { McomPaymentsService } from "./mcom-payments.service";
+import { PaymentCheckoutService } from "./payment-checkout.service";
+import { PaymentFulfillmentService } from "./payment-fulfillment.service";
+import { McomPaymentWebhookService } from "./mcom-payment-webhook.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Tier,
-      PlanSubscription,
-      PlanPayment,
-      PaymentHistory,
-      Business,
-      PointPackage,
-      BusinessPointPackage,
-      StampPackage,
-      BusinessStampPackage,
-    ]),
+    TypeOrmModule.forFeature([Business, PaymentCheckout]),
     ConfigModule,
-    CouponModule,
-    QrPlaquesModule,
-    forwardRef(() => AuthModule),
-    UserModule,
-    WalletModule,
-    ReferralModule,
   ],
-  controllers: [PaymentController, CashbackController],
+  controllers: [
+    CashbackController,
+    McomPaymentWebhookController,
+    PaymentCheckoutController,
+  ],
   providers: [
     PaymentService,
-    StripeService,
-    PaypalService,
     CentralIntegrationService,
+    McomPaymentsService,
+    PaymentCheckoutService,
+    PaymentFulfillmentService,
+    McomPaymentWebhookService,
   ],
   exports: [
     PaymentService,
-    StripeService,
-    PaypalService,
     CentralIntegrationService,
+    McomPaymentsService,
+    PaymentCheckoutService,
+    PaymentFulfillmentService,
   ],
 })
 export class PaymentModule {}

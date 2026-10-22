@@ -3,8 +3,8 @@ import {
   IsNumber,
   IsInt,
   IsEnum,
+  IsOptional,
   IsString,
-  IsNotEmpty,
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { PaymentProvider } from "../enums/group-circle.enums";
@@ -26,8 +26,18 @@ export class VerifyContributionDto {
   @IsEnum(PaymentProvider)
   provider: PaymentProvider;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  transactionId: string;
+  @IsOptional()
+  transactionId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  checkoutId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  chargeId?: string;
 }

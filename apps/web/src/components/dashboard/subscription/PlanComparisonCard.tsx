@@ -25,7 +25,7 @@ export default function PlanComparisonCard({ plan, onChoosePlan, billingCycle }:
 
   const handleStartTrial = () => {
     // Redirect to checkout with trial flag and selected billing cycle
-    router.push(`/checkout?plan=${encodeURIComponent(plan.id)}&billing=${billingCycle}&isTrial=true`);
+    router.push('/dashboard/subscription');
   };
 
   return (

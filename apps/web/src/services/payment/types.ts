@@ -172,10 +172,16 @@ export interface BuyPackageDto {
 
 export interface ConfirmPurchaseDto {
     /** Transaction ID from the payment provider */
-    transactionId: string;
+    transactionId?: string;
 
-    /** Payment provider ('stripe' or 'paypal') */
+    /** Payment provider ('stripe' | 'paypal' | 'wallet') */
     provider: string;
+
+    /** Local checkout id returned by the buy/initiate call */
+    checkoutId?: string;
+
+    /** MCOM Pay charge id returned by the buy/initiate call */
+    chargeId?: string;
 }
 
 export interface ConfirmPurchaseResponse {

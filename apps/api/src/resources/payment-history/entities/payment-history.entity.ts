@@ -6,6 +6,7 @@ import { PlanSubscription } from "../../plans/entities/plan-subscription.entity"
 export enum PaymentProvider {
   STRIPE = "stripe",
   PAYPAL = "paypal",
+  MCOM_WALLET = "mcom_wallet",
 }
 
 export enum PaymentStatus {

@@ -24,8 +24,12 @@ export interface InitiateContributionDto {
 }
 
 export interface InitiateContributionResponse {
+    checkoutId?: string;
+    chargeId?: string;
     clientSecret?: string;
+    approvalUrl?: string;
     orderId?: string;
+    status?: string;
 }
 
 export interface VerifyContributionDto {
@@ -33,7 +37,9 @@ export interface VerifyContributionDto {
     amount: number;
     round: number;
     provider: ContributionProvider;
-    transactionId: string;
+    transactionId?: string;
+    checkoutId?: string;
+    chargeId?: string;
 }
 
 export interface Contribution {

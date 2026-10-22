@@ -27,6 +27,7 @@ import {
   McomPlan,
   useGetPurchasablePlans,
   useGetMyPackage,
+  useSetAutoRenew,
 } from '@/services/mcom-packages';
 import { toast } from 'sonner';
 
@@ -41,6 +42,7 @@ export default function SubscriptionDashboardPage() {
   // consulted for reads — purchase confirm + webhook write locally.
   const { data: plans, isLoading: isLoadingPlans, refetch: refetchPlans } = useGetPurchasablePlans();
   const { data: myPackage, isLoading: isLoadingMyPackage, refetch: refetchMyPackage } = useGetMyPackage();
+  const { mutate: setAutoRenew, isPending: isUpdatingAutoRenew } = useSetAutoRenew();
 
   const handleChoosePlan = (plan: McomPlan, variant?: any) => {
     setSelectedPlan({
@@ -108,6 +110,16 @@ export default function SubscriptionDashboardPage() {
 
   const currentTierName = currentPlanName;
 
+  const mypackageBillingLabel = myPackage?.billingMethod
+    ? ` via ${
+        myPackage.billingMethod === 'wallet'
+          ? 'MCOM Wallet'
+          : myPackage.billingMethod === 'paypal'
+            ? 'PayPal'
+            : 'card'
+      }`
+    : '';
+
   /** A card is "current" only when plan AND billed variant match the local membership. */
   const isPlanCurrent = (plan: McomPlan) => {
     if (isExpired) return false;
@@ -129,22 +141,56 @@ export default function SubscriptionDashboardPage() {
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              try {
-                await api.get('/sso/entitlement');
-              } catch {}
-              refetchPlans();
-              refetchMyPackage();
-              toast.info('Refreshed subscription and entitlement status');
-            }}
-            className="gap-2 self-start sm:self-auto"
-          >
-            <RefreshCw size={14} />
-            <span>Refresh Status</span>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            {myPackage?.planName && myPackage?.planName !== 'Free' && !isExpired && (
+              <Button
+                variant={myPackage?.autoRenew ? 'ghost' : 'default'}
+                size="sm"
+                disabled={isUpdatingAutoRenew}
+                onClick={() =>
+                  setAutoRenew(!myPackage?.autoRenew, {
+                    onSuccess: () => {
+                      refetchMyPackage();
+                      toast.success(
+                        myPackage?.autoRenew
+                          ? 'Automatic renewal cancelled. Access remains until the period ends.'
+                          : 'Automatic renewal resumed.',
+                      );
+                    },
+                    onError: () =>
+                      toast.error('Could not update automatic renewal.'),
+                  })
+                }
+                className="gap-2"
+              >
+                {isUpdatingAutoRenew ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={14} />
+                )}
+                <span>
+                  {myPackage?.autoRenew ? 'Cancel auto-renew' : 'Resume auto-renew'}
+                </span>
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await api.get('/sso/entitlement');
+                } catch {}
+                refetchPlans();
+                refetchMyPackage();
+                toast.info('Refreshed subscription and entitlement status');
+              }}
+              className="gap-2"
+            >
+              <RefreshCw size={14} />
+              <span>Refresh Status</span>
+            </Button>
+          </div>
         </div>
 
         {/* Current Subscription Status Card */}
@@ -199,6 +245,19 @@ export default function SubscriptionDashboardPage() {
                     ? 'You are on the free tier. Upgrade to unlock multiple campaigns, CRM tools, and point allowances.'
                     : 'Your business is fully unlocked with active ecosystem quotas and features.'}
                 </p>
+                {!isExpired && !isMembershipBundle && !isTrialProgramme && myPackage?.autoRenew && (
+                  <p className="text-[11px] text-gray-400">
+                    Auto-renews{mypackageBillingLabel} · Next charge{' '}
+                    {myPackage?.nextBillingAt
+                      ? new Date(myPackage.nextBillingAt).toLocaleDateString('en-GB')
+                      : expiresAtFormatted || 'at period end'}
+                  </p>
+                )}
+                {myPackage?.membershipStatus === 'past_due' && (
+                  <p className="text-[11px] text-amber-300">
+                    Renewal failed. Update your MCOM Wallet balance to keep access.
+                  </p>
+                )}
               </div>
 
               {expiresAtFormatted && (

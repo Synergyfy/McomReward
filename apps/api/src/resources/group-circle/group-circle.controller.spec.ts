@@ -47,8 +47,7 @@ describe("GroupCircleController", () => {
       await controller.getMessages(
         circleId,
         business,
-        2,
-        10,
+        { page: 2, limit: 10 } as any,
         GroupMessageType.GROUP,
         "mem1",
       );
@@ -66,7 +65,7 @@ describe("GroupCircleController", () => {
       const business = { id: "bus1" } as Business;
       const circleId = "circle1";
 
-      await controller.getMessages(circleId, business);
+      await controller.getMessages(circleId, business, { page: 1, limit: 20 } as any);
       expect(service.getMessages).toHaveBeenCalledWith(
         circleId,
         "bus1",

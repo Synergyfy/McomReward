@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, OneToOne, JoinColumn } from "typeorm";
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 import { Business } from "../../business/entities/business.entity";
@@ -11,6 +18,13 @@ export enum SubscriptionStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
   EXPIRED = "expired",
+  PAST_DUE = "past_due",
+}
+
+export enum SubscriptionBillingMethod {
+  WALLET = "wallet",
+  STRIPE = "stripe",
+  PAYPAL = "paypal",
 }
 
 export enum SubscriptionPlanType {
@@ -141,4 +155,60 @@ export class PlanSubscription extends AbstractBaseEntity {
   @OneToOne(() => PlanPayment, { nullable: true, cascade: true })
   @JoinColumn({ name: "payment_id" })
   payment?: PlanPayment;
+
+  @ApiProperty({
+    description: "Whether the subscription renews automatically",
+    default: false,
+  })
+  @Column({ name: "auto_renew", default: false })
+  autoRenew: boolean;
+
+  @ApiProperty({
+    description: "Funding method used for renewals",
+    enum: SubscriptionBillingMethod,
+    required: false,
+  })
+  @Column({
+    name: "billing_method",
+    type: "enum",
+    enum: SubscriptionBillingMethod,
+    nullable: true,
+  })
+  billingMethod?: SubscriptionBillingMethod;
+
+  @ApiProperty({
+    description: "Anchor date used to calculate renewal periods",
+    required: false,
+  })
+  @Column({ name: "billing_anchor", type: "timestamptz", nullable: true })
+  billingAnchor?: Date;
+
+  @ApiProperty({
+    description: "When the next renewal charge should run",
+    required: false,
+  })
+  @Index()
+  @Column({ name: "next_billing_at", type: "timestamptz", nullable: true })
+  nextBillingAt?: Date;
+
+  @ApiProperty({
+    description: "Access remains until this date while a renewal is past due",
+    required: false,
+  })
+  @Column({ name: "grace_until", type: "timestamptz", nullable: true })
+  graceUntil?: Date;
+
+  @ApiProperty({
+    description: "Consecutive failed renewal attempts for the current period",
+    default: 0,
+  })
+  @Column({ name: "renewal_attempts", type: "int", default: 0 })
+  renewalAttempts: number;
+
+  @ApiProperty({
+    description: "When the subscription was cancelled",
+    required: false,
+  })
+  @Column({ name: "canceled_at", type: "timestamptz", nullable: true })
+  canceledAt?: Date;
 }

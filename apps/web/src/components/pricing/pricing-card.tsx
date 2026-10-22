@@ -64,7 +64,7 @@ export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
       </ul>
 
       <Link
-        href={`/checkout?plan=${encodeURIComponent(tier.id)}&billing=${billingCycle}`}
+        href="/dashboard/subscription"
         className="w-full inline-block text-center py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 mb-3 bg-primary text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground shadow-md"
       >
         {tier.name === "Trial" ? "Start Trial" : `Choose ${tier.name}`}
@@ -72,7 +72,7 @@ export default function PricingCard({ tier, billingCycle }: PricingCardProps) {
 
       {tier.name !== "Trial" && (
         <button
-          onClick={() => router.push(`/checkout?plan=${encodeURIComponent(tier.id)}&billing=${billingCycle}&isTrial=true`)}
+          onClick={() => router.push('/dashboard/subscription')}
           className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 border-2 border-primary text-primary group-hover:border-primary-foreground group-hover:text-primary-foreground group-hover:bg-primary-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           Start Trial

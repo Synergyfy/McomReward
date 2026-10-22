@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from "@nestjs/common";
+import { Controller, Get, Post, Body, UseGuards } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -78,5 +78,21 @@ export class McomPackagesController {
   })
   async getMyActivePackage(@CurrentUser() user: any) {
     return this.mcomPackagesService.getMyActivePackage(user.id);
+  }
+
+  @Post("subscription/cancel")
+  @ApiBearerAuth()
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "Stop automatic renewal for the current plan" })
+  async cancelAutoRenew(@CurrentUser() user: any) {
+    return this.mcomPackagesService.setAutoRenew(user.id, false);
+  }
+
+  @Post("subscription/resume")
+  @ApiBearerAuth()
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "Resume automatic renewal for the current plan" })
+  async resumeAutoRenew(@CurrentUser() user: any) {
+    return this.mcomPackagesService.setAutoRenew(user.id, true);
   }
 }

@@ -1,477 +1,143 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { getRepositoryToken } from "@nestjs/typeorm";
 import { PaymentService } from "./payment.service";
-import { Tier } from "../tier/entities/tier.entity";
 import {
-  PlanSubscription,
-  PlanType,
-} from "../plans/entities/plan-subscription.entity";
-import { PaymentHistory } from "../payment-history/entities/payment-history.entity";
-import { StripeService } from "./stripe.service";
-import { PaypalService } from "./paypal.service";
-import { CouponService } from "../coupon/coupon.service";
-import { Coupon, DiscountType } from "../coupon/entities/coupon.entity";
-import { Business } from "../business/entities/business.entity";
-import { ConfigService } from "@nestjs/config";
-import { QrPlaquesService } from "../qr-plaques/qr-plaques.service";
-import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
-import { PointPackage } from "../point-package/entities/point-package.entity";
-import { BusinessPointPackage } from "../point-package/entities/business-point-package.entity";
+  PaymentCheckoutMethod,
+  PaymentCheckoutPurpose,
+  PaymentCheckoutStatus,
+} from "./entities/payment-checkout.entity";
 
-describe("PaymentService", () => {
+describe("PaymentService (MCOM Pay packages)", () => {
   let service: PaymentService;
+  let businessRepository: any;
+  let mcomPayments: any;
+  let checkoutService: any;
+  let centralIntegration: any;
 
-  const mockTierRepository = {
-    findOne: jest.fn(),
-  };
+  const business = { id: "business-1", email: "owner@example.com" };
 
-  const mockPlanSubscriptionRepository = {
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-  };
+  beforeEach(() => {
+    businessRepository = {
+      findOne: jest.fn().mockResolvedValue(business),
+    };
+    mcomPayments = {
+      createCharge: jest.fn(),
+      confirmCharge: jest.fn(),
+      topUpUrl: jest
+        .fn()
+        .mockReturnValue("http://localhost:3000/dashboard/wallet"),
+      toHttpException: jest.fn((error) => {
+        throw error;
+      }),
+    };
+    checkoutService = {
+      getOrCreate: jest.fn(),
+      attachCharge: jest.fn(),
+      markFailed: jest.fn(),
+      markPaid: jest.fn(),
+      findById: jest.fn(),
+      findByChargeId: jest.fn(),
+      findByProviderRef: jest.fn(),
+    };
+    centralIntegration = {
+      processCashback: jest.fn().mockResolvedValue({ success: true }),
+    };
 
-  const mockPaymentHistoryRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockBusinessRepository = {
-    update: jest.fn(),
-    findOne: jest.fn(),
-  };
-
-  const mockStripeService = {
-    createPaymentIntent: jest.fn(),
-    verifyPayment: jest.fn(),
-    createCustomer: jest.fn(),
-    createSubscription: jest.fn(),
-  };
-
-  const mockPaypalService = {
-    createOrder: jest.fn(),
-    capturePayment: jest.fn(),
-    createSubscription: jest.fn(),
-    getSubscription: jest.fn(),
-  };
-
-  const mockCouponService = {
-    findOne: jest.fn(),
-    findByCode: jest.fn(),
-  };
-
-  const mockConfigService = {
-    get: jest.fn(),
-  };
-
-  const mockQrPlaquesService = {
-    ensurePlaqueCountForBusiness: jest.fn(),
-  };
-
-  const mockPointPackageRepository = {
-    find: jest.fn(),
-    findOne: jest.fn(),
-  };
-
-  const mockBusinessPointPackageRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentService,
-        {
-          provide: getRepositoryToken(Tier),
-          useValue: mockTierRepository,
-        },
-        {
-          provide: getRepositoryToken(PlanSubscription),
-          useValue: mockPlanSubscriptionRepository,
-        },
-        {
-          provide: getRepositoryToken(PaymentHistory),
-          useValue: mockPaymentHistoryRepository,
-        },
-        {
-          provide: getRepositoryToken(Business),
-          useValue: mockBusinessRepository,
-        },
-        {
-          provide: StripeService,
-          useValue: mockStripeService,
-        },
-        {
-          provide: PaypalService,
-          useValue: mockPaypalService,
-        },
-        {
-          provide: CouponService,
-          useValue: mockCouponService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-        {
-          provide: QrPlaquesService,
-          useValue: mockQrPlaquesService,
-        },
-        {
-          provide: getRepositoryToken(PointPackage),
-          useValue: mockPointPackageRepository,
-        },
-        {
-          provide: getRepositoryToken(BusinessPointPackage),
-          useValue: mockBusinessPointPackageRepository,
-        },
-      ],
-    }).compile();
-
-    service = module.get<PaymentService>(PaymentService);
+    service = new PaymentService(
+      businessRepository,
+      mcomPayments,
+      checkoutService,
+      centralIntegration,
+    );
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  it("creates a point-package charge server-side in minor units", async () => {
+    const checkout = {
+      id: "checkout-1",
+      businessId: business.id,
+      purpose: PaymentCheckoutPurpose.POINT_PACKAGE,
+      amountMinor: "2500",
+      currency: "GBP",
+      method: PaymentCheckoutMethod.STRIPE,
+    };
+    checkoutService.getOrCreate.mockResolvedValue(checkout);
+    checkoutService.attachCharge.mockImplementation(async (c) => c);
+    mcomPayments.createCharge.mockResolvedValue({
+      charge: {
+        id: "ch_1",
+        status: "pending",
+        amountMinor: "2500",
+        method: "stripe",
+      },
+      clientSecret: "pi_1_secret_x",
+    });
+
+    const result = await service.initiatePackagePurchase(
+      { id: business.id },
+      "pkg-1",
+      25,
+      "stripe",
+      "POINT",
+      "Gold Points",
+    );
+
+    expect(result.checkoutId).toBe("checkout-1");
+    expect(result.chargeId).toBe("ch_1");
+    expect(result.clientSecret).toBe("pi_1_secret_x");
+    expect(mcomPayments.createCharge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountMinor: "2500",
+        method: "stripe",
+        reference: expect.stringContaining("point-business-1-pkg-1"),
+      }),
+    );
   });
 
-  it("should be defined", () => {
-    expect(service).toBeDefined();
+  it("confirms the charge and returns the package metadata", async () => {
+    const checkout = {
+      id: "checkout-1",
+      businessId: business.id,
+      purpose: PaymentCheckoutPurpose.POINT_PACKAGE,
+      chargeId: "ch_1",
+      amountMinor: "2500",
+      currency: "GBP",
+      method: PaymentCheckoutMethod.STRIPE,
+      status: PaymentCheckoutStatus.PENDING,
+      purposeRef: "pkg-1",
+      metadata: { packageId: "pkg-1", packageType: "POINT" },
+    };
+    checkoutService.findByProviderRef.mockResolvedValue(checkout);
+    mcomPayments.confirmCharge.mockResolvedValue({
+      charge: { id: "ch_1", status: "paid", amountMinor: "2500" },
+    });
+    checkoutService.attachCharge.mockResolvedValue(checkout);
+
+    const result = await service.verifyPackagePurchase(
+      { id: business.id },
+      "pi_1",
+      "stripe",
+    );
+
+    expect(result.status).toBe("succeeded");
+    expect(result.packageId).toBe("pkg-1");
+    expect(result.amount).toBe(25);
+    expect(centralIntegration.processCashback).toHaveBeenCalledWith(
+      business.email,
+      25,
+      "POINT_PACKAGE_PURCHASE",
+      "ch_1",
+    );
   });
 
-  describe("initiateStripePayment", () => {
-    it("should throw an error if tier not found", async () => {
-      mockTierRepository.findOne.mockResolvedValue(null);
-      await expect(
-        service.initiateStripePayment(
-          { tier_id: "1", plan_type: PlanType.MONTHLY },
-          {},
-        ),
-      ).rejects.toThrow("Tier not found");
+  it("rejects a payment that belongs to another business", async () => {
+    checkoutService.findByProviderRef.mockResolvedValue({
+      id: "checkout-1",
+      businessId: "someone-else",
+      purpose: PaymentCheckoutPurpose.POINT_PACKAGE,
+      amountMinor: "2500",
+      status: PaymentCheckoutStatus.PENDING,
     });
 
-    it("should initiate a stripe payment without a coupon", async () => {
-      mockTierRepository.findOne.mockResolvedValue({
-        id: "1",
-        monthly_price: 10,
-        annual_price: 100,
-      });
-      mockStripeService.createPaymentIntent.mockResolvedValue({
-        client_secret: "secret",
-      });
-      const result = await service.initiateStripePayment(
-        { tier_id: "1", plan_type: PlanType.MONTHLY },
-        {},
-      );
-      expect(result).toEqual({ clientSecret: "secret" });
-      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith(
-        1000,
-        "gbp",
-        {
-          tier_id: "1",
-          plan_type: PlanType.MONTHLY,
-        },
-      );
-    });
-
-    it("should initiate a stripe payment with a coupon", async () => {
-      mockTierRepository.findOne.mockResolvedValue({
-        id: "1",
-        monthly_price: 10,
-        annual_price: 100,
-      });
-      mockCouponService.findByCode.mockResolvedValue({
-        id: "1",
-        discount_type: DiscountType.FIXED_AMOUNT,
-        discount_value: 5,
-        expires_at: new Date(new Date().getTime() + 86400000),
-        is_active: true,
-      });
-      mockStripeService.createPaymentIntent.mockResolvedValue({
-        client_secret: "secret",
-      });
-      const result = await service.initiateStripePayment(
-        { tier_id: "1", plan_type: PlanType.MONTHLY, coupon_code: "coupon" },
-        {},
-      );
-      expect(result).toEqual({ clientSecret: "secret" });
-      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith(
-        500,
-        "gbp",
-        {
-          tier_id: "1",
-          plan_type: PlanType.MONTHLY,
-        },
-      );
-    });
-
-    it("should not let the amount be less than 0", async () => {
-      mockTierRepository.findOne.mockResolvedValue({
-        id: "1",
-        monthly_price: 10,
-        annual_price: 100,
-      });
-      mockCouponService.findByCode.mockResolvedValue({
-        id: "1",
-        discount_type: DiscountType.FIXED_AMOUNT,
-        discount_value: 15,
-        expires_at: new Date(new Date().getTime() + 86400000),
-        is_active: true,
-      });
-      mockStripeService.createPaymentIntent.mockResolvedValue({
-        client_secret: "secret",
-      });
-      const result = await service.initiateStripePayment(
-        { tier_id: "1", plan_type: PlanType.MONTHLY, coupon_code: "coupon" },
-        {},
-      );
-      expect(result).toEqual({ clientSecret: "secret" });
-      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith(
-        0,
-        "gbp",
-        {
-          tier_id: "1",
-          plan_type: PlanType.MONTHLY,
-        },
-      );
-    });
-
-    it("should initiate a stripe payment with point packages", async () => {
-      mockTierRepository.findOne.mockResolvedValue({
-        id: "1",
-        name: "Gold",
-        monthly_price: 10,
-        annual_price: 100,
-      });
-      mockPointPackageRepository.find.mockResolvedValue([
-        { id: "pkg1", name: "Package 1", price: 20 },
-      ]);
-      mockPointPackageRepository.findOne.mockResolvedValue({
-        id: "pkg1",
-        name: "Package 1",
-        tiers: [{ id: "1" }],
-      });
-      mockStripeService.createPaymentIntent.mockResolvedValue({
-        client_secret: "secret",
-      });
-
-      const result = await service.initiateStripePayment(
-        {
-          tier_id: "1",
-          plan_type: PlanType.MONTHLY,
-          point_package_ids: ["pkg1"],
-        },
-        {},
-      );
-
-      expect(result).toEqual({ clientSecret: "secret" });
-      // Amount should be 10 (tier) + 20 (package) = 30 * 100 = 3000
-      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith(
-        3000,
-        "gbp",
-        {
-          tier_id: "1",
-          plan_type: PlanType.MONTHLY,
-          point_package_ids: "pkg1",
-        },
-      );
-    });
-  });
-
-  describe("verifyStripePayment", () => {
-    it("should create a new membership on successful payment", async () => {
-      mockStripeService.verifyPayment.mockResolvedValue({
-        status: "succeeded",
-        id: "1",
-        amount: 1000,
-        metadata: { tier_id: "1", plan_type: "monthly" },
-      });
-      mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
-      mockPlanSubscriptionRepository.create.mockReturnValue({});
-      await service.verifyStripePayment(
-        { transaction_id: "1" },
-        { id: "1", role: "business" },
-      );
-      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
-      expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
-    });
-
-    it("should update an existing membership on successful payment", async () => {
-      mockStripeService.verifyPayment.mockResolvedValue({
-        status: "succeeded",
-        id: "1",
-        amount: 1000,
-        metadata: { tier_id: "1", plan_type: "monthly" },
-      });
-      mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockPlanSubscriptionRepository.findOne.mockResolvedValue({});
-      await service.verifyStripePayment(
-        { transaction_id: "1" },
-        { id: "1", role: "business" },
-      );
-      expect(mockPlanSubscriptionRepository.save).toHaveBeenCalled();
-      expect(mockPaymentHistoryRepository.save).toHaveBeenCalled();
-    });
-
-    it("should not create a membership on failed payment", async () => {
-      mockStripeService.verifyPayment.mockResolvedValue({ status: "failed" });
-      await service.verifyStripePayment(
-        { transaction_id: "1" },
-        { id: "1", role: "business" },
-      );
-      expect(mockPlanSubscriptionRepository.create).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("initiatePaypalPayment", () => {
-    it("should initiate a paypal payment", async () => {
-      mockTierRepository.findOne.mockResolvedValue({
-        id: "1",
-        monthly_price: 10,
-        annual_price: 100,
-      });
-      mockPaypalService.createOrder.mockResolvedValue({ result: { id: "1" } });
-      const result = await service.initiatePaypalPayment(
-        { tier_id: "1", plan_type: PlanType.MONTHLY },
-        {},
-      );
-      expect(result).toEqual({ orderId: "1" });
-      expect(mockPaypalService.createOrder).toHaveBeenCalledWith(
-        10,
-        "GBP",
-        "1",
-        PlanType.MONTHLY,
-      );
-    });
-  });
-
-  describe("verifyPaypalPayment", () => {
-    it("should create a new membership on successful payment", async () => {
-      mockPaypalService.capturePayment.mockResolvedValue({
-        result: {
-          status: "COMPLETED",
-          id: "1",
-          purchaseUnits: [
-            {
-              referenceId: "1",
-              description: "monthly",
-              amount: { value: "10" },
-            },
-          ],
-        },
-      });
-      mockTierRepository.findOne.mockResolvedValue({ id: "1", qrCodeCount: 0 });
-      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
-      mockPlanSubscriptionRepository.create.mockReturnValue({});
-      await service.verifyPaypalPayment(
-        { transaction_id: "1" },
-        { id: "1", role: "business" },
-      );
-      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
-      expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
-    });
-  });
-
-  describe("subscribe", () => {
-    it("should create a Stripe subscription for Quarterly plan", async () => {
-      const tier = {
-        id: "1",
-        stripe_quarterly_price_id: "price_123",
-        name: "Gold",
-      };
-      mockTierRepository.findOne.mockResolvedValue(tier);
-      mockBusinessRepository.update.mockResolvedValue({});
-      mockStripeService.createSubscription.mockResolvedValue({ id: "sub_123" });
-
-      const business = {
-        id: "b1",
-        name: "Test Biz",
-        email: "test@test.com",
-        stripe_customer_id: "cus_123",
-      };
-      const dto = {
-        tier_id: "1",
-        plan_type: PlanType.QUARTERLY,
-        payment_token: "tok_123",
-        provider: PaymentProvider.STRIPE,
-      };
-
-      await service.subscribe(dto, business as any);
-
-      expect(mockStripeService.createSubscription).toHaveBeenCalledWith(
-        "cus_123",
-        "price_123",
-        undefined,
-      );
-    });
-
-    it("should create a PayPal subscription for Quarterly plan", async () => {
-      const tier = {
-        id: "1",
-        paypal_quarterly_plan_id: "P-123",
-        name: "Gold",
-      };
-      mockTierRepository.findOne.mockResolvedValue(tier);
-      mockPaypalService.createSubscription.mockResolvedValue({
-        subscriptionId: "sub_pp_123",
-        approvalUrl: "https://paypal.com/approve",
-      });
-
-      const business = { id: "b1", name: "Test Biz" };
-      const dto = {
-        tier_id: "1",
-        plan_type: PlanType.QUARTERLY,
-        provider: PaymentProvider.PAYPAL,
-        return_url: "https://return",
-        cancel_url: "https://cancel",
-      };
-
-      const result = await service.subscribe(dto, business as any);
-
-      expect(mockPaypalService.createSubscription).toHaveBeenCalledWith(
-        "P-123",
-        "https://return",
-        "https://cancel",
-      );
-      expect(result).toEqual({
-        status: "Subscription initiated",
-        subscriptionId: "sub_pp_123",
-        approvalUrl: "https://paypal.com/approve",
-      });
-    });
-  });
-
-  describe("verifyPaypalSubscription", () => {
-    it("should activate membership on active subscription", async () => {
-      const subscription = {
-        status: "ACTIVE",
-        plan_id: "P-123",
-        billing_info: {
-          next_billing_time: "2025-01-01T00:00:00Z",
-        },
-      };
-      mockPaypalService.getSubscription.mockResolvedValue(subscription);
-
-      const tier = {
-        id: "tier-1",
-        paypal_monthly_plan_id: "P-123",
-        monthly_price: 10,
-        qrCodeCount: 0,
-      };
-      mockTierRepository.findOne.mockResolvedValue(tier);
-      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
-      mockPlanSubscriptionRepository.create.mockReturnValue({});
-
-      const result = await service.verifyPaypalSubscription(
-        { subscription_id: "sub-123" },
-        { id: "u1", role: "business" },
-      );
-
-      expect(result.status).toBe("ACTIVE");
-      expect(mockPlanSubscriptionRepository.create).toHaveBeenCalled();
-      expect(mockPaymentHistoryRepository.create).toHaveBeenCalled();
-    });
+    await expect(
+      service.verifyPackagePurchase({ id: business.id }, "pi_1", "stripe"),
+    ).rejects.toThrow("another business");
   });
 });

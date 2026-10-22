@@ -8,8 +8,8 @@ import { GroupActivity } from "./entities/group-activity.entity";
 import { GroupCircleContribution } from "./entities/group-circle-contribution.entity";
 
 import { Network } from "../network/entities/network.entity";
-import { StripeService } from "../payment/stripe.service";
-import { PaypalService } from "../payment/paypal.service";
+import { McomPaymentsService } from "../payment/mcom-payments.service";
+import { PaymentCheckoutService } from "../payment/payment-checkout.service";
 import { Repository } from "typeorm";
 import { SendMessageDto } from "./dto/send-message.dto";
 import { Business } from "../business/entities/business.entity";
@@ -35,14 +35,22 @@ describe("GroupCircleService", () => {
     remove: jest.fn(),
   };
 
-  const mockStripeService = {
-    createPaymentIntent: jest.fn(),
-    verifyPayment: jest.fn(),
+  const mockMcomPayments = {
+    createCharge: jest.fn(),
+    confirmCharge: jest.fn(),
+    toHttpException: jest.fn((error) => {
+      throw error;
+    }),
   };
 
-  const mockPaypalService = {
-    createOrder: jest.fn(),
-    capturePayment: jest.fn(),
+  const mockCheckoutService = {
+    getOrCreate: jest.fn(),
+    attachCharge: jest.fn(),
+    markFailed: jest.fn(),
+    markPaid: jest.fn(),
+    findById: jest.fn(),
+    findByChargeId: jest.fn(),
+    findByProviderRef: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -59,8 +67,9 @@ describe("GroupCircleService", () => {
         },
         { provide: getRepositoryToken(Network), useValue: mockRepo },
         { provide: getRepositoryToken(Referral), useValue: mockRepo },
-        { provide: StripeService, useValue: mockStripeService },
-        { provide: PaypalService, useValue: mockPaypalService },
+        { provide: getRepositoryToken(Business), useValue: mockRepo },
+        { provide: McomPaymentsService, useValue: mockMcomPayments },
+        { provide: PaymentCheckoutService, useValue: mockCheckoutService },
       ],
     }).compile();
 

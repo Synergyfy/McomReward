@@ -23,7 +23,6 @@ import { useInitiateGroupCircleContribution, useVerifyGroupCircleContribution } 
 import { ContributionProvider, InitiateContributionResponse } from "@/services/group-circle/types";
 import StripeProvider from "@/components/stripe-provider";
 import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 
 // Specialized Stripe Form for Circle Contributions
 function StripeContributionForm({
@@ -71,35 +70,6 @@ function StripeContributionForm({
     );
 }
 
-// Specialized PayPal Button for Circle Contributions
-function CircleContributionPayPalButton({
-    orderId,
-    onSuccess,
-    onError
-}: {
-    orderId: string;
-    onSuccess: () => void;
-    onError: (err: any) => void;
-}) {
-    const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-
-    if (!paypalClientId) return <div className="text-red-500 text-xs">PayPal not configured</div>;
-
-    return (
-        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: "GBP" }}>
-            <PayPalButtons
-                style={{ layout: "vertical", shape: "pill", height: 44 }}
-                createOrder={() => Promise.resolve(orderId)}
-                onApprove={async (data: any, actions: any) => {
-                    await actions.order.capture();
-                    onSuccess();
-                }}
-                onError={onError}
-            />
-        </PayPalScriptProvider>
-    );
-}
-
 export function ContributionDialog({
     open,
     onOpenChange,
@@ -143,6 +113,24 @@ export function ContributionDialog({
 
             if (provider === 'MANUAL') {
                 handleVerify("MANUAL_TX_" + Date.now());
+            } else if (provider === 'PAYPAL') {
+                if (!data.approvalUrl) {
+                    toast.error("PayPal did not return an approval link.");
+                    return;
+                }
+                // The callback page needs the local contribution context.
+                sessionStorage.setItem(
+                    'mcom-circle-contribution',
+                    JSON.stringify({
+                        circleId,
+                        memberId,
+                        amount: Number(amount),
+                        round: 1,
+                        checkoutId: data.checkoutId,
+                        chargeId: data.chargeId,
+                    }),
+                );
+                window.location.href = data.approvalUrl;
             } else {
                 setStep(2);
             }
@@ -161,7 +149,9 @@ export function ContributionDialog({
                     amount: Number(amount),
                     round: 1,
                     provider,
-                    transactionId
+                    transactionId,
+                    checkoutId: initiateData?.checkoutId,
+                    chargeId: initiateData?.chargeId,
                 }
             });
             setStep(3); // Success
@@ -262,35 +252,6 @@ export function ContributionDialog({
                                         onCancel={() => setStep(1)}
                                     />
                                 </StripeProvider>
-                            </motion.div>
-                        )}
-
-                        {step === 2 && provider === 'PAYPAL' && initiateData?.orderId && (
-                            <motion.div
-                                key="step2-paypal"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="space-y-6"
-                            >
-                                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                                        <Wallet className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-sm">PayPal Checkout</p>
-                                        <p className="text-[10px] text-muted-foreground font-medium underline">Order ID: {initiateData.orderId}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-white rounded-2xl border border-zinc-100 p-4 shadow-sm">
-                                    <CircleContributionPayPalButton
-                                        orderId={initiateData.orderId}
-                                        onSuccess={() => handleVerify(initiateData.orderId!)}
-                                        onError={(err) => toast.error("PayPal Payment Failed")}
-                                    />
-                                </div>
-                                <Button variant="ghost" onClick={() => setStep(1)} className="w-full rounded-xl">
-                                    Back to method selection
-                                </Button>
                             </motion.div>
                         )}
 

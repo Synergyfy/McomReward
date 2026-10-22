@@ -10,6 +10,7 @@ import { GroupCircleContribution } from "./entities/group-circle-contribution.en
 import { Network } from "../network/entities/network.entity";
 import { Referral } from "../referral/entities/referral.entity";
 import { PaymentModule } from "../payment/payment.module";
+import { Business } from "../business/entities/business.entity";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { PaymentModule } from "../payment/payment.module";
       GroupCircleContribution,
       Network,
       Referral,
+      Business,
     ]),
     PaymentModule,
   ],

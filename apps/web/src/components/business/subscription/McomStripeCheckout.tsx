@@ -9,6 +9,7 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 interface McomStripeCheckoutProps {
   externalPlanId: string;
   billingCycle: string;
+  checkoutId: string;
   intentType?: 'payment' | 'setup';
   amountText: string;
   onSuccess: () => void;
@@ -17,6 +18,7 @@ interface McomStripeCheckoutProps {
 export default function McomStripeCheckout({
   externalPlanId,
   billingCycle,
+  checkoutId,
   intentType = 'payment',
   amountText,
   onSuccess,
@@ -57,6 +59,7 @@ export default function McomStripeCheckout({
             billingCycle,
             setupIntentId: setupIntent.id,
             provider: 'stripe',
+            checkoutId,
           });
 
           toast.success('Subscription activated successfully!');
@@ -80,6 +83,7 @@ export default function McomStripeCheckout({
             billingCycle,
             paymentIntentId: paymentIntent.id,
             provider: 'stripe',
+            checkoutId,
           });
 
           toast.success('Payment succeeded! Your plan is now active.');

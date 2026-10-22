@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
   Req,
 } from "@nestjs/common";
 import { PointPackageService } from "./point-package.service";
@@ -22,8 +21,6 @@ import {
   ApiResponse,
   ApiBody,
 } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/role.enum";
 import { ConfirmPointPurchaseDto } from "../business/dto/confirm-point-purchase.dto";
@@ -151,6 +148,8 @@ export class PointPackageController {
       req.user.id,
       body.transactionId,
       body.provider,
+      body.checkoutId,
+      body.chargeId,
     );
   }
 

@@ -5,13 +5,13 @@ export class RefactorQrPlaque1765972274549 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_matching_point_history_business_created_at"`,
+      `DROP INDEX IF EXISTS "public"."IDX_matching_point_history_business_created_at"`,
     );
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_matching_point_history_business_activity_created_at"`,
+      `DROP INDEX IF EXISTS "public"."IDX_matching_point_history_business_activity_created_at"`,
     );
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_matching_point_history_description"`,
+      `DROP INDEX IF EXISTS "public"."IDX_matching_point_history_description"`,
     );
     await queryRunner.query(`ALTER TABLE "qr_plaques" DROP COLUMN "link"`);
     await queryRunner.query(

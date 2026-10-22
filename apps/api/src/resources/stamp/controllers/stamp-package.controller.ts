@@ -77,11 +77,15 @@ export class StampPackageController {
     @CurrentUser() user: any,
     @Body("transaction_id") transactionId: string,
     @Query("provider") provider: string = "stripe",
+    @Body("checkoutId") checkoutId?: string,
+    @Body("chargeId") chargeId?: string,
   ) {
     return this.stampPackageService.confirmPurchase(
       user.id,
       transactionId,
       provider,
+      checkoutId,
+      chargeId,
     );
   }
 

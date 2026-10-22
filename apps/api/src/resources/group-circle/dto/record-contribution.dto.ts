@@ -37,4 +37,14 @@ export class RecordContributionDto {
   @IsString()
   @IsOptional()
   transactionId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  checkoutId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  chargeId?: string;
 }

@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 export enum PaymentProviderType {
   STRIPE = "stripe",
@@ -54,4 +60,23 @@ export class InitiatePlatformPurchaseDto {
   @IsString()
   @IsOptional()
   cancelUrl?: string;
+
+  @ApiProperty({
+    description:
+      "Client-generated id for this checkout attempt. Retries with the same id and provider reuse the same MCOM Pay charge.",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  checkoutId?: string;
+
+  @ApiProperty({
+    description:
+      "Whether this plan should renew automatically. Wallet renewals auto-debit; card/PayPal renewals create a fresh charge each period.",
+    required: false,
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  autoRenew?: boolean;
 }

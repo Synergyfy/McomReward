@@ -12,12 +12,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { PointPackage, PaymentProvider, PayPalVerifyResponse } from '@/services/payment/types';
+import { PointPackage, PaymentProvider } from '@/services/payment/types';
 import { useBuyPointPackage, useConfirmPointPackagePurchase } from '@/services/payment/hook';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/components/stripe-provider';
 import StripePaymentForm from '@/components/stripe-payment-form';
-import PayPalButton from '@/components/paypal-button';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -38,7 +37,8 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
   const router = useRouter();
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>(PaymentProvider.STRIPE);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [payPalOrderId, setPayPalOrderId] = useState<string | null>(null);
+  const [approvalUrl, setApprovalUrl] = useState<string | null>(null);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
 
   const { mutate: buyPackage, isPending: isInitiatingBuy } = useBuyPointPackage();
   const { mutate: confirmPurchase, isPending: isConfirmingPurchase } = useConfirmPointPackagePurchase();
@@ -48,7 +48,8 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
       // Reset state when modal closes
       setSelectedProvider(PaymentProvider.STRIPE);
       setClientSecret(null);
-      setPayPalOrderId(null);
+      setApprovalUrl(null);
+      setCheckoutId(null);
     }
   }, [isOpen]);
 
@@ -59,14 +60,17 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
       { packageId: pointPackage.id, provider: selectedProvider },
       {
         onSuccess: (data) => {
+          if (data.checkoutId) setCheckoutId(data.checkoutId);
+
           if (selectedProvider === PaymentProvider.STRIPE && data.clientSecret) {
             setClientSecret(data.clientSecret);
             toast.info('Stripe payment initiated. Please complete the payment details.');
-          } else if (selectedProvider === PaymentProvider.PAYPAL && data.orderId) {
-            setPayPalOrderId(data.orderId);
-            toast.info('PayPal order created. Redirecting to PayPal or rendering button...');
+          } else if (selectedProvider === PaymentProvider.PAYPAL && data.approvalUrl) {
+            setApprovalUrl(data.approvalUrl);
+            toast.info('Redirecting to PayPal...');
+            window.location.href = data.approvalUrl;
           } else {
-            toast.error('Failed to initiate payment. No client secret or order ID received.');
+            toast.error('Failed to initiate payment. No payment handle was returned.');
           }
         },
         onError: (error) => {
@@ -81,7 +85,11 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
     if (!pointPackage) return;
 
     confirmPurchase(
-      { transactionId: transactionId, provider: PaymentProvider.STRIPE },
+      {
+        transactionId,
+        provider: PaymentProvider.STRIPE,
+        checkoutId: checkoutId || undefined,
+      },
       {
         onSuccess: () => {
           toast.success('Point package purchased successfully!');
@@ -95,32 +103,6 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
         },
       }
     );
-  };
-
-  const handlePayPalPaymentSuccess = (details: PayPalVerifyResponse, transactionId: string) => {
-    if (!pointPackage) return;
-
-    confirmPurchase(
-      { transactionId: transactionId, provider: PaymentProvider.PAYPAL },
-      {
-        onSuccess: () => {
-          toast.success('Point package purchased successfully!');
-          onPurchaseSuccess();
-          onClose();
-          router.refresh();
-        },
-        onError: (error) => {
-          console.error('Failed to confirm PayPal purchase:', error);
-          toast.error('Failed to confirm purchase. Please contact support.');
-        },
-      }
-    );
-  };
-
-  const handlePayPalPaymentError = (error: Error) => {
-    console.error('PayPal payment error:', error);
-    toast.error('PayPal payment failed or was cancelled.');
-    setPayPalOrderId(null);
   };
 
   return (
@@ -143,7 +125,8 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
               onValueChange={(value: PaymentProvider) => {
                 setSelectedProvider(value);
                 setClientSecret(null);
-                setPayPalOrderId(null);
+                setApprovalUrl(null);
+                setCheckoutId(null);
               }}
               className="grid grid-cols-2 gap-4"
             >
@@ -190,20 +173,19 @@ const BuyPointPackageModal: React.FC<BuyPointPackageModalProps> = ({
               </Elements>
             )}
 
-            {selectedProvider === PaymentProvider.PAYPAL && !payPalOrderId && !isInitiatingBuy && (
+            {selectedProvider === PaymentProvider.PAYPAL && !approvalUrl && !isInitiatingBuy && (
               <Button onClick={handleBuyPackage} className="w-full">
                 Proceed with PayPal
               </Button>
             )}
 
-            {selectedProvider === PaymentProvider.PAYPAL && payPalOrderId && (
-              <PayPalButton
-                tier_id={pointPackage.id}
-                plan_type="quarterly"
-                coupon_code=""
-                onPaymentSuccess={handlePayPalPaymentSuccess}
-                onPaymentError={handlePayPalPaymentError}
-              />
+            {selectedProvider === PaymentProvider.PAYPAL && approvalUrl && (
+              <a
+                href={approvalUrl}
+                className="w-full py-3 px-4 bg-[#0070BA] hover:bg-[#003087] text-white rounded-lg font-semibold text-center block"
+              >
+                Continue to PayPal
+              </a>
             )}
 
             {isConfirmingPurchase && (

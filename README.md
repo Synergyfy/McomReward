@@ -213,12 +213,9 @@ POSTGRES_NAME=mcom_rewards
 EMAIL_USER=you@gmail.com
 EMAIL_PASSWORD=your-google-app-password
 
-# ---- Payments (optional for basic dev) ----
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-PAYPAL_CLIENT_ID=
-PAYPAL_CLIENT_SECRET=
-PAYPAL_MODE=sandbox
+# ---- Payments ----
+# Customer payments use MCOM Pay (see the MCOM_* variables below).
+# No direct Stripe/PayPal server credentials are needed.
 
 # ---- Bot protection (optional) ----
 TURNSTILE_SECRET=
@@ -245,6 +242,12 @@ PROVISION_API_KEY=
 # ---- Wallet & MCOM Pay ----
 MCOM_WALLET_ENABLED=true
 MCOM_PAY_ENABLED=true
+# MCOM Console Webhook URL: {API_PUBLIC_URL}/api/v1/payment/webhook
+# MCOM Pay / lifecycle webhooks are signed with MCOM_WEBHOOK_SECRET.
+# PayPal/Stripe return URLs:
+#   plan purchase:        {WEB_PUBLIC_URL}/payment/callback
+#   point packages:       {WEB_PUBLIC_URL}/payment/point-package/callback
+#   circle contributions: {WEB_PUBLIC_URL}/payment/circle-contribution/callback
 
 # ---- Zero-hop service mesh (direct app-to-app RS256) ----
 MCOM_SERVICE_ENABLED=true
@@ -272,7 +275,7 @@ What actually matters:
 | `EMAIL_*` | For OTP/reset mail | Gmail SMTP on port 587; use an app password. |
 | `COMMISSION_RATE` | No | Loaded by `src/config/commission.config.ts` (default `0.9`). |
 | `MCOM_*`, `MALL_*`, `SSO_SECRET`, `PROVISION_API_KEY` | Only for SSO/M2M/wallet features | Missing values disable or degrade those integrations. |
-| `STRIPE_*`, `PAYPAL_*` | Only for checkout | PayPal defaults to sandbox. |
+| `STRIPE_*`, `PAYPAL_*` | Removed | All customer payments now use MCOM Pay. The web app still needs `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (MCOM's publishable key) for Stripe Elements. |
 | `TURNSTILE_SECRET` | No | When absent, server-side Turnstile verification is skipped. |
 
 Notes:
@@ -315,8 +318,9 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
 # ---- Payments / bot protection (optional) ----
+# Stripe Elements only. This must be MCOM's publishable key because MCOM Pay
+# creates the PaymentIntent on MCOM's Stripe account.
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-NEXT_PUBLIC_PAYPAL_CLIENT_ID=
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 ```
 

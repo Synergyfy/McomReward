@@ -117,7 +117,7 @@ export default function SeasonalPricingCard({ tier }: SeasonalPricingCardProps) 
             </ul>
 
             <Link
-                href={`/checkout?plan=${encodeURIComponent(tier.id)}&billing=fixed`}
+                href="/dashboard/subscription"
                 className={cn(
                     "w-full inline-block text-center py-3.5 rounded-full font-semibold transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 mb-3 shadow-lg",
                     !backgroundColor && "bg-primary text-primary-foreground hover:bg-primary/90",

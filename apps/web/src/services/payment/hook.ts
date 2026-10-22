@@ -1,24 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api, { setBearerToken } from '../api';
-import { setAuthTokens } from '@/lib/auth-cookies';
+import api from '../api';
 import {
   Tier,
-  StripeInitiateRequest,
-  StripeInitiateResponse,
-  StripeVerifyRequest,
-  StripeVerifyResponse,
-  PayPalInitiateRequest,
-  PayPalInitiateResponse,
-  PayPalVerifyRequest,
-  PayPalVerifyResponse,
   UpdateTierProgressionDto,
   PointPackage,
   BuyPackageDto,
   ConfirmPurchaseDto,
   BusinessPointPackage,
   PointPackageListResponse,
-  JoinTrialDto,
-  TrialSubscriptionResponse
 } from './types';
 
 const PAYMENT_QUERY_KEY = 'payment';
@@ -50,80 +39,6 @@ export const useUpdateTierProgression = () => {
   });
 };
 
-// Stripe Payment Hooks
-const initiateStripePayment = async (payload: StripeInitiateRequest): Promise<StripeInitiateResponse> => {
-  const { data } = await api.post<StripeInitiateResponse>('/payment/stripe/initiate', payload);
-  return data;
-};
-
-export const useStripeInitiate = () => {
-  return useMutation({
-    mutationFn: initiateStripePayment,
-  });
-};
-
-const verifyStripePayment = async (payload: StripeVerifyRequest): Promise<StripeVerifyResponse> => {
-  const { data } = await api.post<StripeVerifyResponse>('/payment/stripe/verify', payload);
-  return data;
-};
-
-export const useStripeVerify = () => {
-  return useMutation({
-    mutationFn: verifyStripePayment,
-    onSuccess: (data) => {
-      // Update tokens in cookies after successful payment
-      setAuthTokens(data.accessToken, data.refreshToken);
-      setBearerToken(data.accessToken);
-    },
-  });
-};
-
-// PayPal Payment Hooks
-const initiatePayPalPayment = async (payload: PayPalInitiateRequest): Promise<PayPalInitiateResponse> => {
-  const { data } = await api.post<PayPalInitiateResponse>('/payment/paypal/initiate', payload);
-  return data;
-};
-
-export const usePayPalInitiate = () => {
-  return useMutation({
-    mutationFn: initiatePayPalPayment,
-  });
-};
-
-const verifyPayPalPayment = async (payload: PayPalVerifyRequest): Promise<PayPalVerifyResponse> => {
-  const { data } = await api.post<PayPalVerifyResponse>('/payment/paypal/verify', payload);
-  return data;
-};
-
-export const usePayPalVerify = () => {
-  return useMutation({
-    mutationFn: verifyPayPalPayment,
-    onSuccess: (data) => {
-      // Update tokens in cookies after successful payment
-      setAuthTokens(data.accessToken, data.refreshToken);
-      setBearerToken(data.accessToken);
-    },
-  });
-};
-
-// Trial Subscription Hook
-const joinTrial = async (payload: JoinTrialDto): Promise<TrialSubscriptionResponse> => {
-  const { data } = await api.post<TrialSubscriptionResponse>('/membership/join-trial', payload);
-  return data;
-};
-
-export const useJoinTrial = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: joinTrial,
-    onSuccess: () => {
-      // Invalidate subscription queries to refresh user's subscription status
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['mySubscription'] });
-    },
-  });
-};
-
 // Point Package Hooks
 const getAvailablePointPackages = async (): Promise<PointPackage[]> => {
   const { data } = await api.get<PointPackageListResponse>('/point-packages/business/available');
@@ -137,8 +52,22 @@ export const useGetAvailablePointPackages = () => {
   });
 };
 
-const buyPointPackage = async (payload: BuyPackageDto): Promise<{ clientSecret?: string; approvalUrl?: string; orderId?: string }> => {
-  const { data } = await api.post<{ clientSecret?: string; approvalUrl?: string; orderId?: string }>('/point-packages/business/buy', payload);
+const buyPointPackage = async (payload: BuyPackageDto): Promise<{
+  checkoutId?: string;
+  chargeId?: string;
+  clientSecret?: string;
+  approvalUrl?: string;
+  orderId?: string;
+  status?: string;
+}> => {
+  const { data } = await api.post<{
+    checkoutId?: string;
+    chargeId?: string;
+    clientSecret?: string;
+    approvalUrl?: string;
+    orderId?: string;
+    status?: string;
+  }>('/point-packages/business/buy', payload);
   return data;
 };
 

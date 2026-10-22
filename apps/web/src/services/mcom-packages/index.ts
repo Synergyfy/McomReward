@@ -46,14 +46,22 @@ export interface InitiatePurchaseDto {
   provider: 'stripe' | 'paypal' | 'wallet' | 'mcom_wallet';
   returnUrl?: string;
   cancelUrl?: string;
+  /** Stable id for this checkout attempt; retries reuse the same MCOM Pay charge. */
+  checkoutId?: string;
 }
 
 export interface InitiatePurchaseResponse {
+  checkoutId?: string;
+  chargeId?: string;
+  amountMinor?: string;
+  currency?: string;
+  status?: 'pending' | 'paid' | 'failed' | 'refunded' | 'canceled';
+  method?: 'stripe' | 'paypal' | 'wallet';
+  topUpUrl?: string;
   clientSecret?: string;
   type?: 'payment' | 'setup';
   orderId?: string;
   approvalUrl?: string;
-  holdId?: string;
   success?: boolean;
   transactionId?: string;
   plan?: any;
@@ -68,6 +76,8 @@ export interface ConfirmPurchaseDto {
   orderId?: string;
   holdId?: string;
   provider?: string;
+  checkoutId?: string;
+  chargeId?: string;
 }
 
 export interface ProgrammeTask {
@@ -146,6 +156,10 @@ export interface MyPackageResponse {
   daysRemaining?: number;
   upgradeUrl?: string;
   expiresAt?: string | null;
+  autoRenew?: boolean;
+  billingMethod?: 'wallet' | 'stripe' | 'paypal' | string | null;
+  nextBillingAt?: string | null;
+  renewalAttempts?: number;
 }
 
 
@@ -172,6 +186,25 @@ export const useGetMyPackage = () => {
   return useQuery({
     queryKey: [MCOM_PACKAGES_KEY, 'my-package'],
     queryFn: getMyPackage,
+  });
+};
+
+const setAutoRenewRequest = async (autoRenew: boolean) => {
+  const { data } = await api.post(
+    `/mcom/packages/subscription/${autoRenew ? 'resume' : 'cancel'}`,
+  );
+  return data;
+};
+
+export const useSetAutoRenew = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: setAutoRenewRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MCOM_PACKAGES_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['businessSubscription'] });
+    },
   });
 };
 

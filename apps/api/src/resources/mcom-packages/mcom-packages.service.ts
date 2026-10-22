@@ -1,19 +1,19 @@
 import {
   Injectable,
-  UnauthorizedException,
   NotFoundException,
   BadRequestException,
   Logger,
+  OnModuleInit,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
-import axios, { isAxiosError } from "axios";
-import * as crypto from "crypto";
+import { randomUUID } from "crypto";
 import { Business } from "../business/entities/business.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import {
   PlanSubscription,
+  SubscriptionBillingMethod,
   SubscriptionStatus,
   SubscriptionPlanType,
 } from "../plans/entities/plan-subscription.entity";
@@ -22,8 +22,6 @@ import {
   PlanPaymentMethod,
 } from "../plans/entities/plan-payment.entity";
 import { PaymentProvider } from "../payment-history/entities/payment-history.entity";
-import { SsoService } from "../sso/sso.service";
-import { decrypt } from "../../common/utils/crypto.util";
 import {
   InitiatePlatformPurchaseDto,
   PaymentProviderType,
@@ -35,15 +33,26 @@ import { PlanTierLevelEnum } from "../plans/entities/plan-tier-level.entity";
 import { JwtService } from "@nestjs/jwt";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
 import { Role } from "../../common/role.enum";
+import { toMinorUnits, fromMinorUnits } from "../../common/utils/money.util";
+import {
+  McomPaymentsService,
+  McomChargeResponse,
+} from "../payment/mcom-payments.service";
+import { PaymentCheckoutService } from "../payment/payment-checkout.service";
+import { PaymentFulfillmentService } from "../payment/payment-fulfillment.service";
+import {
+  PaymentCheckout,
+  PaymentCheckoutMethod,
+  PaymentCheckoutPurpose,
+  PaymentCheckoutStatus,
+} from "../payment/entities/payment-checkout.entity";
+import { McomWalletPartnerService } from "../wallet/mcom-wallet-partner.service";
+import { SubscriptionBillingService } from "../plans/services/subscription-billing.service";
 
 @Injectable()
-export class McomPackagesService {
+export class McomPackagesService implements OnModuleInit {
   private readonly logger = new Logger(McomPackagesService.name);
-  private readonly centralUrl: string;
   private readonly platformSlug: string;
-  private readonly webPublicUrl: string;
-  private readonly hmacSecret: string;
-  private readonly clientId: string;
 
   constructor(
     @InjectRepository(Business)
@@ -55,30 +64,37 @@ export class McomPackagesService {
     @InjectRepository(PlanPayment)
     private readonly paymentRepository: Repository<PlanPayment>,
     private readonly configService: ConfigService,
-    private readonly ssoService: SsoService,
     private readonly plansService: PlansService,
     private readonly planExpiryService: PlanExpiryService,
     private readonly jwtService: JwtService,
     private readonly planSubscriptionService: PlanSubscriptionService,
+    private readonly mcomPayments: McomPaymentsService,
+    private readonly checkoutService: PaymentCheckoutService,
+    private readonly fulfillmentService: PaymentFulfillmentService,
+    private readonly centralWallet: McomWalletPartnerService,
+    private readonly billingService: SubscriptionBillingService,
   ) {
-    this.centralUrl = (
-      this.configService.get<string>("MCOM_SOLUTIONS_URL") ||
-      this.configService.get<string>("MCOM_CENTRAL_BASE_URL") ||
-      "http://localhost:3010"
-    ).replace(/\/$/, "");
-
     this.platformSlug =
       this.configService.get<string>("MCOM_PLATFORM_SLUG") || "mcom-reward";
+  }
 
-    this.webPublicUrl = (
-      this.configService.get<string>("WEB_PUBLIC_URL") ||
-      this.configService.get<string>("LOYALTY_FRONTEND_URL") ||
-      "http://localhost:3005"
+  private get centralWebUrl(): string {
+    return (
+      this.configService.get<string>("MCOM_CENTRAL_WEB_URL") ||
+      this.configService.get<string>("MCOM_SOLUTIONS_URL") ||
+      "http://localhost:3010"
     ).replace(/\/$/, "");
+  }
 
-    this.hmacSecret = this.configService.get<string>("MCOM_HMAC_SECRET") || "";
-    this.clientId =
-      this.configService.get<string>("MCOM_CLIENT_ID") || "mcom-rewards";
+  onModuleInit(): void {
+    // The generic webhook handler calls this when a plan charge is paid
+    // (close-tab-after-payment backstop). Confirmation uses the same path.
+    this.fulfillmentService.register(
+      PaymentCheckoutPurpose.PLAN,
+      async (checkout) => {
+        await this.activateFromCheckout(checkout);
+      },
+    );
   }
 
   async getPurchasablePlans() {
@@ -179,50 +195,71 @@ export class McomPackagesService {
     return SubscriptionPlanType.MONTHLY;
   }
 
-  private async getValidCentralToken(business: Business): Promise<string> {
-    if (!business.mcomAccessToken && !business.mcomRefreshToken) {
-      throw new UnauthorizedException(
-        "Business is not linked to MCOM Solutions. Please log in via SSO.",
-      );
+  private mapMethod(
+    provider: PaymentProviderType | string,
+  ): PaymentCheckoutMethod {
+    switch ((provider || "").toLowerCase()) {
+      case "wallet":
+      case "mcom_wallet":
+        return PaymentCheckoutMethod.WALLET;
+      case "paypal":
+        return PaymentCheckoutMethod.PAYPAL;
+      case "stripe":
+      default:
+        return PaymentCheckoutMethod.STRIPE;
     }
-
-    if (
-      business.mcomAccessToken &&
-      business.mcomTokenExpiresAt &&
-      new Date(business.mcomTokenExpiresAt).getTime() > Date.now() + 60_000
-    ) {
-      try {
-        return decrypt(business.mcomAccessToken);
-      } catch (e) {
-        this.logger.warn(`Failed to decrypt mcomAccessToken: ${e?.message}`);
-      }
-    }
-
-    return this.ssoService.refreshCentralToken(business.id);
   }
 
-  private walletPartnerHeaders(
-    body: object,
-    idempotencyKey?: string,
-  ): Record<string, string> {
-    const bodyString = typeof body === "string" ? body : JSON.stringify(body);
-    const signature =
-      "sha256=" +
-      crypto
-        .createHmac("sha256", this.hmacSecret)
-        .update(bodyString)
-        .digest("hex");
+  private mapPlanPaymentMethod(
+    method: PaymentCheckoutMethod,
+  ): PlanPaymentMethod {
+    if (method === PaymentCheckoutMethod.WALLET) {
+      return PlanPaymentMethod.MCOM_WALLET;
+    }
+    if (method === PaymentCheckoutMethod.PAYPAL) {
+      return PlanPaymentMethod.PAYPAL;
+    }
+    return PlanPaymentMethod.STRIPE;
+  }
 
+  private mapPaymentProvider(method: PaymentCheckoutMethod): PaymentProvider {
+    if (method === PaymentCheckoutMethod.WALLET) {
+      return PaymentProvider.MCOM_WALLET;
+    }
+    if (method === PaymentCheckoutMethod.PAYPAL) {
+      return PaymentProvider.PAYPAL;
+    }
+    return PaymentProvider.STRIPE;
+  }
+
+  private mapBillingMethod(
+    method: PaymentCheckoutMethod,
+  ): SubscriptionBillingMethod {
+    if (method === PaymentCheckoutMethod.WALLET) {
+      return SubscriptionBillingMethod.WALLET;
+    }
+    if (method === PaymentCheckoutMethod.PAYPAL) {
+      return SubscriptionBillingMethod.PAYPAL;
+    }
+    return SubscriptionBillingMethod.STRIPE;
+  }
+
+  private checkoutMetadata(
+    business: Business,
+    variant: any,
+    price: any,
+    dto: InitiatePlatformPurchaseDto,
+  ): Record<string, unknown> {
     return {
-      "Content-Type": "application/json",
-      "X-Mcom-Client-ID": this.clientId,
-      "X-Mcom-Signature": signature,
-      ...(idempotencyKey
-        ? {
-            "X-Idempotency-Key": idempotencyKey,
-            "Idempotency-Key": idempotencyKey,
-          }
-        : {}),
+      platform: this.platformSlug,
+      businessId: business.id,
+      planVariantId: variant.id,
+      planId: variant.plan?.id,
+      planName: variant.plan?.name,
+      tierLevel: variant.tierLevel?.name,
+      priceId: price.id,
+      billingCycle: dto.billingCycle,
+      autoRenew: dto.autoRenew !== false,
     };
   }
 
@@ -237,113 +274,82 @@ export class McomPackagesService {
     const { variant, price } = await this.plansService.resolveActivePrice(
       dto.externalPlanId,
     );
-    const variantId = variant.id;
 
-    if (dto.provider === PaymentProviderType.WALLET) {
-      if (!business.mcomUserId) {
-        throw new BadRequestException(
+    const method = this.mapMethod(dto.provider);
+    if (method === PaymentCheckoutMethod.WALLET && !business.mcomUserId) {
+      throw new BadRequestException({
+        code: "ACCOUNT_NOT_LINKED",
+        message:
           "Your business profile is not linked to an MCOM account. Please log in via SSO.",
-        );
-      }
-      try {
-        const idempotencyKey = `mcom-rewards-hold-${business.id}-${Date.now()}`;
-        const holdPayload = {
-          userId: business.mcomUserId,
-          amount: Number(price.amount),
-          reference: `hold-${business.id}-${Date.now()}`,
-          description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
-          metadata: {
-            platform: this.platformSlug,
-            planVariantId: variantId,
-            category: "SUBSCRIPTION",
-          },
-        };
-
-        const holdRes = await axios.post(
-          `${this.centralUrl}/api/v1/wallet/partner/hold/place`,
-          holdPayload,
-          { headers: this.walletPartnerHeaders(holdPayload, idempotencyKey) },
-        );
-        return {
-          success: true,
-          holdId: holdRes.data?.holdId || `hold_${Date.now()}`,
-          idempotencyKey,
-          ...holdRes.data,
-        };
-      } catch (walletErr) {
-        const errMsg = isAxiosError(walletErr)
-          ? walletErr.response?.data?.message || walletErr.message
-          : (walletErr as any)?.message;
-        this.logger.error(`Wallet hold creation failed: ${errMsg}`);
-        throw new BadRequestException(`Wallet reservation failed: ${errMsg}`);
-      }
+      });
     }
 
-    let centralToken = await this.getValidCentralToken(business);
+    // A client-generated checkout id makes retries idempotent without ever
+    // reusing a key for a different amount or payment method.
+    const checkoutId = dto.checkoutId?.trim() || randomUUID();
+    const amountMinor = toMinorUnits(price.amount);
+    const idempotencyKey =
+      `mcom-rewards-plan-${business.id}-${checkoutId}-${method}`.slice(0, 255);
+    const reference = `plan-${business.id}-${variant.id}-${checkoutId}`.slice(
+      0,
+      255,
+    );
+    const metadata = this.checkoutMetadata(business, variant, price, dto);
 
-    const payload = {
-      platform: this.platformSlug,
-      externalPlanId: variantId,
-      billingCycle: this.normalizeBillingCycle(dto.billingCycle || "monthly"),
-      returnUrl:
-        dto.returnUrl ||
-        `${this.webPublicUrl}/business/subscription?upgrade=success`,
-      cancelUrl:
-        dto.cancelUrl ||
-        `${this.webPublicUrl}/business/subscription?upgrade=cancel`,
-    };
+    const checkout = await this.checkoutService.getOrCreate({
+      businessId: business.id,
+      purpose: PaymentCheckoutPurpose.PLAN,
+      purposeRef: variant.id,
+      amountMinor,
+      currency: price.currency || "GBP",
+      method,
+      idempotencyKey,
+      reference,
+      metadata,
+    });
 
-    const providerUrlPath =
-      dto.provider === PaymentProviderType.PAYPAL ? "paypal" : "stripe";
-
+    let response: McomChargeResponse;
     try {
-      const res = await axios.post(
-        `${this.centralUrl}/api/v1/payment/platform/${providerUrlPath}/initiate`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${centralToken}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      return res.data;
+      response = await this.mcomPayments.createCharge({
+        amountMinor,
+        currency: price.currency || "GBP",
+        method,
+        reference,
+        description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${
+          variant.tierLevel?.name || "Standard"
+        })`,
+        mcomUserId:
+          method === PaymentCheckoutMethod.WALLET
+            ? business.mcomUserId
+            : undefined,
+        externalCustomerId: business.id,
+        metadata: { ...metadata, checkoutId: checkout.id },
+        idempotencyKey,
+      });
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 401) {
-        this.logger.warn(
-          `Central token expired for user ${userId}, attempting auto-refresh...`,
-        );
-        try {
-          centralToken = await this.ssoService.refreshCentralToken(userId);
-          const retryRes = await axios.post(
-            `${this.centralUrl}/api/v1/payment/platform/${providerUrlPath}/initiate`,
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${centralToken}`,
-                "Content-Type": "application/json",
-              },
-            },
-          );
-          return retryRes.data;
-        } catch (refreshErr) {
-          this.logger.error(
-            `Auto-refresh token failed: ${(refreshErr as any)?.message}`,
-          );
-          throw new UnauthorizedException({
-            code: "CENTRAL_SESSION_EXPIRED",
-            message:
-              "Your MCOM Central session has expired. Please sign in again.",
-          });
-        }
-      }
-
-      const errMsg = isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : (error as any)?.message;
-      this.logger.error(`Failed to initiate payment on Central: ${errMsg}`);
-      throw new BadRequestException(`Payment initiation failed: ${errMsg}`);
+      await this.checkoutService.markFailed(
+        checkout,
+        (error as Error)?.message,
+      );
+      this.mcomPayments.toHttpException(error);
     }
+
+    const updated = await this.checkoutService.attachCharge(checkout, response);
+
+    return {
+      success: true,
+      checkoutId: updated.id,
+      chargeId: response.charge.id,
+      method,
+      amountMinor: response.charge.amountMinor || amountMinor,
+      currency: response.charge.currency || price.currency || "GBP",
+      status: response.charge.status,
+      clientSecret: response.clientSecret,
+      approvalUrl: response.approvalUrl,
+      ...(method === PaymentCheckoutMethod.WALLET
+        ? { topUpUrl: this.centralWallet.topUpUrl() }
+        : {}),
+    };
   }
 
   async confirmPurchase(userId: string, dto: ConfirmPlatformPurchaseDto) {
@@ -354,230 +360,213 @@ export class McomPackagesService {
       throw new NotFoundException("Business profile not found");
     }
 
-    const { variant, price } = await this.plansService.resolveActivePrice(
-      dto.externalPlanId,
-    );
+    const checkout = await this.resolveCheckout(business.id, dto);
 
-    let centralResponseData: any = null;
-    let transactionId =
-      dto.paymentIntentId ||
-      dto.setupIntentId ||
-      dto.orderId ||
-      `TX-${Date.now()}`;
+    if (checkout.purpose === PaymentCheckoutPurpose.PLAN_RENEWAL) {
+      await this.billingService.confirmRenewal(checkout, {
+        ...(dto.paymentIntentId
+          ? { paymentIntentId: dto.paymentIntentId }
+          : {}),
+        ...(dto.orderId ? { orderId: dto.orderId } : {}),
+      });
 
-    // 1. Process with MCOM Solutions
-    if (dto.provider === "wallet" || dto.provider === "mcom_wallet") {
-      const holdId = dto.holdId;
+      return {
+        success: true,
+        renewal: true,
+        payment: {
+          checkoutId: checkout.id,
+          chargeId: checkout.chargeId,
+          amountMinor: checkout.amountMinor,
+          currency: checkout.currency,
+          method: checkout.method,
+          status: checkout.status,
+        },
+      };
+    }
 
-      if (holdId) {
-        try {
-          const idempotencyKey = `mcom-rewards-capture-${holdId}`;
-          const capturePayload = {
-            holdId,
-            description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
-            category: "SUBSCRIPTION",
-          };
-          const captureRes = await axios.post(
-            `${this.centralUrl}/api/v1/wallet/partner/hold/capture`,
-            capturePayload,
-            { headers: this.walletPartnerHeaders(capturePayload, idempotencyKey) },
-          );
-          centralResponseData = captureRes.data;
-          transactionId = holdId;
-        } catch (captureErr) {
-          const errMsg = isAxiosError(captureErr)
-            ? captureErr.response?.data?.message || captureErr.message
-            : (captureErr as any)?.message;
-          throw new BadRequestException(
-            `Failed to capture wallet hold: ${errMsg}`,
-          );
-        }
-      } else {
-        if (!business.mcomUserId) {
-          throw new BadRequestException(
-            "Your business profile is not linked to an MCOM account. Please log in via SSO.",
-          );
-        }
-        try {
-          const idempotencyKey = `mcom-rewards-sub-${business.id}-${Date.now()}`;
-          const debitPayload = {
-            userId: business.mcomUserId,
-            amount: Number(price.amount),
-            category: "SUBSCRIPTION",
-            description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${variant.tierLevel?.name || "Standard"})`,
-            reference: `sub-${business.id}-${Date.now()}`,
-            metadata: {
-              platform: this.platformSlug,
-              planVariantId: variant.id,
-            },
-          };
-          const debitRes = await axios.post(
-            `${this.centralUrl}/api/v1/wallet/partner/debit`,
-            debitPayload,
-            {
-              headers: this.walletPartnerHeaders(debitPayload, idempotencyKey),
-            },
-          );
-          centralResponseData = debitRes.data;
-          transactionId = debitRes.data?.transactionId || `WLT-${Date.now()}`;
-        } catch (walletErr) {
-          const errMsg = isAxiosError(walletErr)
-            ? walletErr.response?.data?.message || walletErr.message
-            : (walletErr as any)?.message;
-          throw new BadRequestException(`Wallet payment failed: ${errMsg}`);
-        }
-      }
-    } else if (dto.provider === "paypal" && dto.orderId) {
-      let centralToken = await this.getValidCentralToken(business);
-      try {
-        const res = await axios.post(
-          `${this.centralUrl}/api/v1/payment/platform/paypal/capture`,
-          { orderId: dto.orderId },
-          {
-            headers: {
-              Authorization: `Bearer ${centralToken}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        centralResponseData = res.data;
-        transactionId = dto.orderId;
-      } catch (error) {
-        const errMsg = isAxiosError(error)
-          ? error.response?.data?.message || error.message
-          : (error as any)?.message;
-        throw new BadRequestException(`PayPal confirmation failed: ${errMsg}`);
-      }
-    } else {
-      const intentId = dto.paymentIntentId || dto.setupIntentId;
-      if (!intentId) {
+    if (checkout.status !== PaymentCheckoutStatus.PAID) {
+      if (!checkout.chargeId) {
         throw new BadRequestException(
-          "paymentIntentId or setupIntentId is required for Stripe confirmation",
+          "This checkout has no MCOM Pay charge. Please start the payment again.",
         );
       }
-      transactionId = intentId;
 
-      let centralToken = await this.getValidCentralToken(business);
       try {
-        const res = await axios.post(
-          `${this.centralUrl}/api/v1/payment/platform/stripe/confirm`,
+        const response = await this.mcomPayments.confirmCharge(
+          checkout.chargeId,
           {
-            platform: this.platformSlug,
-            externalPlanId: variant.id,
-            billingCycle: this.normalizeBillingCycle(
-              dto.billingCycle || "monthly",
-            ),
-            paymentIntentId: intentId,
-            setupIntentId: dto.setupIntentId,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${centralToken}`,
-              "Content-Type": "application/json",
-            },
+            ...(dto.paymentIntentId
+              ? { paymentIntentId: dto.paymentIntentId }
+              : {}),
+            ...(dto.orderId ? { orderId: dto.orderId } : {}),
           },
         );
-        centralResponseData = res.data;
-      } catch (error) {
-        const stripeErrCode = isAxiosError(error)
-          ? (error.response?.data?.error?.code ?? error.response?.data?.code)
-          : null;
-        const stripeStatus = isAxiosError(error)
-          ? error.response?.data?.error?.payment_intent?.status
-          : null;
+
+        if (response.charge.status !== "paid") {
+          throw new BadRequestException(
+            `Payment is not complete (status: ${response.charge.status})`,
+          );
+        }
 
         if (
-          stripeErrCode === "payment_intent_unexpected_state" &&
-          stripeStatus === "succeeded"
+          response.charge.amountMinor &&
+          response.charge.amountMinor !== checkout.amountMinor
         ) {
-          this.logger.log(
-            `PI ${intentId} already succeeded (client-side confirm) — activating plan subscription without re-confirming`,
-          );
-          centralResponseData = {
-            transactionId: intentId,
-            status: "succeeded",
-            source: "already_confirmed",
-          };
-        } else if (isAxiosError(error) && error.response?.status === 401) {
-          centralToken = await this.ssoService.refreshCentralToken(userId);
-          try {
-            const retryRes = await axios.post(
-              `${this.centralUrl}/api/v1/payment/platform/stripe/confirm`,
-              {
-                platform: this.platformSlug,
-                externalPlanId: variant.id,
-                billingCycle: this.normalizeBillingCycle(
-                  dto.billingCycle || "monthly",
-                ),
-                paymentIntentId: intentId,
-                setupIntentId: dto.setupIntentId,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${centralToken}`,
-                  "Content-Type": "application/json",
-                },
-              },
-            );
-            centralResponseData = retryRes.data;
-          } catch (refreshErr) {
-            this.logger.error(
-              `Auto-refresh token failed: ${(refreshErr as any)?.message}`,
-            );
-            throw new UnauthorizedException({
-              code: "CENTRAL_SESSION_EXPIRED",
-              message:
-                "Your MCOM Central session has expired. Please sign in again.",
-            });
-          }
-        } else {
-          const errMsg = isAxiosError(error)
-            ? error.response?.data?.message || error.message
-            : (error as any)?.message;
           throw new BadRequestException(
-            `Payment confirmation failed: ${errMsg}`,
+            "Paid amount does not match the checkout amount",
           );
         }
+
+        await this.checkoutService.attachCharge(checkout, response);
+        await this.checkoutService.markPaid(checkout, response.charge);
+      } catch (error) {
+        if (error instanceof BadRequestException) throw error;
+        this.mcomPayments.toHttpException(error);
       }
     }
 
-    // 2. Save PlanPayment record
-    let paymentMethod = PlanPaymentMethod.STRIPE;
-    if (dto.provider === "paypal") paymentMethod = PlanPaymentMethod.PAYPAL;
-    if (dto.provider === "wallet" || dto.provider === "mcom_wallet") {
-      paymentMethod = PlanPaymentMethod.MCOM_WALLET;
+    const subscription = await this.activateFromCheckout(checkout);
+    const tokens = this.issueAuthTokens(business);
+
+    return {
+      success: true,
+      subscription,
+      payment: {
+        checkoutId: checkout.id,
+        chargeId: checkout.chargeId,
+        amountMinor: checkout.amountMinor,
+        currency: checkout.currency,
+        method: checkout.method,
+        status: checkout.status,
+      },
+      ...tokens,
+    };
+  }
+
+  private async resolveCheckout(
+    businessId: string,
+    dto: ConfirmPlatformPurchaseDto,
+  ): Promise<PaymentCheckout> {
+    let checkout: PaymentCheckout | null = null;
+
+    if (dto.checkoutId) {
+      checkout = await this.checkoutService.findById(dto.checkoutId);
+    } else if (dto.chargeId) {
+      checkout = await this.checkoutService.findByChargeId(dto.chargeId);
+    } else if (dto.paymentIntentId || dto.orderId) {
+      checkout = await this.checkoutService.findByProviderRef(
+        dto.paymentIntentId || dto.orderId,
+      );
+    } else {
+      checkout = await this.checkoutService.findLatestPending(
+        businessId,
+        PaymentCheckoutPurpose.PLAN,
+        dto.externalPlanId,
+      );
     }
+
+    if (!checkout) {
+      throw new NotFoundException(
+        "Checkout not found. Please start the purchase again.",
+      );
+    }
+    if (
+      checkout.purpose !== PaymentCheckoutPurpose.PLAN &&
+      checkout.purpose !== PaymentCheckoutPurpose.PLAN_RENEWAL
+    ) {
+      throw new BadRequestException("This checkout is not a plan purchase");
+    }
+    if (checkout.businessId && checkout.businessId !== businessId) {
+      throw new BadRequestException(
+        "This checkout belongs to another business",
+      );
+    }
+
+    return checkout;
+  }
+
+  private async activateFromCheckout(
+    checkout: PaymentCheckout,
+  ): Promise<PlanSubscription | null> {
+    if (checkout.status !== PaymentCheckoutStatus.PAID) {
+      throw new BadRequestException("The payment has not been completed yet");
+    }
+
+    const businessId = checkout.businessId;
+    if (!businessId) {
+      throw new BadRequestException("Checkout is missing a business");
+    }
+
+    const business = await this.businessRepository.findOne({
+      where: { id: businessId },
+    });
+    if (!business) {
+      throw new NotFoundException("Business profile not found");
+    }
+
+    // Already granted (webhook or a previous confirm). Return the existing
+    // subscription so the confirm response can still issue fresh tokens.
+    if (checkout.fulfilledAt) {
+      const existing = await this.subscriptionRepository.findOne({
+        where: { business: { id: businessId } },
+      });
+      if (existing) return existing;
+    }
+
+    if (!checkout.purposeRef) {
+      throw new BadRequestException("Checkout is missing the purchased plan");
+    }
+
+    const { variant, price } = await this.plansService.resolveActivePrice(
+      checkout.purposeRef,
+    );
+
+    const amount = fromMinorUnits(checkout.amountMinor);
+    const paymentMethod = this.mapPlanPaymentMethod(checkout.method);
+    const paymentProvider = this.mapPaymentProvider(checkout.method);
+    const transactionId = checkout.chargeId || checkout.id;
 
     let savedPayment: PlanPayment;
     try {
-      const payment = this.paymentRepository.create({
-        business,
-        amount: Number(price.amount),
-        currency: price.currency || "GBP",
-        paymentMethod,
-        transactionId,
-        metadata: {
-          variantId: variant.id,
-          planName: variant.plan?.name,
-          tierLevel: variant.tierLevel?.name,
-          centralResponse: centralResponseData,
-        },
-      });
-      savedPayment = await this.paymentRepository.save(payment);
+      savedPayment = await this.paymentRepository.save(
+        this.paymentRepository.create({
+          business,
+          amount,
+          currency: checkout.currency || price.currency || "GBP",
+          paymentMethod,
+          transactionId,
+          metadata: {
+            checkoutId: checkout.id,
+            chargeId: checkout.chargeId,
+            amountMinor: checkout.amountMinor,
+            feeMinor: checkout.feeMinor,
+            netMinor: checkout.netMinor,
+            variantId: variant.id,
+            planName: variant.plan?.name,
+            tierLevel: variant.tierLevel?.name,
+            mcomPayment: checkout.metadata,
+          },
+        }),
+      );
     } catch {
       savedPayment = (await this.paymentRepository.findOne({
         where: { transactionId },
       })) as PlanPayment;
+      if (!savedPayment) {
+        throw new BadRequestException(
+          "Unable to record this payment. Please contact support.",
+        );
+      }
     }
 
-    // 3. Compute leap-safe expiry date
     const startsAt = new Date();
     const expiresAt = this.planExpiryService.calculateExpiryForTierLevel(
       variant.tierLevel?.name,
       startsAt,
     );
+    const autoRenew = checkout.metadata?.autoRenew !== false;
+    const billingMethod = this.mapBillingMethod(checkout.method);
 
-    // 4. Update local PlanSubscription in-place (1:1 per business)
     let subscription = await this.subscriptionRepository.findOne({
       where: { business: { id: business.id } },
     });
@@ -594,14 +583,18 @@ export class McomPackagesService {
       subscription.expires_at = expiresAt;
       subscription.is_trial = false;
       subscription.plan_type = this.resolvePlanType(
-        dto.billingCycle,
+        String(checkout.metadata?.billingCycle || "monthly"),
         variant.tierLevel?.name,
       );
       subscription.transaction_id = transactionId;
-      subscription.payment_provider =
-        dto.provider === "paypal"
-          ? PaymentProvider.PAYPAL
-          : PaymentProvider.STRIPE;
+      subscription.payment_provider = paymentProvider;
+      subscription.autoRenew = autoRenew;
+      subscription.billingMethod = billingMethod;
+      subscription.billingAnchor = startsAt;
+      subscription.nextBillingAt = autoRenew ? expiresAt : null;
+      subscription.renewalAttempts = 0;
+      subscription.graceUntil = null;
+      subscription.canceledAt = null;
     } else {
       subscription = this.subscriptionRepository.create({
         business,
@@ -616,29 +609,39 @@ export class McomPackagesService {
         expires_at: expiresAt,
         is_trial: false,
         plan_type: this.resolvePlanType(
-          dto.billingCycle,
+          String(checkout.metadata?.billingCycle || "monthly"),
           variant.tierLevel?.name,
         ),
         transaction_id: transactionId,
-        payment_provider:
-          dto.provider === "paypal"
-            ? PaymentProvider.PAYPAL
-            : PaymentProvider.STRIPE,
+        payment_provider: paymentProvider,
+        autoRenew,
+        billingMethod,
+        billingAnchor: startsAt,
+        nextBillingAt: autoRenew ? expiresAt : null,
+        renewalAttempts: 0,
+        graceUntil: null,
+        canceledAt: null,
       });
     }
 
     await this.subscriptionRepository.save(subscription);
 
-    // 5. Update cached business fields
     business.membershipTier = variant.plan?.name || "Standard";
     business.membershipLevel = variant.tierLevel?.name || "STANDARD";
     business.membershipStatus = "active";
     await this.businessRepository.save(business);
 
-    // 6. Invalidate subscription cache so next guard sees new plan instantly
     this.planSubscriptionService.invalidateSubscriptionCache(business.id);
+    await this.checkoutService.markFulfilled(checkout);
 
-    // 7. Issue refreshed JWT
+    this.logger.log(
+      `Activated plan "${variant.plan?.name} · ${variant.tierLevel?.name}" for business ${business.id} via ${checkout.method} (${transactionId})`,
+    );
+
+    return subscription;
+  }
+
+  private issueAuthTokens(business: Business) {
     const accessExpiresIn =
       this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRES_IN") ||
       this.configService.get<string>("jwt.expiresIn") ||
@@ -658,25 +661,44 @@ export class McomPackagesService {
       this.configService.get<string>("jwt.secret") ||
       this.configService.get<string>("JWT_SECRET") ||
       process.env.JWT_SECRET;
-    const access_token = this.jwtService.sign(jwtPayload, {
-      secret: jwtSecret,
-      expiresIn: accessExpiresIn as any,
-    });
-    const refresh_token = this.jwtService.sign(jwtPayload, {
-      secret: jwtSecret,
-      expiresIn: refreshExpiresIn as any,
-    });
-
-    this.logger.log(
-      `Successfully activated Plan Variant "${variant.plan?.name} · ${variant.tierLevel?.name}" for business ${business.id}`,
-    );
 
     return {
+      access_token: this.jwtService.sign(jwtPayload, {
+        secret: jwtSecret,
+        expiresIn: accessExpiresIn as any,
+      }),
+      refresh_token: this.jwtService.sign(jwtPayload, {
+        secret: jwtSecret,
+        expiresIn: refreshExpiresIn as any,
+      }),
+    };
+  }
+
+  async setAutoRenew(userId: string, autoRenew: boolean) {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { business: { id: userId } },
+    });
+    if (!subscription) {
+      throw new NotFoundException("No subscription found for this business");
+    }
+
+    subscription.autoRenew = autoRenew;
+    subscription.canceledAt = autoRenew ? null : new Date();
+    if (autoRenew) {
+      subscription.nextBillingAt =
+        subscription.nextBillingAt || subscription.expires_at || new Date();
+      if (subscription.status === SubscriptionStatus.PAST_DUE) {
+        subscription.status = SubscriptionStatus.ACTIVE;
+      }
+    }
+
+    await this.subscriptionRepository.save(subscription);
+    return {
       success: true,
-      subscription,
-      package: centralResponseData,
-      access_token,
-      refresh_token,
+      autoRenew: subscription.autoRenew,
+      nextBillingAt: subscription.nextBillingAt
+        ? new Date(subscription.nextBillingAt).toISOString()
+        : null,
     };
   }
 
@@ -720,7 +742,7 @@ export class McomPackagesService {
             access: {
               hasAccess: true,
               accessType: "TRIAL_PROGRAMME",
-              upgradeUrl: `${this.centralUrl}/dashboard/memberships`,
+              upgradeUrl: `${this.centralWebUrl}/dashboard/memberships`,
             },
             plan: {
               planId: "trial",
@@ -783,7 +805,7 @@ export class McomPackagesService {
           ? "DIRECT_PACKAGE"
           : "NONE";
 
-    const upgradeUrl = `${this.centralUrl}/dashboard/memberships`;
+    const upgradeUrl = `${this.centralWebUrl}/dashboard/memberships`;
 
     const now = Date.now();
     const expiryTimestamp = subscription?.expires_at
@@ -791,9 +813,12 @@ export class McomPackagesService {
       : 0;
     const daysRemaining =
       isTrial && expiryTimestamp > now
-        ? Math.max(0, Math.ceil((expiryTimestamp - now) / (1000 * 60 * 60 * 24)))
-        : (business?.entitlementData as any)?.trialContext?.daysRemaining ??
-          (isTrial ? 14 : 0);
+        ? Math.max(
+            0,
+            Math.ceil((expiryTimestamp - now) / (1000 * 60 * 60 * 24)),
+          )
+        : ((business?.entitlementData as any)?.trialContext?.daysRemaining ??
+          (isTrial ? 14 : 0));
 
     return {
       subscription: subscription || null,
@@ -819,7 +844,12 @@ export class McomPackagesService {
       expiresAt: subscription?.expires_at
         ? new Date(subscription.expires_at).toISOString()
         : null,
+      autoRenew: subscription?.autoRenew ?? false,
+      billingMethod: subscription?.billingMethod ?? null,
+      nextBillingAt: subscription?.nextBillingAt
+        ? new Date(subscription.nextBillingAt).toISOString()
+        : null,
+      renewalAttempts: subscription?.renewalAttempts ?? 0,
     };
   }
 }
-

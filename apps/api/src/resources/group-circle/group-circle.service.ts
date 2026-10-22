@@ -2,8 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  InternalServerErrorException,
-  ServiceUnavailableException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In, EntityManager } from "typeorm";
@@ -39,8 +37,16 @@ import {
   PlanSubscriptionStatus,
 } from "../plans/entities/plan-subscription.entity";
 import { PaginationDto } from "../../common/dto/pagination.dto";
-import { StripeService } from "../payment/stripe.service";
-import { PaypalService } from "../payment/paypal.service";
+import { McomPaymentsService } from "../payment/mcom-payments.service";
+import { PaymentCheckoutService } from "../payment/payment-checkout.service";
+import {
+  PaymentCheckout,
+  PaymentCheckoutMethod,
+  PaymentCheckoutPurpose,
+  PaymentCheckoutStatus,
+} from "../payment/entities/payment-checkout.entity";
+import { toMinorUnits } from "../../common/utils/money.util";
+import { randomUUID } from "crypto";
 import { Referral, ReferralStatus } from "../referral/entities/referral.entity";
 import { NetworkRelationshipTag } from "../../common/enums/network-tags.enum";
 
@@ -58,8 +64,9 @@ export class GroupCircleService {
     private contributionRepo: Repository<GroupCircleContribution>,
     @InjectRepository(Network) private networkRepo: Repository<Network>,
     @InjectRepository(Referral) private referralRepo: Repository<Referral>,
-    private stripeService: StripeService,
-    private paypalService: PaypalService,
+    @InjectRepository(Business) private businessRepo: Repository<Business>,
+    private mcomPayments: McomPaymentsService,
+    private checkoutService: PaymentCheckoutService,
   ) {}
 
   async create(createDto: CreateGroupCircleDto, business: Business) {
@@ -147,7 +154,8 @@ export class GroupCircleService {
           }
         }
 
-        const { networkIds, ...dtoData } = createDto;
+        const dtoData = { ...createDto };
+        delete (dtoData as any).networkIds;
 
         const circle = manager.create(GroupCircle, {
           ...dtoData,
@@ -576,39 +584,80 @@ export class GroupCircleService {
       );
     }
 
+    if (
+      dto.provider !== PaymentProvider.STRIPE &&
+      dto.provider !== PaymentProvider.PAYPAL
+    ) {
+      throw new BadRequestException("Invalid provider for initiation");
+    }
+
+    const method =
+      dto.provider === PaymentProvider.PAYPAL
+        ? PaymentCheckoutMethod.PAYPAL
+        : PaymentCheckoutMethod.STRIPE;
+    const checkoutId = randomUUID();
+    const amountMinor = toMinorUnits(dto.amount);
+    const reference = `circle-${circle.id}-${member.id}-${
+      dto.round || 0
+    }-${checkoutId}`.slice(0, 255);
+    const idempotencyKey = `mcom-rewards-circle-${businessId}-${circle.id}-${
+      member.id
+    }-${dto.round || 0}-${checkoutId}`.slice(0, 255);
     const metadata = {
       groupCircleId: circle.id,
       memberId: member.id,
       round: dto.round,
       type: "GROUP_CIRCLE_CONTRIBUTION",
+      checkoutId,
     };
+    const description = `Contribution for ${circle.name} - Round ${
+      dto.round || "N/A"
+    }`;
+
+    const checkout = await this.checkoutService.getOrCreate({
+      businessId,
+      purpose: PaymentCheckoutPurpose.CIRCLE_CONTRIBUTION,
+      purposeRef: circle.id,
+      amountMinor,
+      method,
+      idempotencyKey,
+      reference,
+      metadata,
+    });
 
     try {
-      if (dto.provider === PaymentProvider.PAYPAL) {
-        const description = `Contribution for ${circle.name} - Round ${dto.round || "N/A"}`;
-        const order = await this.paypalService.createOrder(
-          dto.amount,
-          "GBP",
-          circle.id,
-          description,
-        );
-        return { orderId: order.result.id };
-      } else if (dto.provider === PaymentProvider.STRIPE) {
-        const paymentIntent = await this.stripeService.createPaymentIntent(
-          Math.round(dto.amount * 100),
-          "gbp",
-          metadata,
-        );
-        return { clientSecret: paymentIntent.client_secret };
-      } else {
-        throw new BadRequestException("Invalid provider for initiation");
-      }
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      // Log the error internally here if you have a logger
-      throw new ServiceUnavailableException(
-        `Payment provider error: ${error.message}`,
+      const response = await this.mcomPayments.createCharge({
+        amountMinor,
+        method,
+        reference,
+        description,
+        externalCustomerId: businessId,
+        metadata: { ...metadata, localCheckoutId: checkout.id },
+        idempotencyKey,
+      });
+      const updated = await this.checkoutService.attachCharge(
+        checkout,
+        response,
       );
+
+      return {
+        success: true,
+        checkoutId: updated.id,
+        chargeId: response.charge.id,
+        method,
+        amountMinor,
+        currency: checkout.currency,
+        status: response.charge.status,
+        clientSecret: response.clientSecret,
+        approvalUrl: response.approvalUrl,
+        orderId: response.charge.providerRef,
+      };
+    } catch (error) {
+      await this.checkoutService.markFailed(
+        checkout,
+        (error as Error)?.message,
+      );
+      this.mcomPayments.toHttpException(error);
     }
   }
 
@@ -623,6 +672,8 @@ export class GroupCircleService {
       round: dto.round,
       provider: dto.provider,
       transactionId: dto.transactionId,
+      checkoutId: dto.checkoutId,
+      chargeId: dto.chargeId,
     };
     return this.recordContribution(id, recordDto, businessId);
   }
@@ -647,55 +698,81 @@ export class GroupCircleService {
     let paidAt = dto.status === ContributionStatus.PAID ? new Date() : null;
 
     if (dto.provider && dto.provider !== PaymentProvider.MANUAL) {
-      if (!dto.transactionId) {
-        throw new BadRequestException(
-          "Transaction ID is required for online payments",
+      let checkout: PaymentCheckout | null = null;
+
+      if (dto.checkoutId) {
+        checkout = await this.checkoutService.findById(dto.checkoutId);
+      } else if (dto.chargeId) {
+        checkout = await this.checkoutService.findByChargeId(dto.chargeId);
+      } else if (dto.transactionId) {
+        checkout = await this.checkoutService.findByProviderRef(
+          dto.transactionId,
         );
       }
 
-      if (dto.transactionId) {
-        const existing = await this.contributionRepo.findOne({
-          where: { transactionId: dto.transactionId },
-        });
-        if (existing) {
-          throw new BadRequestException("Transaction already recorded");
-        }
+      if (!checkout) {
+        throw new BadRequestException(
+          "Payment session not found. Please start the contribution again.",
+        );
+      }
+      if (checkout.businessId && checkout.businessId !== businessId) {
+        throw new BadRequestException(
+          "This payment belongs to another business",
+        );
+      }
+      if (checkout.purpose !== PaymentCheckoutPurpose.CIRCLE_CONTRIBUTION) {
+        throw new BadRequestException("This payment is not a contribution");
       }
 
-      try {
-        if (dto.provider === PaymentProvider.STRIPE) {
-          const paymentIntent = await this.stripeService.verifyPayment(
-            dto.transactionId,
+      if (checkout.status !== PaymentCheckoutStatus.PAID) {
+        if (!checkout.chargeId) {
+          throw new BadRequestException(
+            "This contribution has no MCOM Pay charge",
           );
-          if (paymentIntent.status !== "succeeded") {
-            throw new BadRequestException(
-              `Stripe payment not successful: ${paymentIntent.status}`,
-            );
-          }
-        } else if (dto.provider === PaymentProvider.PAYPAL) {
-          try {
-            const capture = await this.paypalService.capturePayment(
-              dto.transactionId,
-            );
-            if (capture.result.status !== "COMPLETED") {
-              throw new BadRequestException(
-                `PayPal payment not completed: ${capture.result.status}`,
-              );
-            }
-          } catch (e) {
-            throw new BadRequestException(
-              `PayPal verification failed: ${e.message}`,
-            );
-          }
         }
-        status = ContributionStatus.PAID;
-        paidAt = new Date();
-      } catch (error) {
-        if (error instanceof BadRequestException) throw error;
-        throw new BadRequestException(
-          `Payment verification failed: ${error.message}`,
-        );
+
+        const handle =
+          dto.provider === PaymentProvider.PAYPAL
+            ? { orderId: dto.transactionId }
+            : { paymentIntentId: dto.transactionId };
+
+        try {
+          const response = await this.mcomPayments.confirmCharge(
+            checkout.chargeId,
+            handle,
+          );
+          if (response.charge.status !== "paid") {
+            throw new BadRequestException(
+              `Payment is not complete (status: ${response.charge.status})`,
+            );
+          }
+          if (
+            response.charge.amountMinor &&
+            response.charge.amountMinor !== checkout.amountMinor
+          ) {
+            throw new BadRequestException(
+              "Paid amount does not match the contribution amount",
+            );
+          }
+          await this.checkoutService.attachCharge(checkout, response);
+          await this.checkoutService.markPaid(checkout, response.charge);
+        } catch (error) {
+          if (error instanceof BadRequestException) throw error;
+          this.mcomPayments.toHttpException(error);
+        }
       }
+
+      dto.transactionId = checkout.chargeId || checkout.id;
+
+      const existing = await this.contributionRepo.findOne({
+        where: { transactionId: dto.transactionId },
+      });
+      if (existing) {
+        throw new BadRequestException("Transaction already recorded");
+      }
+
+      status = ContributionStatus.PAID;
+      paidAt = new Date();
     }
 
     const contribution = this.contributionRepo.create({

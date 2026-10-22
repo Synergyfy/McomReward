@@ -1,19 +1,23 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class ConfirmPlatformPurchaseDto {
-  @ApiProperty({ description: "The plan or tier ID on Rewards platform" })
+  @ApiProperty({
+    description: "The plan or tier ID on Rewards platform",
+    required: false,
+  })
   @IsString()
-  @IsNotEmpty()
-  externalPlanId: string;
+  @IsOptional()
+  externalPlanId?: string;
 
   @ApiProperty({
     description: "Billing cycle (monthly, quarterly, annual)",
     default: "monthly",
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  billingCycle: string;
+  @IsOptional()
+  billingCycle?: string;
 
   @ApiProperty({
     description: "Stripe PaymentIntent ID (pi_...)",
@@ -52,4 +56,20 @@ export class ConfirmPlatformPurchaseDto {
   @IsString()
   @IsOptional()
   holdId?: string;
+
+  @ApiProperty({
+    description: "Local checkout id returned by purchase/initiate",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  checkoutId?: string;
+
+  @ApiProperty({
+    description: "MCOM Pay charge id returned by purchase/initiate",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  chargeId?: string;
 }

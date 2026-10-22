@@ -12,6 +12,7 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
+  AlertCircle,
 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/components/stripe-provider';
@@ -23,6 +24,7 @@ import {
   useConfirmPurchase,
   getSsoAuthorizeUrl,
 } from '@/services/mcom-packages';
+import { useGetWallet } from '@/services/wallet/hook';
 import { toast } from 'sonner';
 
 interface PaymentModalProps {
@@ -33,6 +35,15 @@ interface PaymentModalProps {
   onConfirm: () => void;
 }
 
+type PaymentProvider = 'stripe' | 'paypal' | 'wallet';
+
+function createCheckoutId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `chk-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function PaymentModal({
   isOpen,
   onClose,
@@ -41,34 +52,35 @@ export default function PaymentModal({
   onConfirm,
 }: PaymentModalProps) {
   const [selectedDuration, setSelectedDuration] = useState<string>(initialBillingCycle);
-  const [selectedProvider, setSelectedProvider] = useState<'stripe' | 'paypal' | 'wallet'>('stripe');
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('stripe');
 
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [chargeId, setChargeId] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [intentType, setIntentType] = useState<'payment' | 'setup'>('payment');
-  const [paypalApprovalUrl, setPaypalApprovalUrl] = useState<string | null>(null);
-  const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
-  const [walletHoldId, setWalletHoldId] = useState<string | null>(null);
+  const [approvalUrl, setApprovalUrl] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [topUpUrl, setTopUpUrl] = useState<string | null>(null);
 
   const [needsMcomConnect, setNeedsMcomConnect] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isWalletPaying, setIsWalletPaying] = useState(false);
-  const [holdInitError, setHoldInitError] = useState<string | null>(null);
 
   const { mutateAsync: initiatePurchase, isPending: isInitiating } = useInitiatePurchase();
-  const { mutateAsync: confirmPurchase } = useConfirmPurchase();
+  const { mutateAsync: confirmPurchase, isPending: isConfirming } = useConfirmPurchase();
+  const { data: wallet } = useGetWallet();
 
-  // Reset state when modal opens or plan changes
+  // Reset state when the modal opens or the selected plan/variant changes.
   useEffect(() => {
     if (isOpen && plan) {
       setClientSecret(null);
-      setPaypalApprovalUrl(null);
-      setPaypalOrderId(null);
-      setWalletHoldId(null);
+      setApprovalUrl(null);
+      setChargeId(null);
+      setPaymentError(null);
+      setTopUpUrl(null);
       setNeedsMcomConnect(false);
       setIsSuccess(false);
-      setHoldInitError(null);
       setSelectedDuration(initialBillingCycle);
       setSelectedProvider('stripe');
+      setCheckoutId(createCheckoutId());
     }
   }, [isOpen, plan?.id, initialBillingCycle]);
 
@@ -106,9 +118,7 @@ export default function PaymentModal({
     }
   }, [plan, activeVariant, selectedDuration]);
 
-  const priceFormatted = useMemo(() => {
-    return `£${currentPrice.toFixed(2)}`;
-  }, [currentPrice]);
+  const priceFormatted = useMemo(() => `£${currentPrice.toFixed(2)}`, [currentPrice]);
 
   const durationLabel = useMemo(() => {
     if (activeVariant?.isCalendarYear || selectedDuration.toUpperCase().includes('PLUS')) {
@@ -121,71 +131,19 @@ export default function PaymentModal({
   }, [activeVariant, selectedDuration]);
 
   const externalPlanId = activeVariant?.id || plan?.selectedVariantId || plan?.id;
+  const availableBalance =
+    wallet?.centralAvailableBalance ?? wallet?.centralBalance ?? wallet?.topupBalance;
+  const centralTopUpUrl =
+    topUpUrl ||
+    wallet?.topUpUrl ||
+    `${(process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/wallet`;
 
-  // Trigger payment initiation
-  useEffect(() => {
-    if (!isOpen || !plan || !externalPlanId) return;
+  const isBusy = isInitiating || isConfirming;
+  const renewalLabel =
+    selectedProvider === 'wallet'
+      ? 'Auto-renews from MCOM Wallet'
+      : 'Renews at period end';
 
-    let isMounted = true;
-    setClientSecret(null);
-    setPaypalApprovalUrl(null);
-    setPaypalOrderId(null);
-    setWalletHoldId(null);
-    setNeedsMcomConnect(false);
-    setHoldInitError(null);
-
-    const runInitiate = async () => {
-      try {
-        const res = await initiatePurchase({
-          externalPlanId,
-          billingCycle: selectedDuration,
-          provider: selectedProvider,
-          returnUrl: typeof window !== 'undefined' ? `${window.location.origin}/business/subscription?upgrade=success` : undefined,
-          cancelUrl: typeof window !== 'undefined' ? window.location.href : undefined,
-        });
-
-        if (!isMounted) return;
-
-        if (selectedProvider === 'stripe') {
-          if (res.clientSecret) {
-            setClientSecret(res.clientSecret);
-            setIntentType(res.type === 'setup' ? 'setup' : 'payment');
-          }
-        } else if (selectedProvider === 'paypal') {
-          if (res.approvalUrl) {
-            setPaypalApprovalUrl(res.approvalUrl);
-            setPaypalOrderId(res.orderId || null);
-          }
-        } else if (selectedProvider === 'wallet') {
-          if (res.holdId) {
-            setWalletHoldId(res.holdId);
-          }
-        }
-      } catch (err: any) {
-        if (!isMounted) return;
-        const errCode = err?.response?.data?.code;
-        const errMsg = err?.response?.data?.message || err?.message;
-
-        if (errCode === 'ACCOUNT_NOT_LINKED' || errMsg?.includes('not connected to MCOM')) {
-          setNeedsMcomConnect(true);
-        } else if (selectedProvider === 'wallet') {
-          // Surface wallet-specific errors so the Pay button stays disabled
-          setHoldInitError(errMsg || 'Could not reserve funds. Check your MCOM Wallet balance.');
-        } else {
-          toast.error(errMsg || 'Failed to prepare checkout');
-        }
-      }
-    };
-
-    runInitiate();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, externalPlanId, selectedDuration, selectedProvider]);
-
-  // Handle MCOM SSO Connect Redirect
   const handleConnectMcom = async () => {
     try {
       const { authorizeUrl } = await getSsoAuthorizeUrl();
@@ -197,35 +155,82 @@ export default function PaymentModal({
     }
   };
 
-  // Handle Wallet Payment
-  const handleWalletPay = async () => {
+  const handlePaymentError = (err: any) => {
+    const code = err?.response?.data?.error || err?.response?.data?.code;
+    const message =
+      err?.response?.data?.message || err?.message || 'Payment could not be started.';
+
+    if (code === 'ACCOUNT_NOT_LINKED' || message?.toLowerCase().includes('not linked')) {
+      setNeedsMcomConnect(true);
+      return;
+    }
+
+    setPaymentError(message);
+    if (err?.response?.data?.topUpUrl) {
+      setTopUpUrl(err.response.data.topUpUrl);
+    }
+    // A failed wallet charge (e.g. insufficient balance) must not be retried
+    // with the same MCOM idempotency key after the user tops up.
+    if (err?.response?.status === 402) {
+      setCheckoutId(createCheckoutId());
+    }
+    toast.error(message);
+  };
+
+  const handleStartPayment = async () => {
     if (!externalPlanId) return;
-    setIsWalletPaying(true);
+
+    setPaymentError(null);
+    setNeedsMcomConnect(false);
+
     try {
+      const res = await initiatePurchase({
+        externalPlanId,
+        billingCycle: selectedDuration,
+        provider: selectedProvider,
+        checkoutId: checkoutId || undefined,
+      });
+
+      if (res.checkoutId) setCheckoutId(res.checkoutId);
+      if (res.chargeId) setChargeId(res.chargeId);
+      if (res.topUpUrl) setTopUpUrl(res.topUpUrl);
+
+      if (selectedProvider === 'stripe') {
+        if (!res.clientSecret) {
+          throw new Error('Stripe did not return a payment intent. Please try again.');
+        }
+        setClientSecret(res.clientSecret);
+        return;
+      }
+
+      if (selectedProvider === 'paypal') {
+        if (!res.approvalUrl) {
+          throw new Error('PayPal did not return an approval link. Please try again.');
+        }
+        setApprovalUrl(res.approvalUrl);
+        return;
+      }
+
+      // Wallet charges settle immediately. Confirming grants the entitlement.
       await confirmPurchase({
         externalPlanId,
         billingCycle: selectedDuration,
         provider: 'wallet',
-        holdId: walletHoldId || undefined,
+        checkoutId: res.checkoutId || checkoutId || undefined,
+        chargeId: res.chargeId,
       });
 
       setIsSuccess(true);
       toast.success('Paid with MCOM Wallet! Subscription activated.');
-      setTimeout(() => {
-        onConfirm();
-      }, 1500);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Wallet payment failed. Please check your balance.');
-    } finally {
-      setIsWalletPaying(false);
+      setTimeout(() => onConfirm(), 1500);
+    } catch (err) {
+      handlePaymentError(err);
     }
   };
 
   const handleStripeSuccess = () => {
     setIsSuccess(true);
-    setTimeout(() => {
-      onConfirm();
-    }, 1500);
+    setTimeout(() => onConfirm(), 1500);
   };
 
   return (
@@ -255,7 +260,7 @@ export default function PaymentModal({
                 </div>
                 <h2 className="text-2xl font-black mt-1">Upgrade to {plan.name}</h2>
                 <p className="text-white/80 text-sm mt-0.5">
-                  Billed once · Instant entitlement activation.
+                  Secure checkout · Instant entitlement activation.
                 </p>
               </div>
               <button
@@ -290,11 +295,10 @@ export default function PaymentModal({
                     <Zap size={24} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      Connect Your MCOM Account
-                    </h3>
+                    <h3 className="text-lg font-bold text-gray-900">Connect Your MCOM Account</h3>
                     <p className="text-gray-600 text-sm mt-1 max-w-sm mx-auto">
-                      Subscriptions and payment processing are powered centrally by MCOM Solutions. Connect your account to continue.
+                      Subscriptions and payment processing are powered centrally by MCOM
+                      Solutions. Connect your account to continue.
                     </p>
                   </div>
                   <button
@@ -319,7 +323,7 @@ export default function PaymentModal({
                     </div>
                     <div className="text-right">
                       <span className="text-2xl font-black text-gray-900">{priceFormatted}</span>
-                      <span className="text-[11px] text-gray-500 block font-medium">Billed once</span>
+                      <span className="text-[11px] text-gray-500 block font-medium">{renewalLabel}</span>
                     </div>
                   </div>
 
@@ -331,8 +335,14 @@ export default function PaymentModal({
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedProvider('stripe')}
-                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                        disabled={isBusy}
+                        onClick={() => {
+                          setSelectedProvider('stripe');
+                          setClientSecret(null);
+                          setApprovalUrl(null);
+                          setPaymentError(null);
+                        }}
+                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all disabled:opacity-60 ${
                           selectedProvider === 'stripe'
                             ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20 text-orange-700 font-bold'
                             : 'border-gray-200 hover:border-gray-300 text-gray-600'
@@ -344,8 +354,14 @@ export default function PaymentModal({
 
                       <button
                         type="button"
-                        onClick={() => setSelectedProvider('paypal')}
-                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                        disabled={isBusy}
+                        onClick={() => {
+                          setSelectedProvider('paypal');
+                          setClientSecret(null);
+                          setApprovalUrl(null);
+                          setPaymentError(null);
+                        }}
+                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all disabled:opacity-60 ${
                           selectedProvider === 'paypal'
                             ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20 text-blue-700 font-bold'
                             : 'border-gray-200 hover:border-gray-300 text-gray-600'
@@ -357,8 +373,14 @@ export default function PaymentModal({
 
                       <button
                         type="button"
-                        onClick={() => setSelectedProvider('wallet')}
-                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                        disabled={isBusy}
+                        onClick={() => {
+                          setSelectedProvider('wallet');
+                          setClientSecret(null);
+                          setApprovalUrl(null);
+                          setPaymentError(null);
+                        }}
+                        className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all disabled:opacity-60 ${
                           selectedProvider === 'wallet'
                             ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20 text-amber-700 font-bold'
                             : 'border-gray-200 hover:border-gray-300 text-gray-600'
@@ -370,13 +392,33 @@ export default function PaymentModal({
                     </div>
                   </div>
 
+                  {paymentError && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 flex gap-2">
+                      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Payment could not be completed</p>
+                        <p className="text-xs mt-0.5">{paymentError}</p>
+                        {selectedProvider === 'wallet' && (
+                          <a
+                            href={centralTopUpUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs mt-1 underline font-semibold inline-block"
+                          >
+                            Top up your MCOM Wallet
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Payment Form Container */}
                   <div className="pt-2 border-t border-gray-100">
-                    {isInitiating ? (
+                    {isBusy ? (
                       <div className="py-12 flex flex-col items-center justify-center text-gray-500 space-y-3">
                         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                         <span className="text-sm font-medium">
-                          Connecting to MCOM Solutions Hub...
+                          {isConfirming ? 'Confirming payment...' : 'Connecting to MCOM Payments Hub...'}
                         </span>
                       </div>
                     ) : selectedProvider === 'stripe' ? (
@@ -385,15 +427,20 @@ export default function PaymentModal({
                           <McomStripeCheckout
                             externalPlanId={externalPlanId || ''}
                             billingCycle={selectedDuration}
-                            intentType={intentType}
+                            checkoutId={checkoutId || ''}
                             amountText={priceFormatted}
                             onSuccess={handleStripeSuccess}
                           />
                         </Elements>
                       ) : (
-                        <div className="text-center py-6 text-gray-500 text-sm">
-                          Preparing Card checkout form...
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleStartPayment}
+                          className="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                        >
+                          <CreditCard size={18} />
+                          Continue to card payment ({priceFormatted})
+                        </button>
                       )
                     ) : selectedProvider === 'paypal' ? (
                       <div className="space-y-4 py-2">
@@ -404,20 +451,23 @@ export default function PaymentModal({
                             <strong className="font-bold">{priceFormatted}</strong>.
                           </p>
                         </div>
-                        {paypalApprovalUrl ? (
+                        {approvalUrl ? (
                           <a
-                            href={paypalApprovalUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href={approvalUrl}
                             className="w-full py-3.5 px-4 bg-[#0070BA] hover:bg-[#003087] text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                           >
                             <span>Continue to PayPal ({priceFormatted})</span>
                             <ExternalLink size={16} />
                           </a>
                         ) : (
-                          <div className="text-center py-4 text-gray-400 text-sm">
-                            Preparing PayPal order...
-                          </div>
+                          <button
+                            type="button"
+                            onClick={handleStartPayment}
+                            className="w-full py-3.5 px-4 bg-[#0070BA] hover:bg-[#003087] text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                          >
+                            <span>Continue with PayPal ({priceFormatted})</span>
+                            <ExternalLink size={16} />
+                          </button>
                         )}
                       </div>
                     ) : (
@@ -426,56 +476,34 @@ export default function PaymentModal({
                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-sm text-amber-900 space-y-1">
                           <p className="font-semibold">Centralised Ecosystem Wallet</p>
                           <p className="text-xs text-amber-700">
-                            Instantly reserve and capture{' '}
-                            <strong className="font-bold">{priceFormatted}</strong> from your Central MCOM Wallet.
+                            Pay <strong className="font-bold">{priceFormatted}</strong> instantly from
+                            your Central MCOM Wallet.
                           </p>
-                        </div>
-
-                        {/* Hold error banner */}
-                        {holdInitError && (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
-                            <p className="font-semibold">Wallet reservation failed</p>
-                            <p className="text-xs mt-0.5">{holdInitError}</p>
-                            <p className="text-xs mt-1 text-red-600">
-                              Please check your MCOM Wallet balance at{' '}
-                              <a
-                                href={`${(process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || "http://localhost:3000").replace(/\/$/, "")}/dashboard/wallet`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline font-semibold"
-                              >
-                                MCOM Solutions
-                              </a>
-                              .
+                          {availableBalance !== undefined && availableBalance !== null && (
+                            <p className="text-xs text-amber-800 font-medium">
+                              Available balance: {Number(availableBalance).toFixed(2)} MCOM
                             </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
 
                         <button
                           type="button"
-                          onClick={handleWalletPay}
-                          disabled={isWalletPaying || isInitiating || !walletHoldId}
+                          onClick={handleStartPayment}
+                          disabled={isBusy}
                           className="w-full py-3.5 px-4 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isWalletPaying ? (
-                            <>
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                              <span>Processing Wallet Payment...</span>
-                            </>
-                          ) : isInitiating ? (
-                            <>
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                              <span>Reserving funds...</span>
-                            </>
-                          ) : !walletHoldId ? (
-                            <span>Wallet unavailable — check balance</span>
-                          ) : (
-                            <>
-                              <ShieldCheck size={18} />
-                              <span>Pay with MCOM Wallet ({priceFormatted})</span>
-                            </>
-                          )}
+                          <ShieldCheck size={18} />
+                          <span>Pay with MCOM Wallet ({priceFormatted})</span>
                         </button>
+
+                        <a
+                          href={centralTopUpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-center text-amber-700 underline font-semibold block"
+                        >
+                          Top up your MCOM Wallet
+                        </a>
                       </div>
                     )}
                   </div>

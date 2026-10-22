@@ -160,11 +160,15 @@ export class PointPackageService {
     businessId: string,
     transactionId: string,
     provider: string,
+    checkoutId?: string,
+    chargeId?: string,
   ) {
     const verification = await this.paymentService.verifyPackagePurchase(
       { id: businessId },
       transactionId,
       provider,
+      checkoutId,
+      chargeId,
     );
 
     const pointPackage = await this.findOne(verification.packageId);

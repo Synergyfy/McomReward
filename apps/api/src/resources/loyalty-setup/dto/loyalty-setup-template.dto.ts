@@ -100,6 +100,11 @@ export class CreateLoyaltySetupTemplateDto {
   @IsArray()
   @IsObject({ each: true })
   campaigns?: Record<string, unknown>[];
+
+  @ApiPropertyOptional({ type: Object, description: "Customer loyalty tier configuration" })
+  @IsOptional()
+  @IsObject()
+  tierConfig?: Record<string, unknown>;
 }
 
 export class UpdateLoyaltySetupTemplateDto extends CreateLoyaltySetupTemplateDto {}
@@ -111,5 +116,6 @@ export class CreateLoyaltySetupTemplateInternalDto {
   benefits?: string[];
   rewards: Record<string, unknown>[];
   campaigns?: Record<string, unknown>[];
+  tierConfig?: Record<string, unknown>;
   isBuiltIn?: boolean;
 }

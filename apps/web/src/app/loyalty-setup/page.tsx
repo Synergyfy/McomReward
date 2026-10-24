@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import {
-  useGetLoyaltySetupProgress, useSaveLoyaltySetup,
-  useMarkWelcomeSeen, useMarkEcosystemIntroSeen,
+  useGetLoyaltySetupProgress, useSaveLoyaltySetup, useSkipLoyaltySetup,
+  useMarkWelcomeSeen, useMarkEcosystemIntroSeen, useSaveCampaignSelections,
   useSelectTemplate, useSaveRewardCustomizations, useSaveCampaignDescriptions,
   useSaveTierConfig,
-  getTemplatesForSector,
+  useGetBusinessLoyaltySetupTemplates,
 } from "@/services/loyalty-setup/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
+import { useGetAvailableAdminCampaigns } from "@/services/campaigns/hook";
 import type { SectorTemplate, RewardCustomization, TierConfig } from "@/services/loyalty-setup/types";
 
 import WelcomeScreen from "./_screens/WelcomeScreen";
@@ -24,12 +24,6 @@ import ReviewScreen from "./_screens/ReviewScreen";
 
 type Step = "welcome" | "profile" | "templates" | "campaigns" | "tiers" | "review" | "saving";
 
-const STEP_INDEX: Record<string, number> = {
-  welcome: 0, profile: 1, templates: 2, campaigns: 3, tiers: 4, review: 5, saving: 6,
-};
-
-const TOTAL_STEPS = 5;
-
 function SavingScreen() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-white">
@@ -37,8 +31,8 @@ function SavingScreen() {
         <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center">
           <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900">Activating your programme</h2>
-        <p className="text-gray-500 text-sm">Redirecting to your dashboard...</p>
+        <h2 className="text-xl font-semibold text-gray-900">Saving your onboarding setup</h2>
+        <p className="text-gray-500 text-sm">Taking you to your dashboard…</p>
         <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
       </div>
     </div>
@@ -48,52 +42,120 @@ function SavingScreen() {
 export default function LoyaltySetupPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
+  const hasInitializedStep = useRef(false);
   const [savedCustomizations, setSavedCustomizations] = useState<Record<string, RewardCustomization>>({});
   const [savedTierConfig, setSavedTierConfig] = useState<TierConfig | null>(null);
+  const [templateOverrides, setTemplateOverrides] = useState<Record<string, SectorTemplate>>({});
+  const [centralBusinessProfile, setCentralBusinessProfile] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("mcom_central_business_profile");
+      if (stored) setCentralBusinessProfile(JSON.parse(stored));
+    } catch {
+      setCentralBusinessProfile(null);
+    }
+  }, []);
 
   const { data: progress, isLoading: isProgressLoading } = useGetLoyaltySetupProgress();
   const { data: profile, isLoading: isProfileLoading, isFetched: isProfileFetched } = useGetBusinessProfile();
+  const { data: allTemplates = [], isLoading: areTemplatesLoading, isError: templatesFailed, refetch: refetchTemplates } = useGetBusinessLoyaltySetupTemplates();
+  const { data: adminCampaignPage, isLoading: areAdminCampaignsLoading, isError: adminCampaignsFailed, refetch: refetchAdminCampaigns } = useGetAvailableAdminCampaigns();
   const { mutateAsync: markWelcomeSeen } = useMarkWelcomeSeen();
+  const { mutateAsync: skipLoyaltySetup } = useSkipLoyaltySetup();
   const { mutateAsync: markEcosystemIntroSeen } = useMarkEcosystemIntroSeen();
   const { mutateAsync: selectTemplate } = useSelectTemplate();
   const { mutateAsync: saveRewardCustomizations } = useSaveRewardCustomizations();
   const { mutateAsync: saveCampaignDescriptions } = useSaveCampaignDescriptions();
+  const { mutateAsync: saveCampaignSelections } = useSaveCampaignSelections();
   const { mutateAsync: saveTierConfig } = useSaveTierConfig();
   const { mutateAsync: saveSetup, isPending: isSaving } = useSaveLoyaltySetup();
 
-  const sectorKey = profile?.sector?.name || profile?.category?.name || "retail";
+  const sectorKey = centralBusinessProfile?.industry || centralBusinessProfile?.category || profile?.sector?.name || profile?.category?.name || "retail";
   const resolvedSectorKey = (() => {
     const lower = sectorKey.toLowerCase();
+    if (lower.includes("custom")) return "custom";
+    if (lower.includes("gym") || lower.includes("fitness") || lower.includes("sport")) return "gym";
     if (lower.includes("restaurant") || lower.includes("food") || lower.includes("dining")) return "restaurant";
     if (lower.includes("cafe") || lower.includes("coffee")) return "cafe";
     if (lower.includes("retail") || lower.includes("shop") || lower.includes("store")) return "retail";
     if (lower.includes("salon") || lower.includes("beauty") || lower.includes("hair")) return "salon";
-    if (lower.includes("gym") || lower.includes("fitness") || lower.includes("sport")) return "gym";
     if (lower.includes("service") || lower.includes("consult")) return "service";
     return "retail";
   })();
 
-  const templates = getTemplatesForSector(resolvedSectorKey);
+  const templates = allTemplates
+    .map((template) => templateOverrides[template.id] || template)
+    .sort((first, second) => {
+      const firstMatchesBusiness = first.sectorKey.toLowerCase() === resolvedSectorKey;
+      const secondMatchesBusiness = second.sectorKey.toLowerCase() === resolvedSectorKey;
+      return Number(secondMatchesBusiness) - Number(firstMatchesBusiness);
+    });
   const selectedTemplate = templates.find((t) => t.id === (progress?.selectedTemplateId || ""));
 
   useEffect(() => {
-    if (progress && !isProgressLoading) {
-      if (progress.hasCompletedSetup) router.replace("/dashboard");
-      else if (progress.tierConfig) setStep("tiers");
-      else if (progress.selectedTemplateId) setStep("campaigns");
-      else if (progress.hasSeenEcosystemIntro) setStep("templates");
-      else if (progress.hasSeenWelcome) setStep("profile");
+    const templateId = progress?.selectedTemplateId;
+    const savedCampaigns = progress?.selectedCampaigns;
+    const baseTemplate = allTemplates.find((template) => template.id === templateId);
+    if (!templateId || !baseTemplate || !savedCampaigns) return;
+    setTemplateOverrides((current) => {
+      const currentTemplate = current[templateId] || baseTemplate;
+      if (currentTemplate.campaigns === savedCampaigns) return current;
+      return { ...current, [templateId]: { ...currentTemplate, campaigns: savedCampaigns } };
+    });
+  }, [allTemplates, progress?.selectedTemplateId, progress?.selectedCampaigns]);
+
+  useEffect(() => {
+    if (!progress || isProgressLoading || hasInitializedStep.current) return;
+    if (progress.hasCompletedSetup) {
+      hasInitializedStep.current = true;
+      router.replace("/dashboard");
+      return;
     }
-  }, [progress, isProgressLoading, router]);
+    if (progress.selectedTemplateId && areTemplatesLoading) return;
+
+    hasInitializedStep.current = true;
+    if (progress.selectedTemplateId && !selectedTemplate) setStep("templates");
+    else if (progress.tierConfig) setStep("tiers");
+    else if (progress.selectedTemplateId && selectedTemplate) setStep("campaigns");
+    else if (progress.hasSeenEcosystemIntro) setStep("templates");
+    else if (progress.hasSeenWelcome) setStep("profile");
+  }, [progress, isProgressLoading, areTemplatesLoading, selectedTemplate, router]);
 
   const handleWelcomeComplete = async () => { await markWelcomeSeen(); setStep("profile"); };
-  const handleWelcomeSkip = () => router.push("/dashboard");
+  const handleWelcomeSkip = async () => { await skipLoyaltySetup(); router.push("/dashboard"); };
   const handleProfileComplete = async () => { await markEcosystemIntroSeen(); setStep("templates"); };
   const handleProfileBack = () => setStep("welcome");
   const handleTemplateSelect = async (id: string) => { await selectTemplate(id); setStep("campaigns"); };
   const handleTemplateBack = () => setStep("profile");
 
-  const handleCampaignsComplete = async () => { setStep("tiers"); };
+  const handleTemplateSave = (template: SectorTemplate) => {
+    setTemplateOverrides((current) => ({ ...current, [template.id]: template }));
+    const updatedCustomizations = Object.fromEntries(template.rewards.map((reward) => [reward.id, {
+      name: reward.name,
+      description: reward.description,
+      pointsRequired: reward.pointsRequired || 0,
+      stampsRequired: reward.stampsRequired || 0,
+      rewardType: reward.rewardType,
+      image: reward.image,
+    }]));
+    const nextCustomizations = { ...savedCustomizations, ...updatedCustomizations };
+    setSavedCustomizations(nextCustomizations);
+    void saveRewardCustomizations(nextCustomizations);
+  };
+
+  const handleCampaignsComplete = async (campaigns: SectorTemplate["campaigns"]) => {
+    const selected = templates.find((template) => template.id === progress?.selectedTemplateId);
+    if (selected) {
+      setTemplateOverrides((current) => {
+        const currentTemplate = current[selected.id] || selected;
+        return { ...current, [selected.id]: { ...currentTemplate, campaigns } };
+      });
+    }
+    await saveCampaignDescriptions(Object.fromEntries(campaigns.map((campaign) => [campaign.key, campaign.description])));
+    await saveCampaignSelections(campaigns);
+    setStep("tiers");
+  };
   const handleCampaignsBack = () => setStep("templates");
 
   const handleTierConfigSave = async (config: TierConfig) => {
@@ -116,6 +178,7 @@ export default function LoyaltySetupPage() {
       hasSeenWelcome: true,
       hasSeenEcosystemIntro: true,
       selectedTemplateId: progress?.selectedTemplateId || null,
+      selectedCampaigns: (selectedTemplate?.campaigns || []).map((campaign) => ({ ...campaign, description: descriptions[campaign.key] ?? campaign.description })),
       rewardCustomizations: savedCustomizations,
       campaignDescriptions: descriptions,
       enabledEngines: null,
@@ -142,27 +205,8 @@ export default function LoyaltySetupPage() {
 
   if (progress?.hasCompletedSetup) return null;
 
-  const showProgress = step !== "welcome" && step !== "saving";
-  const progressPercent = showProgress ? ((STEP_INDEX[step] || 0) / TOTAL_STEPS) * 100 : 0;
-
-  const renderProgressBar = () => {
-    if (!showProgress) return null;
-    return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-orange-100 px-4 py-3">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500">Step {STEP_INDEX[step]} of {TOTAL_STEPS}</span>
-            <span className="text-xs font-medium text-orange-500">{Math.round(progressPercent)}%</span>
-          </div>
-          <Progress value={progressPercent} className="h-1.5" indicatorClassName="bg-orange-500" />
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className={showProgress ? "pt-14" : ""}>
-      {renderProgressBar()}
+    <div>
       <AnimatePresence mode="wait">
         {step === "welcome" && (
           <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
@@ -176,14 +220,34 @@ export default function LoyaltySetupPage() {
         )}
         {step === "templates" && (
           <motion.div key="templates" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <TemplateScreen sectorKey={resolvedSectorKey} templates={templates} onSelect={handleTemplateSelect} onBack={handleTemplateBack} />
+            {areTemplatesLoading ? (
+              <div className="flex min-h-[60vh] items-center justify-center gap-3 text-gray-500"><Loader2 className="h-6 w-6 animate-spin text-orange-500" />Loading MCOM Rewards templates…</div>
+            ) : templatesFailed ? (
+              <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center"><p className="text-gray-600">We couldn&apos;t load MCOM Rewards templates. Please try again.</p><button onClick={() => void refetchTemplates()} className="rounded-lg bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600">Try again</button></div>
+            ) : templates.length === 0 ? (
+              <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center"><h2 className="text-xl font-semibold text-gray-900">No templates available yet</h2><p className="max-w-md text-gray-500">There are no MCOM Rewards templates set up for your business type. Please contact your administrator.</p><button onClick={handleTemplateBack} className="text-sm font-medium text-orange-600 hover:text-orange-700">Go back</button></div>
+            ) : (
+              <TemplateScreen
+                sectorKey={resolvedSectorKey}
+                templates={templates}
+                initialSelectedId={progress?.selectedTemplateId}
+                initialCustomizedIds={Object.keys(templateOverrides)}
+                onSelect={handleTemplateSelect}
+                onBack={handleTemplateBack}
+                onTemplateSave={handleTemplateSave}
+              />
+            )}
           </motion.div>
         )}
         {step === "campaigns" && selectedTemplate && (
           <motion.div key="campaigns" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <CampaignsScreen
-              template={selectedTemplate}
-              templateRewards={selectedTemplate.rewards}
+              campaigns={adminCampaignPage?.data || []}
+              templateRewards={selectedTemplate.rewards || []}
+              initialSelectedCampaigns={progress?.selectedCampaigns || []}
+              isLoading={areAdminCampaignsLoading}
+              isError={adminCampaignsFailed}
+              onRetry={() => void refetchAdminCampaigns()}
               onComplete={handleCampaignsComplete}
               onBack={handleCampaignsBack}
             />
@@ -191,15 +255,18 @@ export default function LoyaltySetupPage() {
         )}
         {step === "tiers" && (
           <motion.div key="tiers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <TiersScreen initialConfig={savedTierConfig || progress?.tierConfig || null} onComplete={handleTierConfigSave} onBack={handleTierConfigBack} onSkip={handleTierConfigSkip} />
+            <TiersScreen initialConfig={savedTierConfig || selectedTemplate?.tierConfig || progress?.tierConfig || null} onComplete={handleTierConfigSave} onBack={handleTierConfigBack} onSkip={handleTierConfigSkip} />
           </motion.div>
         )}
         {step === "review" && selectedTemplate && (
           <motion.div key="review" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <ReviewScreen
               template={selectedTemplate}
-              customizations={progress?.rewardCustomizations || savedCustomizations}
-              engines={null}
+              profile={profile}
+              centralBusinessProfile={centralBusinessProfile || undefined}
+              campaignDetails={adminCampaignPage?.data || []}
+              businessName={centralBusinessProfile?.businessName || profile?.name}
+              businessCategory={centralBusinessProfile?.category || centralBusinessProfile?.industry || profile?.sector?.name || profile?.category?.name}
               tierConfig={savedTierConfig || progress?.tierConfig || null}
               onSave={handleReviewSave}
               onBack={handleReviewBack}

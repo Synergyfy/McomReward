@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Trophy, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ArrowRight, ArrowLeft, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import type { TierConfig, TierDefinition } from "@/services/loyalty-setup/types";
+import type { TierConfig } from "@/services/loyalty-setup/types";
 
 interface TiersScreenProps {
   initialConfig: TierConfig | null;
@@ -22,15 +22,7 @@ interface TiersScreenProps {
 const TIER_COLORS = ["bg-orange-100 text-orange-700", "bg-gray-100 text-gray-700", "bg-yellow-100 text-yellow-700", "bg-slate-100 text-slate-700"];
 
 export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip }: TiersScreenProps) {
-  const [config, setConfig] = useState<TierConfig>(() => initialConfig || {
-    enabled: false,
-    tiers: [
-      { name: "Bronze", requirementType: "points", requirementValue: 0, benefits: ["Earn 1x points", "Birthday reward"] },
-      { name: "Silver", requirementType: "points", requirementValue: 500, benefits: ["Earn 1.5x points", "Early access to offers"] },
-      { name: "Gold", requirementType: "points", requirementValue: 1500, benefits: ["Earn 2x points", "VIP offers", "Free delivery"] },
-      { name: "Platinum", requirementType: "points", requirementValue: 5000, benefits: ["Earn 3x points", "Personal manager", "Exclusive events"] },
-    ],
-  });
+  const [config, setConfig] = useState<TierConfig>(() => initialConfig || { enabled: false, tiers: [] });
 
   const updateTier = (idx: number, field: string, value: unknown) => {
     setConfig((prev) => ({
@@ -45,49 +37,65 @@ export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50/50 via-white to-white">
-      <div className="max-w-3xl mx-auto px-4 py-12 md:py-20">
+    <div className="min-h-screen bg-[#f7f8ff] text-slate-900">
+      <div className="mx-auto max-w-3xl px-4 pb-12 pt-4 sm:px-7 md:pb-16 md:pt-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />Back
           </button>
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Customer Tiers</h1>
-            <p className="text-gray-500 max-w-lg mx-auto">Set up a tier system to reward your most loyal customers with escalating benefits.</p>
+          <section aria-label="Setup progress, step 4 of 5" className="mb-8 w-full">
+            <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600 sm:text-xs">
+              <span>Step 4 of 5 · Tiers</span><span className="text-orange-600">80% complete</span>
+            </div>
+            <div className="relative grid grid-cols-5">
+              <div aria-hidden="true" className="absolute left-[10%] right-[10%] top-[15px] h-0.5 bg-slate-200"><div className="h-full w-3/4 bg-orange-500" /></div>
+              {["Profile", "Rewards", "Campaigns", "Tiers", "Review"].map((label, index) => {
+                const number = index + 1;
+                const isComplete = number < 4;
+                const isCurrent = number === 4;
+                return <div key={label} aria-current={isCurrent ? "step" : undefined} className={`relative z-10 flex min-w-0 flex-col items-center gap-1.5 ${isCurrent ? "text-orange-700" : isComplete ? "text-slate-700" : "text-slate-400"}`}>
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold ${isComplete ? "border-orange-500 bg-orange-500 text-white" : isCurrent ? "border-orange-500 bg-orange-50 text-orange-700 ring-2 ring-orange-100" : "border-slate-300 bg-white text-slate-500"}`}>{isComplete ? "✓" : number}</span>
+                  <span className="max-w-full truncate text-[10px] font-semibold sm:text-[11px]">{label}</span>
+                </div>;
+              })}
+            </div>
+          </section>
+          <div className="mb-7 sm:mb-8">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-orange-600">MCOM Rewards setup</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Set up customer tiers</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">Review the tiers supplied with your rewards template. Adjust how customers qualify and what they receive.</p>
           </div>
 
-          <div className="mb-8">
-            <Card className="p-5 border border-orange-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Enable Tier System</h3>
-                  <p className="text-sm text-gray-500">Customers progress through tiers based on their activity</p>
+          <Card className="mb-5 border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-semibold text-slate-900">Tier programme</h2>
+                  <Badge className={config.enabled ? "border-0 bg-emerald-50 text-emerald-700" : "border-0 bg-slate-100 text-slate-600"}>{config.enabled ? "On" : "Off"}</Badge>
                 </div>
-                <Switch checked={config.enabled} onCheckedChange={(v) => setConfig((prev) => ({ ...prev, enabled: v }))} />
+                <p className="mt-1 text-sm text-slate-500">Turn this on to let customers unlock the tiers below.</p>
               </div>
-            </Card>
-          </div>
+              <Switch aria-label="Enable customer tier programme" checked={config.enabled} onCheckedChange={(v) => setConfig((prev) => ({ ...prev, enabled: v }))} />
+            </div>
+          </Card>
 
-          {config.enabled && (
-            <div className="space-y-4 mb-8">
+          {config.enabled && config.tiers.length > 0 ? (
+            <div className="mb-7 grid gap-4 lg:grid-cols-2">
               {config.tiers.map((tier, idx) => (
                 <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                  <Card className="p-5 border border-orange-100">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${TIER_COLORS[idx] || TIER_COLORS[0]}`}>
-                        {idx + 1}
-                      </div>
-                      <div className="flex-1">
-                        <Label className="text-xs text-gray-500">Tier name</Label>
-                        <Input value={tier.name} onChange={(e) => updateTier(idx, "name", e.target.value)} className="font-semibold text-lg h-9 mt-1" />
+                  <Card className="h-full border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${TIER_COLORS[idx] || TIER_COLORS[0]}`}>{idx + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <Label htmlFor={`tier-name-${idx}`} className="text-xs font-medium text-slate-500">Tier name</Label>
+                        <Input id={`tier-name-${idx}`} value={tier.name} onChange={(e) => updateTier(idx, "name", e.target.value)} className="mt-1 h-9 font-semibold" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <Label className="text-xs text-gray-500">Requirement</Label>
-                        <p className="text-[10px] text-gray-400 mb-1">How customers qualify for this tier</p>
+                        <Label className="text-xs font-medium text-slate-500">Qualifies by</Label>
                         <Select value={tier.requirementType} onValueChange={(v) => updateTier(idx, "requirementType", v)}>
-                          <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="points">Points earned</SelectItem>
                             <SelectItem value="spend">Total spend (£)</SelectItem>
@@ -96,38 +104,31 @@ export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip 
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-500">Threshold</Label>
-                        <p className="text-[10px] text-gray-400 mb-1">Minimum amount needed to reach this tier</p>
-                        <Input type="number" min={0} value={tier.requirementValue} onChange={(e) => updateTier(idx, "requirementValue", Number(e.target.value))} className="text-sm" />
+                        <Label className="text-xs font-medium text-slate-500">Minimum required</Label>
+                        <Input type="number" min={0} value={tier.requirementValue} onChange={(e) => updateTier(idx, "requirementValue", Number(e.target.value))} className="mt-1 text-sm" />
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Benefits (comma-separated)</Label>
-                      <p className="text-[10px] text-gray-400 mb-1">Perks customers receive at this tier</p>
-                      <Input value={tier.benefits.join(", ")} onChange={(e) => updateTierBenefits(idx, e.target.value)} className="text-sm" placeholder="e.g. Double points, Free delivery, VIP offers" />
+                    <div className="mt-3">
+                      <Label htmlFor={`tier-benefits-${idx}`} className="text-xs font-medium text-slate-500">Customer benefits</Label>
+                      <Input id={`tier-benefits-${idx}`} value={tier.benefits.join(", ")} onChange={(e) => updateTierBenefits(idx, e.target.value)} className="mt-1 text-sm" placeholder="e.g. Double points, Free delivery" />
                     </div>
                   </Card>
                 </motion.div>
               ))}
 
-              {/* Visual preview */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                {config.tiers.map((tier, idx) => (
-                  <div key={idx} className="flex items-center gap-2 flex-shrink-0">
-                    <Badge className={`${TIER_COLORS[idx] || TIER_COLORS[0]} border-none px-3 py-1.5 text-xs font-semibold`}>{tier.name}</Badge>
-                    {idx < config.tiers.length - 1 && <span className="text-gray-300">→</span>}
-                  </div>
-                ))}
-              </div>
             </div>
-          )}
+          ) : config.enabled ? (
+            <Card className="mb-7 border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+              <Trophy className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+              <h3 className="font-semibold text-slate-900">No customer tiers configured</h3>
+              <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">There are no customer loyalty tiers in this rewards template yet. You can continue without tiers or ask an administrator to add them to the template.</p>
+            </Card>
+          ) : null}
 
-          <div className="flex flex-col items-center gap-4">
-            <Button size="lg" onClick={() => onComplete(config)} className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 hover:shadow-orange-300 transition-all min-w-[280px]">
+          <div className="flex flex-col items-center gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={onSkip} className="order-2 text-slate-500 hover:text-slate-800 sm:order-1">Skip tiers</Button>
+            <Button size="lg" onClick={() => onComplete(config)} className="order-1 w-full rounded-xl bg-orange-500 px-8 py-5 text-base font-semibold text-white shadow-md shadow-orange-200/70 transition-all hover:bg-orange-600 sm:order-2 sm:w-auto sm:min-w-[220px]">
               Continue<ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button variant="ghost" onClick={onSkip} className="text-gray-400 hover:text-gray-600">
-              Skip — no tiers
             </Button>
           </div>
         </motion.div>

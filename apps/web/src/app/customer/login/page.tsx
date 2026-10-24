@@ -9,6 +9,7 @@ import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getCentralCustomerSignupUrl, getCentralLoginUrl } from "@/lib/sso-utils";
+import { useParticipantLogin } from "@/services/auth/hook";
 
 type LoginData = {
   email: string;
@@ -18,9 +19,19 @@ type LoginData = {
 export default function CustomerLoginPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginData>();
   const router = useRouter();
+  const { mutateAsync: participantLogin, isPending: isLoggingIn } = useParticipantLogin();
 
   const onSubmit = async (data: LoginData) => {
-    window.location.href = getCentralLoginUrl("/sso-login");
+    try {
+      const response = await participantLogin(data);
+      localStorage.setItem("userRole", response.user.role);
+      localStorage.setItem("userName", response.user.name);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      router.replace("/participant");
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+      toast.error(Array.isArray(message) ? message[0] : message || "Unable to sign in. Check your email and password and try again.");
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -92,9 +103,9 @@ export default function CustomerLoginPage() {
           <Button
             type="submit"
             className="w-full bg-orange-500 text-white"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoggingIn}
           >
-            {isSubmitting ? "Logging in..." : "Log In"}
+            {isSubmitting || isLoggingIn ? "Logging in..." : "Log In"}
           </Button>
         </form>
 

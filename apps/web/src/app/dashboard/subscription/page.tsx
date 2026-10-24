@@ -16,6 +16,7 @@ import {
   Award,
   Clock,
   ExternalLink,
+  Eye,
   ListTodo,
 } from 'lucide-react';
 import api from '@/services/api';
@@ -30,6 +31,7 @@ import {
   useSetAutoRenew,
 } from '@/services/mcom-packages';
 import { toast } from 'sonner';
+import { enableLocalBusinessPreview } from '@/lib/local-business-preview';
 
 
 export default function SubscriptionDashboardPage() {
@@ -173,7 +175,22 @@ export default function SubscriptionDashboardPage() {
                 </span>
               </Button>
             )}
-
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="max-w-xs">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (enableLocalBusinessPreview()) window.location.assign('/dashboard');
+                  }}
+                  className="gap-2 border-amber-300 bg-amber-50 text-amber-950 hover:bg-amber-100"
+                >
+                  <Eye size={14} />
+                  <span>Open local dashboard preview</span>
+                </Button>
+                <p className="mt-1 text-xs text-amber-800">UI preview only; no payment or entitlement is recorded.</p>
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -185,7 +202,7 @@ export default function SubscriptionDashboardPage() {
                 refetchMyPackage();
                 toast.info('Refreshed subscription and entitlement status');
               }}
-              className="gap-2"
+              className="gap-2 self-start sm:self-auto"
             >
               <RefreshCw size={14} />
               <span>Refresh Status</span>

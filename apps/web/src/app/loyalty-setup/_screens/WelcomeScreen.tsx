@@ -1,17 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, HeartHandshake, Repeat, TrendingUp, Zap, Play, X } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Check, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const BENEFITS = [
-  { icon: HeartHandshake, title: "Retain Your Customers", description: "Build lasting relationships with automated loyalty programmes that keep customers coming back." },
-  { icon: Repeat, title: "Increase Repeat Purchases", description: "Reward repeat behaviour with points, stamps, and personalised offers that drive frequency." },
-  { icon: TrendingUp, title: "Increase Customer Value", description: "Encourage higher spend with tiered rewards, gift cards, and targeted campaigns." },
-  { icon: Zap, title: "Simple & Automated", description: "Everything is pre-configured for your business type. Activate in minutes, not hours." },
+  {
+    title: "Retain your customers",
+    description: "Build lasting relationships with rewards that give customers a reason to return.",
+    image: "/retain.png",
+    alt: "Customer retention illustration",
+    detail: "Stronger customer relationships",
+  },
+  {
+    title: "Increase repeat purchases",
+    description: "Bring points, stamps, and personalised offers together in one simple programme.",
+    image: "/repeat.png",
+    alt: "Repeat purchase rewards illustration",
+    detail: "Points · stamps · offers",
+  },
+  {
+    title: "Grow customer value",
+    description: "Encourage higher spend with tiers, gift cards, and campaigns for your business.",
+    image: "/growth.png",
+    alt: "Business growth illustration",
+    detail: "Tiers and targeted campaigns",
+  },
+  {
+    title: "Simple to set up",
+    description: "Start with a programme suited to your business, then make it your own.",
+    image: "/automated.png",
+    alt: "Automated rewards illustration",
+    detail: "Ready in just a few minutes",
+  },
 ];
 
 interface WelcomeScreenProps {
@@ -20,58 +41,59 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onComplete, onSkip }: WelcomeScreenProps) {
-  const [showDemo, setShowDemo] = useState(false);
-
   return (
-    <>
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-orange-50 via-white to-white px-4">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="mb-6">
-              <span className="text-3xl font-bold text-orange-600 tracking-tight">Loyalty CardX</span>
+    <main className="min-h-screen bg-[#f8fafc] text-slate-900" style={{ fontFamily: "Inter, Arial, sans-serif" }}>
+      <div className="flex min-h-screen w-full flex-col px-5 pb-3 pt-2 sm:px-8 sm:pt-4 lg:px-12 2xl:px-16">
+        <section className="mx-auto w-full flex-1 py-2 sm:w-[90%] sm:py-3 lg:w-[70%] lg:py-4">
+          <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between lg:mb-6">
+            <div className="max-w-none">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-sm">Customer rewards, made simple</p>
+              <h1 className="text-3xl font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl lg:text-5xl">
+                Welcome to <span className="text-orange-600">MCOM Rewards</span>
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+                Bring customers back with points, stamps, rewards, and campaigns tailored to your business. Your business details are ready; let&apos;s shape your programme.
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">Welcome to MCOM<br /><span className="text-orange-600">Reward & Loyalty</span></h1>
-            <p className="text-lg text-gray-500 max-w-lg mx-auto">Your all-in-one loyalty activation platform. We already understand your business — now let&apos;s set up the tools to reward your customers.</p>
+            <div className="hidden shrink-0 pb-1 text-sm font-medium text-slate-500 lg:block">A better way to reward repeat business</div>
           </div>
-          <div className="grid gap-4 mb-10 text-left">
-            {BENEFITS.map((benefit, i) => {
-              const Icon = benefit.icon;
-              return (
-                <motion.div key={benefit.title} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.1 }}>
-                  <Card className="p-4 flex items-start gap-4 border border-orange-100 bg-white/80 hover:bg-orange-50/50 transition-colors">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center"><Icon className="w-5 h-5 text-orange-600" /></div>
-                    <div><h3 className="font-semibold text-gray-900">{benefit.title}</h3><p className="text-sm text-gray-500 mt-0.5">{benefit.description}</p></div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" onClick={onComplete} className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 hover:shadow-orange-300 transition-all">
-              Start Setup<ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => setShowDemo(true)} className="px-8 py-6 text-lg rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50">
-              <Play className="mr-2 w-5 h-5" />View Demo
-            </Button>
-            <Button size="lg" variant="ghost" onClick={onSkip} className="px-8 py-6 text-lg rounded-xl text-gray-400 hover:text-gray-600">
-              Skip For Now
-            </Button>
-          </motion.div>
-        </motion.div>
-      </div>
 
-      <Dialog open={showDemo} onOpenChange={setShowDemo}>
-        <DialogContent className="sm:max-w-2xl" onInteractOutside={(e: Event) => e.preventDefault()}>
-          <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-            <div className="text-center p-8">
-              <Play className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-700">Demo Video</p>
-              <p className="text-sm text-gray-400 mt-1">Replace with YouTube embed link later</p>
-              <p className="text-xs text-gray-300 mt-4 font-mono">https://www.youtube.com/watch?v=PLACEHOLDER</p>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:gap-5">
+            {BENEFITS.map((benefit, index) => (
+              <article key={benefit.title} className="group grid min-h-40 grid-cols-[36%_minmax(0,1fr)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.035)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(15,23,42,0.09)] sm:min-h-44">
+                <div className="relative min-h-full overflow-hidden bg-gradient-to-br from-orange-50 via-[#fff8f0] to-amber-50">
+                  <div className="absolute -right-9 -top-14 h-48 w-48 rounded-full border-[24px] border-white/45" />
+                  <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white/40 to-transparent" />
+                  <Image src={benefit.image} alt={benefit.alt} fill sizes="(max-width: 639px) 38vw, (max-width: 1279px) 19vw, 14vw" className="z-10 object-contain p-2" />
+                  <span className="absolute left-3 top-3 z-20 rounded-md bg-white/90 px-2 py-1 text-[11px] font-bold tracking-[0.12em] text-orange-700 shadow-sm sm:left-4 sm:top-4">0{index + 1}</span>
+                </div>
+                <div className="flex flex-col justify-center p-3 sm:p-4 lg:p-5">
+                  <h2 className="text-base font-semibold leading-snug tracking-tight text-slate-900 sm:text-lg">{benefit.title}</h2>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-600 sm:text-sm">{benefit.description}</p>
+                  <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5 text-xs font-semibold text-slate-600 sm:text-sm">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-orange-600" aria-hidden="true" />
+                    <span>{benefit.detail}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+
+          <div className="mx-auto mt-8 flex max-w-2xl flex-col items-center gap-2 sm:mt-9 sm:flex-row sm:justify-center">
+            <Button onClick={onComplete} className="h-12 w-full rounded-xl bg-orange-600 px-8 text-base font-semibold text-white shadow-sm hover:bg-orange-700 sm:w-auto sm:min-w-52">
+              Start setup <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <button onClick={onSkip} className="h-11 px-5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900">
+              Skip for now
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500 sm:mt-4">
+            <span className="inline-flex items-center gap-1.5"><LockKeyhole className="h-3.5 w-3.5" />Secure setup</span>
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />No credit card required</span>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

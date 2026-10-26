@@ -32,6 +32,14 @@ export interface SsoLoginResult {
   user: {
     name: string;
     role: string;
+    businessProfile?: {
+      businessName?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      postcode?: string;
+      [key: string]: unknown;
+    } | null;
   };
   entitlement?: PlatformEntitlement;
 }

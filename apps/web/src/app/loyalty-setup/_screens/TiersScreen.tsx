@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import type { TierConfig } from "@/services/loyalty-setup/types";
+import FieldRequirementHint from "@/components/onboarding/FieldRequirementHint";
 
 interface TiersScreenProps {
   initialConfig: TierConfig | null;
@@ -87,13 +88,13 @@ export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip 
                     <div className="mb-4 flex items-center gap-3">
                       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${TIER_COLORS[idx] || TIER_COLORS[0]}`}>{idx + 1}</span>
                       <div className="min-w-0 flex-1">
-                        <Label htmlFor={`tier-name-${idx}`} className="text-xs font-medium text-slate-500">Tier name</Label>
+                        <Label htmlFor={`tier-name-${idx}`} className="text-xs font-medium text-slate-500">Tier name<FieldRequirementHint kind="important" /></Label>
                         <Input id={`tier-name-${idx}`} value={tier.name} onChange={(e) => updateTier(idx, "name", e.target.value)} className="mt-1 h-9 font-semibold" />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <Label className="text-xs font-medium text-slate-500">Qualifies by</Label>
+                        <Label className="text-xs font-medium text-slate-500">Qualifies by<FieldRequirementHint kind="important" /></Label>
                         <Select value={tier.requirementType} onValueChange={(v) => updateTier(idx, "requirementType", v)}>
                           <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -104,12 +105,12 @@ export default function TiersScreen({ initialConfig, onComplete, onBack, onSkip 
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs font-medium text-slate-500">Minimum required</Label>
+                        <Label className="text-xs font-medium text-slate-500">Minimum required<FieldRequirementHint kind="important" /></Label>
                         <Input type="number" min={0} value={tier.requirementValue} onChange={(e) => updateTier(idx, "requirementValue", Number(e.target.value))} className="mt-1 text-sm" />
                       </div>
                     </div>
                     <div className="mt-3">
-                      <Label htmlFor={`tier-benefits-${idx}`} className="text-xs font-medium text-slate-500">Customer benefits</Label>
+                      <Label htmlFor={`tier-benefits-${idx}`} className="text-xs font-medium text-slate-500">Customer benefits<FieldRequirementHint kind="important" /></Label>
                       <Input id={`tier-benefits-${idx}`} value={tier.benefits.join(", ")} onChange={(e) => updateTierBenefits(idx, e.target.value)} className="mt-1 text-sm" placeholder="e.g. Double points, Free delivery" />
                     </div>
                   </Card>

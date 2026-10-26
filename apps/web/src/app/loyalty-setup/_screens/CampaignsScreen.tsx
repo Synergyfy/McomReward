@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import type { TemplateCampaign, TemplateReward } from "@/services/loyalty-setup/types";
 import type { AdminCampaignTemplate } from "@/services/campaigns/types";
+import FieldRequirementHint from "@/components/onboarding/FieldRequirementHint";
 
 interface CampaignsScreenProps {
   campaigns: AdminCampaignTemplate[];
@@ -303,7 +304,7 @@ function CampaignDetailPage({
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-orange-600">Link rewards</p>
-                <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">Which rewards can this campaign use?</h2>
+                <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">Which rewards can this campaign use?<FieldRequirementHint kind="required" explanation="Select at least one reward to add this campaign." mobileExplanation="Pick a reward to add it." /></h2>
                 <p className="mt-2 text-sm leading-5 text-slate-600">Select the rewards from your programme that belong with this campaign.</p>
               </div>
               <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{selectedRewardKeys.length} selected</span>

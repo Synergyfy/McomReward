@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { SectorTemplate, TierConfig } from "@/services/loyalty-setup/types";
 import type { BusinessProfile } from "@/services/business/types";
 import type { AdminCampaignTemplate } from "@/services/campaigns/types";
+import FieldRequirementHint from "@/components/onboarding/FieldRequirementHint";
 
 interface ReviewScreenProps {
   template: SectorTemplate;
@@ -153,7 +154,8 @@ export default function ReviewScreen({ template, profile, centralBusinessProfile
                   <div className="p-4">
                     <div className="mb-3 flex flex-wrap gap-2">{campaignType && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">{campaignType.replaceAll("_", " ")}</span>}{audience && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-800">{audience.replaceAll("_", " ")}</span>}</div>
                     <p className="text-sm font-semibold text-slate-900">{campaign.name}</p>
-                    <Textarea value={descriptions[campaign.key] || ""} onChange={(event) => setDescriptions((current) => ({ ...current, [campaign.key]: event.target.value }))} rows={2} aria-label={`${campaign.name} message`} className="mt-3 resize-y bg-white text-sm" />
+                    <label className="mt-3 block text-sm font-semibold text-slate-900" htmlFor={`campaign-message-${campaign.key}`}>Campaign message<FieldRequirementHint kind="important" /></label>
+                    <Textarea id={`campaign-message-${campaign.key}`} value={descriptions[campaign.key] || ""} onChange={(event) => setDescriptions((current) => ({ ...current, [campaign.key]: event.target.value }))} rows={2} aria-label={`${campaign.name} message`} className="mt-3 resize-y bg-white text-sm" />
                     <div className="mt-4">
                       <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Attached rewards</p>
                       {attachedRewards.length ? <div className="grid gap-2 sm:grid-cols-2">{attachedRewards.map((reward) => <div key={reward.id} className="flex min-w-0 items-center gap-2 rounded-xl bg-orange-50 p-2.5">

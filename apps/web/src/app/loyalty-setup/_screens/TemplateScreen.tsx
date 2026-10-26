@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { SectorTemplate, TemplateReward } from "@/services/loyalty-setup/types";
 import { areRewardDetailsAdminManaged } from "@/services/loyalty-setup/template-edit-policy";
+import FieldRequirementHint from "@/components/onboarding/FieldRequirementHint";
 
 const REWARD_TYPES = ["Voucher", "gift card", "coupon", "point offer", "physical product", "MallDiscount"] as const;
 
@@ -342,10 +343,10 @@ function TemplateDetailScreen({ template, onBack, onSelect, onSave }: { template
               {rewardEditStep === 1 ? (
                 <div className="space-y-4">
                   {rewardDetailsAdminManaged && <p className="rounded-xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-[12px] leading-5 text-orange-900 sm:text-sm">Reward name, type, and description are managed by an administrator. You can still change the requirements in the next step.</p>}
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward name{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward name{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
                     <input disabled={rewardDetailsAdminManaged} value={editingReward.name} onChange={(event) => setEditingReward((current) => current ? { ...current, name: event.target.value } : current)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward type{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward type{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
                     <Select disabled={rewardDetailsAdminManaged} value={editingReward.rewardType || undefined} onValueChange={(value) => setEditingReward((current) => current ? { ...current, rewardType: value } : current)}>
                       <SelectTrigger className="mt-1.5 h-11 rounded-xl bg-white text-[12px] font-normal sm:text-sm disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"><SelectValue placeholder="Choose a reward type" /></SelectTrigger>
                       <SelectContent>
@@ -354,16 +355,16 @@ function TemplateDetailScreen({ template, onBack, onSelect, onSave }: { template
                       </SelectContent>
                     </Select>
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Description{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Description{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
                     <textarea disabled={rewardDetailsAdminManaged} value={editingReward.description || ""} onChange={(event) => setEditingReward((current) => current ? { ...current, description: event.target.value } : current)} rows={3} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
                   </label>
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Points required
+                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Points required<FieldRequirementHint kind="important" />
                     <input type="number" min={0} value={editingReward.pointsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, pointsRequired: Math.max(0, Number(event.target.value)) } : current)} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" />
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Stamps required
+                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Stamps required<FieldRequirementHint kind="important" />
                     <input type="number" min={0} value={editingReward.stampsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, stampsRequired: Math.max(0, Number(event.target.value)) } : current)} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" />
                   </label>
                 </div>

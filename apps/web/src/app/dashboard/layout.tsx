@@ -60,9 +60,11 @@ export default function DashboardLayout({
 
     const hasEntitledAccess = Boolean(
       myPackage?.hasAccess === true ||
+        myPackage?.accessPass?.hasAccess === true ||
         isTrial ||
         myPackage?.accessType === 'PAID_MEMBERSHIP' ||
         myPackage?.accessType === 'DIRECT_PACKAGE' ||
+        myPackage?.accessType === 'ACCESS_PASS' ||
         mySubscription?.status === 'active',
     );
 
@@ -78,8 +80,11 @@ export default function DashboardLayout({
       isSubInactive &&
       !profile?.isSuperBusiness
     ) {
-      if (!pathname.includes('/dashboard/subscription')) {
-        router.push('/dashboard/subscription');
+      if (
+        !pathname.includes('/dashboard/subscription') &&
+        !pathname.includes('/dashboard/access-pass')
+      ) {
+        router.push('/dashboard/access-pass');
       }
     }
   }, [myPackage, mySubscription, isMyPackageLoading, pathname, router, profile, isProfileLoading]);

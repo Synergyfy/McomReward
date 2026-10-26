@@ -520,6 +520,18 @@ export class PlansService implements OnModuleInit {
 
   async update(id: string, dto: UpdatePlanDto): Promise<Plan> {
     const plan = await this.findOne(id);
+
+    if (dto.slug && dto.slug !== plan.slug) {
+      const existing = await this.planRepository.findOne({
+        where: { slug: dto.slug },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(
+          `Plan with slug "${dto.slug}" already exists`,
+        );
+      }
+    }
+
     if (dto.name) plan.name = dto.name;
     if (dto.slug) plan.slug = dto.slug;
     if (dto.description !== undefined) plan.description = dto.description;
@@ -562,7 +574,7 @@ export class PlansService implements OnModuleInit {
     const plan = await this.findOne(id);
     plan.isActive = false;
     await this.planRepository.save(plan);
-    return { message: "Plan deactivated successfully" };
+    return { message: "Plan soft deleted (deactivated) successfully" };
   }
 
   async getPlanSchema() {

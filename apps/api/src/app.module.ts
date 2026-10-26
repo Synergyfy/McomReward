@@ -68,6 +68,7 @@ import { SsoModule } from "./resources/sso/sso.module";
 import { SystemPlansModule } from "./resources/system-plans/system-plans.module";
 import { McomPackagesModule } from "./resources/mcom-packages/mcom-packages.module";
 import { PlansModule } from "./resources/plans/plans.module";
+import { AccessPassModule } from "./resources/access-passes/access-pass.module";
 import { BusinessAssetsModule } from "./resources/business-assets/business-assets.module";
 import { ServiceMeshModule } from "./resources/service-mesh/service-mesh.module";
 import { PartnerRewardsModule } from "./resources/partner-rewards/partner-rewards.module";
@@ -75,6 +76,7 @@ import { PartnerRewardsModule } from "./resources/partner-rewards/partner-reward
 @Module({
   imports: [
     PlansModule,
+    AccessPassModule,
     McomPackagesModule,
     LibraryAssetsModule,
     GroupCircleModule,

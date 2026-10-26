@@ -27,6 +27,7 @@ import { ProvisionModule } from "../provision/provision.module";
 import { PlansModule } from "../plans/plans.module";
 import { MatchingPointModule } from "../matching-point/matching-point.module";
 import { McomCentralService } from "../sso/mcom-central.service";
+import { AccessPassModule } from "../access-passes/access-pass.module";
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { McomCentralService } from "../sso/mcom-central.service";
     ProvisionModule,
     forwardRef(() => PlansModule),
     MatchingPointModule,
+    AccessPassModule,
   ],
   providers: [BusinessService, McomCentralService],
   controllers: [BusinessController, AffiliateController],

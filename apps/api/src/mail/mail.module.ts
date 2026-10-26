@@ -1,10 +1,16 @@
 import { Module } from "@nestjs/common";
 import { MailerModule } from "@nestjs-modules/mailer";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ScheduleModule } from "@nestjs/schedule";
 import { MailService } from "./mail.service";
+import { EmailQueueService } from "./email-queue.service";
+import { EmailQueue } from "./entities/email-queue.entity";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([EmailQueue]),
+    ScheduleModule.forRoot(),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -24,7 +30,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
       inject: [ConfigService],
     }),
   ],
-  providers: [MailService],
-  exports: [MailService],
+  providers: [MailService, EmailQueueService],
+  exports: [MailService, EmailQueueService],
 })
 export class MailModule {}

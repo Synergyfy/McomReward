@@ -48,6 +48,10 @@ import {
 } from "../payment/entities/payment-checkout.entity";
 import { McomWalletPartnerService } from "../wallet/mcom-wallet-partner.service";
 import { SubscriptionBillingService } from "../plans/services/subscription-billing.service";
+import { AccessPassService } from "../access-passes/access-pass.service";
+import { EntitlementSyncService } from "../sso/entitlement-sync.service";
+import { unwrapPlatformEntitlement } from "../sso/entitlement.util";
+import { formatPlanDisplayName } from "../plans/utils/plan-display.util";
 
 @Injectable()
 export class McomPackagesService implements OnModuleInit {
@@ -73,6 +77,8 @@ export class McomPackagesService implements OnModuleInit {
     private readonly fulfillmentService: PaymentFulfillmentService,
     private readonly centralWallet: McomWalletPartnerService,
     private readonly billingService: SubscriptionBillingService,
+    private readonly accessPassService: AccessPassService,
+    private readonly entitlementSyncService: EntitlementSyncService,
   ) {
     this.platformSlug =
       this.configService.get<string>("MCOM_PLATFORM_SLUG") || "mcom-reward";
@@ -358,6 +364,31 @@ export class McomPackagesService implements OnModuleInit {
     });
     if (!business) {
       throw new NotFoundException("Business profile not found");
+    }
+
+    // Payments started from the access-pass catalogue reuse the same MCOM Pay
+    // callback. Route them to the access-pass grant service before the plan
+    // checkout path expects a subscription variant.
+    if (dto.checkoutId || dto.chargeId || dto.paymentIntentId || dto.orderId) {
+      let candidate: PaymentCheckout | null = null;
+      if (dto.checkoutId) {
+        candidate = await this.checkoutService.findById(dto.checkoutId);
+      } else if (dto.chargeId) {
+        candidate = await this.checkoutService.findByChargeId(dto.chargeId);
+      } else {
+        candidate = await this.checkoutService.findByProviderRef(
+          dto.paymentIntentId || dto.orderId || "",
+        );
+      }
+
+      if (candidate?.purpose === PaymentCheckoutPurpose.ACCESS_PASS) {
+        return this.accessPassService.confirmPurchase(userId, {
+          checkoutId: candidate.id,
+          chargeId: dto.chargeId,
+          paymentIntentId: dto.paymentIntentId,
+          orderId: dto.orderId,
+        });
+      }
     }
 
     const checkout = await this.resolveCheckout(business.id, dto);
@@ -703,130 +734,188 @@ export class McomPackagesService implements OnModuleInit {
   }
 
   async getMyActivePackage(userId: string) {
+    const subscriptionRelations = [
+      "planVariant",
+      "planVariant.plan",
+      "planVariant.tierLevel",
+      "planVariant.prices",
+      "price",
+      "payment",
+    ];
+
     let subscription = await this.subscriptionRepository.findOne({
       where: { business: { id: userId } },
-      relations: [
-        "planVariant",
-        "planVariant.plan",
-        "planVariant.tierLevel",
-        "planVariant.prices",
-        "price",
-        "payment",
-      ],
+      relations: subscriptionRelations,
     });
 
     const business = await this.businessRepository.findOne({
       where: { id: userId },
     });
 
-    // If subscription is missing, dynamically sync from stored entitlement or trial context
+    // If nothing is provisioned yet, apply the stored Central entitlement (or
+    // the legacy verification-fee trial context) and re-read the result.
     if (!subscription && business) {
-      if (business.entitlementData) {
-        subscription = await this.planSubscriptionService.syncFromEntitlement(
-          business.id,
-          business.entitlementData as any,
-        );
-      } else if (
-        business.hasPaidVerificationFee ||
-        business.membershipStatus === "trial"
+      let entitlement = unwrapPlatformEntitlement(business.entitlementData);
+
+      if (
+        !entitlement &&
+        (business.hasPaidVerificationFee || business.membershipStatus === "trial")
       ) {
-        subscription = await this.planSubscriptionService.syncFromEntitlement(
-          business.id,
-          {
-            version: "2026-10-01",
-            targetPlatform: {
-              clientId: "rewards",
-              platformSlug: "rewards",
-              name: "MCOM Rewards",
-            },
-            access: {
-              hasAccess: true,
-              accessType: "TRIAL_PROGRAMME",
-              upgradeUrl: `${this.centralWebUrl}/dashboard/memberships`,
-            },
-            plan: {
-              planId: "trial",
-              planName: "14-Day Trial",
-              source: "trial",
-              status: "trial",
-              billingCycle: "14 days",
-              quotas: {},
-              limits: {},
-              features: [],
-            },
-            membershipContext: {
-              membershipPlanName: null,
-              membershipLevel: "STANDARD",
-              membershipStatus: "trial",
-              isIncludedInMembership: false,
-            },
-            trialContext: {
-              isInTrial: true,
-              hasPaidVerificationFee: true,
-              trialExpiresAt: new Date(
-                Date.now() + 14 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              daysRemaining: 14,
-              programmeTasks: [],
-            },
-          } as any,
-        );
+        entitlement = {
+          version: "2026-10-01",
+          targetPlatform: {
+            clientId: "rewards",
+            platformSlug: "rewards",
+            name: "MCOM Rewards",
+          },
+          access: {
+            hasAccess: true,
+            accessType: "TRIAL_PROGRAMME",
+            upgradeUrl: `${this.centralWebUrl}/dashboard/memberships`,
+          },
+          plan: {
+            planId: "trial",
+            planName: "14-Day Trial",
+            source: "trial",
+            status: "trial",
+            billingCycle: "14 days",
+            quotas: {},
+            limits: {},
+            features: [],
+          },
+          membershipContext: {
+            membershipPlanName: null,
+            membershipLevel: "STANDARD",
+            membershipStatus: "trial",
+            isIncludedInMembership: false,
+          },
+          trialContext: {
+            isInTrial: true,
+            hasPaidVerificationFee: true,
+            trialExpiresAt: new Date(
+              Date.now() + 14 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            daysRemaining: 14,
+            programmeTasks: [],
+          },
+        };
+      }
+
+      if (entitlement) {
+        await this.entitlementSyncService.apply(business.id, entitlement);
+        subscription = await this.subscriptionRepository.findOne({
+          where: { business: { id: userId } },
+          relations: subscriptionRelations,
+        });
       }
     }
 
-    const isExpired =
+    const accessPass = await this.accessPassService.findActiveForBusiness(userId);
+    const accessPassDaysRemaining = accessPass
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(accessPass.expiresAt).getTime() - Date.now()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 0;
+
+    const planExpired =
       !subscription ||
       (subscription.expires_at &&
         new Date(subscription.expires_at) < new Date()) ||
       subscription.status === SubscriptionStatus.EXPIRED;
-    const effectiveStatus = !subscription
-      ? "none"
-      : isExpired
-        ? "expired"
-        : subscription.status || "active";
-    const planName =
-      subscription?.planVariant?.plan?.name ||
-      (subscription?.is_trial ? "14-Day Trial" : "Free");
-    const membershipLevel =
-      subscription?.planVariant?.tierLevel?.name || "STANDARD";
+    const planHasAccess =
+      !planExpired &&
+      (subscription?.status === SubscriptionStatus.ACTIVE ||
+        (subscription?.status as string) === "active" ||
+        subscription?.is_trial === true);
 
-    const isTrial = subscription?.is_trial || false;
-    const hasAccess =
-      !isExpired &&
-      (effectiveStatus === SubscriptionStatus.ACTIVE ||
-        (effectiveStatus as string) === "active" ||
-        isTrial);
+    const isExpired = planExpired && !accessPass;
+    const effectiveStatus = accessPass && !planHasAccess
+      ? "active"
+      : !subscription
+        ? "none"
+        : planExpired
+          ? "expired"
+          : subscription.status || "active";
+    const entitlement = unwrapPlatformEntitlement(business?.entitlementData);
+    const localPlanName = subscription?.planVariant?.plan?.name || null;
+    const localTierName = subscription?.planVariant?.tierLevel?.name || null;
+    const isTrialSubscription = Boolean(subscription?.is_trial);
 
-    const accessType = isTrial
-      ? "TRIAL_PROGRAMME"
-      : business?.entitlementSource === "membership"
-        ? "PAID_MEMBERSHIP"
-        : subscription?.isActive
-          ? "DIRECT_PACKAGE"
-          : "NONE";
+    // Always render OUR catalogue name + variant (e.g. plan "Gold" + variant
+    // "PRO" → "Gold Pro"). Central only identifies which plan is bundled.
+    const planName = planHasAccess
+      ? isTrialSubscription
+        ? "14-Day Trial"
+        : formatPlanDisplayName(localPlanName, localTierName) || "Free"
+      : accessPass?.planName || "Free";
+    const membershipLevel = planHasAccess
+      ? localTierName || "STANDARD"
+      : accessPass
+        ? "ACCESS_PASS"
+        : "STANDARD";
+
+    const isTrial = planHasAccess && (subscription?.is_trial || false);
+    const hasAccess = planHasAccess || Boolean(accessPass);
+
+    const accessType = planHasAccess
+      ? isTrial
+        ? "TRIAL_PROGRAMME"
+        : business?.entitlementSource === "membership"
+          ? "PAID_MEMBERSHIP"
+          : subscription?.isActive
+            ? "DIRECT_PACKAGE"
+            : "NONE"
+      : accessPass
+        ? "ACCESS_PASS"
+        : "NONE";
 
     const upgradeUrl = `${this.centralWebUrl}/dashboard/memberships`;
 
     const now = Date.now();
-    const expiryTimestamp = subscription?.expires_at
+    const expiryTimestamp = planHasAccess && subscription?.expires_at
       ? new Date(subscription.expires_at).getTime()
-      : 0;
+      : accessPass
+        ? new Date(accessPass.expiresAt).getTime()
+        : 0;
     const daysRemaining =
       isTrial && expiryTimestamp > now
         ? Math.max(
             0,
             Math.ceil((expiryTimestamp - now) / (1000 * 60 * 60 * 24)),
           )
-        : ((business?.entitlementData as any)?.trialContext?.daysRemaining ??
-          (isTrial ? 14 : 0));
+        : accessPass && !planHasAccess
+          ? accessPassDaysRemaining
+          : ((business?.entitlementData as any)?.trialContext?.daysRemaining ??
+            (isTrial ? 14 : 0));
 
     return {
       subscription: subscription || null,
       membership: subscription || null, // Keep membership alias for frontend compatibility
+      accessPass: accessPass
+        ? {
+            hasAccess: true,
+            id: accessPass.id,
+            planId: accessPass.planId,
+            planName: accessPass.planName,
+            source: accessPass.source,
+            startsAt: accessPass.startsAt,
+            expiresAt: accessPass.expiresAt,
+            daysRemaining: accessPassDaysRemaining,
+            features: accessPass.features || [],
+            configuration: accessPass.configuration || {},
+          }
+        : null,
       isLinkedToMcom: !!business?.mcomAccessToken,
       mcomUserId: business?.mcomUserId || null,
       membershipLevel,
-      membershipTier: planName,
+      membershipTier:
+        entitlement?.membershipContext?.membershipPlanName ||
+        entitlement?.plan?.planName ||
+        planName,
       planName,
       planVariantId:
         subscription?.planVariant?.id || subscription?.planVariantId || null,
@@ -835,15 +924,21 @@ export class McomPackagesService implements OnModuleInit {
       isTrial,
       hasAccess,
       accessType,
-      source: business?.entitlementSource || (isTrial ? "trial" : "direct"),
+      source: planHasAccess
+        ? business?.entitlementSource || (isTrial ? "trial" : "direct")
+        : accessPass
+          ? "access-pass"
+          : business?.entitlementSource || "direct",
       entitlement: business?.entitlementData || null,
       trialTasks: business?.trialTasks || [],
       hasPaidVerificationFee: business?.hasPaidVerificationFee || false,
       daysRemaining,
       upgradeUrl,
-      expiresAt: subscription?.expires_at
+      expiresAt: planHasAccess && subscription?.expires_at
         ? new Date(subscription.expires_at).toISOString()
-        : null,
+        : accessPass
+          ? new Date(accessPass.expiresAt).toISOString()
+          : null,
       autoRenew: subscription?.autoRenew ?? false,
       billingMethod: subscription?.billingMethod ?? null,
       nextBillingAt: subscription?.nextBillingAt

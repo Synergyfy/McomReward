@@ -24,6 +24,7 @@ import {
 } from "../participant-campaign-balance/entities/point-history.entity";
 import { Staff } from "../staff/entities/staff.entity";
 import { BusinessService } from "../business/services/business.service";
+import { AccessPassService } from "../access-passes/access-pass.service";
 import moment from "moment";
 
 export enum ActionType {
@@ -55,6 +56,7 @@ export class CapabilityService {
     private readonly staffRepository: Repository<Staff>,
     @Inject(forwardRef(() => BusinessService))
     private readonly businessService: BusinessService,
+    private readonly accessPassService: AccessPassService,
   ) {}
 
   async checkPermission(
@@ -79,12 +81,20 @@ export class CapabilityService {
       (s) => s.plan_type === PlanType.SEASONAL,
     );
 
-    if (!standardSubscription && subscriptions.length === 0) {
+    const accessPass =
+      await this.accessPassService.findActiveForBusiness(userId);
+
+    if (!standardSubscription && subscriptions.length === 0 && !accessPass) {
       this.logger.warn(`User ${userId} has no active plan subscription.`);
       throw new ForbiddenException("Active plan subscription required.");
     }
 
-    let effectiveConfig: TierConfig = null;
+    // An access pass is a standalone entitlement. Start from its configuration
+    // and let any active plan tier layer on top of it. Previously the pass was
+    // ignored completely whenever a plan subscription existed.
+    let effectiveConfig: TierConfig = accessPass?.configuration
+      ? ({ ...accessPass.configuration } as unknown as TierConfig)
+      : null;
 
     const standardTierConfig =
       (standardSubscription?.planVariant?.tierLevel as any)?.configuration ||
@@ -93,7 +103,10 @@ export class CapabilityService {
       standardSubscription?.planVariant?.configuration;
 
     if (standardTierConfig && Object.keys(standardTierConfig).length > 0) {
-      effectiveConfig = { ...(standardTierConfig as unknown as TierConfig) };
+      const planConfig = standardTierConfig as unknown as TierConfig;
+      effectiveConfig = effectiveConfig
+        ? this.mergeTierConfigs(effectiveConfig, planConfig)
+        : { ...planConfig };
     }
 
     // If no standard, start with first seasonal
@@ -250,6 +263,23 @@ export class CapabilityService {
     }
   }
 
+  /**
+   * Layer a full tier configuration over another one (e.g. an active plan
+   * variant on top of an access pass). Values defined by the override win,
+   * while the base fills in anything the override does not specify.
+   */
+  private mergeTierConfigs(base: TierConfig, override: TierConfig): TierConfig {
+    return {
+      ...base,
+      ...override,
+      quotas: { ...(base?.quotas || {}), ...(override?.quotas || {}) },
+      featureFlags: {
+        ...(base?.featureFlags || {}),
+        ...(override?.featureFlags || {}),
+      },
+    } as TierConfig;
+  }
+
   private mergeSeasonalConfig(
     base: TierConfig,
     override: SeasonalTierConfig,
@@ -316,6 +346,7 @@ export class CapabilityService {
   private async checkRewardLimit(campaignId: string, config: TierConfig) {
     if (!campaignId) return; // Should be provided for this check
     const limit = config.quotas.maxRewardsPerCampaign;
+    if (limit === -1) return; // Unlimited
     const currentUsage = await this.campaignService.countRewards(campaignId);
     if (currentUsage >= limit) {
       this.logger.warn(
@@ -329,6 +360,7 @@ export class CapabilityService {
 
   private checkRewardCountLimit(count: number, config: TierConfig) {
     const limit = config.quotas.maxRewardsPerCampaign;
+    if (limit === -1) return; // Unlimited
     if (count > limit) {
       this.logger.warn(`Reward count ${count} exceeds limit ${limit}`);
       throw new ForbiddenException(

@@ -68,7 +68,13 @@ export default function BusinessDashboard() {
   };
 
   const isSuperBusiness = profile?.isSuperBusiness;
-  const tierName = isSuperBusiness ? 'Super Business' : (subscription?.tier?.name || 'Starter');
+  const subscriptionTierName =
+    typeof subscription?.tier === 'string'
+      ? subscription.tier
+      : subscription?.tier?.name;
+  const tierName = isSuperBusiness
+    ? 'Super Business'
+    : subscriptionTierName || 'Starter';
   const tierLimit = tierUsage?.features?.campaigns?.limit ?? 0;
   const tierUsed = tierUsage?.features?.campaigns?.used ?? 0;
   const tierProgress = isSuperBusiness

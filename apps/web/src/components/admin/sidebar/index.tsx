@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp, Image as ImageIcon, Layers } from 'lucide-react';
+import { LayoutDashboard, Award, Briefcase, History, Megaphone, Lightbulb, Users, ChevronDown, SlidersHorizontal, Tag, Handshake, Bell, BarChart, QrCode, DollarSign, ShoppingCart, ShieldHalf, BookCopy, PieChart, CircleDollarSign, ListFilter, Stamp, Image as ImageIcon, Layers, KeyRound } from 'lucide-react';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -56,6 +56,12 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
           <Link href="/admin/plans" className={linkClasses("/admin/plans")}>
             <Layers className="mr-3" />
             Plans & Tiers
+          </Link>
+        </li>
+        <li>
+          <Link href="/admin/access-passes" className={linkClasses("/admin/access-passes")}>
+            <KeyRound className="mr-3" />
+            Access Passes
           </Link>
         </li>
         <li>

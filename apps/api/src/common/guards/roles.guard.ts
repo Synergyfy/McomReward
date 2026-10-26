@@ -8,10 +8,12 @@ import {
   SKIP_SUBSCRIPTION_CHECK_KEY,
 } from "../decorators/skip-membership-check.decorator";
 import { PlanSubscriptionService } from "../../resources/plans/services/plan-subscription.service";
+import { AccessPassService } from "../../resources/access-passes/access-pass.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   private subscriptionService?: PlanSubscriptionService;
+  private accessPassService?: AccessPassService;
 
   constructor(
     private readonly reflector: Reflector,
@@ -25,6 +27,15 @@ export class RolesGuard implements CanActivate {
       });
     }
     return this.subscriptionService;
+  }
+
+  private getAccessPassService(): AccessPassService {
+    if (!this.accessPassService) {
+      this.accessPassService = this.moduleRef.get(AccessPassService, {
+        strict: false,
+      });
+    }
+    return this.accessPassService;
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -75,7 +86,11 @@ export class RolesGuard implements CanActivate {
       const hasActive =
         await this.getSubscriptionService().hasActiveSubscription(user.id);
       if (!hasActive) {
-        return false;
+        const accessPass =
+          await this.getAccessPassService().findActiveForBusiness(user.id);
+        if (!accessPass) {
+          return false;
+        }
       }
     }
 

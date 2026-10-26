@@ -86,7 +86,7 @@ export class PlansController {
   @Delete(":id")
   @Roles(Role.Admin)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Deactivate plan (Admin only)" })
+  @ApiOperation({ summary: "Soft delete / deactivate plan (Admin only)" })
   @ApiResponse({ status: 200, description: "Plan deactivated" })
   remove(@Param("id") id: string) {
     return this.plansService.remove(id);

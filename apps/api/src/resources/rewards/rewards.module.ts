@@ -18,6 +18,7 @@ import { Category } from "../category/entities/category.entity";
 import { SubCategory } from "../subcategory/entities/subcategory.entity";
 import { MallIntegrationModule } from "../mall-integration/mall-integration.module";
 import { PartnerIssuanceMetricsModule } from "../partner-rewards/partner-issuance-metrics.module";
+import { AccessPassModule } from "../access-passes/access-pass.module";
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PartnerIssuanceMetricsModule } from "../partner-rewards/partner-issuanc
     forwardRef(() => TierProgressionModule),
     MallIntegrationModule,
     PartnerIssuanceMetricsModule,
+    AccessPassModule,
   ],
   controllers: [RewardsController],
   providers: [RewardsService],

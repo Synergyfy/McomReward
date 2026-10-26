@@ -28,6 +28,7 @@ import {
   Wallet,
   Banknote,
   BarChart3,
+  KeyRound,
 } from 'lucide-react';
 import { useLinkClasses } from '@/app/hooks';
 import TierBadge from '../../ui/tierBadge';
@@ -105,9 +106,11 @@ export default function BusinessSidebar({
 
   const hasEntitledAccess = Boolean(
     myPackage?.hasAccess ||
+      myPackage?.accessPass?.hasAccess ||
       isTrial ||
       myPackage?.accessType === 'PAID_MEMBERSHIP' ||
-      myPackage?.accessType === 'DIRECT_PACKAGE',
+      myPackage?.accessType === 'DIRECT_PACKAGE' ||
+      myPackage?.accessType === 'ACCESS_PASS',
   );
 
   const isFreeTier = useMemo(() => {
@@ -135,7 +138,11 @@ export default function BusinessSidebar({
 
   const enhancedLinkClasses = (path: string, exact: boolean = false) => {
     let classes = linkClasses(path, exact);
-    if (isFreeTier && !path.includes('/dashboard/subscription')) {
+    if (
+      isFreeTier &&
+      !path.includes('/dashboard/subscription') &&
+      !path.includes('/dashboard/access-pass')
+    ) {
       classes += ' opacity-50 pointer-events-none cursor-not-allowed';
     }
     return classes;
@@ -350,6 +357,10 @@ export default function BusinessSidebar({
 
           {!isSuperBusiness && (
             <SidebarItem icon={CreditCard} label="Subscription" href="/dashboard/subscription" />
+          )}
+
+          {!isSuperBusiness && (
+            <SidebarItem icon={KeyRound} label="Access Pass" href="/dashboard/access-pass" />
           )}
 
           <SidebarItem icon={Settings} label="Settings" href="/dashboard/account" />

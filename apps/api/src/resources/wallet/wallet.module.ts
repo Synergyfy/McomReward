@@ -9,6 +9,7 @@ import { BusinessWallet } from "./entities/business-wallet.entity";
 import { WalletTransaction } from "./entities/wallet-transaction.entity";
 import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 import { Business } from "../business/entities/business.entity";
+import { AccessPassSubscription } from "../access-passes/entities/access-pass-subscription.entity";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Business } from "../business/entities/business.entity";
       WalletTransaction,
       PlanSubscription,
       Business,
+      AccessPassSubscription,
     ]),
     ScheduleModule.forRoot(),
   ],

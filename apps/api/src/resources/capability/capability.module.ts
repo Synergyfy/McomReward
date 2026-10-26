@@ -7,6 +7,7 @@ import { PointHistory } from "../participant-campaign-balance/entities/point-his
 import { RewardsModule } from "../rewards/rewards.module";
 import { Staff } from "../staff/entities/staff.entity";
 import { BusinessModule } from "../business/business.module";
+import { AccessPassModule } from "../access-passes/access-pass.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { BusinessModule } from "../business/business.module";
     RewardsModule,
     TypeOrmModule.forFeature([PointHistory, Staff]),
     forwardRef(() => BusinessModule),
+    AccessPassModule,
   ],
   providers: [CapabilityService],
   exports: [CapabilityService],

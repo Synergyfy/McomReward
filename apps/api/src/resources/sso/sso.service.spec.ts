@@ -4,6 +4,7 @@ import { McomCentralService } from "./mcom-central.service";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../../user/user.service";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
+import { EntitlementSyncService } from "./entitlement-sync.service";
 import { ConfigService } from "@nestjs/config";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Business } from "../business/entities/business.entity";
@@ -41,6 +42,10 @@ describe("SsoService", () => {
     save: jest.fn(),
   };
 
+  const mockEntitlementSyncService = {
+    apply: jest.fn(),
+  };
+
   const mockParticipantRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -66,6 +71,10 @@ describe("SsoService", () => {
         {
           provide: PlanSubscriptionService,
           useValue: mockPlanSubscriptionService,
+        },
+        {
+          provide: EntitlementSyncService,
+          useValue: mockEntitlementSyncService,
         },
         { provide: ConfigService, useValue: mockConfigService },
         {
@@ -271,7 +280,7 @@ describe("SsoService", () => {
 
       expect(result.entitlement).toBeDefined();
       expect(result.entitlement?.access.accessType).toBe("PAID_MEMBERSHIP");
-      expect(mockPlanSubscriptionService.syncFromEntitlement).toHaveBeenCalledWith(
+      expect(mockEntitlementSyncService.apply).toHaveBeenCalledWith(
         "biz-member-1",
         entitlement,
       );
@@ -350,7 +359,7 @@ describe("SsoService", () => {
 
       expect(result.entitlement?.access.accessType).toBe("TRIAL_PROGRAMME");
       expect(result.entitlement?.trialContext.programmeTasks).toHaveLength(1);
-      expect(mockPlanSubscriptionService.syncFromEntitlement).toHaveBeenCalledWith(
+      expect(mockEntitlementSyncService.apply).toHaveBeenCalledWith(
         "biz-trial-1",
         entitlement,
       );

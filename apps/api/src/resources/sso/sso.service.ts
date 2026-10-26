@@ -16,6 +16,8 @@ import { nanoid } from "nanoid";
 import { ConfigService } from "@nestjs/config";
 import { encrypt, decrypt } from "../../common/utils/crypto.util";
 import { PlatformEntitlement } from "./interfaces/entitlement.interface";
+import { EntitlementSyncService } from "./entitlement-sync.service";
+import { unwrapPlatformEntitlement } from "./entitlement.util";
 
 export interface SsoCallbackResult {
   accessToken: string;
@@ -60,6 +62,7 @@ export class SsoService {
     private readonly mcomCentralService: McomCentralService,
     @Inject(forwardRef(() => PlanSubscriptionService))
     private readonly planSubscriptionService: PlanSubscriptionService,
+    private readonly entitlementSyncService: EntitlementSyncService,
     private readonly configService: ConfigService,
     @InjectRepository(Business)
     private readonly businessRepository: Repository<Business>,
@@ -111,12 +114,9 @@ export class SsoService {
     let user = await this.jitProvisionUser(centralUser);
 
     let entitlement: PlatformEntitlement | undefined =
-      tokenResponse?.entitlement;
+      unwrapPlatformEntitlement(tokenResponse?.entitlement) ?? undefined;
 
-    entitlement = this.normalizeEntitlement(
-      entitlement,
-      centralUser.membershipStatus,
-    );
+    entitlement = this.normalizeEntitlement(entitlement);
 
     // Persist encrypted tokens and Central user details
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
@@ -134,29 +134,7 @@ export class SsoService {
         user.membershipStatus = centralUser.membershipStatus;
 
       if (entitlement) {
-        user.entitlementData = entitlement;
-        user.hasPaidVerificationFee =
-          entitlement.trialContext?.hasPaidVerificationFee ?? false;
-        user.trialTasks = entitlement.trialContext?.programmeTasks || [];
-        user.entitlementSource =
-          entitlement.plan?.source ||
-          (entitlement.access?.accessType === "PAID_MEMBERSHIP"
-            ? "membership"
-            : entitlement.access?.accessType === "TRIAL_PROGRAMME"
-              ? "trial"
-              : "direct");
-
-        if (entitlement.membershipContext?.membershipLevel) {
-          user.membershipLevel = entitlement.membershipContext.membershipLevel;
-        }
-        if (entitlement.membershipContext?.membershipPlanName) {
-          user.membershipTier =
-            entitlement.membershipContext.membershipPlanName;
-        }
-        if (entitlement.membershipContext?.membershipStatus) {
-          user.membershipStatus =
-            entitlement.membershipContext.membershipStatus;
-        }
+        this.applyEntitlementFields(user, entitlement);
       }
 
       user = await this.businessRepository.save(user);
@@ -173,10 +151,7 @@ export class SsoService {
         this.logger.log(
           `Resolving entitlement protocol (access: ${entitlement.access?.hasAccess}, type: ${entitlement.access?.accessType}, plan: "${entitlement.plan?.planName || "active"}") for ${user.email}`,
         );
-        await this.planSubscriptionService.syncFromEntitlement(
-          user.id,
-          entitlement,
-        );
+        await this.entitlementSyncService.apply(user.id, entitlement);
       } else {
         const anyUser = centralUser as any;
         const businessProfile = anyUser?.businessProfile;
@@ -278,41 +253,18 @@ export class SsoService {
     }
 
     if (freshEntitlement) {
-      freshEntitlement = this.normalizeEntitlement(
-        freshEntitlement,
-        business.membershipStatus,
-      )!;
+      freshEntitlement = this.normalizeEntitlement(freshEntitlement)!;
 
-      business.entitlementData = freshEntitlement;
-      business.hasPaidVerificationFee =
-        freshEntitlement.trialContext?.hasPaidVerificationFee ?? false;
-      business.trialTasks =
-        freshEntitlement.trialContext?.programmeTasks || [];
-      business.entitlementSource =
-        freshEntitlement.plan?.source ||
-        (freshEntitlement.access?.accessType === "PAID_MEMBERSHIP"
-          ? "membership"
-          : freshEntitlement.access?.accessType === "TRIAL_PROGRAMME"
-            ? "trial"
-            : "direct");
-
-      if (freshEntitlement.membershipContext?.membershipLevel) {
-        business.membershipLevel =
-          freshEntitlement.membershipContext.membershipLevel;
-      }
-      if (freshEntitlement.membershipContext?.membershipPlanName) {
-        business.membershipTier =
-          freshEntitlement.membershipContext.membershipPlanName;
-      }
+      this.applyEntitlementFields(business, freshEntitlement);
       await this.businessRepository.save(business);
-      await this.planSubscriptionService.syncFromEntitlement(
+      await this.entitlementSyncService.apply(
         business.id,
         freshEntitlement,
       );
       return freshEntitlement;
     }
 
-    return (business.entitlementData as PlatformEntitlement) || null;
+    return unwrapPlatformEntitlement(business.entitlementData) ?? null;
   }
 
   async refreshCentralToken(userId: string): Promise<string> {
@@ -541,7 +493,18 @@ export class SsoService {
     // Sync subscription from MCOM Central if packages are present in token
     let rewardsPackage: any = null;
     if (user.role === Role.Business) {
-      if (payload.packages) {
+      const tokenEntitlement = unwrapPlatformEntitlement(payload.entitlement);
+
+      if (tokenEntitlement && user instanceof Business) {
+        const normalized =
+          this.normalizeEntitlement(tokenEntitlement) ?? tokenEntitlement;
+        this.applyEntitlementFields(user, normalized);
+        await this.businessRepository.save(user);
+        await this.entitlementSyncService.apply(user.id, normalized);
+        this.logger.log(
+          `Applied entitlement from SSO token for business ${user.id} (type: ${normalized.access?.accessType})`,
+        );
+      } else if (payload.packages) {
         rewardsPackage = payload.packages.find(
           (p: any) =>
             (p.platform === "MCOM Rewards" ||
@@ -583,10 +546,12 @@ export class SsoService {
         }
       }
 
-      await this.planSubscriptionService.syncFromCentralProfile(
-        user.id,
-        user.email,
-      );
+      if (!tokenEntitlement) {
+        await this.planSubscriptionService.syncFromCentralProfile(
+          user.id,
+          user.email,
+        );
+      }
     }
 
     const hasActiveSubscription =
@@ -613,64 +578,85 @@ export class SsoService {
     };
   }
 
+  /**
+   * Persist the entitlement-derived fields on the business. Central is the
+   * source of truth for membership context, trial tasks and the access source.
+   */
+  private applyEntitlementFields(
+    business: Business,
+    entitlement: PlatformEntitlement,
+  ): Business {
+    business.entitlementData = entitlement;
+    business.hasPaidVerificationFee =
+      entitlement.trialContext?.hasPaidVerificationFee ?? false;
+    business.trialTasks = entitlement.trialContext?.programmeTasks || [];
+    business.entitlementSource =
+      entitlement.plan?.source ||
+      (entitlement.access?.accessType === "PAID_MEMBERSHIP"
+        ? "membership"
+        : entitlement.access?.accessType === "TRIAL_PROGRAMME"
+          ? "trial"
+          : "direct");
+
+    if (entitlement.membershipContext?.membershipLevel) {
+      business.membershipLevel = entitlement.membershipContext.membershipLevel;
+    }
+    if (entitlement.membershipContext?.membershipPlanName) {
+      business.membershipTier =
+        entitlement.membershipContext.membershipPlanName;
+    }
+    if (entitlement.membershipContext?.membershipStatus) {
+      business.membershipStatus =
+        entitlement.membershipContext.membershipStatus;
+    }
+
+    return business;
+  }
+
   private normalizeEntitlement(
     entitlement?: PlatformEntitlement,
-    membershipStatus?: string,
   ): PlatformEntitlement | undefined {
     if (!entitlement) return entitlement;
 
     const access = entitlement.access;
     const trialCtx = entitlement.trialContext;
 
-    // If already an active paid membership or direct package, preserve it
-    if (
-      (access?.accessType === "PAID_MEMBERSHIP" ||
-        access?.accessType === "DIRECT_PACKAGE") &&
-      access?.hasAccess
-    ) {
+    // Central is the single source of truth for access decisions: never
+    // upgrade a denial (e.g. TRIAL_NO_TASKS, TRIAL_EXPIRED, UNVERIFIED) into
+    // an approval locally.
+    if (!access || access.hasAccess !== true) {
       return entitlement;
     }
 
-    const isTrial =
-      access?.accessType === "TRIAL_PROGRAMME" ||
-      trialCtx?.isInTrial === true ||
-      access?.reason === "TRIAL_NO_TASKS" ||
-      membershipStatus === "trial";
+    if (access.accessType !== "TRIAL_PROGRAMME") {
+      return entitlement;
+    }
 
-    // If the merchant is in trial and hasn't expired or failed verification, grant trial access
-    if (
-      isTrial &&
-      access?.reason !== "TRIAL_EXPIRED" &&
-      access?.reason !== "UNVERIFIED"
-    ) {
-      if (access) {
-        access.hasAccess = true;
-        access.accessType = "TRIAL_PROGRAMME";
+    // Keep the trial context/plan populated so local provisioning can derive
+    // the expiry and remaining days even from older Central responses.
+    if (trialCtx) {
+      trialCtx.isInTrial = true;
+      if (!trialCtx.trialExpiresAt) {
+        trialCtx.trialExpiresAt = new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000,
+        ).toISOString();
       }
-      if (trialCtx) {
-        trialCtx.isInTrial = true;
-        trialCtx.hasPaidVerificationFee = true;
-        if (!trialCtx.trialExpiresAt) {
-          trialCtx.trialExpiresAt = new Date(
-            Date.now() + 14 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-        }
-      }
-      if (!entitlement.plan) {
-        entitlement.plan = {
-          planId: "trial",
-          planName: "14-Day Trial",
-          source: "trial",
-          status: "trial",
-          billingCycle: "14 days",
-          expiresAt:
-            trialCtx?.trialExpiresAt ||
-            new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          quotas: {},
-          limits: {},
-          features: ["14-Day Full Access Trial"],
-        };
-      }
+    }
+
+    if (!entitlement.plan) {
+      entitlement.plan = {
+        planId: "trial",
+        planName: "14-Day Trial",
+        source: "trial",
+        status: "trial",
+        billingCycle: "14 days",
+        expiresAt:
+          trialCtx?.trialExpiresAt ||
+          new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        quotas: {},
+        limits: {},
+        features: ["14-Day Full Access Trial"],
+      };
     }
 
     return entitlement;

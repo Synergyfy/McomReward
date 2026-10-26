@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, Inject, forwardRef } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like } from "typeorm";
+import { Repository, Like, ILike } from "typeorm";
 import {
   PlanSubscription,
   SubscriptionStatus,
@@ -18,6 +18,10 @@ import {
 } from "../../sso/mcom-central.service";
 import { PlatformEntitlement } from "../../sso/interfaces/entitlement.interface";
 import { ConfigService } from "@nestjs/config";
+import {
+  extractTierFromPlanName,
+  stripTierSuffix,
+} from "../utils/plan-display.util";
 
 @Injectable()
 export class PlanSubscriptionService {
@@ -260,6 +264,101 @@ export class PlanSubscriptionService {
     return saved;
   }
 
+  /**
+   * Resolve the local plan variant Central is referring to.
+   *
+   * `plan.planId` can be one of our plan-variant ids, plan ids/slugs; the tier
+   * may also be encoded in the plan name (e.g. "Gold Pro"). We always return
+   * one of OUR variants so the dashboard can show the local plan + tier.
+   */
+  private async resolveEntitlementVariant(
+    planId?: string | null,
+    planName?: string | null,
+  ): Promise<PlanVariant | null> {
+    const desiredTier = extractTierFromPlanName(planName);
+    const isUUID = (value: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      );
+
+    // 1. Central may send the id of one of our plan variants.
+    if (planId && isUUID(planId)) {
+      const variant = await this.planVariantRepository.findOne({
+        where: { id: planId },
+        relations: ["plan", "tierLevel", "prices"],
+      });
+      if (variant) return variant;
+    }
+
+    // 2. Plan id or slug.
+    if (planId) {
+      const plan = await this.planRepository.findOne({
+        where: isUUID(planId)
+          ? [{ slug: planId }, { id: planId }]
+          : { slug: planId },
+        relations: ["variants", "variants.tierLevel", "variants.prices"],
+      });
+      if (plan) return this.pickVariant(plan, desiredTier);
+    }
+
+    // 3. Plan name, with any tier suffix removed ("Gold Pro" → "Gold").
+    const baseName = stripTierSuffix(planName);
+    if (baseName) {
+      const plan = await this.planRepository.findOne({
+        where: { name: ILike(baseName) },
+        relations: ["variants", "variants.tierLevel", "variants.prices"],
+      });
+      if (plan) return this.pickVariant(plan, desiredTier);
+    }
+
+    return null;
+  }
+
+  private pickVariant(
+    plan: Plan,
+    desiredTier?: string | null,
+  ): PlanVariant | null {
+    const variants = plan.variants || [];
+    if (variants.length === 0) return null;
+
+    if (desiredTier) {
+      const match = variants.find(
+        (variant) =>
+          (variant.tierLevel?.name || "").toUpperCase() === desiredTier,
+      );
+      if (match) return match;
+    }
+
+    return variants[0];
+  }
+
+  /**
+   * Expire only the records we provisioned from Central. Locally purchased
+   * plans/passes are left alone.
+   */
+  private async expireCentralSubscriptions(businessId: string): Promise<void> {
+    const centralSubscriptions = await this.subscriptionRepository.find({
+      where: {
+        business: { id: businessId },
+        transaction_id: Like("CENTRAL-%"),
+      },
+    });
+
+    const active = centralSubscriptions.filter(
+      (subscription) =>
+        subscription.status === SubscriptionStatus.ACTIVE ||
+        subscription.isActive === true,
+    );
+    if (active.length === 0) return;
+
+    for (const subscription of active) {
+      subscription.status = SubscriptionStatus.EXPIRED;
+      subscription.isActive = false;
+    }
+    await this.subscriptionRepository.save(active);
+    this.invalidateSubscriptionCache(businessId);
+  }
+
   async syncFromEntitlement(
     businessId: string,
     entitlement: PlatformEntitlement,
@@ -267,34 +366,21 @@ export class PlanSubscriptionService {
     if (!entitlement) return null;
 
     const access = entitlement.access;
-    const trialContext = entitlement.trialContext;
-    const isTrialUser =
-      access?.accessType === "TRIAL_PROGRAMME" ||
-      trialContext?.isInTrial === true ||
-      trialContext?.hasPaidVerificationFee === true ||
-      access?.reason === "TRIAL_NO_TASKS";
+    const accessType = access?.accessType;
+    const planData = entitlement.plan;
+    const hasAccess = access?.hasAccess === true;
 
-    const hasAccess =
-      access?.hasAccess === true ||
-      (isTrialUser &&
-        access?.reason !== "TRIAL_EXPIRED" &&
-        access?.reason !== "UNVERIFIED");
+    // Direct access passes are provisioned by AccessPassService. Never let a
+    // pass create a plan subscription, otherwise the plan tier would shadow
+    // the pass's own quotas and feature flags.
+    const isDirectPass = accessType === "DIRECT_PACKAGE";
 
-    if (!hasAccess) {
-      const subscription = await this.subscriptionRepository.findOne({
-        where: { business: { id: businessId } },
-      });
-      if (subscription) {
-        subscription.status = SubscriptionStatus.EXPIRED;
-        subscription.isActive = false;
-        await this.subscriptionRepository.save(subscription);
-        this.invalidateSubscriptionCache(businessId);
-      }
+    if (!hasAccess || isDirectPass) {
+      await this.expireCentralSubscriptions(businessId);
       return null;
     }
 
-    const planData = entitlement.plan;
-    const isTrial = access?.accessType === "TRIAL_PROGRAMME" || isTrialUser;
+    const isTrial = accessType === "TRIAL_PROGRAMME";
 
     // Resolve expiry date
     let expiresAt: Date;
@@ -305,39 +391,20 @@ export class PlanSubscriptionService {
     } else if (planData?.expiresAt) {
       expiresAt = new Date(planData.expiresAt);
     } else {
+      // Membership bundles have no per-plan expiry; access follows the
+      // membership and is revalidated with Central.
       expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     }
 
     const isExpired = expiresAt <= new Date();
     const isActive = !isExpired;
 
-    // Resolve unified plan variant
-    let variant: PlanVariant | null = null;
-    if (planData?.planName) {
-      const plan = await this.planRepository.findOne({
-        where: { name: planData.planName },
-        relations: ["variants", "variants.tierLevel", "variants.prices"],
-      });
-      if (plan && plan.variants?.length > 0) {
-        variant = plan.variants[0];
-      }
-    }
-
-    if (!variant && planData?.planId) {
-      const isUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          planData.planId,
-        );
-      const plan = await this.planRepository.findOne({
-        where: isUUID
-          ? [{ slug: planData.planId }, { id: planData.planId }]
-          : { slug: planData.planId },
-        relations: ["variants", "variants.tierLevel", "variants.prices"],
-      });
-      if (plan && plan.variants?.length > 0) {
-        variant = plan.variants[0];
-      }
-    }
+    // Resolve the local plan variant from the Central plan id/name. Central is
+    // only used to identify the plan; the dashboard always renders OUR name.
+    let variant: PlanVariant | null = await this.resolveEntitlementVariant(
+      planData?.planId,
+      planData?.planName,
+    );
 
     if (!variant) {
       const allPlans = await this.planRepository.find({
@@ -358,11 +425,11 @@ export class PlanSubscriptionService {
       planData?.source ||
       (isTrial
         ? "trial"
-        : access.accessType === "PAID_MEMBERSHIP"
+        : accessType === "PAID_MEMBERSHIP"
           ? "membership"
           : "direct");
 
-    const transactionId = `CENTRAL-ENTITLEMENT-${access.accessType}-${planData?.planId || "active"}`;
+    const transactionId = `CENTRAL-ENTITLEMENT-${accessType}-${planData?.planId || "active"}`;
 
     if (subscription) {
       if (variant) {

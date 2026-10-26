@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -18,10 +18,13 @@ import {
   ChevronRight,
   TrendingUp,
   Sliders,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import {
   useGetAdminPlans,
   useAddVariantPrice,
+  useDeletePlan,
   AdminPlan,
   AdminPlanVariant,
 } from '@/services/admin/plans';
@@ -30,10 +33,49 @@ import { toast } from 'sonner';
 export default function AdminPlansListPage() {
   const { data: plans, isLoading, error } = useGetAdminPlans();
   const { mutateAsync: addPrice, isPending: isAddingPrice } = useAddVariantPrice();
+  const { mutateAsync: deletePlan, isPending: isDeletingPlan } = useDeletePlan();
+
+  // Newest plans first (API returns oldest first)
+  const sortedPlans = useMemo(() => {
+    if (!plans) return plans;
+    const toTime = (value?: string | null) => {
+      const time = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(time) ? time : 0;
+    };
+    return [...plans].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+  }, [plans]);
+
+  const formatCreatedAt = (value?: string | null) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+  };
 
   const [selectedVariant, setSelectedVariant] = useState<AdminPlanVariant | null>(null);
   const [newPriceAmount, setNewPriceAmount] = useState<string>('');
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+
+  const [planToDelete, setPlanToDelete] = useState<AdminPlan | null>(null);
+
+  const handleConfirmDelete = async () => {
+    if (!planToDelete) return;
+
+    try {
+      await deletePlan(planToDelete.id);
+      toast.success(
+        `Plan "${planToDelete.name}" was deleted (deactivated). You can restore it from Edit.`
+      );
+      setPlanToDelete(null);
+    } catch (err: unknown) {
+      const response = err as { response?: { data?: { message?: string | string[] } } };
+      const rawMessage = response?.response?.data?.message;
+      toast.error(
+        Array.isArray(rawMessage)
+          ? rawMessage.join(', ')
+          : rawMessage || 'Failed to delete plan. Please try again.'
+      );
+    }
+  };
 
   const handleOpenPriceModal = (variant: AdminPlanVariant) => {
     setSelectedVariant(variant);
@@ -125,7 +167,7 @@ export default function AdminPlansListPage() {
         <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
           Failed to load plans. Please verify database connectivity.
         </div>
-      ) : !plans || plans.length === 0 ? (
+      ) : !sortedPlans || sortedPlans.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-gray-200 shadow-sm space-y-4 max-w-lg mx-auto">
           <Layers className="w-12 h-12 text-gray-400 mx-auto" />
           <div>
@@ -144,7 +186,7 @@ export default function AdminPlansListPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {plans.map((plan: AdminPlan) => (
+          {sortedPlans.map((plan: AdminPlan) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 10 }}
@@ -176,8 +218,28 @@ export default function AdminPlansListPage() {
                   )}
                 </div>
 
-                <div className="text-xs text-gray-500 font-medium">
-                  Created {new Date(plan.created_at).toLocaleDateString()}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="text-xs text-gray-500 font-medium">
+                    Created {formatCreatedAt(plan.createdAt)}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/plans/${plan.id}/edit`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setPlanToDelete(plan)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -358,6 +420,69 @@ export default function AdminPlansListPage() {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {planToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-gray-100 space-y-5"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-plan-title"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-red-50 text-red-600 border border-red-100">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="delete-plan-title" className="text-lg font-black text-gray-900">
+                  Delete “{planToDelete.name}”?
+                </h3>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  This performs a soft delete by deactivating the plan. It immediately disappears
+                  from checkout, but the plan, its three variants and all pricing/history are kept.
+                  It will stay in this admin list marked as <span className="font-semibold">Inactive</span>{' '}
+                  so you can restore it later via Edit.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <span>
+                Existing subscribers keep their access and billing history. You can restore the plan
+                anytime by editing it and switching visibility back on.
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setPlanToDelete(null)}
+                disabled={isDeletingPlan}
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeletingPlan}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeletingPlan ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                <span>{isDeletingPlan ? 'Deleting...' : 'Delete plan'}</span>
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

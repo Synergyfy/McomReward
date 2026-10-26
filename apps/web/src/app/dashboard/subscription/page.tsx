@@ -18,7 +18,9 @@ import {
   ExternalLink,
   Eye,
   ListTodo,
+  KeyRound,
 } from 'lucide-react';
+import Link from 'next/link';
 import api from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,6 +94,12 @@ export default function SubscriptionDashboardPage() {
     myPackage?.accessType === 'PAID_MEMBERSHIP';
   const isTrialProgramme =
     myPackage?.accessType === 'TRIAL_PROGRAMME' || isTrial;
+  // A Central access-pass bundle (or a locally bought pass) is the current
+  // entitlement when no plan subscription backs the account.
+  const accessPass = myPackage?.accessPass;
+  const isAccessPass =
+    myPackage?.accessType === 'ACCESS_PASS' ||
+    (accessPass?.hasAccess === true && !isMembershipBundle && !isTrialProgramme);
   const trialTasks = myPackage?.trialTasks || [];
   const upgradeUrl =
     myPackage?.upgradeUrl || 'http://localhost:3010/dashboard/memberships';
@@ -111,6 +119,18 @@ export default function SubscriptionDashboardPage() {
   }, [membership, myPackage]);
 
   const currentTierName = currentPlanName;
+  // `planName` now includes the variant (e.g. "Gold Pro"), so don't repeat the
+  // tier badge next to it and compare plan cards against the plan family.
+  const levelSuffixPattern =
+    currentLevel === 'PRO_PLUS'
+      ? /pro\s*\+$/i
+      : currentLevel === 'PRO'
+        ? /\bpro$/i
+        : /standard$/i;
+  const nameIncludesLevel = levelSuffixPattern.test(currentTierName.trim());
+  const currentPlanFamily = currentTierName
+    .replace(/\s+(pro\s*\+|pro_plus|pro|standard)$/i, '')
+    .trim();
 
   const mypackageBillingLabel = myPackage?.billingMethod
     ? ` via ${
@@ -125,7 +145,7 @@ export default function SubscriptionDashboardPage() {
   /** A card is "current" only when plan AND billed variant match the local membership. */
   const isPlanCurrent = (plan: McomPlan) => {
     if (isExpired) return false;
-    if ((currentPlanName || '').toLowerCase() !== (plan?.name || '').toLowerCase()) return false;
+    if ((currentPlanFamily || '').toLowerCase() !== (plan?.name || '').toLowerCase()) return false;
     return currentLevel === durationTab.toUpperCase();
   };
 
@@ -210,6 +230,28 @@ export default function SubscriptionDashboardPage() {
           </div>
         </div>
 
+        {/* Access pass short-term alternative */}
+        <div className="bg-white border border-orange-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-100">
+              <KeyRound size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Prefer short-term access?</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Buy a one-off access pass or redeem a gift code — no recurring billing.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/access-pass"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold hover:bg-orange-100 whitespace-nowrap"
+          >
+            <KeyRound size={14} />
+            View access passes
+          </Link>
+        </div>
+
         {/* Current Subscription Status Card */}
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
           <div className="bg-gradient-to-r from-gray-900 via-slate-900 to-gray-800 p-6 text-white">
@@ -229,6 +271,11 @@ export default function SubscriptionDashboardPage() {
                       <Sparkles size={12} />
                       <span>MCOM Membership Bundle</span>
                     </span>
+                  ) : isAccessPass ? (
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <KeyRound size={12} />
+                      <span>Access Pass</span>
+                    </span>
                   ) : isTrialProgramme ? (
                     <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                       <Clock size={12} />
@@ -247,7 +294,7 @@ export default function SubscriptionDashboardPage() {
                 </div>
                 <h2 className="text-3xl font-black">
                   {currentTierName}
-                  {currentTierName !== 'Free' && (
+                  {currentTierName !== 'Free' && !isAccessPass && !nameIncludesLevel && (
                     <span className="text-orange-400 text-xl font-bold"> · {currentLevel}</span>
                   )}
                 </h2>
@@ -256,6 +303,8 @@ export default function SubscriptionDashboardPage() {
                     ? 'Your subscription period has ended. Upgrade or renew to restore campaign creation, digital stamps, and customer analytics.'
                     : isMembershipBundle
                     ? `Included in your MCOM Central ${myPackage?.membershipTier || 'Global'} Membership. Quotas and renewals are automatically managed.`
+                    : isAccessPass
+                    ? `Your ${accessPass?.planName || 'access pass'} unlocks the full dashboard${expiresAtFormatted ? ` until ${expiresAtFormatted}` : ''}.`
                     : isTrialProgramme
                     ? 'You are active on a task-gated onboarding trial. Complete your required tasks to unlock ongoing ecosystem benefits.'
                     : currentTierName === 'Free'
@@ -284,7 +333,7 @@ export default function SubscriptionDashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium">
-                      {isExpired ? 'Expired On' : isTrialProgramme ? 'Trial Ends' : 'Next Renewal'}
+                      {isExpired ? 'Expired On' : isAccessPass ? 'Pass Expires' : isTrialProgramme ? 'Trial Ends' : 'Next Renewal'}
                     </p>
                     <p className="text-sm font-bold text-white">{expiresAtFormatted}</p>
                   </div>
@@ -310,6 +359,28 @@ export default function SubscriptionDashboardPage() {
                 <span>Manage on MCOM Central</span>
                 <ExternalLink size={12} />
               </a>
+            </div>
+          )}
+
+          {isAccessPass && (
+            <div className="bg-emerald-50 border-t border-emerald-100 px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-900 text-xs sm:text-sm">
+              <div className="flex items-center gap-2.5">
+                <KeyRound className="text-emerald-600 flex-shrink-0" size={18} />
+                <span>
+                  Your <strong>{accessPass?.planName || 'Access Pass'}</strong> is active
+                  {expiresAtFormatted ? ` until ${expiresAtFormatted}` : ''}.
+                  {typeof accessPass?.daysRemaining === 'number' && accessPass.daysRemaining > 0
+                    ? ` ${accessPass.daysRemaining} day${accessPass.daysRemaining === 1 ? '' : 's'} left.`
+                    : ''}
+                </span>
+              </div>
+              <Link
+                href="/dashboard/access-pass"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap self-end sm:self-auto shadow-sm"
+              >
+                <span>View access pass</span>
+                <KeyRound size={12} />
+              </Link>
             </div>
           )}
 

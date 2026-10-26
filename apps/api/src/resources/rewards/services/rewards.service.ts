@@ -39,6 +39,7 @@ import { Category } from "../../category/entities/category.entity";
 import { SubCategory } from "../../subcategory/entities/subcategory.entity";
 import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
 import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
+import { AccessPassService } from "../../access-passes/access-pass.service";
 
 @Injectable()
 export class RewardsService {
@@ -69,7 +70,31 @@ export class RewardsService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     private readonly mallIntegration: MallIntegrationService,
     private readonly partnerIssuance: PartnerIssuanceMetricsService,
+    private readonly accessPassService: AccessPassService,
   ) {}
+
+  /**
+   * Resolve the admin-configured max points for a reward. The active plan tier
+   * takes precedence, but an active access pass fills in the value when the
+   * business has no plan-level limit (access passes are standalone entitlements).
+   */
+  private async resolveMaxRewardPoints(
+    businessId: string,
+    subscription: PlanSubscription | null,
+  ): Promise<number> {
+    const planMax =
+      subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ??
+      (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
+        ?.maxRewardPoints;
+
+    if (planMax !== undefined && planMax !== null) {
+      return planMax;
+    }
+
+    const accessPass =
+      await this.accessPassService.findActiveForBusiness(businessId);
+    return accessPass?.configuration?.quotas?.maxRewardPoints ?? 0;
+  }
 
   async createReward(createRewardDto: CreateRewardDto): Promise<Reward> {
     const {
@@ -261,11 +286,10 @@ export class RewardsService {
       relations: ["planVariant"],
     });
 
-    const maxPoints =
-      subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
-      (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
-        ?.maxRewardPoints ||
-      0;
+    const maxPoints = await this.resolveMaxRewardPoints(
+      businessId,
+      subscription,
+    );
 
     if (maxPoints > 0 && pointRequired && pointRequired > maxPoints) {
       throw new BadRequestException(
@@ -313,11 +337,10 @@ export class RewardsService {
     const isPointsEnabled = createBusinessRewardDto.is_points_enabled ?? true;
     const isStampsEnabled = createBusinessRewardDto.is_stamps_enabled ?? false;
 
-    const maxPoints =
-      subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
-      (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
-        ?.maxRewardPoints ||
-      0;
+    const maxPoints = await this.resolveMaxRewardPoints(
+      businessId,
+      subscription,
+    );
 
     if (isPointsEnabled && maxPoints > 0) {
       const pointRequired = createBusinessRewardDto.points_required;
@@ -474,11 +497,10 @@ export class RewardsService {
         relations: ["planVariant"],
       });
 
-      const maxPoints =
-        subscription?.planVariant?.configuration?.quotas?.maxRewardPoints ||
-        (subscription?.planVariant?.tierLevel as any)?.configuration?.quotas
-          ?.maxRewardPoints ||
-        0;
+      const maxPoints = await this.resolveMaxRewardPoints(
+        businessId,
+        subscription,
+      );
 
       if (
         maxPoints > 0 &&

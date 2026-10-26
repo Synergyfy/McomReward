@@ -5,6 +5,7 @@ import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 export enum PaymentCheckoutPurpose {
   PLAN = "PLAN",
   PLAN_RENEWAL = "PLAN_RENEWAL",
+  ACCESS_PASS = "ACCESS_PASS",
   POINT_PACKAGE = "POINT_PACKAGE",
   STAMP_PACKAGE = "STAMP_PACKAGE",
   EXTRA_POINTS = "EXTRA_POINTS",

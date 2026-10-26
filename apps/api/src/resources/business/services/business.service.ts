@@ -51,6 +51,8 @@ import { ProvisionType } from "../../provision/entities/provision.entity";
 import { PlanSubscriptionService } from "../../plans/services/plan-subscription.service";
 import { PlanType } from "../../plans/entities/plan-subscription.entity";
 import { McomCentralService } from "../../sso/mcom-central.service";
+import { AccessPassService } from "../../access-passes/access-pass.service";
+import { formatPlanDisplayName } from "../../plans/utils/plan-display.util";
 
 @Injectable()
 export class BusinessService {
@@ -87,6 +89,7 @@ export class BusinessService {
     private readonly provisionService: ProvisionService,
     private readonly planSubscriptionService: PlanSubscriptionService,
     private readonly mcomCentralService: McomCentralService,
+    private readonly accessPassService: AccessPassService,
   ) {}
 
   private async generateAffiliateCode(): Promise<string> {
@@ -547,21 +550,77 @@ export class BusinessService {
       const isExpired =
         (activeSub.expires_at && new Date(activeSub.expires_at) < new Date()) ||
         activeSub.status === "expired";
-      const planName = activeSub.planVariant?.plan?.name || "Free";
-      const membershipLevel = activeSub.planVariant?.tierLevel?.name || null;
+      const localPlanName = activeSub.planVariant?.plan?.name || "Free";
+      const localTierName = activeSub.planVariant?.tierLevel?.name || null;
+      // Render our catalogue name + variant (e.g. "Gold Pro"), never the label
+      // Central sends for the bundled plan.
+      const planName = activeSub.is_trial
+        ? "14-Day Trial"
+        : formatPlanDisplayName(localPlanName, localTierName) || localPlanName;
+      const membershipLevel = localTierName;
+
+      if (!isExpired) {
+        return {
+          tier: planName,
+          planName,
+          membershipLevel,
+          planVariantId:
+            activeSub.planVariant?.id || activeSub.planVariantId || null,
+          status: activeSub.status || "active",
+          expiresAt: activeSub.expires_at
+            ? new Date(activeSub.expires_at).toISOString()
+            : null,
+          planType: activeSub.plan_type || "monthly",
+          isTrial: activeSub.is_trial,
+          features: activeSub.planVariant?.features || [],
+        };
+      }
+
+      const accessPass =
+        await this.accessPassService.findActiveForBusiness(id);
+      if (accessPass) {
+        return {
+          tier: accessPass.planName,
+          planName: accessPass.planName,
+          membershipLevel: "ACCESS_PASS",
+          planVariantId: null,
+          status: "active",
+          expiresAt: new Date(accessPass.expiresAt).toISOString(),
+          planType: "access_pass",
+          isTrial: false,
+          features: accessPass.features || [],
+        };
+      }
+
       return {
         tier: planName,
         planName,
         membershipLevel,
         planVariantId:
           activeSub.planVariant?.id || activeSub.planVariantId || null,
-        status: isExpired ? "expired" : activeSub.status || "active",
+        status: "expired",
         expiresAt: activeSub.expires_at
           ? new Date(activeSub.expires_at).toISOString()
           : null,
         planType: activeSub.plan_type || "monthly",
         isTrial: activeSub.is_trial,
         features: activeSub.planVariant?.features || [],
+      };
+    }
+
+    const accessPass =
+      await this.accessPassService.findActiveForBusiness(id);
+    if (accessPass) {
+      return {
+        tier: accessPass.planName,
+        planName: accessPass.planName,
+        membershipLevel: "ACCESS_PASS",
+        planVariantId: null,
+        status: "active",
+        expiresAt: new Date(accessPass.expiresAt).toISOString(),
+        planType: "access_pass",
+        isTrial: false,
+        features: accessPass.features || [],
       };
     }
 
@@ -588,8 +647,13 @@ export class BusinessService {
       await this.planSubscriptionService.findActiveSubscription(businessId);
     const tierLevel =
       activeSub?.planVariant?.tierLevel || activeSub?.planVariant?.plan;
+    const accessPass = tierLevel
+      ? null
+      : await this.accessPassService.findActiveForBusiness(businessId);
     const monthlyAllowance =
-      (tierLevel as any)?.configuration?.quotas?.monthlyPointsAllowance || 0;
+      (tierLevel as any)?.configuration?.quotas?.monthlyPointsAllowance ??
+      accessPass?.configuration?.quotas?.monthlyPointsAllowance ??
+      0;
 
     // Calculate start of current month
     const now = new Date();
@@ -621,8 +685,13 @@ export class BusinessService {
       await this.planSubscriptionService.findActiveSubscription(businessId);
     const tierLevel =
       activeSub?.planVariant?.tierLevel || activeSub?.planVariant?.plan;
+    const accessPass = tierLevel
+      ? null
+      : await this.accessPassService.findActiveForBusiness(businessId);
     const monthlyAllowance =
-      (tierLevel as any)?.configuration?.quotas?.monthlyStampsAllowance || 0;
+      (tierLevel as any)?.configuration?.quotas?.monthlyStampsAllowance ??
+      accessPass?.configuration?.quotas?.monthlyStampsAllowance ??
+      0;
 
     const packageBalance =
       await this.stampPackageService.getAggregateBalance(businessId);
@@ -668,8 +737,12 @@ export class BusinessService {
     const activeSub =
       await this.planSubscriptionService.findActiveSubscription(businessId);
     const rewardsPackage = await this.getCentralPackage(businessId);
+    const accessPass =
+      activeSub || rewardsPackage
+        ? null
+        : await this.accessPassService.findActiveForBusiness(businessId);
 
-    if (!activeSub && !rewardsPackage) {
+    if (!activeSub && !rewardsPackage && !accessPass) {
       return {
         totalAllowance: 0,
         totalUsed: 0,
@@ -680,18 +753,24 @@ export class BusinessService {
     const tierLevel =
       activeSub?.planVariant?.tierLevel || activeSub?.planVariant?.plan;
     const monthlyAllowance =
-      (tierLevel as any)?.configuration?.quotas?.monthlyPointsAllowance || 0;
+      (tierLevel as any)?.configuration?.quotas?.monthlyPointsAllowance ??
+      accessPass?.configuration?.quotas?.monthlyPointsAllowance ??
+      0;
 
     const startDate = activeSub?.starts_at
       ? new Date(activeSub.starts_at)
-      : rewardsPackage?.createdAt
-        ? new Date(rewardsPackage.createdAt)
-        : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      : accessPass
+        ? new Date(accessPass.startsAt)
+        : rewardsPackage?.createdAt
+          ? new Date(rewardsPackage.createdAt)
+          : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const endDate = activeSub?.expires_at
       ? new Date(activeSub.expires_at)
-      : rewardsPackage?.expiresAt
-        ? new Date(rewardsPackage.expiresAt)
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      : accessPass
+        ? new Date(accessPass.expiresAt)
+        : rewardsPackage?.expiresAt
+          ? new Date(rewardsPackage.expiresAt)
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const isAnnual =
       activeSub?.plan_type === PlanType.ANNUAL ||
@@ -868,9 +947,13 @@ export class BusinessService {
       await this.planSubscriptionService.findActiveSubscription(businessId);
     const tierLevel =
       activeSub?.planVariant?.tierLevel || activeSub?.planVariant?.plan;
-    const tierConfig = (tierLevel as any)?.configuration;
+    const accessPass = tierLevel
+      ? null
+      : await this.accessPassService.findActiveForBusiness(businessId);
+    const tierConfig =
+      (tierLevel as any)?.configuration || accessPass?.configuration;
 
-    if (!activeSub || !tierConfig) {
+    if ((!activeSub || !tierConfig) && !accessPass) {
       return {
         tierName: "Free",
         features: {
@@ -882,7 +965,7 @@ export class BusinessService {
       };
     }
 
-    const quotas = tierConfig.quotas || {};
+    const quotas = tierConfig?.quotas || {};
 
     // Active Campaigns: Not disabled, and end_date >= now
     const activeCampaignsCount = await this.businessCampaignRepository.count({
@@ -917,7 +1000,7 @@ export class BusinessService {
     };
 
     return {
-      tierName: tierLevel?.name || "Standard",
+      tierName: tierLevel?.name || accessPass?.planName || "Standard",
       features: {
         campaigns: {
           limit: quotas.maxActiveCampaigns,

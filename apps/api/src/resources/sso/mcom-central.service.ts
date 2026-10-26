@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
 import { PlatformEntitlement } from "./interfaces/entitlement.interface";
+import { unwrapPlatformEntitlement } from "./entitlement.util";
 
 export interface CentralPackage {
   platform: string;
@@ -298,7 +299,7 @@ export class McomCentralService {
         return null;
       }
 
-      return response.json();
+      return unwrapPlatformEntitlement(await response.json());
     } catch (error) {
       this.logger.error(
         `Error fetching entitlement from MCOM Central: ${error?.message}`,
@@ -328,7 +329,7 @@ export class McomCentralService {
         return null;
       }
 
-      return response.json();
+      return unwrapPlatformEntitlement(await response.json());
     } catch (error) {
       this.logger.error(
         `Error fetching entitlement by userId from MCOM Central: ${error?.message}`,

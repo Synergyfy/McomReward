@@ -34,7 +34,7 @@ function PaymentCallbackContent() {
 
     const run = async () => {
       try {
-        await confirmPurchase({
+        const result = await confirmPurchase({
           externalPlanId: '',
           billingCycle: 'monthly',
           provider,
@@ -42,6 +42,7 @@ function PaymentCallbackContent() {
           ...(orderId ? { orderId } : {}),
           ...(checkoutId ? { checkoutId } : {}),
         });
+        const isAccessPass = Boolean((result as any)?.accessPass);
 
         if (cancelled) return;
 
@@ -49,10 +50,23 @@ function PaymentCallbackContent() {
         queryClient.invalidateQueries({ queryKey: ['subscription'] });
         queryClient.invalidateQueries({ queryKey: ['businessSubscription'] });
         queryClient.invalidateQueries({ queryKey: ['businessProfile'] });
+        queryClient.invalidateQueries({ queryKey: ['access-passes'] });
 
         setStatus('success');
-        setMessage('Payment confirmed. Your plan is now active.');
-        setTimeout(() => router.replace('/dashboard/subscription?upgrade=success'), 1800);
+        setMessage(
+          isAccessPass
+            ? 'Payment confirmed. Your access pass is now active.'
+            : 'Payment confirmed. Your plan is now active.',
+        );
+        setTimeout(
+          () =>
+            router.replace(
+              isAccessPass
+                ? '/dashboard/access-pass?purchase=success'
+                : '/dashboard/subscription?upgrade=success',
+            ),
+          1800,
+        );
       } catch (error: any) {
         if (cancelled) return;
         setStatus('error');

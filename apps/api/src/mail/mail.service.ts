@@ -444,6 +444,127 @@ export class MailService {
     });
   }
 
+  async sendRaw(options: {
+    to: string;
+    subject: string;
+    html?: string | null;
+    text?: string | null;
+  }) {
+    await this.mailerService.sendMail({
+      to: options.to,
+      subject: options.subject,
+      ...(options.html ? { html: options.html } : {}),
+      ...(options.text ? { text: options.text } : {}),
+    });
+  }
+
+  async sendAccessPassCodeEmail(options: {
+    to: string;
+    code: string;
+    planName: string;
+    durationDays: number;
+    expiresAt?: Date | null;
+    restrictToAssignedUser: boolean;
+    assignedEmail?: string | null;
+    note?: string | null;
+  }) {
+    const expiryText = options.expiresAt
+      ? options.expiresAt.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "No expiry";
+    const usageText = options.restrictToAssignedUser
+      ? `This code is locked to <strong>${options.assignedEmail || options.to}</strong>. Only that account can redeem it.`
+      : options.assignedEmail
+        ? `This code was sent to <strong>${options.assignedEmail}</strong>, but it is <strong>transferable</strong> — you may give it to anyone you like.`
+        : "This code is transferable — you may give it to anyone you like.";
+
+    await this.mailerService.sendMail({
+      to: options.to,
+      subject: `Your MCOM Rewards Access Pass code — ${options.planName}`,
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #f0f0f0;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #ea580c; margin: 0; font-size: 28px; font-weight: 700;">You've received an Access Pass</h2>
+            <p style="color: #666; margin-top: 10px; font-size: 16px;">${options.planName} · ${options.durationDays} days of dashboard access</p>
+          </div>
+
+          <div style="color: #333333; font-size: 16px; line-height: 1.6;">
+            <p>Hello,</p>
+            <p>An MCOM administrator has gifted you an <strong>Access Pass</strong>. Redeem the code below from your business dashboard to unlock the plan.</p>
+
+            <div style="text-align: center; margin: 35px 0;">
+              <span style="display: inline-block; background-color: #ea580c; color: #ffffff; font-size: 26px; font-weight: bold; padding: 16px 30px; border-radius: 8px; letter-spacing: 3px; font-family: monospace; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);">
+                ${options.code}
+              </span>
+            </div>
+
+            <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0 0 6px 0;"><strong>Plan:</strong> ${options.planName}</p>
+              <p style="margin: 0 0 6px 0;"><strong>Access duration:</strong> ${options.durationDays} days</p>
+              <p style="margin: 0;"><strong>Code expires:</strong> ${expiryText}</p>
+            </div>
+
+            <p>${usageText}</p>
+            ${options.note ? `<p style="background:#f9fafb;border-radius:8px;padding:12px 16px;color:#555;"><strong>Note from the admin:</strong> ${options.note}</p>` : ""}
+
+            <p>To redeem: sign in, open <strong>Dashboard → Access Pass</strong>, enter the code and click “Redeem code”. Access begins immediately and runs for ${options.durationDays} days.</p>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <p style="font-size: 14px; color: #888; text-align: center;">
+              Best regards,<br>
+              <strong>The Mcom Loyalty Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+      text: `You have received an MCOM Rewards Access Pass.\n\nPlan: ${options.planName}\nDuration: ${options.durationDays} days\nCode: ${options.code}\nExpires: ${expiryText}\n\n${options.restrictToAssignedUser ? "This code can only be redeemed by the assigned account." : "This code is transferable and may be shared."}\n\nRedeem it from Dashboard -> Access Pass.`,
+    });
+  }
+
+  async sendAccessPassRevokedEmail(options: {
+    to: string;
+    planName: string;
+    reason: string;
+    revokedAt: Date;
+  }) {
+    await this.mailerService.sendMail({
+      to: options.to,
+      subject: `Your MCOM Rewards Access Pass has been revoked`,
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #f0f0f0;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #dc2626; margin: 0; font-size: 26px; font-weight: 700;">Access Pass revoked</h2>
+            <p style="color: #666; margin-top: 10px; font-size: 16px;">${options.planName}</p>
+          </div>
+
+          <div style="color: #333333; font-size: 16px; line-height: 1.6;">
+            <p>Hello,</p>
+            <p>Your <strong>${options.planName}</strong> Access Pass has been revoked by an MCOM administrator, effective ${options.revokedAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.</p>
+
+            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 22px 0;">
+              <p style="margin: 0 0 6px 0; color: #991b1b;"><strong>Reason provided:</strong></p>
+              <p style="margin: 0; color: #7f1d1d;">${options.reason}</p>
+            </div>
+
+            <p>If you believe this was a mistake, please contact MCOM support or reply to this email and our team will review your account.</p>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <p style="font-size: 14px; color: #888; text-align: center;">
+              Best regards,<br>
+              <strong>The Mcom Loyalty Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+      text: `Your ${options.planName} Access Pass has been revoked.\n\nReason: ${options.reason}\n\nContact support if you believe this was a mistake.`,
+    });
+  }
+
   async sendLevelPromotionEmail(
     email: string,
     participantName: string,

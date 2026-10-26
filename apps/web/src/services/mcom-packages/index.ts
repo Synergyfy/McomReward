@@ -148,8 +148,20 @@ export interface MyPackageResponse {
   isExpired?: boolean;
   isTrial?: boolean;
   hasAccess?: boolean;
-  accessType?: 'PAID_MEMBERSHIP' | 'TRIAL_PROGRAMME' | 'DIRECT_PACKAGE' | 'NONE';
-  source?: 'membership' | 'trial' | 'direct' | string;
+  accessType?: 'PAID_MEMBERSHIP' | 'TRIAL_PROGRAMME' | 'DIRECT_PACKAGE' | 'ACCESS_PASS' | 'NONE';
+  source?: 'membership' | 'trial' | 'direct' | 'access-pass' | string;
+  accessPass?: {
+    hasAccess: boolean;
+    id: string;
+    planId: string;
+    planName: string;
+    source: string;
+    startsAt: string;
+    expiresAt: string;
+    daysRemaining: number;
+    features: string[];
+    configuration?: Record<string, any>;
+  } | null;
   entitlement?: PlatformEntitlement | null;
   trialTasks?: ProgrammeTask[];
   hasPaidVerificationFee?: boolean;

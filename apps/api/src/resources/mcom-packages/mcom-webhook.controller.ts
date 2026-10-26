@@ -24,6 +24,8 @@ import {
 import { PlanVariant } from "../plans/entities/plan-variant.entity";
 import { Plan } from "../plans/entities/plan.entity";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
+import { McomCentralService } from "../sso/mcom-central.service";
+import { EntitlementSyncService } from "../sso/entitlement-sync.service";
 
 @ApiTags("MCOM Webhooks")
 @Controller("mcom")
@@ -38,6 +40,8 @@ export class McomWebhookController {
     @InjectRepository(PlanSubscription)
     private readonly subscriptionRepository: Repository<PlanSubscription>,
     private readonly planSubscriptionService: PlanSubscriptionService,
+    private readonly mcomCentralService: McomCentralService,
+    private readonly entitlementSyncService: EntitlementSyncService,
   ) {}
 
   private verifySignature(
@@ -154,11 +158,61 @@ export class McomWebhookController {
   }
 
 
+  /**
+   * Webhooks are a signal, not the source of truth: re-introspect Central and
+   * apply the resulting entitlement. Returns false when Central could not be
+   * reached so callers can fall back to legacy payload handling.
+   */
+  private async introspectAndApply(business: Business): Promise<boolean> {
+    if (!business.mcomUserId) return false;
+
+    try {
+      const entitlement =
+        await this.mcomCentralService.getIntrospectionEntitlementByUserId(
+          business.mcomUserId,
+        );
+      if (!entitlement) return false;
+
+      business.entitlementData = entitlement;
+      business.hasPaidVerificationFee =
+        entitlement.trialContext?.hasPaidVerificationFee ?? false;
+      business.trialTasks = entitlement.trialContext?.programmeTasks || [];
+      business.entitlementSource =
+        entitlement.plan?.source ||
+        (entitlement.access?.accessType === "PAID_MEMBERSHIP"
+          ? "membership"
+          : entitlement.access?.accessType === "TRIAL_PROGRAMME"
+            ? "trial"
+            : "direct");
+
+      if (entitlement.membershipContext?.membershipLevel) {
+        business.membershipLevel =
+          entitlement.membershipContext.membershipLevel;
+      }
+      if (entitlement.membershipContext?.membershipPlanName) {
+        business.membershipTier =
+          entitlement.membershipContext.membershipPlanName;
+      }
+      if (entitlement.membershipContext?.membershipStatus) {
+        business.membershipStatus =
+          entitlement.membershipContext.membershipStatus;
+      }
+
+      await this.businessRepository.save(business);
+      await this.entitlementSyncService.apply(business.id, entitlement);
+      return true;
+    } catch (error: any) {
+      this.logger.warn(
+        `Entitlement re-introspection failed for business ${business.id}: ${error?.message}`,
+      );
+      return false;
+    }
+  }
+
   private async findBusinessByCentralId(
     identifier?: string,
     email?: string,
-  ): Promise<Business | null> {
-    if (!identifier && !email) return null;
+  ): Promise<Business | null> {    if (!identifier && !email) return null;
     if (identifier) {
       const byMcomId = await this.businessRepository.findOne({
         where: { mcomUserId: identifier },
@@ -187,6 +241,13 @@ export class McomWebhookController {
       return;
     }
 
+    if (await this.introspectAndApply(business)) {
+      this.logger.log(
+        `Webhook applied via entitlement introspection for business ${business.id}`,
+      );
+      return;
+    }
+
     await this.planSubscriptionService.syncFromAppPlan(business.id, {
       planId: data.externalPlanId,
       planName: data.packageName,
@@ -212,6 +273,13 @@ export class McomWebhookController {
   private async handlePackageExpired(data: any) {
     const business = await this.findBusinessByCentralId(data.mcomUserId);
     if (!business) return;
+
+    if (await this.introspectAndApply(business)) {
+      this.logger.log(
+        `Webhook applied via entitlement introspection for business ${business.id} (expired event)`,
+      );
+      return;
+    }
 
     const subscription = await this.subscriptionRepository.findOne({
       where: { business: { id: business.id } },
@@ -242,6 +310,13 @@ export class McomWebhookController {
       return;
     }
 
+    if (await this.introspectAndApply(business)) {
+      this.logger.log(
+        `Webhook applied via entitlement introspection for business ${business.id} (trial_started)`,
+      );
+      return;
+    }
+
     business.hasPaidVerificationFee = true;
     business.entitlementSource = "trial";
     if (data.programmeTasks) {
@@ -252,17 +327,14 @@ export class McomWebhookController {
     if (data.entitlement) {
       business.entitlementData = data.entitlement;
       await this.businessRepository.save(business);
-      await this.planSubscriptionService.syncFromEntitlement(
-        business.id,
-        data.entitlement,
-      );
+      await this.entitlementSyncService.apply(business.id, data.entitlement);
     } else {
       const trialDays = data.trialAccessDays || 14;
       const expiresAt =
         data.trialAccessExpiresAt ||
         new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
-      await this.planSubscriptionService.syncFromEntitlement(business.id, {
+      await this.entitlementSyncService.apply(business.id, {
         version: "2026-10-01",
         targetPlatform: {
           clientId: "mcom-rewards",
@@ -316,6 +388,13 @@ export class McomWebhookController {
       return;
     }
 
+    if (await this.introspectAndApply(business)) {
+      this.logger.log(
+        `Webhook applied via entitlement introspection for business ${business.id} (membership_assigned)`,
+      );
+      return;
+    }
+
     business.entitlementSource = "membership";
     business.membershipLevel =
       data.membershipLevel || data.membershipPlanName || business.membershipLevel;
@@ -326,10 +405,7 @@ export class McomWebhookController {
     if (data.entitlement) {
       business.entitlementData = data.entitlement;
       await this.businessRepository.save(business);
-      await this.planSubscriptionService.syncFromEntitlement(
-        business.id,
-        data.entitlement,
-      );
+      await this.entitlementSyncService.apply(business.id, data.entitlement);
     } else {
       await this.businessRepository.save(business);
       await this.planSubscriptionService.syncFromAppPlan(business.id, {

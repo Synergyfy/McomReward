@@ -36,8 +36,8 @@ export interface AdminPlan {
   description?: string | null;
   isActive: boolean;
   variants: AdminPlanVariant[];
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreatePlanPayload {
@@ -62,6 +62,14 @@ export interface AddPricePayload {
   currency?: string;
 }
 
+export interface UpdatePlanPayload {
+  name?: string;
+  slug?: string;
+  description?: string;
+  isActive?: boolean;
+  variants?: CreatePlanPayload['variants'];
+}
+
 const ADMIN_PLANS_KEY = 'admin-plans';
 
 export const getAdminPlans = async (): Promise<AdminPlan[]> => {
@@ -73,6 +81,19 @@ export const useGetAdminPlans = () => {
   return useQuery({
     queryKey: [ADMIN_PLANS_KEY],
     queryFn: getAdminPlans,
+  });
+};
+
+export const getAdminPlan = async (id: string): Promise<AdminPlan> => {
+  const { data } = await api.get<AdminPlan>(`/plans/${id}`);
+  return data;
+};
+
+export const useGetAdminPlan = (id?: string) => {
+  return useQuery({
+    queryKey: [ADMIN_PLANS_KEY, id],
+    queryFn: () => getAdminPlan(id as string),
+    enabled: Boolean(id),
   });
 };
 
@@ -99,6 +120,29 @@ export const useCreatePlan = () => {
     mutationFn: createPlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [ADMIN_PLANS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['mcom-packages'] });
+    },
+  });
+};
+
+export const updatePlan = async ({
+  id,
+  payload,
+}: {
+  id: string;
+  payload: UpdatePlanPayload;
+}): Promise<AdminPlan> => {
+  const { data } = await api.patch<AdminPlan>(`/plans/${id}`, payload);
+  return data;
+};
+
+export const useUpdatePlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePlan,
+    onSuccess: (plan) => {
+      queryClient.invalidateQueries({ queryKey: [ADMIN_PLANS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [ADMIN_PLANS_KEY, plan?.id] });
       queryClient.invalidateQueries({ queryKey: ['mcom-packages'] });
     },
   });

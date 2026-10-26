@@ -8,14 +8,17 @@ import { McomCentralService } from "./mcom-central.service";
 import { UserModule } from "../../user/user.module";
 import { BusinessModule } from "../business/business.module";
 import { PlansModule } from "../plans/plans.module";
+import { AccessPassModule } from "../access-passes/access-pass.module";
 import { Business } from "../business/entities/business.entity";
 import { Participant } from "../participant/entities/participant.entity";
+import { EntitlementSyncService } from "./entitlement-sync.service";
 
 @Module({
   imports: [
     UserModule,
     forwardRef(() => BusinessModule),
     forwardRef(() => PlansModule),
+    AccessPassModule,
     TypeOrmModule.forFeature([Business, Participant]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -27,7 +30,7 @@ import { Participant } from "../participant/entities/participant.entity";
     }),
   ],
   controllers: [SsoController],
-  providers: [SsoService, McomCentralService],
-  exports: [SsoService, McomCentralService],
+  providers: [SsoService, McomCentralService, EntitlementSyncService],
+  exports: [SsoService, McomCentralService, EntitlementSyncService],
 })
 export class SsoModule {}

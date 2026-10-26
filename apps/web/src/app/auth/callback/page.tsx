@@ -69,41 +69,44 @@ function CallbackContent() {
       if (!mountedRef.current) return;
 
       const entitlement = data?.entitlement;
-      const isTrial =
-        entitlement?.trialContext?.isInTrial === true ||
-        entitlement?.trialContext?.hasPaidVerificationFee === true ||
-        entitlement?.access?.reason === "TRIAL_NO_TASKS" ||
-        entitlement?.access?.accessType === "TRIAL_PROGRAMME";
+      const isCentralAccessDenied =
+        entitlement?.access && entitlement.access.hasAccess === false;
 
-      const isAccessDenied =
-        entitlement?.access &&
-        entitlement.access.hasAccess === false &&
-        !isTrial;
-
-      if (isAccessDenied) {
-        const upgradeUrl =
-          entitlement.access.upgradeUrl || "http://localhost:3010/dashboard/memberships";
-        const reason = entitlement.access.reason;
-
-        let reasonMessage = "Subscription or verification required to access MCOM Rewards.";
-        if (reason === "PLATFORM_NOT_IN_MEMBERSHIP") {
-          reasonMessage = "Your current MCOM Membership tier does not include MCOM Rewards.";
-        } else if (reason === "TRIAL_EXPIRED") {
-          reasonMessage = "Your trial access period has expired.";
-        } else if (reason === "UNVERIFIED") {
-          reasonMessage = "Verification fee required to access MCOM Rewards.";
-        } else if (reason === "MEMBERSHIP_EXPIRED") {
-          reasonMessage = "Your MCOM Membership has expired.";
+      if (isCentralAccessDenied) {
+        // A local Access Pass is a valid standalone entitlement even when the
+        // Central membership/plan does not include MCOM Rewards.
+        let hasLocalAccessPass = false;
+        try {
+          const { data: localPass } = await api.get("/access-passes/me");
+          hasLocalAccessPass = Boolean(localPass?.hasAccess);
+        } catch {
+          hasLocalAccessPass = false;
         }
 
-        toast.error("Access Required", {
-          description: `${reasonMessage} Redirecting to MCOM Central to upgrade or verify...`,
-        });
+        if (!hasLocalAccessPass) {
+          const reason = entitlement?.access?.reason as string | undefined;
+          const reasonCopy: Record<string, string> = {
+            PLATFORM_NOT_IN_MEMBERSHIP:
+              "Your MCOM Central membership does not include MCOM Rewards.",
+            TRIAL_NO_TASKS:
+              "Trial access is unavailable because MCOM Rewards has no active onboarding tasks.",
+            TRIAL_EXPIRED: "Your MCOM trial window has ended.",
+            UNVERIFIED: "Your MCOM verification fee has not been paid.",
+            MEMBERSHIP_EXPIRED: "Your MCOM Central membership has expired.",
+            NO_ACTIVE_ENTITLEMENT:
+              "No active membership or access pass was found for MCOM Rewards.",
+          };
 
-        setTimeout(() => {
-          window.location.href = upgradeUrl;
-        }, 1200);
-        return;
+          toast.info("Choose how to continue", {
+            description: `${
+              (reason && reasonCopy[reason]) || "MCOM Rewards access is not included."
+            } Buy an Access Pass or redeem a code to unlock it.`,
+          });
+          router.push(
+            `/dashboard/access-pass?source=sso${reason ? `&reason=${reason}` : ""}`,
+          );
+          return;
+        }
       }
 
       toast.success("Welcome back!");

@@ -29,6 +29,10 @@ export class LoyaltySetupTemplate extends AbstractBaseEntity {
   @Column({ type: "json", nullable: true })
   campaigns: Record<string, unknown>[];
 
+  @ApiProperty({ description: "Customer loyalty tier configuration", required: false })
+  @Column({ name: "tier_config", type: "json", nullable: true })
+  tierConfig: Record<string, unknown>;
+
   @ApiProperty({ description: "Whether this is a seeded built-in template" })
   @Column({ default: false, name: "is_built_in" })
   isBuiltIn: boolean;

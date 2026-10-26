@@ -23,10 +23,17 @@ export class LoyaltySetupTemplatesController {
   constructor(private readonly loyaltySetupService: LoyaltySetupService) {}
 
   @Get()
-  @Roles(Role.Admin, Role.Business)
-  @ApiOperation({ summary: "Get all reward templates" })
+  @Roles(Role.Admin)
+  @ApiOperation({ summary: "Get all reward templates for administration" })
   getTemplates() {
     return this.loyaltySetupService.getTemplates();
+  }
+
+  @Get("available")
+  @Roles(Role.Business)
+  @ApiOperation({ summary: "Get admin-created templates available to businesses" })
+  getAvailableTemplates() {
+    return this.loyaltySetupService.getAvailableTemplates();
   }
 
   @Post()

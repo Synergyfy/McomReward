@@ -101,6 +101,59 @@ export interface CampaignResponse {
   targetTiers?: TierResponse[];
 }
 
+/** An admin-created campaign template returned to a business during onboarding. */
+export interface AdminCampaignTemplate {
+  id: string;
+  name: string;
+  banner_url?: string | null;
+  bannerUrl?: string | null;
+  logo_url?: string | null;
+  logoUrl?: string | null;
+  campaign_message?: string;
+  campaignMessage?: string;
+  campaign_type?: string;
+  campaignType?: string;
+  audience_type?: string;
+  audienceType?: string;
+  reward_mode?: string;
+  rewardMode?: string;
+  signUpPoint?: number | null;
+  regular_points_threshold?: number | null;
+  regularPointsThreshold?: number | null;
+  initial_audience_size?: number | null;
+  initialAudienceSize?: number | null;
+  uniqueCode?: string | null;
+  earn_point_page_title?: string | null;
+  earnPointPageTitle?: string | null;
+  earn_point_page_description?: string | null;
+  earnPointPageDescription?: string | null;
+  redeem_reward_page_title?: string | null;
+  redeemRewardPageTitle?: string | null;
+  redeem_reward_page_description?: string | null;
+  redeemRewardPageDescription?: string | null;
+  contact_us_page_title?: string | null;
+  contactUsPageTitle?: string | null;
+  contact_us_page_description?: string | null;
+  contactUsPageDescription?: string | null;
+  contact_email?: string | null;
+  contactEmail?: string | null;
+  contact_phone_number?: string | null;
+  contactPhoneNumber?: string | null;
+  footer_text?: string | null;
+  footerText?: string | null;
+  total_points_earned?: number;
+  totalPointsEarned?: number;
+  total_points_redeemed?: number;
+  totalPointsRedeemed?: number;
+  targetTiers?: Array<{ id: string; name: string }>;
+  disabled?: boolean;
+  rewards?: Reward[];
+}
+
+export interface PaginatedAdminCampaignTemplatesResponse extends PaginationMeta {
+  data: AdminCampaignTemplate[];
+}
+
 export enum CampaignType {
   QR_CODE = 'qr_code',
   LINK = 'link',

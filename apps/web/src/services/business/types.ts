@@ -71,6 +71,8 @@ export interface Business {
 
 export interface BusinessProfile {
   id: string;
+  /** Present when this business identity is linked to CHS through SSO. */
+  mcomUserId?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

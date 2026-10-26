@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Building2, MapPin, Phone, Globe, Edit3 } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Clock3, Globe, Mail, MapPin, Phone, ShieldCheck, Store, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useGetBusinessProfile } from "@/services/business/hook";
 
 interface ProfileScreenProps {
@@ -15,122 +13,117 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onComplete, onBack }: ProfileScreenProps) {
   const { data: profile } = useGetBusinessProfile();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(profile?.name || "");
-  const [editedAddress, setEditedAddress] = useState(profile?.address || "");
-  const [editedPhone, setEditedPhone] = useState(profile?.phone || "");
-  const [editedWebsite, setEditedWebsite] = useState(profile?.website || "");
+  const [centralProfile, setCentralProfile] = useState<Record<string, string> | null>(null);
 
-  const industryName = profile?.sector?.name || profile?.category?.name || "Business";
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("mcom_central_business_profile");
+      if (stored) setCentralProfile(JSON.parse(stored));
+    } catch {
+      setCentralProfile(null);
+    }
+  }, []);
+
+  const formatTaxonomy = (value?: string) => value
+    ? value.replace(/^(sec|cat|sub)-/i, "").replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+    : "";
+  const industryName = centralProfile
+    ? formatTaxonomy(centralProfile.industry) || "Not set"
+    : profile?.sector?.name || profile?.category?.name || "Business";
+  const categoryName = centralProfile
+    ? formatTaxonomy(centralProfile.category)
+    : profile?.category?.name || "";
+  const businessName = centralProfile
+    ? centralProfile.businessName || "Your Business"
+    : profile?.name || "Your Business";
+  const profileValue = (centralValue: string | undefined, localValue: string | undefined) =>
+    centralProfile ? centralValue || "" : localValue || "";
+  const profileNameImportedFromChs = Boolean(centralProfile || profile?.mcomUserId);
+
+  const renderValue = (label: string, value: string, field: "address" | "phone" | "website" | "category" | "email") => {
+    const Icon = field === "address" ? MapPin : field === "phone" ? Phone : field === "category" ? Tags : field === "email" ? Mail : Globe;
+    return (
+      <div key={field} className="flex min-w-0 items-center gap-3 rounded-xl bg-[#f5f7fc] px-3 py-1 sm:gap-3.5 sm:px-3.5 sm:py-1.5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ffded0] text-[#ff4b0a] sm:h-12 sm:w-12"><Icon className="h-[18px] w-[18px]" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[8px] font-bold uppercase tracking-[0.1em] text-slate-600 sm:text-[10px]">{label}</p>
+          <p className="truncate text-[11px] text-slate-600 sm:text-[13px]">{value || "Not set"}</p>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50/50 via-white to-white">
-      <div className="max-w-3xl mx-auto px-4 py-12 md:py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-6">
-            <ArrowLeft className="w-4 h-4" />Back
-          </button>
+    <main className="min-h-screen bg-[#f7f8ff] text-slate-900" style={{ fontFamily: "Inter, Arial, sans-serif" }}>
+      <div className="mx-auto flex min-h-screen w-full flex-col px-4 pb-6 pt-4 sm:px-7 lg:w-[75vw] lg:max-w-[1600px] lg:px-0 lg:pb-4 lg:pt-3">
+        <button onClick={onBack} className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-orange-700"><ArrowLeft className="h-4 w-4" />Back</button>
+        <section className="flex flex-1 items-center py-2">
+          <div className="grid w-full items-stretch gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-10 xl:gap-12">
+          <div className="flex min-w-0 flex-col">
+            <div className="mb-4 hidden items-center gap-2 self-start rounded-full bg-[#e7edff] px-3 py-1.5 text-[9px] font-bold tracking-[0.1em] text-slate-600 sm:text-[11px] lg:inline-flex"><span className="text-orange-600">✣</span>MCOM REWARDS</div>
+            <div aria-label="Setup progress, step 1 of 5" className="mb-0 w-full max-w-2xl lg:mb-7">
+              <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:text-[13px]"><span>Step 1 of 5 · Profile</span><span className="text-orange-600">20%</span></div>
+              <div className="relative grid grid-cols-5">
+                <div aria-hidden="true" className="absolute left-[10%] right-[10%] top-[14px] h-0.5 bg-slate-200" />
+                {[
+                  { label: "Profile", current: true },
+                  { label: "Rewards", current: false },
+                  { label: "Campaigns", current: false },
+                  { label: "Tiers", current: false },
+                  { label: "Review", current: false },
+                ].map((item, index) => (
+                  <div key={item.label} className={`relative z-10 flex min-w-0 flex-col items-center gap-2 ${item.current ? "text-orange-700" : "text-slate-400"}`}>
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-full border bg-white text-[14px] font-bold ${item.current ? "border-orange-500 bg-orange-50 text-orange-700 ring-4 ring-orange-100" : "border-slate-300 text-slate-500"}`}>{index + 1}</span>
+                    <span className="max-w-full truncate text-[9px] font-semibold sm:text-[11px]">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <h1 className="mt-5 hidden max-w-3xl text-[27px] font-semibold leading-tight tracking-[-0.04em] text-slate-950 lg:mt-0 lg:block sm:text-[32px] xl:text-[40px]">Verify Your Business Identity</h1>
+            <p className="mt-3 hidden max-w-3xl text-[14px] leading-6 text-slate-600 lg:block sm:text-[16px] sm:leading-7">We&apos;ve synchronized your verified profile from <strong className="font-semibold text-slate-900">Central Hub Solution.</strong> Review your public merchant credentials or update them in real time.</p>
 
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">Confirm Your Profile</h1>
-            <p className="text-gray-500 max-w-lg mx-auto">We&apos;ve pulled your information from M-Com Central. Review and continue.</p>
+            <div className="relative mx-auto mt-8 hidden w-full max-w-[432px] px-1 sm:mt-10 lg:mb-4 lg:mt-auto lg:block lg:-translate-y-[20%] lg:pt-8">
+              <div className="relative aspect-[16/10] w-full">
+                <Image src="/step2.png" alt="Business identity verification" fill priority sizes="(max-width: 1024px) 100vw, 34vw" className="scale-[1.35] object-contain" />
+              </div>
+            </div>
+
           </div>
 
-          <Card className="p-6 md:p-8 border border-orange-100 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Business Information</h2>
-              <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50">
-                <Edit3 className="w-4 h-4 mr-1.5" />{isEditing ? "Done" : "Edit"}
-              </Button>
+          <section className="min-w-0 rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.08)] sm:p-5 lg:p-5 xl:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0"><h2 className="text-[22px] font-semibold tracking-tight text-slate-950 sm:text-[27px]">Confirm Your Profile</h2><p className="mt-1 max-w-lg text-[12px] leading-5 text-slate-600 sm:text-[14px]">We&apos;ve pulled your information from Central Hub Solution. Review and continue.</p></div>
             </div>
 
-            <div className="space-y-5">
-              {/* Logo + Name */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {profile?.profileImage ? (
-                    <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Building2 className="w-8 h-8 text-orange-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 mb-1">Business Name</p>
-                  {isEditing ? (
-                    <Input value={editedName} onChange={(e) => setEditedName(e.target.value)} className="text-lg font-semibold" />
-                  ) : (
-                    <p className="text-lg font-semibold text-gray-900 truncate">{profile?.name || "Your Business"}</p>
-                  )}
-                </div>
-              </div>
+            <div className="mb-4 mt-3 border-t border-blue-100 pt-3 sm:mb-5 sm:mt-2"><h3 className="text-[14px] font-semibold text-slate-900 sm:text-[15px]">Business Information</h3></div>
 
-              <div className="border-t border-gray-100" />
-
-              {/* Industry */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Building2 className="w-4 h-4 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Industry</p>
-                  <p className="text-sm font-medium text-gray-900">{industryName}</p>
-                </div>
+            <div className="space-y-2 sm:space-y-2.5">
+              <div className="flex items-center gap-3 rounded-xl bg-[#f5f7fc] px-3 py-1.5 sm:gap-3.5 sm:px-3.5 sm:py-2">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ffded0] text-[#ff4b0a] sm:h-11 sm:w-11"><Store className="h-4 w-4" /></span>
+                <div className="min-w-0 flex-1"><p className="text-[8px] font-bold uppercase tracking-[0.1em] text-slate-600 sm:text-[10px]">Business Name</p><div className="flex min-w-0 items-center gap-2"><p className="truncate text-[13px] font-semibold text-slate-950 sm:text-[15px]">{businessName}</p>{profileNameImportedFromChs && <span className="shrink-0 rounded-md bg-blue-100 px-2 py-1 text-[8px] font-semibold text-blue-800">Imported</span>}</div></div>
+                <ShieldCheck className="h-5 w-5 shrink-0 text-orange-600" />
               </div>
-
-              {/* Address */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-orange-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400">Address</p>
-                  {isEditing ? (
-                    <Input value={editedAddress} onChange={(e) => setEditedAddress(e.target.value)} className="text-sm" />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 truncate">{profile?.address || "Not set"}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-4 h-4 text-orange-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400">Phone</p>
-                  {isEditing ? (
-                    <Input value={editedPhone} onChange={(e) => setEditedPhone(e.target.value)} className="text-sm" />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 truncate">{profile?.phone || "Not set"}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Website */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Globe className="w-4 h-4 text-orange-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400">Website</p>
-                  {isEditing ? (
-                    <Input value={editedWebsite} onChange={(e) => setEditedWebsite(e.target.value)} className="text-sm" />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 truncate">{profile?.website || "Not set"}</p>
-                  )}
-                </div>
-              </div>
+              {(centralProfile?.jobTitle || centralProfile?.description) && <div className="rounded-xl bg-[#f5f7fc] px-3 py-2.5 sm:px-3.5">
+                {centralProfile?.jobTitle && <p className="text-[11px] font-semibold text-slate-800 sm:text-[13px]">{centralProfile?.jobTitle}</p>}
+                {centralProfile?.description && <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-600 sm:text-[12px]">{centralProfile?.description}</p>}
+              </div>}
+              <div className="flex items-center gap-3 rounded-xl bg-[#f5f7fc] px-3 py-1.5 sm:gap-3.5 sm:px-3.5 sm:py-2"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ffded0] text-[#ff4b0a] sm:h-11 sm:w-11"><Tags className="h-4 w-4" /></span><div className="min-w-0 flex-1"><p className="text-[8px] font-bold uppercase tracking-[0.1em] text-slate-600 sm:text-[10px]">Industry</p><p className="truncate text-[12px] text-slate-900 sm:text-[13px]">{industryName}</p></div>{profileNameImportedFromChs && <span className="shrink-0 rounded-md bg-blue-100 px-2 py-1 text-[8px] font-semibold text-blue-800">Imported</span>}</div>
+              {categoryName && renderValue("Category", categoryName, "category")}
+              {renderValue("Email", profileValue(centralProfile?.email, profile?.email), "email")}
+              {renderValue("Address", [profileValue(centralProfile?.address, profile?.address), centralProfile?.country].filter((part, index, parts) => part && !parts.slice(0, index).some((previous) => previous?.toLowerCase() === part.toLowerCase())).join(", "), "address")}
+              {renderValue("Phone", profileValue(centralProfile?.phone, profile?.phone), "phone")}
+              {renderValue("Website", profileValue(centralProfile?.website, profile?.website), "website")}
             </div>
-          </Card>
 
-          <div className="flex flex-col items-center gap-4">
-            <Button size="lg" onClick={onComplete} className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 text-lg rounded-xl shadow-lg shadow-orange-200 hover:shadow-orange-300 transition-all min-w-[280px]">
-              Continue<ArrowRight className="ml-2 w-5 h-5" />
+            <Button size="lg" onClick={onComplete} className="mt-4 h-11 w-full rounded-xl bg-orange-600 text-[13px] font-semibold text-white shadow-[0_8px_16px_rgba(255,91,0,0.2)] hover:bg-orange-700 sm:mt-5 sm:h-12 sm:text-[14px]">
+              Continue<ArrowRight className="ml-2 h-5 w-5" />
             </Button>
+            <p className="mt-3 text-center text-xs text-slate-600 sm:text-sm"><Clock3 className="mr-1 inline h-4 w-4 text-blue-600" />You can update these details anytime in Account Settings.</p>
+          </section>
           </div>
-        </motion.div>
+        </section>
+
       </div>
-    </div>
+    </main>
   );
 }

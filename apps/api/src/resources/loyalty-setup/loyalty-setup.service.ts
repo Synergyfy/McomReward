@@ -12,6 +12,16 @@ import {
 } from "./dto/loyalty-setup-template.dto";
 import { BUILT_IN_TEMPLATES } from "./built-in-templates";
 
+const DEFAULT_BUILT_IN_TIER_CONFIG = {
+  enabled: false,
+  tiers: [
+    { name: "Bronze", requirementType: "points", requirementValue: 0, benefits: ["Earn 1x points", "Birthday reward"] },
+    { name: "Silver", requirementType: "points", requirementValue: 500, benefits: ["Earn 1.5x points", "Early access to offers"] },
+    { name: "Gold", requirementType: "points", requirementValue: 1500, benefits: ["Earn 2x points", "VIP offers", "Free delivery"] },
+    { name: "Platinum", requirementType: "points", requirementValue: 5000, benefits: ["Earn 3x points", "Personal manager", "Exclusive events"] },
+  ],
+};
+
 const normalize = (template: LoyaltySetupTemplate) => {
   const rewards = (template.rewards || []).map(
     (r: Record<string, unknown>) => ({
@@ -33,6 +43,7 @@ const normalize = (template: LoyaltySetupTemplate) => {
     benefits: template.benefits || [],
     rewards,
     campaigns,
+    tierConfig: template.tierConfig || null,
     isBuiltIn: template.isBuiltIn,
   };
 };
@@ -51,7 +62,11 @@ export class LoyaltySetupService {
     }
     await this.templateRepository.save(
       BUILT_IN_TEMPLATES.map((t) =>
-        this.templateRepository.create({ ...t, isBuiltIn: true }),
+        this.templateRepository.create({
+          ...t,
+          tierConfig: t.tierConfig || DEFAULT_BUILT_IN_TIER_CONFIG,
+          isBuiltIn: true,
+        }),
       ),
     );
   }
@@ -64,11 +79,18 @@ export class LoyaltySetupService {
     return templates.map(normalize);
   }
 
+  async getAvailableTemplates() {
+    // The admin page lists both built-in starter templates and templates
+    // created by admins. Businesses should be offered that same managed set.
+    return this.getTemplates();
+  }
+
   async createTemplate(dto: CreateLoyaltySetupTemplateDto) {
     const template = this.templateRepository.create({
       ...dto,
       benefits: dto.benefits || [],
       campaigns: dto.campaigns || [],
+      tierConfig: dto.tierConfig || null,
       isBuiltIn: false,
     });
     const saved = await this.templateRepository.save(template);
@@ -83,6 +105,7 @@ export class LoyaltySetupService {
     Object.assign(template, dto, {
       benefits: dto.benefits || template.benefits,
       campaigns: dto.campaigns || template.campaigns,
+      tierConfig: dto.tierConfig ?? template.tierConfig,
     });
     const saved = await this.templateRepository.save(template);
     return normalize(saved);

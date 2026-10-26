@@ -16,6 +16,7 @@ import {
   PaginatedOngoingCampaignsResponse,
   OngoingCampaign,
   ParticipantCampaignSearchResponse,
+  PaginatedAdminCampaignTemplatesResponse,
 } from './types';
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
@@ -104,6 +105,19 @@ export const useGetClaimableCampaigns = (page: number = 1, limit: number = 10) =
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'claimable', { page, limit }],
     queryFn: () => getClaimableCampaigns(page, limit),
+  });
+};
+
+// Admin-created campaign templates that a business can review during onboarding.
+export const useGetAvailableAdminCampaigns = () => {
+  return useQuery<PaginatedAdminCampaignTemplatesResponse>({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'available-admin-templates'],
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedAdminCampaignTemplatesResponse>('/campaigns/admin', {
+        params: { page: 1, limit: 100 },
+      });
+      return data;
+    },
   });
 };
 

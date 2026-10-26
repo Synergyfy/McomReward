@@ -1,474 +1,221 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useGetPublicCampaigns } from '@/services/customer-campaigns/hook';
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, BadgePercent, Building2, Gift, Sparkles, Trophy, Wallet } from "lucide-react";
+import { useMemo } from "react";
+import { useGetPublicCampaigns } from "@/services/customer-campaigns/hook";
 
 const tiers = [
-  { name: 'Bronze', color: 'text-[#CD7F32]', bg: 'bg-[#CD7F32]/10', benefits: 'Standard rewards access. Scan to earn.' },
-  { name: 'Silver', color: 'text-slate-500', bg: 'bg-slate-300/30', benefits: '5% Bonus Points. Member support queue.' },
-  { name: 'Gold', color: 'text-amber-500', bg: 'bg-amber-400/20', benefits: '10% Bonus. Exclusive local partner access.' },
-  { name: 'Platinum', color: 'text-orange-500', bg: 'bg-orange-500/10', benefits: 'VIP early event access. Custom brand details.' },
+  { name: "Bronze", color: "text-[#b96b30]", bg: "bg-[#b96b30]/10", benefits: "Standard rewards access. Scan to earn." },
+  { name: "Silver", color: "text-slate-500", bg: "bg-slate-300/40", benefits: "5% Bonus Points. Member support queue." },
+  { name: "Gold", color: "text-amber-500", bg: "bg-amber-400/20", benefits: "10% Bonus. Exclusive local partner access." },
+  { name: "Platinum", color: "text-orange-500", bg: "bg-orange-500/10", benefits: "VIP early event access. Custom brand details." },
+];
+
+const journey = [
+  { title: "Join", description: "Create your free digital profile.", icon: "person_add" },
+  { title: "Earn", description: "Shop at partner brands.", icon: "shopping_cart" },
+  { title: "Collect", description: "Keep points in your wallet.", icon: "account_balance_wallet" },
+  { title: "Redeem", description: "Swap points for vouchers.", icon: "redeem" },
+  { title: "Enjoy", description: "Experience the real value.", icon: "celebration" },
 ];
 
 export default function Homepage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const { data: campaignsData } = useGetPublicCampaigns(1, 12);
-
   const campaigns = useMemo(() => campaignsData?.data ?? [], [campaignsData]);
-
-
-
-  const heroSlides = useMemo(() => {
-    const withBanner = campaigns.filter((c) => c.bannerUrl).slice(0, 5);
-    if (withBanner.length === 0) return [];
-    return withBanner.map((c) => ({
-      title: c.name,
-      description: c.campaignMessage || c.business?.name || '',
-      image: c.bannerUrl,
-      campaignId: c.id,
-    }));
-  }, [campaigns]);
-
   const spotlight = useMemo(() => campaigns.slice(0, 2), [campaigns]);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (heroSlides.length === 0 ? 0 : (prev + 1) % heroSlides.length));
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (heroSlides.length === 0 ? 0 : (prev - 1 + heroSlides.length) % heroSlides.length));
-  };
-
   return (
-    <div className="bg-surface-bright text-on-surface font-body-md overflow-x-hidden">
-      
-      {/* Hero Section */}
-      <section className="pt-3 pb-12 md:py-20 max-w-7xl mx-auto px-6">
-        
-        {/* Desktop Split Layout (lg and up) */}
-        <div className="hidden lg:grid grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <span className="inline-block px-4 py-1.5 bg-orange-500/10 text-orange-600 rounded-full text-sm font-semibold tracking-tight">
-              New Discovery Engine
+    <div className="overflow-hidden bg-[#f8f9fb] text-slate-900">
+      <section className="relative isolate overflow-hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-40 top-0 -z-10 h-[34rem] w-[34rem] rounded-full bg-orange-100/70 blur-3xl" />
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:px-10 lg:pb-20 lg:pt-20">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-orange-700 shadow-sm sm:text-xs">
+              <Sparkles className="h-3.5 w-3.5" /> New Discovery Engine
             </span>
-            <h1 className="text-5xl lg:text-6xl font-bold font-headline-lg leading-tight tracking-tight text-gray-900">
-              Earn More From The <span className="text-orange-500">Brands & Businesses</span> You Already Use
+            <h1 className="mt-5 font-headline-lg text-[2.6rem] font-bold leading-[1.02] tracking-[-0.045em] text-slate-950 sm:text-5xl lg:text-[3.65rem] xl:text-[4.15rem]">
+              Earn more from the <span className="text-orange-600">brands and businesses</span> you already use.
             </h1>
-            <p className="text-lg text-gray-600 max-w-lg leading-relaxed">
+            <p className="mt-5 max-w-xl text-[15px] leading-7 text-slate-600 sm:text-lg sm:leading-8">
               Get rewards, gift cards, loyalty points, cashback, and exclusive local offers seamlessly delivered to your MCOM wallet.
             </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Link
-                href="/customer"
-                className="px-8 py-3.5 bg-orange-500 text-white font-bold rounded-full shadow-lg shadow-orange-500/20 hover:shadow-xl hover:bg-orange-600 transition duration-200 active:scale-95 text-center"
-              >
-                Join Free
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link href="/customer" className="inline-flex min-h-12 items-center justify-center rounded-full bg-orange-600 px-7 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:-translate-y-0.5 hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2">
+                Join Free <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-              <Link
-                href="/reward"
-                className="px-8 py-3.5 border-2 border-gray-300 text-gray-700 font-bold rounded-full hover:bg-gray-50 transition duration-200 active:scale-95 text-center"
-              >
+              <Link href="/reward" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:bg-orange-50">
                 Explore Rewards
               </Link>
-              <Link
-                href="/business"
-                className="flex items-center justify-center text-orange-600 hover:text-orange-700 font-bold px-4 hover:underline py-3.5 text-center"
-              >
-                For Businesses →
+              <Link href="/business" className="inline-flex min-h-11 items-center justify-center gap-1 px-2 text-sm font-bold text-orange-700 transition hover:text-orange-800">
+                For Businesses <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-          </div>
-
-          {/* Desktop Right Panel (Bento) */}
-          <div className="relative h-[480px]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="grid grid-cols-2 gap-6 w-full max-w-md transform -rotate-3">
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_10px_35px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 group"
-                >
-                  <span className="material-symbols-outlined text-4xl text-orange-500">wallet</span>
-                  <div>
-                    <h4 className="font-bold text-gray-800">Digital Wallet</h4>
-                    <p className="text-xs text-gray-400 mt-0.5">Points and rewards in one place</p>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="bg-orange-500 text-white p-6 rounded-2xl shadow-lg shadow-orange-500/10 flex flex-col justify-between h-40 translate-y-6"
-                >
-                  <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
-                  <div>
-                    <h4 className="font-bold">Premium Club</h4>
-                    <p className="text-xs opacity-80 mt-0.5">Unlock higher tiers as you earn</p>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="col-span-2 bg-gray-50 border border-gray-100 p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex items-center gap-4 h-28"
-                >
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-100">
-                    <span className="material-symbols-outlined text-orange-500">card_giftcard</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-gray-800">Active Rewards</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">Redeem points for partner rewards</p>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Full-Card Image Slider (lg:hidden) */}
-        {heroSlides.length > 0 && (
-        <div className="lg:hidden w-full relative min-h-[580px] rounded-[32px] overflow-hidden shadow-lg border border-gray-100 flex flex-col justify-between p-6 md:p-10 group">
-          
-          {/* Background Sliding Images */}
-          <div className="absolute inset-0 z-0">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide}
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0"
-              >
-                <img 
-                  src={heroSlides[currentSlide].image} 
-                  alt={heroSlides[currentSlide].title}
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-            </AnimatePresence>
-            {/* Dark contrast gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/90" />
-          </div>
-
-          {/* Top content overlay */}
-          <div className="relative z-10 space-y-4">
-            <span className="inline-block px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold tracking-wider uppercase">
-              New Discovery Engine
-            </span>
-            <h1 className="text-3xl md:text-4xl font-bold font-headline-lg leading-tight text-white">
-              Earn More From The <span className="text-orange-400">Brands & Businesses</span> You Already Use
-            </h1>
-          </div>
-
-          {/* Bottom actions & slide progress */}
-          <div className="relative z-10 space-y-6 pt-8">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/customer"
-                className="px-6 py-3 bg-orange-500 text-white font-bold rounded-full text-xs text-center shadow shadow-orange-500/20 active:scale-95 transition-transform"
-              >
-                Join Free
-              </Link>
-              <Link
-                href="/reward"
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-full text-xs text-center backdrop-blur-md active:scale-95 transition-transform"
-              >
-                Explore Rewards
-              </Link>
-              <Link
-                href="/business"
-                className="text-orange-400 hover:text-orange-300 font-bold py-2 text-xs text-center active:scale-95"
-              >
-                For Businesses →
-              </Link>
-            </div>
-
-            {/* Pagination dots & index */}
-            <div className="flex justify-between items-center border-t border-white/10 pt-4 text-white/60">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400">
-                {heroSlides[currentSlide].title}
-              </span>
-              <div className="flex gap-1.5 items-center">
-                {heroSlides.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      idx === currentSlide ? 'bg-orange-500 w-3' : 'bg-white/30'
-                    }`}
-                  />
-                ))}
-              </div>
+            <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500 sm:text-sm">
+              <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" /> One wallet for your rewards</span>
+              <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-500" /> Local offers and global brands</span>
             </div>
           </div>
 
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevSlide}
-            className="absolute left-3 top-[45%] -translate-y-1/2 w-9 h-9 bg-black/35 hover:bg-black/50 active:scale-90 border border-white/10 backdrop-blur-md text-white rounded-full flex items-center justify-center transition z-20 cursor-pointer"
-            aria-label="Previous slide"
-          >
-            <span className="material-symbols-outlined text-lg">chevron_left</span>
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-3 top-[45%] -translate-y-1/2 w-9 h-9 bg-black/35 hover:bg-black/50 active:scale-90 border border-white/10 backdrop-blur-md text-white rounded-full flex items-center justify-center transition z-20 cursor-pointer"
-            aria-label="Next slide"
-          >
-            <span className="material-symbols-outlined text-lg">chevron_right</span>
-          </button>
-
-        </div>
-        )}
-      </section>
-
-
-
-
-      {/* Discovery Hub (Featured Spotlights & Category Bento) */}
-      <section className="py-16 max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-headline-lg text-gray-900">Discovery Hub</h2>
-            <p className="text-gray-500 text-xs md:text-sm mt-1">Exclusive local perks and trending global rewards.</p>
-          </div>
-          <Link href="/reward" className="text-orange-500 font-bold hover:underline flex items-center gap-1 text-xs md:text-sm w-fit pt-1 md:pt-0">
-            View All Marketplace <span className="material-symbols-outlined text-xs md:text-sm">arrow_forward</span>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Featured Local Spotlight Carousel */}
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {spotlight.length === 0 ? (
-              <p className="text-sm text-gray-500">No live campaigns yet — check back soon.</p>
-            ) : spotlight.map((biz) => (
-              <motion.div
-                key={biz.id}
-                whileHover={{ y: -4 }}
-                className="group relative overflow-hidden rounded-3xl h-[380px] shadow-sm border border-gray-100/60"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-10" />
-                {biz.bannerUrl && (
-                  <img
-                    className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-100 transition-all duration-500"
-                    src={biz.bannerUrl}
-                    alt={biz.name}
-                  />
-                )}
-                <div className="absolute bottom-0 left-0 p-6 z-20 w-full text-white space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm text-orange-400">location_on</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-orange-300">{biz.business?.name ?? 'Local business'}</span>
-                  </div>
-                  <h3 className="text-2xl font-bold">{biz.name}</h3>
-                  <p className="text-sm opacity-90 line-clamp-2">{biz.campaignMessage}</p>
-                  <div className="pt-3 flex gap-2">
-                    <Link
-                      href={`/merchants/${biz.id}`}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-1.5 rounded-full text-xs font-bold transition duration-200"
-                    >
-                      View Offer
-                    </Link>
-                    <Link
-                      href={`/merchants/${biz.id}`}
-                      className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-1.5 rounded-full text-xs font-semibold"
-                    >
-                      Details
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Reward Types Cards Bento */}
-          <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-            <div className="bg-orange-50/50 border border-orange-100 rounded-3xl p-6 flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start">
-                <span className="material-symbols-outlined text-orange-500 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-                <span className="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">15% MAX</span>
+          <div className="relative mx-auto w-full max-w-[620px] lg:max-w-none">
+            <div className="relative aspect-[1.28/1] overflow-hidden rounded-[2rem] border border-orange-100 bg-gradient-to-br from-[#fff5eb] via-white to-[#fff0e4] shadow-[0_24px_70px_rgba(74,42,20,0.10)] sm:rounded-[2.5rem]">
+              <div aria-hidden="true" className="absolute -right-8 -top-8 h-56 w-56 rounded-full border-[28px] border-white/70 sm:h-72 sm:w-72" />
+              <div aria-hidden="true" className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-orange-200/35 blur-2xl" />
+              <Image src="/signup-img.png" alt="MCOM digital rewards pass and partner storefront" fill priority sizes="(max-width: 1024px) 100vw, 48vw" className="relative z-10 object-contain p-3 sm:p-7 lg:p-4 xl:p-7" />
+              <div className="absolute left-4 top-4 z-20 rounded-2xl border border-white/80 bg-white/90 px-3 py-2 shadow-lg backdrop-blur sm:left-6 sm:top-6 sm:px-4 sm:py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Your rewards</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-slate-900"><Wallet className="h-4 w-4 text-orange-600" /> All in one wallet</p>
               </div>
-              <div>
-                <h4 className="font-bold text-orange-800 text-lg">Cashback</h4>
-                <p className="text-xs text-orange-600 mt-1">Earn digital credit back on everyday retail purchases.</p>
-              </div>
-            </div>
-
-            <div className="bg-orange-50/50 border border-orange-100 rounded-3xl p-6 flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start">
-                <span className="material-symbols-outlined text-orange-500 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
-                <span className="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">LOYALTY</span>
-              </div>
-              <div>
-                <h4 className="font-bold text-orange-800 text-lg">Loyalty Rewards</h4>
-                <p className="text-xs text-orange-600 mt-1">Unlock stamps, custom merchant tiers, and lifestyle awards.</p>
+              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-2xl border border-white/80 bg-white/95 px-3 py-2 shadow-lg sm:bottom-6 sm:right-6 sm:px-4 sm:py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-700"><Gift className="h-4 w-4" /></span>
+                <div><p className="text-xs font-bold text-slate-900">Earn. Collect. Enjoy.</p><p className="text-[10px] text-slate-500">Rewards for everyday moments</p></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Journey */}
-      <section className="py-16 max-w-7xl mx-auto px-6">
-        <div className="text-center mb-8 md:mb-12">
-          <span className="text-orange-500 font-bold text-xs tracking-widest uppercase bg-orange-50 px-3 py-1 rounded-full inline-block mb-3">
-            5 Simple Steps
-          </span>
-          <h2 className="text-3xl font-bold font-headline-lg text-gray-900">The MCOM Journey</h2>
-          <p className="text-xs text-gray-400 mt-2 md:hidden">Swipe across to explore the steps</p>
-        </div>
-
-        <div className="relative">
-          {/* Connecting line on desktop */}
-          <div className="hidden md:block absolute top-8 left-10 right-10 h-[2px] bg-gradient-to-r from-orange-400 via-orange-200 to-gray-200 -z-10" />
-
-          {/* Steps container: Horizontal snap-scroll on mobile, 5-column grid on desktop */}
-          <div className="flex md:grid md:grid-cols-5 gap-4 md:gap-8 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 pt-1 -mx-6 px-6 md:mx-0 md:px-0 md:overflow-visible">
-            {[
-              { step: 'Join', num: '01', icon: 'person_add', desc: 'Create your free digital profile.' },
-              { step: 'Earn', num: '02', icon: 'shopping_cart', desc: 'Shop at partner brands.' },
-              { step: 'Collect', num: '03', icon: 'account_balance_wallet', desc: 'Amass points in your wallet.' },
-              { step: 'Redeem', num: '04', icon: 'redeem', desc: 'Swap points for vouchers.' },
-              { step: 'Enjoy', num: '05', icon: 'celebration', desc: 'Experience the real value.' },
-            ].map((item, idx) => (
-              <div
-                key={item.step}
-                className="snap-start shrink-0 w-[200px] sm:w-[220px] md:w-auto p-4 md:p-0 rounded-2xl md:rounded-none bg-white md:bg-transparent border border-gray-100 md:border-none shadow-sm md:shadow-none flex flex-col items-center text-center group transition-all duration-300"
-              >
-                <div className="relative mb-3 md:mb-4">
-                  <div
-                    className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-full flex items-center justify-center shadow-sm border-2 transition-transform duration-300 group-hover:scale-105 ${
-                      idx === 0
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-orange-500/20'
-                        : 'bg-orange-50/50 md:bg-white text-orange-500 border-orange-200 md:border-orange-100'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[24px] md:text-[26px]">{item.icon}</span>
-                  </div>
-                  <span className="absolute -top-1.5 -right-1.5 md:hidden bg-gray-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
-                    {item.num}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 justify-center">
-                  <span className="hidden md:inline-block text-[11px] font-black text-orange-500/70 tracking-wider">
-                    {item.num}.
-                  </span>
-                  <h5 className="font-bold text-gray-800 text-base">{item.step}</h5>
-                </div>
-                <p className="text-xs text-gray-400 mt-1 max-w-[150px] leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Business Benefits Integration */}
-        <div className="mt-16 p-8 bg-orange-500/5 rounded-3xl border border-orange-500/10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex gap-4 items-center">
-            <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-md shadow-orange-500/10">
-              <span className="material-symbols-outlined">storefront</span>
-            </div>
+      <section className="border-y border-slate-100 bg-white py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="mb-7 flex flex-col gap-3 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h4 className="font-bold text-gray-800 text-lg">Are you a Business? Get Discovered.</h4>
-              <p className="text-sm text-gray-500 mt-0.5">Reach local customers, run stamp campaigns, and boost sales loyalty.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-orange-600">Discover more value</p>
+              <h2 className="mt-2 font-headline-lg text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Discovery Hub</h2>
+              <p className="mt-2 text-sm text-slate-600 sm:text-base">Exclusive local perks and trending global rewards.</p>
             </div>
-          </div>
-          <Link
-            href="/business"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-md shadow-orange-500/10 active:scale-95 transition-all text-center whitespace-nowrap"
-          >
-            Join As A Business
-          </Link>
-        </div>
-      </section>
-
-      {/* Membership Tiers Comparison */}
-      <section className="py-16 bg-gray-50 border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-headline-lg text-gray-900">Unlock Tier Status</h2>
-            <p className="text-gray-500 mt-1">Unlock larger benefits as you engage with the loyalty community.</p>
+            <Link href="/reward" className="inline-flex w-fit items-center gap-2 text-sm font-bold text-orange-700 hover:text-orange-800">
+              View All Marketplace <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {tiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`p-6 rounded-2xl border border-gray-200/60 bg-white flex flex-col items-center text-center shadow-sm ${
-                  tier.name === 'Gold' ? 'border-2 border-orange-500 scale-105 shadow-md relative' : ''
-                }`}
-              >
-                {tier.name === 'Gold' && (
-                  <span className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg">
-                    POPULAR
-                  </span>
-                )}
-                <div className={`w-12 h-12 rounded-full ${tier.bg} flex items-center justify-center mb-4`}>
-                  <span className={`material-symbols-outlined ${tier.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                    workspace_premium
-                  </span>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {spotlight.length === 0 ? (
+              <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center sm:col-span-2 sm:flex-row sm:gap-5 sm:text-left">
+                <div className="relative h-28 w-44 shrink-0 sm:h-36 sm:w-52">
+                  <Image src="/login-img.png" alt="MCOM rewards wallet with a gift voucher" fill sizes="(max-width: 640px) 176px, 208px" className="object-contain" />
                 </div>
-                <h4 className="font-bold text-gray-800 text-lg mb-1">{tier.name}</h4>
-                <p className="text-xs text-gray-400 leading-relaxed">{tier.benefits}</p>
+                <div className="max-w-sm">
+                  <span className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 shadow-sm">Discovery updates</span>
+                  <h3 className="mt-3 text-lg font-bold text-slate-900">New offers are on the way</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">No live campaigns yet. Check back soon for rewards from MCOM businesses.</p>
+                </div>
               </div>
+            ) : spotlight.map((campaign) => (
+              <Link key={campaign.id} href={`/merchants/${campaign.id}`} className="group relative flex min-h-[220px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                {campaign.bannerUrl ? <Image src={campaign.bannerUrl} alt="" fill unoptimized sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-orange-800" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+                <div className="relative z-10 mt-auto p-5 text-white">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-200">{campaign.business?.name ?? "Local business"}</p>
+                  <h3 className="mt-1 text-lg font-bold leading-snug">{campaign.name}</h3>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/80">{campaign.campaignMessage || "Explore this local reward."}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-white">Explore offer <ArrowRight className="h-3.5 w-3.5" /></span>
+                </div>
+              </Link>
             ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Play & Win & Events Bento Grid */}
-      <section className="py-16 max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Play & Win games summary */}
-        <div className="rounded-3xl bg-neutral-900 text-white p-8 flex flex-col justify-between h-[320px] group relative overflow-hidden shadow-lg">
-          <div className="absolute top-0 right-0 w-44 h-44 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="space-y-3 relative z-10">
-            <span className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 text-xs font-bold rounded-full">
-              MCOM PLAY
-            </span>
-            <h3 className="text-3xl font-bold font-headline-lg">Play & Win Rewards</h3>
-            <p className="text-sm opacity-70 max-w-sm">
-              Spin the Wheel, Peg-Drop (Ball Drop Pegs), or try custom Scratch Cards to unlock daily points.
-            </p>
-          </div>
-          <Link
-            href="/play-win"
-            className="w-fit bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-bold text-xs shadow-md transition duration-200"
-          >
-            Play Games Now
-          </Link>
-        </div>
-
-        {/* Expo events teaser */}
-        <div className="rounded-3xl border border-gray-200/80 p-8 flex flex-col justify-between h-[320px] group hover:bg-gray-50 transition-colors shadow-sm bg-white">
-          <div className="space-y-3">
-            <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
-              UPCOMING EXPONENTIAL
-            </span>
-            <h3 className="text-3xl font-bold font-headline-lg text-gray-900">MCOM Rewards Expo</h3>
-            <p className="text-sm text-gray-500">
-              Gather with local businesses. Complete offline quests, claim ticket rewards, and network.
-            </p>
-          </div>
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex -space-x-2 text-xs font-bold text-white">
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-300" />
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-400" />
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-500" />
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-500 flex items-center justify-center text-[10px]">
-                +
+            <Link href="/matching-rewards" className="group flex min-h-[220px] items-center gap-3 overflow-hidden rounded-3xl border border-orange-100 bg-[#fff8f1] p-4 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg sm:gap-4 sm:p-5">
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-orange-700"><BadgePercent className="h-3 w-3" /> Cashback</span>
+                <h3 className="mt-3 text-lg font-bold text-slate-900">Cashback</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-600">Earn digital credit back on everyday retail purchases.</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange-700">Explore offers <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
               </div>
-            </div>
-            <Link
-              href="/events"
-              className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-200 active:scale-95"
-            >
-              →
+              <div className="relative h-28 w-24 shrink-0 sm:h-36 sm:w-28"><Image src="/repeat.png" alt="Shopping bags and reward coins" fill sizes="112px" className="object-contain transition duration-300 group-hover:scale-105" /></div>
+            </Link>
+
+            <Link href="/reward" className="group flex min-h-[220px] items-center gap-3 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg sm:gap-4 sm:p-5">
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-orange-700"><Trophy className="h-3 w-3" /> MCOM Rewards</span>
+                <h3 className="mt-3 text-lg font-bold text-slate-900">Loyalty Rewards</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-600">Unlock stamps, custom merchant tiers, and lifestyle rewards.</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange-700">View rewards <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></span>
+              </div>
+              <div className="relative h-28 w-24 shrink-0 sm:h-36 sm:w-28"><Image src="/growth.png" alt="Growing reward points" fill sizes="112px" className="object-contain transition duration-300 group-hover:scale-105" /></div>
             </Link>
           </div>
         </div>
       </section>
 
+      <section className="bg-[#f8f9fb] py-14 sm:py-16 lg:py-20">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="text-center">
+            <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-orange-700">Five simple steps</span>
+            <h2 className="mt-3 font-headline-lg text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">The MCOM Journey</h2>
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">A simple way to get more from the places you already shop.</p>
+          </div>
+
+          <div className="relative mt-9 grid gap-3 sm:grid-cols-2 lg:mt-12 lg:grid-cols-5 lg:gap-5">
+            <div aria-hidden="true" className="absolute left-[10%] right-[10%] top-7 hidden h-px bg-gradient-to-r from-orange-400 via-orange-200 to-slate-200 lg:block" />
+            {journey.map((item, index) => (
+              <div key={item.title} className="relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-col lg:border-0 lg:bg-transparent lg:p-2 lg:text-center lg:shadow-none">
+                <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border ${index === 0 ? "border-orange-600 bg-orange-600 text-white shadow-lg shadow-orange-600/20" : "border-orange-100 bg-white text-orange-600 shadow-sm"}`}>
+                  <span className="material-symbols-outlined text-[21px]">{item.icon}</span>
+                </div>
+                <div className="min-w-0 lg:mt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-orange-700">0{index + 1} · {item.title}</p>
+                  <p className="mt-1 text-sm leading-5 text-slate-600">{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-orange-100 bg-gradient-to-r from-orange-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 lg:mt-12">
+            <div className="flex items-center gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-md shadow-orange-600/15"><Building2 className="h-5 w-5" /></span>
+              <div><h3 className="font-bold text-slate-900 sm:text-lg">Are you a business? Get discovered.</h3><p className="mt-1 text-sm leading-5 text-slate-600">Reach local customers, run stamp campaigns, and build repeat business.</p></div>
+            </div>
+            <Link href="/business" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-orange-600 px-5 text-sm font-bold text-white transition hover:bg-orange-700">Join as a business <ArrowRight className="h-4 w-4" /></Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-slate-100 bg-white py-14 sm:py-16 lg:py-20">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-10">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-orange-600">More ways to enjoy MCOM</p>
+            <h2 className="mt-2 font-headline-lg text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Unlock Tier Status</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">Unlock larger benefits as you engage with the rewards community.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
+            {tiers.map((tier) => (
+              <div key={tier.name} className={`relative flex min-h-[170px] flex-col items-center rounded-2xl border bg-white px-3 py-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:min-h-[190px] sm:px-5 sm:py-6 ${tier.name === "Gold" ? "border-orange-400 ring-1 ring-orange-200 shadow-orange-100" : "border-slate-200"}`}>
+                {tier.name === "Gold" && <span className="absolute -top-2.5 rounded-full bg-orange-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">Popular</span>}
+                <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tier.bg}`}><Trophy className={`h-5 w-5 ${tier.color}`} /></span>
+                <h3 className="mt-3 font-bold text-slate-900 sm:text-lg">{tier.name}</h3>
+                <p className="mt-1 max-w-[14rem] text-[11px] leading-5 text-slate-500 sm:text-xs">{tier.benefits}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f8f9fb] py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto grid w-full max-w-7xl gap-4 px-5 sm:px-8 md:grid-cols-2 md:gap-5 lg:px-10">
+          <article className="relative flex min-h-[250px] flex-col items-start justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#172337] to-[#0c1422] p-6 text-white shadow-lg sm:min-h-[290px] sm:p-8">
+            <div aria-hidden="true" className="absolute -right-12 -top-16 h-56 w-56 rounded-full border-[28px] border-white/[0.05]" />
+            <div className="relative z-10">
+              <span className="rounded-full bg-orange-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-300">MCOM Play</span>
+              <h2 className="mt-4 font-headline-lg text-2xl font-bold sm:text-3xl">Play &amp; Win Rewards</h2>
+              <p className="mt-2 max-w-md text-sm leading-6 text-white/70">Spin the Wheel, Peg-Drop, or try Scratch Cards to unlock daily points.</p>
+            </div>
+            <Link href="/play-win" className="relative z-10 mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-orange-600 px-5 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition hover:bg-orange-500">Play Games Now <ArrowRight className="h-4 w-4" /></Link>
+            <div className="absolute -bottom-5 right-0 h-40 w-40 opacity-20 sm:h-52 sm:w-52"><Image src="/automated.png" alt="" fill sizes="208px" className="object-contain" /></div>
+          </article>
+
+          <article className="flex min-h-[250px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:min-h-[290px] sm:p-8">
+            <div>
+              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">Coming soon</span>
+              <h2 className="mt-4 font-headline-lg text-2xl font-bold text-slate-950 sm:text-3xl">MCOM Rewards Expo</h2>
+              <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Gather with local businesses, complete offline quests, claim ticket rewards, and meet the community.</p>
+            </div>
+            <div className="mt-7 flex items-center justify-between border-t border-slate-100 pt-5">
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-500"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-50 text-orange-600"><Gift className="h-4 w-4" /></span>More local experiences are coming</div>
+              <Link href="/events" aria-label="Explore MCOM events" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"><ArrowRight className="h-4 w-4" /></Link>
+            </div>
+          </article>
+        </div>
+      </section>
     </div>
   );
 }

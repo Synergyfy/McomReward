@@ -11,11 +11,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetMyPackage } from '@/services/mcom-packages';
 import { useGetBusinessProfile } from '@/services/business/hook';
-import TrialBanner from '@/components/dashboard/trial-banner';
+import TrialBanner, { OnboardingReminderBanner } from '@/components/dashboard/trial-banner';
+import { useGetLoyaltySetupProgress } from '@/services/loyalty-setup/hook';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Gift, Megaphone, Users, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { clearLocalBusinessPreview, isLocalBusinessPreviewEnabled } from '@/lib/local-business-preview';
 
 export default function DashboardLayout({
   children,
@@ -24,6 +26,7 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isLocalBusinessPreview, setIsLocalBusinessPreview] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { isImpersonating, businessId, participantId, stopImpersonation } = useImpersonation();
@@ -36,8 +39,17 @@ export default function DashboardLayout({
   const toggleCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const { data: profile, isLoading: isProfileLoading } = useGetBusinessProfile();
+  const { data: loyaltySetupProgress } = useGetLoyaltySetupProgress();
+  const hasSkippedRewardsSetup = Boolean(
+    loyaltySetupProgress?.hasSkippedOnboarding && !loyaltySetupProgress.hasCompletedSetup,
+  );
 
   useEffect(() => {
+    if (isLocalBusinessPreviewEnabled()) {
+      setIsLocalBusinessPreview(true);
+      return;
+    }
+
     const bypassSso = process.env.NEXT_PUBLIC_BYPASS_SSO === "true";
     if (bypassSso) return; // Skip all auth checks in bypass mode
 
@@ -129,8 +141,28 @@ export default function DashboardLayout({
             </div>
           )}
 
+          {isLocalBusinessPreview && (
+            <div className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-2 border-b border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-950">
+              <span><strong>Local dashboard preview.</strong> Payment and account entitlements have not been verified or changed.</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearLocalBusinessPreview();
+                  setIsLocalBusinessPreview(false);
+                  router.replace('/dashboard/subscription');
+                }}
+                className="h-8 border-amber-400 bg-white"
+              >
+                Exit preview
+              </Button>
+            </div>
+          )}
+
           {/* Trial Banner - Task-Gated Trial from MCOM Central or local subscription trial */}
-          {(myPackage?.isTrial || mySubscription?.isTrial) &&
+          {hasSkippedRewardsSetup ? (
+            <OnboardingReminderBanner />
+          ) : (myPackage?.isTrial || mySubscription?.isTrial) &&
             (myPackage?.expiresAt || mySubscription?.expiresAt) && (
               <TrialBanner
                 planName={

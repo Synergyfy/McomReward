@@ -5,6 +5,7 @@ export interface SectorTemplate {
   sectorKey: string;
   rewards: TemplateReward[];
   campaigns: TemplateCampaign[];
+  tierConfig?: TierConfig | null;
   benefits?: string[];
   isBuiltIn?: boolean;
 }
@@ -75,21 +76,10 @@ export interface TierConfig {
   tiers: TierDefinition[];
 }
 
-export function defaultTierConfig(): TierConfig {
-  return {
-    enabled: false,
-    tiers: [
-      { name: "Bronze", requirementType: "points", requirementValue: 0, benefits: ["Earn 1x points", "Birthday reward"] },
-      { name: "Silver", requirementType: "points", requirementValue: 500, benefits: ["Earn 1.5x points", "Early access to offers"] },
-      { name: "Gold", requirementType: "points", requirementValue: 1500, benefits: ["Earn 2x points", "VIP offers", "Free delivery"] },
-      { name: "Platinum", requirementType: "points", requirementValue: 5000, benefits: ["Earn 3x points", "Personal manager", "Exclusive events"] },
-    ],
-  };
-}
-
 // ─── PROGRESS ──────────────────────────────────────────────────────────────
 
 export interface LoyaltySetupProgress {
+  selectedCampaigns: TemplateCampaign[];
   hasSeenWelcome: boolean;
   hasSeenEcosystemIntro: boolean;
   selectedTemplateId: string | null;
@@ -98,9 +88,11 @@ export interface LoyaltySetupProgress {
   enabledEngines: RewardEngineConfig | null;
   tierConfig: TierConfig | null;
   hasCompletedSetup: boolean;
+  hasSkippedOnboarding: boolean;
 }
 
 export interface SaveSetupRequest {
+  selectedCampaigns: TemplateCampaign[];
   hasSeenWelcome: boolean;
   hasSeenEcosystemIntro: boolean;
   selectedTemplateId: string | null;

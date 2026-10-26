@@ -32,6 +32,14 @@ export interface SsoLoginResult {
   user: {
     name: string;
     role: string;
+    businessProfile?: {
+      businessName?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      postcode?: string;
+      [key: string]: unknown;
+    } | null;
   };
   entitlement?: PlatformEntitlement;
 }
@@ -609,6 +617,20 @@ export class SsoService {
       user: {
         name: user.name,
         role: user.role,
+        // Keep the Central profile available to the onboarding profile step.
+        businessProfile:
+          user.role === Role.Business
+            ? payload.businessProfile || {
+                // Older CHS SSO tokens include these basic profile claims at
+                // the top level. Keep them available while the Central API
+                // rolls out the expanded businessProfile claim.
+                businessName: payload.name || payload.businessName || "",
+                email: payload.email || "",
+                phone: payload.phoneNumber || payload.phone || "",
+                address: payload.address || "",
+                postcode: payload.postcode || "",
+              }
+            : null,
       },
     };
   }

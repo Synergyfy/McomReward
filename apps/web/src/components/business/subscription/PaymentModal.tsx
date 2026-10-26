@@ -422,7 +422,11 @@ export default function PaymentModal({
                         </span>
                       </div>
                     ) : selectedProvider === 'stripe' ? (
-                      clientSecret && stripePromise ? (
+                      !stripePromise ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+                          Card checkout is unavailable: this environment has no Stripe publishable key configured.
+                        </div>
+                      ) : clientSecret ? (
                         <Elements stripe={stripePromise} options={{ clientSecret }}>
                           <McomStripeCheckout
                             externalPlanId={externalPlanId || ''}

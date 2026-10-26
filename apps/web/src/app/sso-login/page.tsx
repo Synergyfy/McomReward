@@ -46,6 +46,17 @@ function SsoLoginContent() {
         if (!mountedRef.current) return;
 
         toast.success("Welcome back!");
+        const centralBusinessProfile = data?.user?.businessProfile;
+        if (typeof window !== "undefined") {
+          if (centralBusinessProfile) {
+            localStorage.setItem(
+              "mcom_central_business_profile",
+              JSON.stringify(centralBusinessProfile),
+            );
+          } else {
+            localStorage.removeItem("mcom_central_business_profile");
+          }
+        }
         const userRole = data?.role || data?.user?.role;
         if (userRole === "Business" || userRole === "business") {
           try {

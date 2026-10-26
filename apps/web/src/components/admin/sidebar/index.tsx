@@ -55,7 +55,7 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
         <li>
           <Link href="/admin/plans" className={linkClasses("/admin/plans")}>
             <Layers className="mr-3" />
-            Plans & Tiers
+            Plans &amp; Tiers
           </Link>
         </li>
         <li>

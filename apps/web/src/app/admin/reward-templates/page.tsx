@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -22,7 +23,7 @@ import {
   Coins, Stamp, X, Sparkles, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { SectorTemplate, TemplateReward } from '@/services/loyalty-setup/types';
+import type { SectorTemplate, TemplateReward, TierConfig, TierDefinition } from '@/services/loyalty-setup/types';
 import type { RewardResponse } from '@/services/rewards/types';
 import { useGetRewards } from '@/services/rewards/hook';
 import {
@@ -83,6 +84,7 @@ function cloneTemplate(t: SectorTemplate): SectorTemplate {
     name: `${t.name} (Copy)`,
     rewards: t.rewards.map(r => ({ ...r, id: genId().replace('tpl', 'rw'), key: genId().replace('tpl', 'rw') })),
     campaigns: t.campaigns ? t.campaigns.map(c => ({ ...c, id: genId().replace('tpl', 'camp'), key: genId().replace('tpl', 'camp') })) : [],
+    tierConfig: t.tierConfig ? { ...t.tierConfig, tiers: t.tierConfig.tiers.map(tier => ({ ...tier, benefits: [...tier.benefits] })) } : { enabled: false, tiers: [] },
   };
 }
 
@@ -176,7 +178,7 @@ export default function AdminRewardTemplatesPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Reward Templates</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Create and manage reward templates used during business loyalty setup
+              Create and manage reward templates used during MCOM Rewards business setup
             </p>
           </div>
           <Button onClick={() => setShowCreate(true)} className="gap-2">
@@ -268,6 +270,11 @@ export default function AdminRewardTemplatesPage() {
                       {t.campaigns && t.campaigns.length > 0 && (
                         <Badge variant="secondary" className="text-[10px]">
                           {t.campaigns.length} campaign{t.campaigns.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      {!!t.tierConfig?.tiers?.length && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {t.tierConfig.tiers.length} customer tier{t.tierConfig.tiers.length !== 1 ? 's' : ''}
                         </Badge>
                       )}
                       {isBuiltIn && <Badge className="text-[10px] bg-green-100 text-green-700 border-green-200">Built-in</Badge>}
@@ -366,6 +373,10 @@ function TemplateFormModal({
   const [sectorKey, setSectorKey] = useState(template?.sectorKey ?? 'retail');
   const [rewards, setRewards] = useState<TemplateReward[]>(template?.rewards ?? []);
   const [benefits, setBenefits] = useState<string[]>(template?.benefits ?? []);
+  const [tierConfig, setTierConfig] = useState<TierConfig>(() => template?.tierConfig ? {
+    ...template.tierConfig,
+    tiers: template.tierConfig.tiers.map(tier => ({ ...tier, benefits: [...tier.benefits] })),
+  } : { enabled: false, tiers: [] });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPicker, setShowPicker] = useState(false);
 
@@ -386,6 +397,7 @@ function TemplateFormModal({
       sectorKey,
       rewards,
       campaigns: template?.campaigns ?? [],
+      tierConfig,
       benefits: benefits.filter(b => b.trim()),
     });
   }
@@ -400,6 +412,30 @@ function TemplateFormModal({
 
   function removeBenefit(idx: number) {
     setBenefits(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function addTier() {
+    setTierConfig(current => ({
+      ...current,
+      enabled: true,
+      tiers: [...current.tiers, {
+        name: `Tier ${current.tiers.length + 1}`,
+        requirementType: 'points',
+        requirementValue: current.tiers.length ? current.tiers[current.tiers.length - 1].requirementValue + 500 : 0,
+        benefits: [],
+      }],
+    }));
+  }
+
+  function updateTier(index: number, changes: Partial<TierDefinition>) {
+    setTierConfig(current => ({
+      ...current,
+      tiers: current.tiers.map((tier, tierIndex) => tierIndex === index ? { ...tier, ...changes } : tier),
+    }));
+  }
+
+  function removeTier(index: number) {
+    setTierConfig(current => ({ ...current, tiers: current.tiers.filter((_, tierIndex) => tierIndex !== index) }));
   }
 
   function removeReward(id: string) {
@@ -501,6 +537,50 @@ function TemplateFormModal({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Customer Loyalty Tiers */}
+            <div className="border-t border-gray-100 pt-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Customer Loyalty Tiers</label>
+                  <p className="mt-1 text-xs text-gray-400">Set the customer levels businesses can review and customise during onboarding.</p>
+                </div>
+                <Switch checked={tierConfig.enabled} onCheckedChange={enabled => setTierConfig(current => ({ ...current, enabled }))} aria-label="Enable customer loyalty tiers" />
+              </div>
+              {tierConfig.enabled && <div className="mt-4 space-y-3">
+                {tierConfig.tiers.map((tier, index) => (
+                  <div key={`${index}-${tier.name}`} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-semibold text-gray-600">Level {index + 1}</p>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-red-500" onClick={() => removeTier(index)}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove</Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="text-xs font-medium text-gray-600">Tier name
+                        <Input value={tier.name} onChange={event => updateTier(index, { name: event.target.value })} placeholder="e.g. Silver" className="mt-1 bg-white text-sm" />
+                      </label>
+                      <label className="text-xs font-medium text-gray-600">Qualification rule
+                        <Select value={tier.requirementType} onValueChange={value => updateTier(index, { requirementType: value as TierDefinition['requirementType'] })}>
+                          <SelectTrigger className="mt-1 bg-white text-sm"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="points">Points earned</SelectItem>
+                            <SelectItem value="spend">Total spend</SelectItem>
+                            <SelectItem value="purchases">Number of purchases</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </label>
+                      <label className="text-xs font-medium text-gray-600">Threshold
+                        <Input type="number" min={0} value={tier.requirementValue} onChange={event => updateTier(index, { requirementValue: Number(event.target.value) })} className="mt-1 bg-white text-sm" />
+                      </label>
+                      <label className="text-xs font-medium text-gray-600">Benefits (comma-separated)
+                        <Input value={tier.benefits.join(', ')} onChange={event => updateTier(index, { benefits: event.target.value.split(',').map(value => value.trim()).filter(Boolean) })} placeholder="e.g. Birthday reward, early access" className="mt-1 bg-white text-sm" />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addTier} className="gap-1"><Plus className="h-3.5 w-3.5" />Add customer tier</Button>
+                {tierConfig.tiers.length === 0 && <p className="text-xs text-amber-700">Add at least one tier for businesses to see this section in onboarding.</p>}
+              </div>}
             </div>
 
             {/* Rewards */}

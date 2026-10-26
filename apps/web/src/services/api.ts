@@ -5,6 +5,7 @@ import {
   getRefreshToken,
   setAuthTokens,
 } from '@/lib/auth-cookies';
+import { isLocalBusinessPreviewEnabled } from '@/lib/local-business-preview';
 
 declare module 'axios' {
   export interface InternalAxiosRequestConfig {
@@ -186,6 +187,9 @@ export const refreshAuthTokens = async (): Promise<string> => {
 /** Redirect to login unless in bypass mode, already there, or opted out. */
 const redirectToLogin = (originalRequest: InternalAxiosRequestConfig) => {
   if (typeof window === 'undefined') return;
+  // Local business preview is UI-only; allow protected data requests to fail
+  // without turning the preview into an authentication or payment bypass.
+  if (isLocalBusinessPreviewEnabled()) return;
 
   const isBypassSso = localStorage.getItem('mcom_bypass_sso') === 'true';
   const isAlreadyOnLoginPage = window.location.pathname.includes('/login');

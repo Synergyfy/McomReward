@@ -46,7 +46,6 @@ const FLAG_FIELDS = [
   { key: "hasAccessToCRM", label: "Customer CRM access" },
   { key: "canUpdateReward", label: "Update rewards" },
   { key: "priorityInSearch", label: "Priority search placement" },
-  { key: "allowCustomBranding", label: "Custom storefront branding" },
 ] as const;
 
 type QuotaKey = (typeof QUOTA_FIELDS)[number]["key"];
@@ -160,7 +159,15 @@ export function AccessPassPlanForm({
     const next = emptyQuotas();
     for (const field of QUOTA_FIELDS) {
       const value = initialPlan?.configuration?.quotas?.[field.key];
-      next[field.key] = typeof value === "number" ? String(value) : "";
+      next[field.key] =
+        typeof value === "number" && value > 0 ? String(value) : "";
+    }
+    return next;
+  });
+  const [unlimited, setUnlimited] = useState<Record<QuotaKey, boolean>>(() => {
+    const next = {} as Record<QuotaKey, boolean>;
+    for (const field of QUOTA_FIELDS) {
+      next[field.key] = initialPlan?.configuration?.quotas?.[field.key] === -1;
     }
     return next;
   });
@@ -173,6 +180,17 @@ export function AccessPassPlanForm({
     }
     return next;
   });
+  const preservedFlags = useMemo(() => {
+    const editable = new Set<string>(FLAG_FIELDS.map((field) => field.key));
+    const next: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(
+      initialPlan?.configuration?.featureFlags ?? {},
+    )) {
+      if (!editable.has(key)) next[key] = Boolean(value);
+    }
+    return next;
+  }, [initialPlan]);
+
   const [isActive, setIsActive] = useState(initialPlan?.isActive ?? true);
   const [purchaseEnabled, setPurchaseEnabled] = useState(
     initialPlan?.purchaseEnabled ?? true,
@@ -221,16 +239,28 @@ export function AccessPassPlanForm({
       next.features = "Add at least one feature or benefit.";
 
     for (const field of QUOTA_FIELDS) {
+      if (unlimited[field.key]) continue;
       const value = quotas[field.key].trim();
       if (!value) {
-        next[`quota.${field.key}`] = "Required. Use -1 for unlimited.";
-      } else if (!/^-?\d+$/.test(value) || Number(value) < -1) {
-        next[`quota.${field.key}`] = "Use a whole number, or -1 for unlimited.";
+        next[`quota.${field.key}`] =
+          "Enter a positive limit or tick Unlimited.";
+      } else if (!/^\d+$/.test(value) || Number(value) < 1) {
+        next[`quota.${field.key}`] =
+          "Use a whole number of 1 or more, or tick Unlimited.";
       }
     }
 
     return next;
-  }, [name, slug, description, price, durationDays, features, quotas]);
+  }, [
+    name,
+    slug,
+    description,
+    price,
+    durationDays,
+    features,
+    quotas,
+    unlimited,
+  ]);
 
   const show = (key: string) =>
     Boolean(errors[key]) && (attempted || touched[key]);
@@ -259,23 +289,27 @@ export function AccessPassPlanForm({
     setFeatures((prev) => prev.filter((_, i) => i !== index));
 
   const setAllUnlimited = () => {
-    setQuotas(
+    setQuotas(emptyQuotas());
+    setUnlimited(
       QUOTA_FIELDS.reduce(
-        (acc, field) => ({ ...acc, [field.key]: "-1" }),
-        {} as Record<QuotaKey, string>,
+        (acc, field) => ({ ...acc, [field.key]: true }),
+        {} as Record<QuotaKey, boolean>,
       ),
     );
   };
 
+  const setQuotaUnlimited = (key: QuotaKey, checked: boolean) =>
+    setUnlimited((prev) => ({ ...prev, [key]: checked }));
+
   const buildConfiguration = (): AccessPassConfiguration => ({
     quotas: QUOTA_FIELDS.reduce(
       (acc, field) => {
-        acc[field.key] = Number(quotas[field.key]);
+        acc[field.key] = unlimited[field.key] ? -1 : Number(quotas[field.key]);
         return acc;
       },
       {} as Record<string, number>,
     ),
-    featureFlags: { ...flags },
+    featureFlags: { ...preservedFlags, ...flags },
   });
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -529,7 +563,7 @@ export function AccessPassPlanForm({
 
       <Section
         title="Limits & feature flags"
-        description="These are enforced for businesses on this pass. Use -1 for unlimited quotas."
+        description="These are enforced for businesses on this pass. Tick Unlimited for no cap, or enter a positive limit."
         icon={Users}
       >
         <div className="flex justify-end mb-3">
@@ -544,22 +578,42 @@ export function AccessPassPlanForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {QUOTA_FIELDS.map((field) => (
             <div key={field.key}>
-              <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
-                {field.label}
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <label
+                  htmlFor={`quota-${field.key}`}
+                  className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider"
+                >
+                  {field.label}
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={unlimited[field.key]}
+                    onChange={(e) =>
+                      setQuotaUnlimited(field.key, e.target.checked)
+                    }
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <span className="text-[11px] font-semibold text-gray-500">
+                    Unlimited
+                  </span>
+                </label>
+              </div>
               <input
+                id={`quota-${field.key}`}
                 type="text"
                 inputMode="numeric"
-                value={quotas[field.key]}
-                onChange={(e) =>
-                  setQuotas((prev) => ({
-                    ...prev,
-                    [field.key]: e.target.value,
-                  }))
-                }
+                value={unlimited[field.key] ? "" : quotas[field.key]}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "");
+                  setQuotas((prev) => ({ ...prev, [field.key]: digits }));
+                }}
                 onBlur={() => markTouched(`quota.${field.key}`)}
-                placeholder="-1"
-                className={`w-full px-3 py-2 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 ${
+                disabled={unlimited[field.key]}
+                placeholder={
+                  unlimited[field.key] ? "Unlimited" : "Enter a limit"
+                }
+                className={`w-full px-3 py-2 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${
                   show(`quota.${field.key}`)
                     ? "border-red-400 bg-red-50/30 focus:ring-red-500"
                     : "border-gray-300 focus:ring-orange-500"

@@ -912,7 +912,8 @@ export class AccessPassService implements OnModuleInit {
   async redeemCode(
     businessId: string,
     rawCode: string,
-  ): Promise<AccessPassSubscription> {    const business = await this.businessRepository.findOne({
+  ): Promise<AccessPassSubscription> {
+    const business = await this.businessRepository.findOne({
       where: { id: businessId },
     });
     if (!business) throw new NotFoundException("Business profile not found");
@@ -1445,11 +1446,6 @@ export class AccessPassService implements OnModuleInit {
         {
           key: "priorityInSearch",
           label: "Priority Placement in Search",
-          type: "boolean",
-        },
-        {
-          key: "allowCustomBranding",
-          label: "Custom Storefront Branding",
           type: "boolean",
         },
       ],

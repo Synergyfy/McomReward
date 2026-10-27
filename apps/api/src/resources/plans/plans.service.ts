@@ -647,11 +647,6 @@ export class PlansService implements OnModuleInit {
           label: "Priority Placement in Search",
           type: "boolean",
         },
-        {
-          key: "allowCustomBranding",
-          label: "Custom Storefront Branding",
-          type: "boolean",
-        },
       ],
     };
   }

@@ -72,11 +72,6 @@ const FEATURE_FLAGS = [
     label: 'Priority placement in search',
     description: 'Boost the business in marketplace and search results.',
   },
-  {
-    key: 'allowCustomBranding',
-    label: 'Custom storefront branding',
-    description: 'Apply custom branding and colours to their storefront.',
-  },
 ] as const;
 
 type QuotaKey = (typeof CORE_QUOTA_FIELDS)[number]['key'];
@@ -140,7 +135,9 @@ interface VariantFormState {
   features: string[];
   newFeatureInput: string;
   quotas: Record<QuotaKey, string>;
+  unlimitedQuotas: Record<QuotaKey, boolean>;
   featureFlags: Record<FlagKey, boolean>;
+  preservedFlags: Record<string, boolean>;
 }
 
 interface VariantErrors {
@@ -161,6 +158,12 @@ const emptyQuotas = (): Record<QuotaKey, string> =>
     {} as Record<QuotaKey, string>
   );
 
+const emptyUnlimitedQuotas = (): Record<QuotaKey, boolean> =>
+  CORE_QUOTA_FIELDS.reduce(
+    (acc, field) => ({ ...acc, [field.key]: false }),
+    {} as Record<QuotaKey, boolean>
+  );
+
 const emptyFlags = (): Record<FlagKey, boolean> =>
   FEATURE_FLAGS.reduce(
     (acc, flag) => ({ ...acc, [flag.key]: false }),
@@ -176,9 +179,12 @@ const getVariantInitialState = (
     variant?.prices?.find((price) => price.isActive) || variant?.prices?.[0];
 
   const quotas = emptyQuotas();
+  const unlimitedQuotas = emptyUnlimitedQuotas();
   for (const field of CORE_QUOTA_FIELDS) {
     const value = variant?.configuration?.quotas?.[field.key];
-    quotas[field.key] = typeof value === 'number' ? String(value) : '';
+    unlimitedQuotas[field.key] = value === -1;
+    quotas[field.key] =
+      typeof value === 'number' && value > 0 ? String(value) : '';
   }
 
   const featureFlags = emptyFlags();
@@ -186,12 +192,21 @@ const getVariantInitialState = (
     featureFlags[flag.key] = Boolean(variant?.configuration?.featureFlags?.[flag.key]);
   }
 
+  // Keep flags not shown in this form so editing a plan cannot silently drop them.
+  const editableFlags = new Set<string>(FEATURE_FLAGS.map((flag) => flag.key));
+  const preservedFlags: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(variant?.configuration?.featureFlags ?? {})) {
+    if (!editableFlags.has(key)) preservedFlags[key] = Boolean(value);
+  }
+
   return {
     price: activePrice ? String(activePrice.amount) : '',
     features: variant?.features ? [...variant.features] : [],
     newFeatureInput: '',
     quotas,
+    unlimitedQuotas,
     featureFlags,
+    preservedFlags,
   };
 };
 
@@ -219,11 +234,12 @@ const validatePrice = (raw: string): string | undefined => {
 
 const validateQuota = (raw: string): string | undefined => {
   const value = raw.trim();
-  if (!value) return 'Required. Use -1 for unlimited.';
-  if (!/^-?\d+$/.test(value)) return 'Use a whole number (or -1 for unlimited).';
+  if (!value) return 'Enter a positive limit or tick Unlimited.';
+  if (!/^\d+$/.test(value)) return 'Use a whole number of 1 or more, or tick Unlimited.';
   const number = Number(value);
-  if (!Number.isFinite(number)) return 'Enter a valid number.';
-  if (number < -1) return 'Use -1 for unlimited or a value of 0 or more.';
+  if (!Number.isFinite(number) || number < 1) {
+    return 'Use a whole number of 1 or more, or tick Unlimited.';
+  }
   if (number > MAX_QUOTA) return `Keep the value at ${MAX_QUOTA.toLocaleString()} or below.`;
   return undefined;
 };
@@ -374,6 +390,7 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
       const quotas: Partial<Record<QuotaKey, string>> = {};
 
       for (const field of CORE_QUOTA_FIELDS) {
+        if (state.unlimitedQuotas[field.key]) continue;
         const error = validateQuota(state.quotas[field.key]);
         if (error) quotas[field.key] = error;
       }
@@ -433,9 +450,17 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
   };
 
   const handleQuotaChange = (tier: TierKey, key: QuotaKey, value: string) => {
+    const digits = value.replace(/\D/g, '');
     updateVariant(tier, (state) => ({
       ...state,
-      quotas: { ...state.quotas, [key]: value },
+      quotas: { ...state.quotas, [key]: digits },
+    }));
+  };
+
+  const handleQuotaUnlimitedChange = (tier: TierKey, key: QuotaKey, checked: boolean) => {
+    updateVariant(tier, (state) => ({
+      ...state,
+      unlimitedQuotas: { ...state.unlimitedQuotas, [key]: checked },
     }));
   };
 
@@ -449,9 +474,10 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
   const handleSetAllQuotasUnlimited = (tier: TierKey) => {
     updateVariant(tier, (state) => ({
       ...state,
-      quotas: CORE_QUOTA_FIELDS.reduce(
-        (acc, field) => ({ ...acc, [field.key]: '-1' }),
-        {} as Record<QuotaKey, string>
+      quotas: emptyQuotas(),
+      unlimitedQuotas: CORE_QUOTA_FIELDS.reduce(
+        (acc, field) => ({ ...acc, [field.key]: true }),
+        {} as Record<QuotaKey, boolean>
       ),
     }));
     CORE_QUOTA_FIELDS.forEach((field) => markTouched(`${tier}.quotas.${field.key}`));
@@ -499,7 +525,9 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
   const buildVariantPayload = (tier: TierKey) => {
     const state = variants[tier];
     const quotas = CORE_QUOTA_FIELDS.reduce((acc, field) => {
-      acc[field.key] = Number(state.quotas[field.key]);
+      acc[field.key] = state.unlimitedQuotas[field.key]
+        ? -1
+        : Number(state.quotas[field.key]);
       return acc;
     }, {} as Record<string, number>);
 
@@ -509,7 +537,7 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
       features: state.features.map((feature) => feature.trim()).filter(Boolean),
       configuration: {
         quotas,
-        featureFlags: { ...state.featureFlags },
+        featureFlags: { ...state.preservedFlags, ...state.featureFlags },
       },
     };
   };
@@ -1037,8 +1065,8 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
                   <div>
                     <h3 className="text-sm font-bold text-gray-900">Enforced Quota Limits</h3>
                     <p className="text-xs text-gray-500">
-                      Whole numbers only. Use <span className="font-semibold">-1</span> for unlimited.
-                      All quota fields are required.
+                      Whole numbers only. Tick <span className="font-semibold">Unlimited</span> for no
+                      cap, or enter a positive limit. All quota fields are required.
                     </p>
                   </div>
                 </div>
@@ -1047,7 +1075,7 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
                   onClick={() => handleSetAllQuotasUnlimited(activeTab)}
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 underline underline-offset-2 self-start sm:self-auto"
                 >
-                  Set all to unlimited (-1)
+                  Set all quotas unlimited
                 </button>
               </div>
 
@@ -1056,25 +1084,35 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
                   const path = `${activeTab}.quotas.${field.key}`;
                   const error = activeErrors.quotas[field.key];
                   const hasError = showError(path, error, attemptedSave);
+                  const isUnlimited = activeState.unlimitedQuotas[field.key];
 
                   return (
                     <div key={field.key}>
                       <FieldLabel htmlFor={`${path}`} label={field.label} required>
-                        <span className="text-[11px] text-gray-400">-1 = ∞</span>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-500">
+                          <input
+                            type="checkbox"
+                            checked={isUnlimited}
+                            onChange={(e) =>
+                              handleQuotaUnlimitedChange(activeTab, field.key, e.target.checked)
+                            }
+                            className="h-3.5 w-3.5 rounded border-gray-300 accent-blue-600"
+                          />
+                          Unlimited
+                        </label>
                       </FieldLabel>
                       <input
                         id={path}
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        step="1"
-                        min="-1"
-                        value={activeState.quotas[field.key]}
+                        value={isUnlimited ? '' : activeState.quotas[field.key]}
                         onChange={(e) => handleQuotaChange(activeTab, field.key, e.target.value)}
                         onBlur={() => markTouched(path)}
-                        placeholder="Required"
+                        disabled={isUnlimited}
+                        placeholder={isUnlimited ? 'Unlimited' : 'Enter a limit'}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${path}-error` : undefined}
-                        className={`w-full px-3 py-2.5 rounded-lg border text-sm font-bold text-gray-900 transition-colors focus:outline-none focus:ring-2 ${
+                        className={`w-full px-3 py-2.5 rounded-lg border text-sm font-bold text-gray-900 transition-colors focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${
                           hasError
                             ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
                             : 'border-gray-300 focus:ring-blue-500'

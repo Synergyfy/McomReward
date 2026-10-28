@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import type { SectorTemplate, TemplateReward } from "@/services/loyalty-setup/types";
 import { areRewardDetailsAdminManaged } from "@/services/loyalty-setup/template-edit-policy";
 import FieldRequirementHint from "@/components/onboarding/FieldRequirementHint";
+import { formTypography } from "./formTypography";
+import SetupProgress from "./SetupProgress";
 
 const REWARD_TYPES = ["Voucher", "gift card", "coupon", "point offer", "physical product", "MallDiscount"] as const;
 
@@ -18,7 +20,6 @@ const SECTOR_ICONS: Record<string, React.ElementType> = {
   restaurant: Coffee, cafe: Coffee, retail: ShoppingBag, salon: Scissors, gym: Dumbbell, service: Briefcase, custom: Sparkles,
 };
 
-const SETUP_STEPS = ["Profile", "Rewards", "Campaigns", "Tiers", "Review"];
 
 function getRewardCategory(reward: TemplateReward): "point" | "stamp" | "hybrid" {
   if (reward.pointsRequired > 0 && (reward.stampsRequired || 0) > 0) return "hybrid";
@@ -40,25 +41,25 @@ function TemplateCard({ template, isSelected, hasCustomized, onSelectTemplate, o
   const campaigns = template.campaigns || [];
 
   return (
-    <Card className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white p-0 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isSelected ? "border-orange-500 ring-2 ring-orange-100" : "border-slate-200 hover:border-orange-300"}`}>
+    <Card className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white p-0 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg max-sm:h-auto ${isSelected ? "border-orange-500 ring-2 ring-orange-100" : "border-slate-200 hover:border-orange-300"}`}>
       <div className={`h-1.5 w-full ${isSelected ? "bg-orange-500" : "bg-slate-100"}`} />
-      <button type="button" onClick={() => onSelectTemplate(template)} aria-pressed={isSelected} className="flex flex-1 cursor-pointer flex-col p-5 text-left sm:p-6">
-        <div className="flex w-full items-start gap-4">
+      <button type="button" onClick={() => onSelectTemplate(template)} aria-pressed={isSelected} className="flex flex-1 cursor-pointer flex-col p-5 text-left max-sm:flex-none max-sm:p-4 sm:p-6">
+        <div className="flex w-full items-start gap-4 max-sm:gap-3">
           <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${isSelected ? "bg-orange-100 text-orange-600" : "bg-blue-50 text-blue-600"}`}><SectorIcon className="h-4 w-4" /></span>
           <span className="min-w-0 flex-1">
             <span className="flex items-start justify-between gap-2">
               <span className="line-clamp-2 min-w-0 text-sm font-bold leading-5 text-slate-900 sm:text-lg">{template.name}</span>
               {isSelected && <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />}
             </span>
-            <span className="mt-2 inline-flex max-w-full rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold leading-4 text-slate-700 sm:text-[11px]">{displaySectorName(template.sectorKey)}</span>
+            <span className="mt-2 inline-flex max-w-full rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold leading-4 text-slate-700 max-sm:mt-1.5 sm:text-[11px]">{displaySectorName(template.sectorKey)}</span>
           </span>
         </div>
 
-        <span className="mt-5 line-clamp-2 min-h-10 text-sm leading-5 text-slate-600">{template.description}</span>
+        <span className="mt-5 line-clamp-2 min-h-10 text-sm leading-5 text-slate-600 max-sm:mt-3 max-sm:min-h-0 max-sm:text-[13px]">{template.description}</span>
 
-        <span className="mt-5 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-          <span className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700"><Gift className="h-4 w-4 text-orange-500" /><strong>{rewards.length}</strong> rewards</span>
-          <span className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700"><Megaphone className="h-4 w-4 text-blue-600" /><strong>{campaigns.length}</strong> campaigns</span>
+        <span className="mt-5 grid w-full grid-cols-2 gap-2 max-sm:mt-3">
+          <span className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700 max-sm:gap-1.5 max-sm:px-2.5 max-sm:py-2 max-sm:text-[12px]"><Gift className="h-4 w-4 shrink-0 text-orange-500 max-sm:h-3.5 max-sm:w-3.5" /><strong>{rewards.length}</strong> rewards</span>
+          <span className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700 max-sm:gap-1.5 max-sm:px-2.5 max-sm:py-2 max-sm:text-[12px]"><Megaphone className="h-4 w-4 shrink-0 text-blue-600 max-sm:h-3.5 max-sm:w-3.5" /><strong>{campaigns.length}</strong> campaigns</span>
         </span>
 
       </button>
@@ -120,36 +121,16 @@ export default function TemplateScreen({ sectorKey, templates, initialSelectedId
 
   return (
     <div className="min-h-screen bg-[#f7f8ff] text-slate-900">
-      <div className="mx-auto w-full max-w-[1440px] px-[1.5vw] py-6 sm:px-[1.5vw] sm:py-9 md:px-7 lg:px-10 lg:py-10">
+      <div className="mx-auto w-full max-w-[1440px] px-[1.5vw] py-3 sm:px-[1.5vw] sm:py-9 md:px-7 lg:px-10 lg:py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <button onClick={onBack} className="mb-7 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 sm:text-sm transition hover:bg-white hover:text-orange-700">
+          <button onClick={onBack} className="mb-7 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 transition hover:bg-white hover:text-orange-700 max-sm:mb-3 max-sm:py-1.5 sm:text-sm">
             <ArrowLeft className="h-4 w-4" />Back
           </button>
-          <div aria-label="Setup progress, step 2 of 5" className="mb-8 w-full">
-            <div className="mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600 sm:text-sm">
-              <span>Step 2 of 5 · Rewards</span><span className="text-orange-600">40% complete</span>
-            </div>
-            <div className="relative grid grid-cols-5">
-              <div aria-hidden="true" className="absolute left-[10%] right-[10%] top-[18px] h-0.5 bg-slate-200">
-                <div className="h-full w-1/4 bg-orange-500" />
-              </div>
-              {SETUP_STEPS.map((label, index) => {
-                const number = index + 1;
-                const isComplete = number < 2;
-                const isCurrent = number === 2;
-                return (
-                  <div key={label} aria-current={isCurrent ? "step" : undefined} className={`relative z-10 flex min-w-0 flex-col items-center gap-2 ${isCurrent ? "text-orange-700" : isComplete ? "text-slate-700" : "text-slate-400"}`}>
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold sm:h-9 sm:w-9 sm:text-base ${isComplete ? "border-orange-500 bg-orange-500 text-white" : isCurrent ? "border-orange-500 bg-orange-50 text-orange-700 ring-4 ring-orange-100" : "border-slate-300 bg-white text-slate-500"}`}>{isComplete ? <Check className="h-4 w-4" /> : number}</span>
-                    <span className="max-w-full truncate text-[10px] font-semibold sm:text-[11px]">{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <SetupProgress currentStep={2} className="mb-8 max-sm:mb-3" />
           <div className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 sm:mb-9 sm:flex-row sm:items-end sm:justify-between sm:pb-8">
             <div className="max-w-3xl">
               <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] sm:text-xs text-orange-600">MCOM Rewards setup · {displayName}</p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">Choose your rewards template</h1>
+              <h1 className="text-[22px] font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">Choose your rewards template</h1>
               <p className="mt-3 max-w-2xl text-[13px] leading-5 text-slate-600 sm:text-base sm:leading-6">Start with a programme prepared for your business. You can review and customise its rewards before continuing.</p>
             </div>
             <div className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm sm:text-sm">
@@ -238,7 +219,7 @@ function TemplateDetailScreen({ template, onBack, onSelect, onSave }: { template
                 </div>
               </div>
 
-              <Button onClick={onSelect} className="min-h-11 shrink-0 bg-orange-600 text-[12px] text-white sm:text-sm shadow-sm shadow-orange-200 hover:bg-orange-700 lg:mt-1">Use this template<ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button onClick={onSelect} className="min-h-11 shrink-0 bg-orange-600 text-sm text-white shadow-sm shadow-orange-200 hover:bg-orange-700 lg:mt-1">Use this template<ArrowRight className="ml-2 h-4 w-4" /></Button>
             </div>
 
             <div className="mt-7 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-3">
@@ -306,8 +287,8 @@ function TemplateDetailScreen({ template, onBack, onSelect, onSave }: { template
         </section>
 
         <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-200 px-4 pt-5 sm:flex-row sm:justify-between sm:px-0">
-          <Button variant="outline" onClick={onBack} className="min-h-11 text-[12px] sm:text-sm">Back to templates</Button>
-          <Button onClick={onSelect} className="min-h-11 bg-orange-600 px-6 text-[12px] text-white sm:text-sm shadow-sm shadow-orange-200 hover:bg-orange-700">Use this template<ArrowRight className="ml-2 h-4 w-4" /></Button>
+          <Button variant="outline" onClick={onBack} className="min-h-11 text-sm">Back to templates</Button>
+          <Button onClick={onSelect} className="min-h-11 bg-orange-600 px-6 text-sm text-white shadow-sm shadow-orange-200 hover:bg-orange-700">Use this template<ArrowRight className="ml-2 h-4 w-4" /></Button>
         </div>
       </div>
       <Dialog open={Boolean(editingReward)} onOpenChange={(open) => { if (!open) setEditingReward(null); }}>
@@ -336,36 +317,36 @@ function TemplateDetailScreen({ template, onBack, onSelect, onSave }: { template
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
             <div className="mx-auto max-w-md">
               <div className="mb-6 text-center">
-                <h2 className="text-base font-bold text-slate-950 sm:text-xl">{rewardEditStep === 1 ? "Basic Information" : "Reward Requirements"}</h2>
+                <h2 className={`text-base font-bold text-slate-950 sm:text-xl ${formTypography.section}`}>{rewardEditStep === 1 ? "Basic Information" : "Reward Requirements"}</h2>
                 <p className="mt-1 text-[12px] leading-5 text-slate-500 sm:text-sm">{rewardEditStep === 1 ? "Set the reward details customers will see." : "Set the points and stamps needed to redeem this reward."}</p>
               </div>
 
               {rewardEditStep === 1 ? (
                 <div className="space-y-4">
                   {rewardDetailsAdminManaged && <p className="rounded-xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-[12px] leading-5 text-orange-900 sm:text-sm">Reward name, type, and description are managed by an administrator. You can still change the requirements in the next step.</p>}
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward name{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
-                    <input disabled={rewardDetailsAdminManaged} value={editingReward.name} onChange={(event) => setEditingReward((current) => current ? { ...current, name: event.target.value } : current)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
+                  <label className={`block text-[12px] font-semibold text-slate-700 sm:text-sm ${formTypography.label}`}>Reward name{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                    <input disabled={rewardDetailsAdminManaged} value={editingReward.name} onChange={(event) => setEditingReward((current) => current ? { ...current, name: event.target.value } : current)} className={`mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ${formTypography.value}`} />
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Reward type{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                  <label className={`block text-[12px] font-semibold text-slate-700 sm:text-sm ${formTypography.label}`}>Reward type{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
                     <Select disabled={rewardDetailsAdminManaged} value={editingReward.rewardType || undefined} onValueChange={(value) => setEditingReward((current) => current ? { ...current, rewardType: value } : current)}>
-                      <SelectTrigger className="mt-1.5 h-11 rounded-xl bg-white text-[12px] font-normal sm:text-sm disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"><SelectValue placeholder="Choose a reward type" /></SelectTrigger>
+                      <SelectTrigger className={`mt-1.5 h-11 rounded-xl bg-white text-[12px] font-normal sm:text-sm disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ${formTypography.value}`}><SelectValue placeholder="Choose a reward type" /></SelectTrigger>
                       <SelectContent>
                         {editingReward.rewardType && !REWARD_TYPES.includes(editingReward.rewardType as (typeof REWARD_TYPES)[number]) && <SelectItem value={editingReward.rewardType}>{editingReward.rewardType}</SelectItem>}
                         {REWARD_TYPES.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Description{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
-                    <textarea disabled={rewardDetailsAdminManaged} value={editingReward.description || ""} onChange={(event) => setEditingReward((current) => current ? { ...current, description: event.target.value } : current)} rows={3} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500" />
+                  <label className={`block text-[12px] font-semibold text-slate-700 sm:text-sm ${formTypography.label}`}>Description{!rewardDetailsAdminManaged && <FieldRequirementHint kind="important" />}{rewardDetailsAdminManaged && <span className="ml-1 text-[10px] font-normal text-slate-400 sm:text-xs">· Admin managed</span>}
+                    <textarea disabled={rewardDetailsAdminManaged} value={editingReward.description || ""} onChange={(event) => setEditingReward((current) => current ? { ...current, description: event.target.value } : current)} rows={3} className={`mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-[13px] font-normal text-slate-900 sm:text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ${formTypography.value}`} />
                   </label>
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Points required<FieldRequirementHint kind="important" />
-                    <input type="number" min={0} value={editingReward.pointsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, pointsRequired: Math.max(0, Number(event.target.value)) } : current)} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" />
+                  <label className={`block text-[12px] font-semibold text-slate-700 sm:text-sm ${formTypography.label}`}>Points required<FieldRequirementHint kind="important" />
+                    <input type="number" min={0} value={editingReward.pointsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, pointsRequired: Math.max(0, Number(event.target.value)) } : current)} className={`mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 ${formTypography.value}`} />
                   </label>
-                  <label className="block text-[12px] font-semibold text-slate-700 sm:text-sm">Stamps required<FieldRequirementHint kind="important" />
-                    <input type="number" min={0} value={editingReward.stampsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, stampsRequired: Math.max(0, Number(event.target.value)) } : current)} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" />
+                  <label className={`block text-[12px] font-semibold text-slate-700 sm:text-sm ${formTypography.label}`}>Stamps required<FieldRequirementHint kind="important" />
+                    <input type="number" min={0} value={editingReward.stampsRequired || 0} onChange={(event) => setEditingReward((current) => current ? { ...current, stampsRequired: Math.max(0, Number(event.target.value)) } : current)} className={`mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[14px] font-semibold text-slate-900 outline-none sm:text-base transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 ${formTypography.value}`} />
                   </label>
                 </div>
               )}

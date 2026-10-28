@@ -11,7 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { useGetMyPackage } from '@/services/mcom-packages';
 import { useGetBusinessProfile } from '@/services/business/hook';
-import TrialBanner, { OnboardingReminderBanner } from '@/components/dashboard/trial-banner';
+import { OnboardingReminderBanner } from '@/components/dashboard/trial-banner';
 import { useGetLoyaltySetupProgress } from '@/services/loyalty-setup/hook';
 import { useImpersonation } from '@/context/ImpersonationContext';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export default function DashboardLayout({
   // LOCAL-FIRST gating: Rewards DB membership via my-package (planVariant)
   // + my-membership. Central /business/subscription is never consulted.
   const { data: myPackage, isLoading: isMyPackageLoading } = useGetMyPackage();
-  const { data: mySubscription, isLoading: isMySubLoading } = useGetMySubscription();
+  const { data: mySubscription } = useGetMySubscription();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const toggleCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -164,22 +164,8 @@ export default function DashboardLayout({
             </div>
           )}
 
-          {/* Trial Banner - Task-Gated Trial from MCOM Central or local subscription trial */}
-          {hasSkippedRewardsSetup ? (
-            <OnboardingReminderBanner />
-          ) : (myPackage?.isTrial || mySubscription?.isTrial) &&
-            (myPackage?.expiresAt || mySubscription?.expiresAt) && (
-              <TrialBanner
-                planName={
-                  myPackage?.planName ||
-                  mySubscription?.tier?.name ||
-                  'Programme Trial'
-                }
-                expiresAt={(myPackage?.expiresAt || mySubscription?.expiresAt)!}
-                tasks={myPackage?.trialTasks || []}
-                upgradeUrl={myPackage?.upgradeUrl}
-              />
-            )}
+          {/* Trial reminder removed; keep the skipped-onboarding prompt for unfinished setup. */}
+          {hasSkippedRewardsSetup && <OnboardingReminderBanner />}
 
 
           {/* Header for mobile */}

@@ -124,7 +124,7 @@ export default function BusinessDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-5 lg:p-7 xl:p-8">
+    <div className="min-h-screen bg-white px-3 pt-1 pb-3 sm:px-5 sm:pt-2 sm:pb-5 lg:px-7 lg:pt-3 lg:pb-7 xl:px-8 xl:pt-3 xl:pb-8">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Business Dashboard</h1>

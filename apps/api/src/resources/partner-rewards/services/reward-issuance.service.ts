@@ -49,6 +49,12 @@ import {
   PartnerEntitlementService,
 } from "./partner-entitlement.service";
 import { ServiceCallerContext } from "../../service-mesh/interfaces/authenticated-service-request.interface";
+import { RewardFulfilmentService } from "../../reward-fulfilment/reward-fulfilment.service";
+import {
+  FulfilmentKind,
+  FulfilmentProvider,
+  FulfilmentStatus,
+} from "../../reward-fulfilment/reward-fulfilment.enums";
 
 const CODE_PREFIX = "MCOM";
 
@@ -107,6 +113,7 @@ export class RewardIssuanceService {
     private readonly mallIntegration: MallIntegrationService,
     private readonly partnerEntitlement: PartnerEntitlementService,
     private readonly notifier: PartnerEventNotifier,
+    private readonly fulfilment: RewardFulfilmentService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -192,6 +199,7 @@ export class RewardIssuanceService {
         email: dto.business?.email ?? null,
       },
       entitlement,
+      mallTargets: this.buildCatalogueMallTargets(reward),
     });
   }
 
@@ -300,11 +308,31 @@ export class RewardIssuanceService {
         email: businessReward.business.email ?? null,
       },
       entitlement,
-      mallTargets: this.buildMallTargets(
-        businessReward,
-        businessReward.business.mcomUserId ?? null,
-      ),
+      mallTargets: this.buildBusinessRewardMallTargets(businessReward),
     });
+  }
+
+  private buildBusinessRewardMallTargets(
+    businessReward: BusinessReward,
+  ): Record<string, any> | null {
+    const mcomUserId = businessReward.business?.mcomUserId ?? null;
+    const config = businessReward.fulfilment_config ?? null;
+    const fromConfig = config
+      ? this.buildMallTargetsFromConfig(
+          {
+            ...config,
+            businessMcomUserId:
+              config.businessMcomUserId ?? mcomUserId ?? undefined,
+          },
+          config.businessId ??
+            businessReward.fulfilment_business_ref ??
+            null,
+        )
+      : null;
+
+    return (
+      fromConfig ?? this.buildMallTargets(businessReward, mcomUserId)
+    );
   }
 
   /**
@@ -359,17 +387,15 @@ export class RewardIssuanceService {
     const { recipientEmail, resolved, quantity } =
       await this.resolveRecipient(dto);
 
-    if (resolved?.userType !== "Participant") {
-      throw new BadRequestException(
-        "Gifted rewards require the recipient to resolve to an MCOM participant account",
-      );
-    }
+    // Stock is authoritative before audience/recipient policy so a rejected
+    // attempt can never consume a unit or create misleading failure clutter.
+    await this.assertStockAvailable(reward, quantity);
+
+    this.assertGiftRecipientEligible(reward, resolved);
 
     const expiresAt = dto.expiresAt
       ? new Date(dto.expiresAt)
       : reward.expiry_datetime || null;
-
-    await this.assertStockAvailable(reward, quantity);
 
     return this.persistIssuance({
       callerClientId,
@@ -399,6 +425,7 @@ export class RewardIssuanceService {
         app: callerClientId,
         role: "admin",
       },
+      mallTargets: this.buildCatalogueMallTargets(reward),
     });
   }
 
@@ -754,7 +781,11 @@ export class RewardIssuanceService {
 
       // Idempotent: an already-redeemed issuance is a no-op.
       if (issuance.status === RewardIssuanceStatus.REDEEMED) {
-        return { alreadyCommitted: true, dto: this.toDto(issuance) };
+        return {
+          alreadyCommitted: true,
+          dto: this.toDto(issuance),
+          issuerClientId: issuance.issuer_client_id ?? null,
+        };
       }
       if (
         issuance.status !== RewardIssuanceStatus.RESERVED &&
@@ -775,22 +806,46 @@ export class RewardIssuanceService {
       issuance.status = RewardIssuanceStatus.REDEEMED;
       issuance.redeemed_at = new Date();
       issuance.committed_at = new Date();
+      const providerBacked =
+        issuance.fulfilment_provider != null &&
+        issuance.fulfilment_provider !== FulfilmentProvider.NONE;
+      if (
+        providerBacked ||
+        issuance.fulfilment_ref ||
+        issuance.fulfilment_code
+      ) {
+        issuance.fulfilment_status = FulfilmentStatus.DELIVERED;
+        issuance.fulfilled_at = issuance.fulfilled_at ?? new Date();
+      }
       issuance.metadata = {
         ...(issuance.metadata || {}),
         mallOrderRef: dto.orderRef ?? issuance.reservation_ref ?? null,
         commitNote: dto.note ?? null,
       };
       await repo.save(issuance);
-      return { alreadyCommitted: false, dto: this.toDto(issuance) };
+      return {
+        alreadyCommitted: false,
+        dto: this.toDto(issuance),
+        issuerClientId: issuance.issuer_client_id ?? null,
+      };
     });
 
     if (!result.alreadyCommitted) {
-      // Emit `reward.redeemed` to the caller (mall updates its mirror).
-      await this.notifier.notify(
-        callerClientId,
-        PartnerRewardEvent.REDEEMED,
-        result.dto,
+      // Both the peer that consumed the reward (mall) and the peer that issued
+      // it (e.g. FundOrDonate) need the lifecycle event so their mirrors stay
+      // accurate. De-duplicate when the caller is also the issuer.
+      const targets = new Set(
+        [callerClientId, result.issuerClientId].filter(
+          (target): target is string => Boolean(target),
+        ),
       );
+      for (const target of targets) {
+        await this.notifier.notify(
+          target,
+          PartnerRewardEvent.REDEEMED,
+          result.dto,
+        );
+      }
     }
 
     return result.dto;
@@ -917,12 +972,23 @@ export class RewardIssuanceService {
 
     issuance.status = RewardIssuanceStatus.REDEEMED;
     issuance.redeemed_at = new Date();
-    if (dto.note) {
-      issuance.metadata = {
-        ...(issuance.metadata || {}),
-        redeemNote: dto.note,
-      };
+    // A provider-backed issuance that has been delivered (Mall instrument or
+    // Central grant) is DELIVERED once redeemed. Legacy rows may still carry
+    // the column default (NOT_REQUIRED), so key off the attachment instead.
+    const providerBacked =
+      issuance.fulfilment_provider != null &&
+      issuance.fulfilment_provider !== FulfilmentProvider.NONE;
+    if (providerBacked || issuance.fulfilment_ref || issuance.fulfilment_code) {
+      issuance.fulfilment_status = FulfilmentStatus.DELIVERED;
+      issuance.fulfilled_at = issuance.fulfilled_at ?? new Date();
     }
+    issuance.metadata = {
+      ...(issuance.metadata || {}),
+      ...(dto.note ? { redeemNote: dto.note } : {}),
+      ...(dto.instrumentType
+        ? { redeemedInstrumentType: dto.instrumentType }
+        : {}),
+    };
     await this.issuanceRepository.save(issuance);
   }
 
@@ -960,8 +1026,21 @@ export class RewardIssuanceService {
       );
     }
 
+    // Best-effort provider revocation. Failures are queued by the fulfilment
+    // service so the local ledger can still move to REVOKED immediately.
+    if (issuance.fulfilment_ref || issuance.fulfilment_code) {
+      try {
+        await this.fulfilment.revoke(issuance.id, dto.reason);
+      } catch (err) {
+        this.logger.warn(
+          `Provider revocation deferred for issuance ${issuance.id}: ${(err as Error).message}`,
+        );
+      }
+    }
+
     issuance.status = RewardIssuanceStatus.REVOKED;
     issuance.revoked_at = new Date();
+    issuance.fulfilment_status = FulfilmentStatus.REVOKED;
     issuance.metadata = {
       ...(issuance.metadata || {}),
       revokeReason: dto.reason || null,
@@ -1095,6 +1174,73 @@ export class RewardIssuanceService {
       },
       relations: ["reward"],
     });
+  }
+
+  /**
+   * Gifted rewards follow the audience matrix derived from the reward's
+   * fulfilment kind:
+   *  - `CENTRAL_*` may only be gifted to a business (Central is business-scoped).
+   *  - Mall/other rewards may only be gifted to a participant.
+   *
+   * A consumer receiving a Central reward is rejected explicitly rather than
+   * silently producing a failed fulfilment.
+   */
+  private assertGiftRecipientEligible(
+    reward: Reward,
+    resolved: { userType: string } | null,
+  ): void {
+    if (!resolved) {
+      throw new BadRequestException(
+        "RECIPIENT_IDENTITY_UNRESOLVED: the recipient does not resolve to an MCOM Rewards account",
+      );
+    }
+
+    const central = this.isCentralFulfilment(reward);
+    const mall = this.isMallFulfilment(reward);
+    const audience = String(reward?.audience ?? "").toLowerCase();
+    const consumerAllowed = !central && audience !== "business";
+    const businessAllowed =
+      (central || mall) && audience !== "consumer";
+
+    if (resolved.userType === "Participant" && !consumerAllowed) {
+      throw new BadRequestException(
+        "INELIGIBLE_AUDIENCE: Central membership, access pass and coupon rewards can only be gifted to a business recipient",
+      );
+    }
+    if (resolved.userType === "Business" && !businessAllowed) {
+      throw new BadRequestException(
+        "INELIGIBLE_AUDIENCE: this reward is only available to consumer recipients",
+      );
+    }
+    if (
+      resolved.userType !== "Participant" &&
+      resolved.userType !== "Business"
+    ) {
+      throw new BadRequestException(
+        `INELIGIBLE_AUDIENCE: unsupported recipient type "${resolved.userType}"`,
+      );
+    }
+  }
+
+  private isCentralFulfilment(reward: Reward): boolean {
+    const kind = reward?.fulfilment_kind;
+    if (kind) return String(kind).startsWith("CENTRAL_");
+    return String(reward?.fulfilment_provider ?? "") === "CENTRAL";
+  }
+
+  private isMallFulfilment(reward: Reward): boolean {
+    const kind = reward?.fulfilment_kind;
+    if (kind) return String(kind).startsWith("MALL_");
+    const provider = String(reward?.fulfilment_provider ?? "");
+    if (provider) return provider === "MALL";
+    // Legacy catalogue rewards are materialised as Mall instruments by the
+    // fulfilment orchestrator, so their runtime audience matches Mall.
+    return [
+      RewardType.GIFT_CARD,
+      RewardType.VOUCHER,
+      RewardType.COUPON,
+      RewardType.MALL_DISCOUNT,
+    ].includes(reward.reward_type as RewardType);
   }
 
   private async resolveRecipient(
@@ -1440,45 +1586,13 @@ export class RewardIssuanceService {
       case RewardType.VOUCHER:
       case RewardType.GIFT_CARD:
       case RewardType.COUPON: {
-        issuance.code = `${CODE_PREFIX}-${nanoid(10).toUpperCase()}`;
-
-        try {
-          // Pass the rewards-generated code so both apps show one code; store
-          // the mall instrument id as the mall reference (handbook §13).
-          const mallPayload = {
-            amount: Number(ctx.value) || 0,
-            recipientEmail: issuance.recipient_email,
-            recipientName: issuance.recipient_name,
-            message: ctx.description,
-            businessName: "MCOM Rewards",
-            code: issuance.code,
-            expiresAt: issuance.expires_at
-              ? new Date(issuance.expires_at).toISOString()
-              : undefined,
-          };
-          let mallResponse: MallInstrument;
-          if (ctx.rewardType === RewardType.GIFT_CARD) {
-            mallResponse =
-              await this.mallIntegration.createGiftCard(mallPayload);
-          } else if (ctx.rewardType === RewardType.COUPON) {
-            mallResponse = await this.mallIntegration.createCoupon(mallPayload);
-          } else {
-            mallResponse =
-              await this.mallIntegration.createVoucher(mallPayload);
-          }
-          // Keep the shared code the mall actually persisted (idempotent on it).
-          if (mallResponse?.code) {
-            issuance.code = mallResponse.code;
-          }
-          issuance.mall_reference =
-            mallResponse?.id ?? this.extractMallReference(mallResponse);
-        } catch (err) {
-          this.logger.warn(
-            `Mall delivery skipped for issuance ${issuance.id}: ${(err as Error).message}`,
-          );
-        }
-
-        await this.issuanceRepository.save(issuance);
+        // The fulfilment orchestrator resolves the provider attachment (Mall
+        // instrument or Central entitlement) and records the outcome. Legacy
+        // rewards without an explicit attachment fall back to a Mall
+        // instrument so existing behaviour is preserved.
+        issuance.code =
+          issuance.code || `${CODE_PREFIX}-${nanoid(10).toUpperCase()}`;
+        await this.fulfilment.fulfil(issuance);
         return;
       }
 
@@ -1504,6 +1618,81 @@ export class RewardIssuanceService {
     const candidate =
       response.id ?? response.code ?? response.reference ?? response.data?.id;
     return candidate ? String(candidate) : null;
+  }
+
+  /**
+   * Build `metadata.mallTargets` for a catalogue reward from its fulfilment
+   * config. This is the path used by admin-created (`MCOM_VAULT`) Mall
+   * discounts: without it the issuance never appears in Mall's
+   * `/rewards/eligible`.
+   */
+  private buildCatalogueMallTargets(
+    reward: Reward | null,
+  ): Record<string, any> | null {
+    if (!reward) return null;
+    if (reward.fulfilment_kind !== FulfilmentKind.MALL_DISCOUNT) return null;
+    return this.buildMallTargetsFromConfig(
+      reward.fulfilment_config,
+      reward.fulfilment_business_ref ?? null,
+    );
+  }
+
+  /**
+   * Shared Mall-target builder. Reads the provider-neutral fulfilment config
+   * shape used by both catalogue rewards and business rewards:
+   * `{ scope, value: { discountType, discountValue, maxDiscount, minSpend } }`.
+   */
+  private buildMallTargetsFromConfig(
+    config: Record<string, any> | null | undefined,
+    fallbackBusinessId: string | null,
+  ): Record<string, any> | null {
+    if (!config || typeof config !== "object") return null;
+
+    const value = (config.value ?? {}) as Record<string, any>;
+    const discountValue = Number(value.discountValue);
+    const rawType = String(value.discountType ?? "").toLowerCase();
+    const discountType =
+      rawType === "percentage"
+        ? "percentage"
+        : rawType === "fixed"
+          ? "fixed"
+          : null;
+
+    if (!discountType || !Number.isFinite(discountValue) || discountValue <= 0) {
+      return null;
+    }
+
+    const scope = (config.scope ?? {}) as Record<string, any>;
+    const mode = String(scope.mode ?? "NO_SCOPE").toUpperCase();
+    const productIds = Array.isArray(scope.productIds)
+      ? scope.productIds.map(String)
+      : [];
+    const serviceIds = Array.isArray(scope.serviceIds)
+      ? scope.serviceIds.map(String)
+      : [];
+
+    const targets: Record<string, any> = {
+      scope:
+        mode === "ITEMS" || mode === "LISTINGS" ? "SPECIFIC" : "ALL",
+      discountType,
+      discountValue,
+    };
+
+    const businessId = config.businessId ?? fallbackBusinessId ?? null;
+    if (businessId) targets.businessId = String(businessId);
+    if (config.businessMcomUserId) {
+      targets.businessMcomUserId = String(config.businessMcomUserId);
+    }
+    if (productIds.length) targets.productIds = productIds;
+    if (serviceIds.length) targets.serviceIds = serviceIds;
+    if (value.maxDiscount !== undefined && value.maxDiscount !== null) {
+      targets.maxDiscount = Number(value.maxDiscount);
+    }
+    if (value.minSpend !== undefined && value.minSpend !== null) {
+      targets.minSpend = Number(value.minSpend);
+    }
+
+    return targets;
   }
 
   /**
@@ -1574,9 +1763,22 @@ export class RewardIssuanceService {
       code: issuance.code,
       status: issuance.status,
       rewardType: issuance.reward_type,
-      value: Number(issuance.value),
+      // Code/balance instruments carry their monetary value in the fulfilment
+      // config; fall back to it so callers never display £0.00 for a £20 reward.
+      value:
+        Number(issuance.value) ||
+        Number((issuance.metadata as any)?.fulfilment?.amount) ||
+        0,
       pointsAwarded: issuance.points_awarded,
       mallReference: issuance.mall_reference,
+      fulfilmentProvider: issuance.fulfilment_provider ?? null,
+      fulfilmentKind: issuance.fulfilment_kind ?? null,
+      fulfilmentStatus: issuance.fulfilment_status ?? null,
+      fulfilmentRef: issuance.fulfilment_ref ?? null,
+      fulfilmentCode: issuance.fulfilment_code ?? null,
+      fulfilmentError: issuance.fulfilment_error ?? null,
+      centralReference: issuance.central_reference ?? null,
+      fulfilledAt: issuance.fulfilled_at ?? null,
       quantity: issuance.quantity,
       expiresAt: issuance.expires_at,
       redeemedAt: issuance.redeemed_at,

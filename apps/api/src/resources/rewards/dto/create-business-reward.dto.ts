@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   IsNumber,
   IsOptional,
@@ -7,12 +8,16 @@ import {
   IsEnum,
   IsBoolean,
   IsArray,
+  IsIn,
+  Min,
+  ValidateNested,
 } from "class-validator";
 import { RewardStatus } from "../enums/reward-status.enum";
 import { RewardType } from "../enums/reward-type.enum";
 import { ImageSourceType } from "../enums/image-source-type.enum";
 import { RewardSource } from "../enums/reward-source.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
+import { RewardFulfilmentConfigDto } from "../../reward-fulfilment/dto/reward-fulfilment.dto";
 
 export class CreateBusinessRewardDto {
   @ApiProperty({
@@ -29,6 +34,7 @@ export class CreateBusinessRewardDto {
     required: false,
   })
   @IsNumber()
+  @Min(0)
   @IsOptional()
   points_required?: number;
 
@@ -38,6 +44,7 @@ export class CreateBusinessRewardDto {
     required: false,
   })
   @IsNumber()
+  @Min(0)
   @IsOptional()
   stamps_required?: number;
   @ApiProperty({
@@ -129,8 +136,9 @@ export class CreateBusinessRewardDto {
     description: "The type of the mall reward",
     enum: ["VOUCHER", "GIFT_CARD", "COUPON"],
     example: "VOUCHER",
+    required: false,
   })
-  @IsString()
+  @IsIn(["VOUCHER", "GIFT_CARD", "COUPON"])
   @IsOptional()
   mall_reward_type?: "VOUCHER" | "GIFT_CARD" | "COUPON";
 
@@ -199,7 +207,7 @@ export class CreateBusinessRewardDto {
   // ─── Mall discount targeting ────────────────────────────────────────────────
 
   @ApiProperty({ enum: ["SPECIFIC", "ALL"], required: false })
-  @IsString()
+  @IsIn(["SPECIFIC", "ALL"])
   @IsOptional()
   mall_target_scope?: "SPECIFIC" | "ALL";
 
@@ -216,7 +224,7 @@ export class CreateBusinessRewardDto {
   mall_target_service_ids?: string[];
 
   @ApiProperty({ enum: ["percentage", "fixed"], required: false })
-  @IsString()
+  @IsIn(["percentage", "fixed"])
   @IsOptional()
   mall_discount_type?: "percentage" | "fixed";
 
@@ -234,4 +242,15 @@ export class CreateBusinessRewardDto {
   @IsNumber()
   @IsOptional()
   mall_min_spend?: number;
+
+  @ApiProperty({
+    description:
+      "Ecosystem fulfilment attachment (Mall instrument or Central entitlement)",
+    type: () => RewardFulfilmentConfigDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RewardFulfilmentConfigDto)
+  fulfilment?: RewardFulfilmentConfigDto;
 }

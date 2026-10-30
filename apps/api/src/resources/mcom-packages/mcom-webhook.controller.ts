@@ -26,6 +26,7 @@ import { Plan } from "../plans/entities/plan.entity";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
 import { McomCentralService } from "../sso/mcom-central.service";
 import { EntitlementSyncService } from "../sso/entitlement-sync.service";
+import { RewardFulfilmentService } from "../reward-fulfilment/reward-fulfilment.service";
 
 @ApiTags("MCOM Webhooks")
 @Controller("mcom")
@@ -42,6 +43,7 @@ export class McomWebhookController {
     private readonly planSubscriptionService: PlanSubscriptionService,
     private readonly mcomCentralService: McomCentralService,
     private readonly entitlementSyncService: EntitlementSyncService,
+    private readonly rewardFulfilment: RewardFulfilmentService,
   ) {}
 
   private verifySignature(
@@ -150,6 +152,10 @@ export class McomWebhookController {
         break;
 
       default:
+        if (typeof event === "string" && event.startsWith("central.")) {
+          await this.rewardFulfilment.handleCentralEvent(event, data);
+          break;
+        }
         this.logger.log(`Unhandled webhook event: ${event}`);
         break;
     }

@@ -23,6 +23,8 @@ import { PointPackageModule } from "../point-package/point-package.module";
 import { StampModule } from "../stamp/stamp.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { MallIntegrationModule } from "../mall-integration/mall-integration.module";
+import { RewardFulfilmentModule } from "../reward-fulfilment/reward-fulfilment.module";
+import { RewardIssuance } from "../partner-rewards/entities/reward-issuance.entity";
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { MallIntegrationModule } from "../mall-integration/mall-integration.modu
       BusinessCampaign,
       TransactionCode,
       Business,
+      RewardIssuance,
     ]),
     MailModule,
     forwardRef(() => CapabilityModule),
@@ -46,6 +49,7 @@ import { MallIntegrationModule } from "../mall-integration/mall-integration.modu
     forwardRef(() => StampModule),
     WalletModule,
     MallIntegrationModule,
+    RewardFulfilmentModule,
   ],
   providers: [
     RedemptionService,

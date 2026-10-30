@@ -13,6 +13,7 @@ import {
 import Image from 'next/image';
 import { MoreVertical, Edit, Trash2, Gift, Star, Stamp, Users } from 'lucide-react';
 import { BusinessReward } from '@/services/business-reward/types';
+import type { RewardCardDetails } from './reward-details';
 
 interface PointRewardCardProps {
     reward: BusinessReward;
@@ -24,6 +25,7 @@ interface PointRewardCardProps {
     onResume?: (id: string) => void;
     onDeactivate?: (id: string) => void;
     variant?: 'standard' | 'stamp-card' | 'hybrid';
+    details?: RewardCardDetails;
 }
 
 export default function PointRewardCard({
@@ -36,6 +38,7 @@ export default function PointRewardCard({
     onResume,
     onDeactivate,
     variant = 'standard',
+    details,
 }: PointRewardCardProps) {
     const isStampCard = variant === 'stamp-card';
     const isHybrid = variant === 'hybrid';
@@ -101,7 +104,7 @@ export default function PointRewardCard({
                             <CardTitle className="text-base line-clamp-1">
                                 {reward.title}
                             </CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                 <Badge
                                     variant={!reward.disabled ? 'default' : 'secondary'}
                                     className={!reward.disabled
@@ -111,16 +114,9 @@ export default function PointRewardCard({
                                 >
                                     {!reward.disabled ? 'Active' : 'Disabled'}
                                 </Badge>
-                                {(reward.is_points_enabled || reward.isPointsEnabled) && (
-                                    <Badge variant="outline" className="text-blue-600 border-blue-300 text-xs">
-                                        <Gift className="h-3 w-3 mr-1" />
-                                        Points
-                                    </Badge>
-                                )}
-                                {(reward.is_stamps_enabled || reward.isStampsEnabled) && (
-                                    <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
-                                        <Stamp className="h-3 w-3 mr-1" />
-                                        Stamps
+                                {details && (
+                                    <Badge variant="outline" className={`text-xs ${details.typeClass}`}>
+                                        {details.typeLabel}
                                     </Badge>
                                 )}
                             </div>
@@ -213,9 +209,53 @@ export default function PointRewardCard({
                     </div>
                 )}
 
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2.5 line-clamp-2">
                     {reward.description}
                 </p>
+
+                {/* Reward details (type, Mall template, access, value) */}
+                {details &&
+                    (details.templateLabel ||
+                        details.accessLabel ||
+                        details.valueLabel) && (
+                        <div className="mb-3 space-y-1 rounded-lg border border-gray-100 bg-gray-50/70 px-2.5 py-1.5 dark:border-gray-800 dark:bg-gray-800/40">
+                            {details.templateLabel && (
+                                <div className="flex items-start justify-between gap-2 text-[11px] leading-4">
+                                    <span className="shrink-0 text-gray-400">Template</span>
+                                    <span
+                                        className="min-w-0 truncate text-right font-medium text-gray-700 dark:text-gray-300"
+                                        title={details.templateLabel}
+                                    >
+                                        {details.templateLabel}
+                                    </span>
+                                </div>
+                            )}
+                            {details.accessLabel && (
+                                <div className="flex items-start justify-between gap-2 text-[11px] leading-4">
+                                    <span className="shrink-0 text-gray-400">Access</span>
+                                    <span
+                                        className="min-w-0 truncate text-right font-medium text-gray-700 dark:text-gray-300"
+                                        title={details.accessTitle ?? details.accessLabel}
+                                    >
+                                        {details.accessLabel}
+                                    </span>
+                                </div>
+                            )}
+                            {details.valueLabel && (
+                                <div className="flex items-start justify-between gap-2 text-[11px] leading-4">
+                                    <span className="shrink-0 text-gray-400">
+                                        {details.typeLabel === 'Mall Discount' ? 'Discount' : 'Value'}
+                                    </span>
+                                    <span
+                                        className="min-w-0 truncate text-right font-medium text-gray-700 dark:text-gray-300"
+                                        title={details.valueTitle ?? details.valueLabel}
+                                    >
+                                        {details.valueLabel}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-3">
@@ -302,25 +342,19 @@ export default function PointRewardCard({
 
 
 
-                {/* Additional Metrics */}
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                    <div className={`p-2.5 rounded-lg text-center border ${isStampCard ? 'bg-purple-50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800/30' : 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/30'}`}>
-                        <span className={`text-lg font-bold ${isStampCard ? 'text-purple-600 dark:text-purple-400' : 'text-purple-700 dark:text-purple-400'}`}>
-                            {reward.totalRedemptions ?? 0}
-                        </span>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-500 mt-0.5">Total Redemptions</p>
-                    </div>
-                    <div className={`p-2.5 rounded-lg text-center border ${isStampCard ? 'bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800/30'}`}>
-                        <span className={`text-lg font-bold ${isStampCard ? 'text-orange-600 dark:text-orange-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                            {reward.totalPointsRedeemed ?? 0}
-                        </span>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-orange-500 mt-0.5">Points Redeemed</p>
-                    </div>
+                {/* Redemption metrics (compact, keeps the card height stable) */}
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-2 text-[10px] font-semibold uppercase tracking-wider dark:border-gray-800">
+                    <span className="text-purple-500 dark:text-purple-400">
+                        {reward.totalRedemptions ?? 0} redeemed
+                    </span>
+                    <span className="text-orange-500 dark:text-orange-400">
+                        {reward.totalPointsRedeemed ?? 0} pts used
+                    </span>
                 </div>
 
                 {/* View Customers / Award Footer */}
                 {(onView || (isStampCard && onAwardStamp)) && (
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                         {onView && (
                             <Button
                                 variant="ghost"

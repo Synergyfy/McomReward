@@ -189,6 +189,7 @@ export default function PartnerRewardsView({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {filtered.map((reward) => {
           const mallTargets = getMallTargets(reward);
+          const rewardCode = reward.fulfilmentCode || reward.code;
           return (
           <Card key={reward.id} className="overflow-hidden">
             <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -220,22 +221,42 @@ export default function PartnerRewardsView({
                 </div>
               )}
 
-              {reward.status === 'REDEEMED' && reward.code && (
-                <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2">
-                  <span className="font-mono text-sm text-green-800">
-                    {reward.code}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyCode(reward.code!)}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
+              {rewardCode && (
+                <div className="space-y-2 rounded-lg bg-green-50 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm text-green-800">
+                      {rewardCode}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyCode(rewardCode)}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {reward.deepLink && (
+                    <a
+                      href={reward.deepLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex w-full items-center justify-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-medium text-white hover:bg-green-800"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Use this reward
+                    </a>
+                  )}
                 </div>
               )}
 
-              {reward.status === 'ISSUED' && !mallTargets && (
+              {reward.fulfilmentStatus === 'PENDING_IDENTITY' && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  We could not link this reward to your MCOM account yet. Please
+                  contact support so we can deliver it.
+                </p>
+              )}
+
+              {reward.status === 'ISSUED' && !mallTargets && !rewardCode && (
                 <Button
                   onClick={() => handleClaim(reward)}
                   disabled={claimReward.isPending}

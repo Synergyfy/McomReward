@@ -72,6 +72,7 @@ import { AccessPassModule } from "./resources/access-passes/access-pass.module";
 import { BusinessAssetsModule } from "./resources/business-assets/business-assets.module";
 import { ServiceMeshModule } from "./resources/service-mesh/service-mesh.module";
 import { PartnerRewardsModule } from "./resources/partner-rewards/partner-rewards.module";
+import { RewardFulfilmentModule } from "./resources/reward-fulfilment/reward-fulfilment.module";
 
 @Module({
   imports: [
@@ -146,6 +147,7 @@ import { PartnerRewardsModule } from "./resources/partner-rewards/partner-reward
     BusinessAssetsModule,
     ServiceMeshModule,
     PartnerRewardsModule,
+    RewardFulfilmentModule,
   ],
   controllers: [AppController],
   providers: [

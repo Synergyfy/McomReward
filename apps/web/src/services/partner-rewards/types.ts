@@ -75,6 +75,15 @@ export interface PartnerReward {
   value: number;
   pointsAwarded: number | null;
   mallReference: string | null;
+  fulfilmentProvider?: 'NONE' | 'MALL' | 'CENTRAL' | null;
+  fulfilmentKind?: string | null;
+  fulfilmentStatus?: string | null;
+  fulfilmentRef?: string | null;
+  fulfilmentCode?: string | null;
+  fulfilmentError?: string | null;
+  centralReference?: string | null;
+  fulfilledAt?: string | null;
+  deepLink?: string | null;
   quantity: number;
   expiresAt: string | null;
   redeemedAt: string | null;

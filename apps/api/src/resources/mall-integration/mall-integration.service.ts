@@ -50,6 +50,20 @@ export interface MallInstrument {
   type: "voucher" | "gift_card" | "coupon";
   id: string;
   code: string;
+  issuanceId?: string | null;
+  status?: string | null;
+  scope?: Record<string, any> | null;
+  balance?: number | null;
+  currency?: string | null;
+  expiresAt?: string | null;
+  [key: string]: any;
+}
+
+export interface MallInstrumentScope {
+  mode: "ALL" | "LISTINGS" | "ITEMS" | "NO_SCOPE";
+  listingIds?: string[];
+  productIds?: string[];
+  serviceIds?: string[];
 }
 
 export interface CreateInstrumentPayload {
@@ -62,6 +76,35 @@ export interface CreateInstrumentPayload {
   code?: string;
   /** Coupons only; vouchers/gift cards default to +1 year. */
   expiresAt?: string;
+  /** Rewards issuance id — provider idempotency + consumption callbacks. */
+  issuanceId?: string;
+  /** Mall gift-card template / voucher product / coupon template. */
+  templateId?: string;
+  /** Mall business the instrument is bound to. */
+  businessId?: string;
+  /** Product/service scope (partner concept, enforced by Mall). */
+  scope?: MallInstrumentScope;
+  metadata?: Record<string, any>;
+}
+
+export interface MallTemplate {
+  id: string;
+  kind: string;
+  name?: string;
+  title?: string;
+  description?: string | null;
+  [key: string]: any;
+}
+
+export interface MallPagedResult<T = any> {
+  data: T[];
+  meta: {
+    itemCount: number;
+    totalItems: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
 
 /**
@@ -155,6 +198,164 @@ export class MallIntegrationService {
     );
   }
 
+  // ─── Templates (mesh, mall:read) ───────────────────────────────────────────
+
+  async listTemplates(
+    kind: "gift-cards" | "vouchers" | "coupons",
+    query: {
+      businessId?: string;
+      mcomUserId?: string;
+      email?: string;
+      includePlatform?: boolean;
+      includeInactive?: boolean;
+    } = {},
+  ): Promise<{ business?: any; templates: MallTemplate[] }> {
+    const qs = new URLSearchParams();
+    if (query.businessId) qs.set("businessId", query.businessId);
+    if (query.mcomUserId) qs.set("mcomUserId", query.mcomUserId);
+    if (query.email) qs.set("email", query.email);
+    if (query.includePlatform) qs.set("includePlatform", "true");
+    if (query.includeInactive) qs.set("includeInactive", "true");
+
+    return this.serviceMesh.callPeerByClientId(
+      this.mallClientId,
+      `/api/v1/partner/templates/${kind}?${qs.toString()}`,
+      { method: "GET", timeout: 8_000 },
+      SERVICE_SCOPE_MALL_READ,
+    );
+  }
+
+  async getTemplate(
+    kind: "gift-cards" | "vouchers" | "coupons",
+    id: string,
+    query: Record<string, string | undefined> = {},
+  ): Promise<any> {
+    const qs = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        qs.set(key, String(value));
+      }
+    });
+    return this.serviceMesh.callPeerByClientId(
+      this.mallClientId,
+      `/api/v1/partner/templates/${kind}/${encodeURIComponent(id)}?${qs.toString()}`,
+      { method: "GET", timeout: 8_000 },
+      SERVICE_SCOPE_MALL_READ,
+    );
+  }
+
+  // ─── Global catalogue (mesh, mall:read; platform callers) ──────────────────
+
+  listGlobalListings(query: Record<string, any> = {}): Promise<MallPagedResult> {
+    return this.globalCatalogRead("/api/v1/partner/catalog/listings", query);
+  }
+
+  getGlobalListing(id: string): Promise<any> {
+    return this.serviceMesh.callPeerByClientId(
+      this.mallClientId,
+      `/api/v1/partner/catalog/listings/${encodeURIComponent(id)}`,
+      { method: "GET", timeout: 8_000 },
+      SERVICE_SCOPE_MALL_READ,
+    );
+  }
+
+  listGlobalProducts(query: Record<string, any> = {}): Promise<MallPagedResult> {
+    return this.globalCatalogRead("/api/v1/partner/catalog/products", query);
+  }
+
+  listGlobalServices(query: Record<string, any> = {}): Promise<MallPagedResult> {
+    return this.globalCatalogRead("/api/v1/partner/catalog/services", query);
+  }
+
+  private globalCatalogRead(
+    path: string,
+    query: Record<string, any>,
+  ): Promise<MallPagedResult> {
+    const qs = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        qs.set(key, String(value));
+      }
+    });
+    return this.serviceMesh.callPeerByClientId(
+      this.mallClientId,
+      `${path}?${qs.toString()}`,
+      { method: "GET", timeout: 10_000 },
+      SERVICE_SCOPE_MALL_READ,
+    );
+  }
+
+  // ─── Instrument status / revocation (mesh) ─────────────────────────────────
+
+  getInstrumentStatus(
+    kind: "gift_card" | "voucher" | "coupon",
+    code: string,
+  ): Promise<MallInstrument> {
+    const path = this.instrumentPath(kind);
+    return this.serviceMesh.callPeerByClientId<MallInstrument>(
+      this.mallClientId,
+      `/api/v1/partner/instruments/${path}/${encodeURIComponent(code)}`,
+      { method: "GET", timeout: 8_000 },
+      SERVICE_SCOPE_MALL_READ,
+    );
+  }
+
+  revokeInstrument(
+    kind: "gift_card" | "voucher" | "coupon",
+    code: string,
+    note?: string,
+  ): Promise<any> {
+    const path = this.instrumentPath(kind);
+    return this.serviceMesh.callPeerByClientId(
+      this.mallClientId,
+      `/api/v1/partner/instruments/${path}/${encodeURIComponent(code)}/revoke`,
+      { method: "POST", data: { note }, timeout: 10_000 },
+      SERVICE_SCOPE_MALL_WRITE,
+    );
+  }
+
+  getMallFrontendUrl(): string {
+    const configured =
+      this.configService.get<string>("MALL_WEB_URL") ||
+      this.configService.get<string>("MALL_FRONTEND_URL") ||
+      this.configService.get<string>("MALL_APP_URL");
+    if (configured?.trim()) return configured.replace(/\/+$/, "");
+
+    const isProduction =
+      this.configService.get<string>("NODE_ENV") === "production" ||
+      process.env.NODE_ENV === "production";
+    if (!isProduction) {
+      throw new Error(
+        "MALL_WEB_URL (or MALL_FRONTEND_URL/MALL_APP_URL) must be configured for Mall deep links",
+      );
+    }
+
+    // Last resort only: never silently emit a non-Mall host in development.
+    const central =
+      this.configService.get<string>("MCOM_CENTRAL_WEB_URL") ||
+      this.configService.get<string>("CENTRAL_WEB_URL");
+    if (central?.trim()) {
+      this.logger.warn(
+        "Mall deep links falling back to the Central web URL; set MALL_WEB_URL",
+      );
+      return central.replace(/\/+$/, "");
+    }
+    throw new Error(
+      "MALL_WEB_URL (or MALL_FRONTEND_URL/MALL_APP_URL) must be configured for Mall deep links",
+    );
+  }
+
+  private instrumentPath(kind: "gift_card" | "voucher" | "coupon"): string {
+    switch (kind) {
+      case "gift_card":
+        return "gift-cards";
+      case "voucher":
+        return "vouchers";
+      default:
+        return "coupons";
+    }
+  }
+
   // ─── Instruments (mesh, mall:write) ─────────────────────────────────────────
 
   async createVoucher(
@@ -187,6 +388,11 @@ export class MallIntegrationService {
       businessName: payload.businessName,
       code: payload.code,
       expiresAt: payload.expiresAt,
+      issuanceId: payload.issuanceId,
+      templateId: payload.templateId,
+      businessId: payload.businessId,
+      scope: payload.scope,
+      metadata: payload.metadata,
     };
 
     try {

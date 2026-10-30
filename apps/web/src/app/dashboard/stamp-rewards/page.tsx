@@ -42,11 +42,18 @@ import {
     useCreateBusinessReward,
     useGetBusinessRewards,
     useUpdateBusinessReward,
-    useRemoveBusinessReward
+    useRemoveBusinessReward,
+    useGetMallCatalog,
+    useGetBusinessMallTemplates
 } from '@/services/business-reward/hooks';
 import { useGetBusinessTierUsage } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { Reward, BusinessReward, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
+import { buildBusinessRewardPayload } from '@/services/business-reward/payload';
+import {
+    getRewardCardDetails,
+    RewardLookups,
+} from '@/components/dashboard/rewards/reward-details';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -106,6 +113,91 @@ export default function BusinessStampRewardsPage() {
     const plan = (subscription?.tier?.name || 'starter').toLowerCase();
 
     const pointRewards = pointRewardsData?.data || [];
+
+    // ─── Mall details shown on each reward card ────────────────────────────
+    // Only fetch the lookups actually needed by the rewards on this page.
+    const templateKinds = useMemo(() => {
+        let giftCards = false;
+        let vouchers = false;
+        let coupons = false;
+
+        pointRewards.forEach((reward) => {
+            const kind = reward.fulfilmentKind ?? reward.fulfilment_kind;
+            const mallType = reward.mallRewardType ?? reward.mall_reward_type;
+            const hasTemplate = Boolean(
+                reward.fulfilmentTemplateId ?? reward.fulfilment_template_id,
+            );
+            if (!hasTemplate) return;
+
+            if (kind === 'MALL_GIFT_CARD' || mallType === 'GIFT_CARD') {
+                giftCards = true;
+            } else if (kind === 'MALL_COUPON' || mallType === 'COUPON') {
+                coupons = true;
+            } else {
+                vouchers = true;
+            }
+        });
+
+        return { giftCards, vouchers, coupons };
+    }, [pointRewards]);
+
+    const needsMallCatalog = useMemo(
+        () =>
+            pointRewards.some((reward) => {
+                const config =
+                    reward.fulfilmentConfig ?? reward.fulfilment_config;
+                return Boolean(
+                    config?.scope?.productIds?.length ||
+                        config?.scope?.serviceIds?.length ||
+                        reward.mallTargetProductIds?.length ||
+                        reward.mallTargetServiceIds?.length ||
+                        reward.mall_target_product_ids?.length ||
+                        reward.mall_target_service_ids?.length,
+                );
+            }),
+        [pointRewards],
+    );
+
+    const { data: giftCardTemplates } = useGetBusinessMallTemplates(
+        'gift-cards',
+        templateKinds.giftCards,
+    );
+    const { data: voucherTemplates } = useGetBusinessMallTemplates(
+        'vouchers',
+        templateKinds.vouchers,
+    );
+    const { data: couponTemplates } = useGetBusinessMallTemplates(
+        'coupons',
+        templateKinds.coupons,
+    );
+    const { data: mallCatalog } = useGetMallCatalog(needsMallCatalog);
+
+    const rewardLookups = useMemo<RewardLookups>(() => {
+        const templateNames: Record<string, string> = {};
+        [giftCardTemplates, voucherTemplates, couponTemplates].forEach(
+            (response) => {
+                (response?.templates ?? []).forEach((template) => {
+                    if (!template.id) return;
+                    templateNames[template.id] =
+                        template.name ||
+                        template.title ||
+                        `Template ${template.id.slice(0, 8)}`;
+                });
+            },
+        );
+
+        const productNames: Record<string, string> = {};
+        (mallCatalog?.products ?? []).forEach((product) => {
+            productNames[product.id] = product.title;
+        });
+
+        const serviceNames: Record<string, string> = {};
+        (mallCatalog?.services ?? []).forEach((service) => {
+            serviceNames[service.id] = service.name;
+        });
+
+        return { templateNames, productNames, serviceNames };
+    }, [giftCardTemplates, voucherTemplates, couponTemplates, mallCatalog]);
 
     // Combine counts for stats
     const totalActiveRewards = pointRewards.filter(r => !r.disabled).length;
@@ -248,6 +340,16 @@ export default function BusinessStampRewardsPage() {
                 businessReward.mallMaxDiscount ?? businessReward.mall_max_discount,
             mall_min_spend:
                 businessReward.mallMinSpend ?? businessReward.mall_min_spend,
+            fulfilmentProvider:
+                businessReward.fulfilmentProvider ?? businessReward.fulfilment_provider,
+            fulfilmentKind:
+                businessReward.fulfilmentKind ?? businessReward.fulfilment_kind,
+            fulfilmentConfig:
+                businessReward.fulfilmentConfig ?? businessReward.fulfilment_config,
+            fulfilmentTemplateId:
+                businessReward.fulfilmentTemplateId ?? businessReward.fulfilment_template_id,
+            fulfilmentBusinessRef:
+                businessReward.fulfilmentBusinessRef ?? businessReward.fulfilment_business_ref,
             image_source_type: businessReward.image_source_type,
             stamp_emoji: businessReward.stamp_emoji,
             emoji: businessReward.emoji,
@@ -345,32 +447,7 @@ export default function BusinessStampRewardsPage() {
                 // Update existing reward
                 updateBusinessReward({
                     rewardId: editingBusinessRewardId,
-                    payload: {
-                        title: rewardData.title,
-                        description: rewardData.description,
-                        points_required: rewardData.points_required ?? rewardData.pointsRequired ?? 0,
-                        stamps_required: rewardData.stamps_required ?? rewardData.stampsRequired ?? 0,
-                        is_points_enabled: rewardData.is_points_enabled,
-                        is_stamps_enabled: rewardData.is_stamps_enabled,
-                        image: rewardData.image,
-                        gallery: rewardData.gallery,
-                        quantity: rewardData.quantity,
-                        disabled: rewardData.disabled,
-                        reward_type: rewardData.rewardType ?? rewardData.reward_type ?? 'Voucher',
-                        is_mall_integrated: rewardData.is_mall_integrated,
-                        mall_reward_type: rewardData.mall_reward_type,
-                        mall_reward_value: rewardData.mall_reward_value,
-                        mall_target_scope: rewardData.mall_target_scope,
-                        mall_target_product_ids: rewardData.mall_target_product_ids,
-                        mall_target_service_ids: rewardData.mall_target_service_ids,
-                        mall_discount_type: rewardData.mall_discount_type,
-                        mall_discount_value: rewardData.mall_discount_value,
-                        mall_max_discount: rewardData.mall_max_discount,
-                        mall_min_spend: rewardData.mall_min_spend,
-                        image_source_type: rewardData.image_source_type,
-                        stamp_emoji: rewardData.stamp_emoji,
-                        emoji: rewardData.emoji,
-                    },
+                    payload: buildBusinessRewardPayload(rewardData),
                 }, {
                     onSuccess: () => {
                         toast.success('Reward updated successfully');
@@ -395,34 +472,10 @@ export default function BusinessStampRewardsPage() {
                 });
             } else {
                 // Create new reward
-                const payload: CreateBusinessRewardDto = {
-                    title: rewardData.title,
-                    description: rewardData.description,
-                    points_required: rewardData.points_required ?? rewardData.pointsRequired ?? 0,
-                    stamps_required: rewardData.stamps_required ?? rewardData.stampsRequired ?? 0,
-                    is_points_enabled: rewardData.is_points_enabled,
-                    is_stamps_enabled: rewardData.is_stamps_enabled,
-                    image: rewardData.image,
-                    gallery: rewardData.gallery,
-                    quantity: rewardData.quantity,
-                    disabled: rewardData.disabled,
-                    reward_type: rewardData.rewardType ?? rewardData.reward_type ?? 'Voucher',
-                    is_mall_integrated: rewardData.is_mall_integrated,
-                    mall_reward_type: rewardData.mall_reward_type,
-                    mall_reward_value: rewardData.mall_reward_value,
-                    mall_target_scope: rewardData.mall_target_scope,
-                    mall_target_product_ids: rewardData.mall_target_product_ids,
-                    mall_target_service_ids: rewardData.mall_target_service_ids,
-                    mall_discount_type: rewardData.mall_discount_type,
-                    mall_discount_value: rewardData.mall_discount_value,
-                    mall_max_discount: rewardData.mall_max_discount,
-                    mall_min_spend: rewardData.mall_min_spend,
-                    image_source_type: rewardData.image_source_type,
-                    stamp_emoji: rewardData.stamp_emoji,
-                    emoji: rewardData.emoji,
+                const payload: CreateBusinessRewardDto = buildBusinessRewardPayload(rewardData, {
                     status: RewardStatus.ACTIVE,
-                    expiry_datetime: rewardData.expiry_datetime,
-                };
+                    includeExpiry: true,
+                });
 
                 createBusinessReward(payload).then(() => {
                     toast.success('Reward created successfully');
@@ -693,6 +746,7 @@ export default function BusinessStampRewardsPage() {
                                         <PointRewardCard
                                             key={reward.id}
                                             reward={reward}
+                                            details={getRewardCardDetails(reward, rewardLookups)}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
                                             onView={handleViewCustomers}
@@ -725,6 +779,7 @@ export default function BusinessStampRewardsPage() {
                                         <PointRewardCard
                                             key={reward.id}
                                             reward={reward}
+                                            details={getRewardCardDetails(reward, rewardLookups)}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
                                             onView={handleViewCustomers}
@@ -756,6 +811,7 @@ export default function BusinessStampRewardsPage() {
                                         <PointRewardCard
                                             key={reward.id}
                                             reward={reward}
+                                            details={getRewardCardDetails(reward, rewardLookups)}
                                             onEdit={handleEditPointReward}
                                             onDelete={handleDeletePointReward}
                                             onView={handleViewCustomers}

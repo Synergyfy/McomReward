@@ -51,6 +51,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import toast from 'react-hot-toast';
 import { useCreateReward, useUpdateReward } from '@/services/rewards/hook';
+import {
+    useAdminCentralAccessPlans,
+    useAdminCentralMemberships,
+    useAdminMallListings,
+    useAdminMallProducts,
+    useAdminMallServices,
+    useAdminMallTemplates,
+} from '@/services/reward-fulfilment/hook';
 import { useGetSectors } from '@/services/sectors/hook';
 import { useGetTiers } from '@/services/tiers/hook';
 import { RewardResponse, CreateRewardRequest } from '@/services/rewards/types';
@@ -140,6 +148,62 @@ export default function UnifiedRewardWizardModal({
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>('');
     const [rewardEmoji, setRewardEmoji] = useState('🎁');
 
+    // Step 1: Ecosystem fulfilment
+    const [fulfilmentProvider, setFulfilmentProvider] = useState<'NONE' | 'MALL' | 'CENTRAL'>('NONE');
+    const [fulfilmentKind, setFulfilmentKind] = useState<string>('MALL_VOUCHER');
+    const [fulfilmentBusinessId, setFulfilmentBusinessId] = useState('');
+    const [fulfilmentTemplateId, setFulfilmentTemplateId] = useState('');
+    const [fulfilmentScopeMode, setFulfilmentScopeMode] = useState<'ALL' | 'LISTINGS' | 'ITEMS'>('ALL');
+    const [fulfilmentListingIds, setFulfilmentListingIds] = useState<string[]>([]);
+    const [fulfilmentProductIds, setFulfilmentProductIds] = useState<string[]>([]);
+    const [fulfilmentServiceIds, setFulfilmentServiceIds] = useState<string[]>([]);
+    const [centralPlanId, setCentralPlanId] = useState('');
+    const [centralTier, setCentralTier] = useState('Standard');
+    const [centralDurationDays, setCentralDurationDays] = useState('');
+    const [centralDiscountType, setCentralDiscountType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
+    const [centralDiscountValue, setCentralDiscountValue] = useState('');
+    const [centralAppliesToAllAccess, setCentralAppliesToAllAccess] = useState(false);
+    const [centralAccessPlanIds, setCentralAccessPlanIds] = useState<string[]>([]);
+
+    const isMallFulfilment = fulfilmentProvider === 'MALL';
+    const isCentralMembership =
+        fulfilmentProvider === 'CENTRAL' && fulfilmentKind === 'CENTRAL_MEMBERSHIP';
+    const isCentralAccess =
+        fulfilmentProvider === 'CENTRAL' && fulfilmentKind === 'CENTRAL_ACCESS_PASS';
+    const mallTemplateKind: 'gift-cards' | 'vouchers' | 'coupons' =
+        fulfilmentKind === 'MALL_GIFT_CARD'
+            ? 'gift-cards'
+            : fulfilmentKind === 'MALL_COUPON'
+                ? 'coupons'
+                : 'vouchers';
+
+    const { data: centralMemberships = [] } =
+        useAdminCentralMemberships(isCentralMembership);
+    const { data: centralAccessPlans = [] } =
+        useAdminCentralAccessPlans(isCentralAccess);
+    const { data: mallListingsPage } = useAdminMallListings(
+        { limit: 100 },
+        isMallFulfilment,
+    );
+    const { data: mallProductsPage } = useAdminMallProducts(
+        { limit: 100 },
+        isMallFulfilment && fulfilmentScopeMode === 'ITEMS',
+    );
+    const { data: mallServicesPage } = useAdminMallServices(
+        { limit: 100 },
+        isMallFulfilment && fulfilmentScopeMode === 'ITEMS',
+    );
+    const { data: mallTemplatesData } = useAdminMallTemplates(
+        mallTemplateKind,
+        fulfilmentBusinessId || undefined,
+        isMallFulfilment && !!fulfilmentBusinessId,
+    );
+
+    const mallListings = mallListingsPage?.data ?? [];
+    const mallProducts = mallProductsPage?.data ?? [];
+    const mallServices = mallServicesPage?.data ?? [];
+    const mallTemplates = mallTemplatesData?.templates ?? [];
+
     // Initialization
     useEffect(() => {
         if (isOpen) {
@@ -188,6 +252,43 @@ export default function UnifiedRewardWizardModal({
                 setSelectedSubCategoryId((reward as any).sub_category_id || '');
                 setRewardEmoji((reward as any).emoji || '🎁');
 
+                const provider = (reward as any).fulfilment_provider || 'NONE';
+                setFulfilmentProvider(provider);
+                setFulfilmentKind(
+                    (reward as any).fulfilment_kind ||
+                    (provider === 'CENTRAL'
+                        ? 'CENTRAL_MEMBERSHIP'
+                        : 'MALL_VOUCHER'),
+                );
+                const config = (reward as any).fulfilment_config || {};
+                setFulfilmentBusinessId(
+                    (reward as any).fulfilment_business_ref ||
+                    config.businessId ||
+                    '',
+                );
+                setFulfilmentTemplateId(
+                    (reward as any).fulfilment_template_id ||
+                    config.templateRef?.id ||
+                    '',
+                );
+                setFulfilmentScopeMode(config.scope?.mode || 'ALL');
+                setFulfilmentListingIds(config.scope?.listingIds || []);
+                setFulfilmentProductIds(config.scope?.productIds || []);
+                setFulfilmentServiceIds(config.scope?.serviceIds || []);
+                setCentralPlanId(config.grant?.planId || '');
+                setCentralTier(config.grant?.tier || 'Standard');
+                setCentralDurationDays(
+                    String(config.grant?.durationDays || ''),
+                );
+                setCentralDiscountType(
+                    config.coupon?.discountType === 'FIXED'
+                        ? 'FIXED'
+                        : 'PERCENTAGE',
+                );
+                setCentralDiscountValue(
+                    String(config.coupon?.discountValue || ''),
+                );
+
             } else {
                 // New Reward logic
                 resetForm();
@@ -222,14 +323,76 @@ export default function UnifiedRewardWizardModal({
         setSelectedCategoryId('');
         setSelectedSubCategoryId('');
         setRewardEmoji('🎁');
+        setFulfilmentProvider('NONE');
+        setFulfilmentKind('MALL_VOUCHER');
+        setFulfilmentBusinessId('');
+        setFulfilmentTemplateId('');
+        setFulfilmentScopeMode('ALL');
+        setFulfilmentListingIds([]);
+        setFulfilmentProductIds([]);
+        setFulfilmentServiceIds([]);
+        setCentralPlanId('');
+        setCentralTier('Standard');
+        setCentralDurationDays('');
+        setCentralDiscountType('PERCENTAGE');
+        setCentralDiscountValue('');
     };
 
     // Validation
     const step1Valid = useMemo(() => {
-        return title.trim().length > 0 &&
+        const base =
+            title.trim().length > 0 &&
             description.trim().length > 0 &&
             rewardValue.trim().length > 0;
-    }, [title, description, rewardValue]);
+        if (!base) return false;
+
+        if (fulfilmentProvider === 'MALL') {
+            if (!(Number(rewardValue) > 0)) return false;
+            if (
+                fulfilmentScopeMode === 'LISTINGS' &&
+                fulfilmentListingIds.length === 0
+            ) {
+                return false;
+            }
+            if (
+                fulfilmentScopeMode === 'ITEMS' &&
+                fulfilmentProductIds.length === 0 &&
+                fulfilmentServiceIds.length === 0
+            ) {
+                return false;
+            }
+        }
+
+        if (fulfilmentProvider === 'CENTRAL') {
+            if (
+                (fulfilmentKind === 'CENTRAL_MEMBERSHIP' ||
+                    fulfilmentKind === 'CENTRAL_ACCESS_PASS') &&
+                !centralPlanId
+            ) {
+                return false;
+            }
+            if (
+                fulfilmentKind === 'CENTRAL_COUPON' &&
+                !(Number(centralDiscountValue) > 0)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }, [
+        title,
+        description,
+        rewardValue,
+        fulfilmentProvider,
+        fulfilmentKind,
+        fulfilmentScopeMode,
+        fulfilmentListingIds,
+        fulfilmentProductIds,
+        fulfilmentServiceIds,
+        centralPlanId,
+        centralDiscountValue,
+    ]);
 
     const step2Valid = useMemo(() => {
         let valid = true;
@@ -283,6 +446,104 @@ export default function UnifiedRewardWizardModal({
         }
     };
 
+    const toggleFulfilmentListing = (id: string) =>
+        setFulfilmentListingIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+        );
+    const toggleFulfilmentProduct = (id: string) =>
+        setFulfilmentProductIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+        );
+    const toggleFulfilmentService = (id: string) =>
+        setFulfilmentServiceIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+        );
+
+    const buildFulfilment = (): any => {
+        if (fulfilmentProvider === 'MALL') {
+            const business = mallListings.find(
+                (listing: any) => listing.id === fulfilmentBusinessId,
+            );
+            return {
+                provider: 'MALL',
+                kind: fulfilmentKind,
+                delivery: 'CODE',
+                businessId: fulfilmentBusinessId || undefined,
+                businessName:
+                    business?.name || business?.businessName || undefined,
+                templateRef: fulfilmentTemplateId
+                    ? { system: 'MALL', id: fulfilmentTemplateId }
+                    : undefined,
+                value: {
+                    amount: Number(rewardValue) || 0,
+                    currency: 'GBP',
+                },
+                scope: {
+                    mode: fulfilmentScopeMode,
+                    ...(fulfilmentScopeMode === 'LISTINGS'
+                        ? { listingIds: fulfilmentListingIds }
+                        : {}),
+                    ...(fulfilmentScopeMode === 'ITEMS'
+                        ? {
+                              productIds: fulfilmentProductIds,
+                              serviceIds: fulfilmentServiceIds,
+                          }
+                        : {}),
+                },
+            };
+        }
+
+        if (fulfilmentProvider === 'CENTRAL') {
+            if (fulfilmentKind === 'CENTRAL_MEMBERSHIP') {
+                return {
+                    provider: 'CENTRAL',
+                    kind: 'CENTRAL_MEMBERSHIP',
+                    delivery: 'DIRECT_GRANT',
+                    templateRef: centralPlanId
+                        ? { system: 'CENTRAL', id: centralPlanId }
+                        : undefined,
+                    grant: {
+                        planId: centralPlanId,
+                        tier: centralTier,
+                        durationDays: centralDurationDays
+                            ? Number(centralDurationDays)
+                            : undefined,
+                        extendExisting: true,
+                    },
+                };
+            }
+            if (fulfilmentKind === 'CENTRAL_ACCESS_PASS') {
+                return {
+                    provider: 'CENTRAL',
+                    kind: 'CENTRAL_ACCESS_PASS',
+                    delivery: 'CODE',
+                    templateRef: centralPlanId
+                        ? { system: 'CENTRAL', id: centralPlanId }
+                        : undefined,
+                    grant: { planId: centralPlanId },
+                };
+            }
+            return {
+                provider: 'CENTRAL',
+                kind: 'CENTRAL_COUPON',
+                delivery: 'CODE',
+                coupon: {
+                    discountType: centralDiscountType,
+                    discountValue: Number(centralDiscountValue) || 0,
+                    appliesToAllMemberships: true,
+                    appliesToAllAccess: centralAppliesToAllAccess,
+                    accessPlanIds: centralAppliesToAllAccess
+                        ? []
+                        : centralAccessPlanIds,
+                    maxUses: 1,
+                    maxUsesPerUser: 1,
+                },
+            };
+        }
+
+        return { provider: 'NONE', kind: 'MALL_DISCOUNT' };
+    };
+
     const handleSubmit = async () => {
         try {
             let finalImageUrl = image || '';
@@ -309,6 +570,15 @@ export default function UnifiedRewardWizardModal({
             }
 
             const finalStampCount = useCustomCount ? Number(customStampCount) : stampsRequired;
+            const fulfilment = buildFulfilment();
+            const rewardTypeLabel =
+                fulfilment.provider === 'MALL' &&
+                fulfilment.kind === 'MALL_GIFT_CARD'
+                    ? 'gift card'
+                    : fulfilment.provider === 'MALL' &&
+                        fulfilment.kind === 'MALL_COUPON'
+                      ? 'coupon'
+                      : 'Voucher';
 
             const payload: CreateRewardRequest = {
                 title,
@@ -326,7 +596,8 @@ export default function UnifiedRewardWizardModal({
                 status,
                 image: finalImageUrl,
                 expiry_datetime: expiryDate ? new Date(expiryDate).toISOString() : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-                reward_type: 'Voucher', // Defaulting to Voucher for now as per requirements mostly being about type
+                reward_type: rewardTypeLabel,
+                fulfilment,
                 sector_id: selectedSectorId || undefined,
                 category_id: selectedCategoryId || undefined,
                 sub_category_id: selectedSubCategoryId || undefined,
@@ -358,7 +629,8 @@ export default function UnifiedRewardWizardModal({
                         category_id: selectedCategoryId,
                         sub_category_id: selectedSubCategoryId,
                         emoji: rewardEmoji,
-                        image_source_type: 'CUSTOM_URL'
+                        image_source_type: 'CUSTOM_URL',
+                        fulfilment,
                     },
                     {
                         onSuccess: () => {
@@ -503,6 +775,449 @@ export default function UnifiedRewardWizardModal({
                                 </div>
                                 <p className="text-xs text-gray-400">The monetary value of this reward in GBP</p>
                             </div>
+
+                            {/* Ecosystem fulfilment */}
+                            <Card>
+                                <CardContent className="pt-6 space-y-4">
+                                    <div>
+                                        <Label>How is this reward fulfilled?</Label>
+                                        <Select
+                                            value={fulfilmentProvider}
+                                            onValueChange={(value: any) => {
+                                                setFulfilmentProvider(value);
+                                                if (value === 'MALL') {
+                                                    setFulfilmentKind('MALL_VOUCHER');
+                                                }
+                                                if (value === 'CENTRAL') {
+                                                    setFulfilmentKind('CENTRAL_MEMBERSHIP');
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="NONE">
+                                                    None (manual / physical)
+                                                </SelectItem>
+                                                <SelectItem value="MALL">
+                                                    MCOM Mall instrument
+                                                </SelectItem>
+                                                <SelectItem value="CENTRAL">
+                                                    MCOM Central entitlement or coupon
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {isMallFulfilment && (
+                                        <div className="space-y-4 rounded-lg border bg-gray-50/60 p-4">
+                                            <div className="grid gap-4 sm:grid-cols-2">
+                                                <div>
+                                                    <Label>Mall instrument</Label>
+                                                    <Select
+                                                        value={fulfilmentKind}
+                                                        onValueChange={setFulfilmentKind}
+                                                    >
+                                                        <SelectTrigger className="mt-1 bg-white">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="MALL_GIFT_CARD">
+                                                                Gift card
+                                                            </SelectItem>
+                                                            <SelectItem value="MALL_VOUCHER">
+                                                                Voucher
+                                                            </SelectItem>
+                                                            <SelectItem value="MALL_COUPON">
+                                                                Coupon
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label>Business (optional)</Label>
+                                                    <Select
+                                                        value={fulfilmentBusinessId || 'none'}
+                                                        onValueChange={(value) => {
+                                                            setFulfilmentBusinessId(
+                                                                value === 'none' ? '' : value,
+                                                            );
+                                                            setFulfilmentTemplateId('');
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="mt-1 bg-white">
+                                                            <SelectValue placeholder="All of Mall" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none">
+                                                                All of Mall
+                                                            </SelectItem>
+                                                            {mallListings.map((listing: any) => (
+                                                                <SelectItem
+                                                                    key={listing.id}
+                                                                    value={listing.id}
+                                                                >
+                                                                    {listing.name ||
+                                                                        listing.businessName ||
+                                                                        listing.id}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+
+                                            {fulfilmentBusinessId && (
+                                                <div>
+                                                    <Label>Mall template (optional)</Label>
+                                                    <Select
+                                                        value={fulfilmentTemplateId || 'none'}
+                                                        onValueChange={(value) =>
+                                                            setFulfilmentTemplateId(
+                                                                value === 'none' ? '' : value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="mt-1 bg-white">
+                                                            <SelectValue placeholder="Default template" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none">
+                                                                Default (no template)
+                                                            </SelectItem>
+                                                            {mallTemplates.map((template: any) => (
+                                                                <SelectItem
+                                                                    key={template.id}
+                                                                    value={template.id}
+                                                                >
+                                                                    {template.name ||
+                                                                        template.title ||
+                                                                        template.id}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
+
+                                            <div>
+                                                <Label>Where can it be used?</Label>
+                                                <Select
+                                                    value={fulfilmentScopeMode}
+                                                    onValueChange={(value: any) =>
+                                                        setFulfilmentScopeMode(value)
+                                                    }
+                                                >
+                                                    <SelectTrigger className="mt-1 bg-white">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="ALL">
+                                                            All eligible Mall listings
+                                                        </SelectItem>
+                                                        <SelectItem value="LISTINGS">
+                                                            Selected listings
+                                                        </SelectItem>
+                                                        <SelectItem value="ITEMS">
+                                                            Specific products/services
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {fulfilmentScopeMode === 'LISTINGS' && (
+                                                <div className="max-h-48 space-y-1 overflow-y-auto rounded border bg-white p-2">
+                                                    {mallListings.map((listing: any) => (
+                                                        <label
+                                                            key={listing.id}
+                                                            className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-gray-50"
+                                                        >
+                                                            <Checkbox
+                                                                checked={fulfilmentListingIds.includes(
+                                                                    listing.id,
+                                                                )}
+                                                                onCheckedChange={() =>
+                                                                    toggleFulfilmentListing(listing.id)
+                                                                }
+                                                            />
+                                                            <span>
+                                                                {listing.name ||
+                                                                    listing.businessName ||
+                                                                    listing.id}
+                                                            </span>
+                                                        </label>
+                                                    ))}
+                                                    {mallListings.length === 0 && (
+                                                        <p className="text-xs text-gray-500">
+                                                            No listings found.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {fulfilmentScopeMode === 'ITEMS' && (
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="max-h-48 space-y-1 overflow-y-auto rounded border bg-white p-2">
+                                                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                            Products
+                                                        </p>
+                                                        {mallProducts.map((product: any) => (
+                                                            <label
+                                                                key={product.id}
+                                                                className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-gray-50"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={fulfilmentProductIds.includes(
+                                                                        product.id,
+                                                                    )}
+                                                                    onCheckedChange={() =>
+                                                                        toggleFulfilmentProduct(product.id)
+                                                                    }
+                                                                />
+                                                                <span>{product.title || product.name}</span>
+                                                            </label>
+                                                        ))}
+                                                        {mallProducts.length === 0 && (
+                                                            <p className="text-xs text-gray-500">
+                                                                No products found.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="max-h-48 space-y-1 overflow-y-auto rounded border bg-white p-2">
+                                                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                            Services
+                                                        </p>
+                                                        {mallServices.map((service: any) => (
+                                                            <label
+                                                                key={service.id}
+                                                                className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-gray-50"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={fulfilmentServiceIds.includes(
+                                                                        service.id,
+                                                                    )}
+                                                                    onCheckedChange={() =>
+                                                                        toggleFulfilmentService(service.id)
+                                                                    }
+                                                                />
+                                                                <span>{service.name}</span>
+                                                            </label>
+                                                        ))}
+                                                        {mallServices.length === 0 && (
+                                                            <p className="text-xs text-gray-500">
+                                                                No services found.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {fulfilmentProvider === 'CENTRAL' && (
+                                        <div className="space-y-4 rounded-lg border bg-blue-50/40 p-4">
+                                            <div>
+                                                <Label>Central fulfilment</Label>
+                                                <Select
+                                                    value={fulfilmentKind}
+                                                    onValueChange={(value) => {
+                                                        setFulfilmentKind(value);
+                                                        setCentralPlanId('');
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="mt-1 bg-white">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="CENTRAL_MEMBERSHIP">
+                                                            Membership
+                                                        </SelectItem>
+                                                        <SelectItem value="CENTRAL_ACCESS_PASS">
+                                                            Access pass
+                                                        </SelectItem>
+                                                        <SelectItem value="CENTRAL_COUPON">
+                                                            Coupon
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {(isCentralMembership || isCentralAccess) && (
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div>
+                                                        <Label>
+                                                            {isCentralMembership
+                                                                ? 'Membership plan'
+                                                                : 'Access plan'}
+                                                        </Label>
+                                                        <Select
+                                                            value={centralPlanId}
+                                                            onValueChange={setCentralPlanId}
+                                                        >
+                                                            <SelectTrigger className="mt-1 bg-white">
+                                                                <SelectValue placeholder="Select a plan" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {(isCentralMembership
+                                                                    ? centralMemberships
+                                                                    : centralAccessPlans
+                                                                ).map((plan: any) => (
+                                                                    <SelectItem
+                                                                        key={plan.id}
+                                                                        value={plan.id}
+                                                                    >
+                                                                        {plan.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    {isCentralMembership && (
+                                                        <>
+                                                            <div>
+                                                                <Label>Tier</Label>
+                                                                <Select
+                                                                    value={centralTier}
+                                                                    onValueChange={setCentralTier}
+                                                                >
+                                                                    <SelectTrigger className="mt-1 bg-white">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Standard">
+                                                                            Standard
+                                                                        </SelectItem>
+                                                                        <SelectItem value="Pro">
+                                                                            Pro
+                                                                        </SelectItem>
+                                                                        <SelectItem value="Pro+">
+                                                                            Pro+
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div>
+                                                                <Label>Duration (days, optional)</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    className="mt-1 bg-white"
+                                                                    value={centralDurationDays}
+                                                                    onChange={(e) =>
+                                                                        setCentralDurationDays(
+                                                                            e.target.value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {fulfilmentKind === 'CENTRAL_COUPON' && (
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div>
+                                                        <Label>Discount type</Label>
+                                                        <Select
+                                                            value={centralDiscountType}
+                                                            onValueChange={(value: any) =>
+                                                                setCentralDiscountType(value)
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="mt-1 bg-white">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="PERCENTAGE">
+                                                                    Percentage (%)
+                                                                </SelectItem>
+                                                                <SelectItem value="FIXED">
+                                                                    Fixed (£)
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label>Discount value</Label>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            className="mt-1 bg-white"
+                                                            value={centralDiscountValue}
+                                                            onChange={(e) =>
+                                                                setCentralDiscountValue(
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 sm:col-span-2">
+                                                        Central coupons apply to MCOM membership and
+                                                        access-pass purchases only — not Mall products.
+                                                    </p>
+                                                    <div className="sm:col-span-2 space-y-2 rounded-lg border border-gray-200 p-3">
+                                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={centralAppliesToAllAccess}
+                                                                onChange={(e) => {
+                                                                    setCentralAppliesToAllAccess(e.target.checked);
+                                                                    if (e.target.checked) setCentralAccessPlanIds([]);
+                                                                }}
+                                                            />
+                                                            Applies to all access passes
+                                                        </label>
+                                                        {!centralAppliesToAllAccess && (
+                                                            <div>
+                                                                <p className="mb-1 text-xs text-gray-500">
+                                                                    Or select the access plans this coupon applies to:
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {centralAccessPlans.length === 0 && (
+                                                                        <span className="text-xs text-gray-400">
+                                                                            No access plans available
+                                                                        </span>
+                                                                    )}
+                                                                    {centralAccessPlans.map((plan: any) => {
+                                                                        const checked = centralAccessPlanIds.includes(plan.id);
+                                                                        return (
+                                                                            <label
+                                                                                key={plan.id}
+                                                                                className="flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-xs text-gray-700"
+                                                                            >
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={checked}
+                                                                                    onChange={(e) =>
+                                                                                        setCentralAccessPlanIds((prev) =>
+                                                                                            e.target.checked
+                                                                                                ? [...prev, plan.id]
+                                                                                                : prev.filter((id) => id !== plan.id),
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                                {plan.name}
+                                                                            </label>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                {centralAccessPlanIds.length === 0 && (
+                                                                    <p className="mt-1 text-xs text-amber-600">
+                                                                        Choose at least one access plan, or enable “all access passes”.
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </div>
                     )}
 

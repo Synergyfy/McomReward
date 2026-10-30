@@ -18,6 +18,33 @@ const fetchMallCatalog = async (): Promise<MallCatalogBusiness> => {
   return data;
 };
 
+export interface MallTemplateOption {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string | null;
+  [key: string]: any;
+}
+
+/** Fetch the business's own Mall templates for a fulfilment picker. */
+export const useGetBusinessMallTemplates = (
+  kind: 'gift-cards' | 'vouchers' | 'coupons',
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: ['businessMallTemplates', kind],
+    queryFn: async () => {
+      const { data } = await api.get<{
+        business?: any;
+        templates: MallTemplateOption[];
+      }>(`/rewards/business/mall/templates`, { params: { kind } });
+      return data;
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 /** Resolve the logged-in business in MCOM Mall for discount targeting. */
 export const useGetMallCatalog = (enabled = true) => {
   return useQuery({

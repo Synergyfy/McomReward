@@ -16,6 +16,7 @@ import {
 import { useGetBusinessTierUsage } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessReward, Reward, PaginationMeta, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
+import { buildBusinessRewardPayload } from '@/services/business-reward/payload';
 import LoadingSpinner from '@/components/ui/Loading';
 import UsageCard from '@/components/dashboard/shared/UsageCard';
 import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
@@ -243,29 +244,7 @@ export default function BusinessRewardsPage() {
       if (editingBusinessRewardId) {
         updateBusinessReward({
           rewardId: editingBusinessRewardId,
-          payload: {
-            title: rewardData.title,
-            description: rewardData.description,
-            points_required: rewardData.pointsRequired,
-            image: rewardData.image,
-            gallery: rewardData.gallery,
-            quantity: rewardData.quantity,
-            reward_type: rewardData.rewardType,
-            stamps_required: rewardData.stampsRequired,
-            disabled: rewardData.disabled,
-            is_mall_integrated: rewardData.is_mall_integrated,
-            mall_reward_type: rewardData.mall_reward_type,
-            mall_reward_value: rewardData.mall_reward_value,
-            mall_target_scope: rewardData.mall_target_scope,
-            mall_target_product_ids: rewardData.mall_target_product_ids,
-            mall_target_service_ids: rewardData.mall_target_service_ids,
-            mall_discount_type: rewardData.mall_discount_type,
-            mall_discount_value: rewardData.mall_discount_value,
-            mall_max_discount: rewardData.mall_max_discount,
-            mall_min_spend: rewardData.mall_min_spend,
-            is_points_enabled: rewardData.is_points_enabled,
-            is_stamps_enabled: rewardData.is_stamps_enabled,
-          },
+          payload: buildBusinessRewardPayload(rewardData),
         }, {
           onSuccess: () => {
             toast.success('Reward updated successfully');
@@ -296,30 +275,9 @@ export default function BusinessRewardsPage() {
         });
       } else if (selectedTemplate && !editingBusinessRewardId) {
         // Add template flow
-        const payload: CreateBusinessRewardDto = {
-          title: rewardData.title,
-          description: rewardData.description,
-          points_required: rewardData.pointsRequired,
-          image: rewardData.image,
-          gallery: rewardData.gallery,
-          quantity: rewardData.quantity,
-          disabled: rewardData.disabled,
-          reward_type: rewardData.rewardType || 'Voucher',
-          stamps_required: rewardData.stampsRequired,
+        const payload: CreateBusinessRewardDto = buildBusinessRewardPayload(rewardData, {
           status: RewardStatus.ACTIVE,
-          is_mall_integrated: rewardData.is_mall_integrated,
-          mall_reward_type: rewardData.mall_reward_type,
-          mall_reward_value: rewardData.mall_reward_value,
-          mall_target_scope: rewardData.mall_target_scope,
-          mall_target_product_ids: rewardData.mall_target_product_ids,
-          mall_target_service_ids: rewardData.mall_target_service_ids,
-          mall_discount_type: rewardData.mall_discount_type,
-          mall_discount_value: rewardData.mall_discount_value,
-          mall_max_discount: rewardData.mall_max_discount,
-          mall_min_spend: rewardData.mall_min_spend,
-          is_points_enabled: rewardData.is_points_enabled,
-          is_stamps_enabled: rewardData.is_stamps_enabled,
-        };
+        });
 
         addBusinessReward({ rewardId: selectedTemplate.id, payload }).then(() => {
           toast.success('Reward added successfully');
@@ -343,30 +301,10 @@ export default function BusinessRewardsPage() {
 
       } else {
         // Create new reward flow
-        const payload: CreateBusinessRewardDto = {
-          title: rewardData.title,
-          description: rewardData.description,
-          points_required: rewardData.pointsRequired,
-          image: rewardData.image,
-          gallery: rewardData.gallery,
-          quantity: rewardData.quantity,
-          disabled: rewardData.disabled,
-          reward_type: rewardData.rewardType || 'Voucher',
-          stamps_required: rewardData.stampsRequired,
+        const payload: CreateBusinessRewardDto = buildBusinessRewardPayload(rewardData, {
           status: RewardStatus.ACTIVE,
-          is_mall_integrated: rewardData.is_mall_integrated,
-          mall_reward_type: rewardData.mall_reward_type,
-          mall_reward_value: rewardData.mall_reward_value,
-          mall_target_scope: rewardData.mall_target_scope,
-          mall_target_product_ids: rewardData.mall_target_product_ids,
-          mall_target_service_ids: rewardData.mall_target_service_ids,
-          mall_discount_type: rewardData.mall_discount_type,
-          mall_discount_value: rewardData.mall_discount_value,
-          mall_max_discount: rewardData.mall_max_discount,
-          mall_min_spend: rewardData.mall_min_spend,
-          is_points_enabled: rewardData.is_points_enabled,
-          is_stamps_enabled: rewardData.is_stamps_enabled,
-        };
+          includeExpiry: true,
+        });
 
         createBusinessReward(payload).then(() => {
           toast.success('Reward created successfully');
@@ -414,6 +352,16 @@ export default function BusinessRewardsPage() {
       mall_discount_value: businessReward.mall_discount_value,
       mall_max_discount: businessReward.mall_max_discount,
       mall_min_spend: businessReward.mall_min_spend,
+      fulfilmentProvider:
+        businessReward.fulfilmentProvider ?? businessReward.fulfilment_provider,
+      fulfilmentKind:
+        businessReward.fulfilmentKind ?? businessReward.fulfilment_kind,
+      fulfilmentConfig:
+        businessReward.fulfilmentConfig ?? businessReward.fulfilment_config,
+      fulfilmentTemplateId:
+        businessReward.fulfilmentTemplateId ?? businessReward.fulfilment_template_id,
+      fulfilmentBusinessRef:
+        businessReward.fulfilmentBusinessRef ?? businessReward.fulfilment_business_ref,
     };
     handleOpenCreateModal(mergedReward);
   }, [handleOpenCreateModal]);

@@ -10,12 +10,14 @@ import { PointHistory } from "../participant-campaign-balance/entities/point-his
 import { MallIntegrationModule } from "../mall-integration/mall-integration.module";
 import { PlansModule } from "../plans/plans.module";
 import { SsoModule } from "../sso/sso.module";
+import { RewardFulfilmentModule } from "../reward-fulfilment/reward-fulfilment.module";
 
 import { RewardIssuance } from "./entities/reward-issuance.entity";
 import { PartnerRewardsController } from "./controllers/partner-rewards.controller";
 import { PartnerIssuancesController } from "./controllers/partner-issuances.controller";
 import { PartnerBusinessRewardsController } from "./controllers/partner-business-rewards.controller";
 import { MePartnerRewardsController } from "./controllers/me-partner-rewards.controller";
+import { PartnerEventsController } from "./controllers/partner-events.controller";
 import { PartnerRewardsService } from "./services/partner-rewards.service";
 import { RewardIssuanceService } from "./services/reward-issuance.service";
 import { RecipientResolverService } from "./services/recipient-resolver.service";
@@ -40,6 +42,7 @@ import { PartnerRewardsCron } from "./partner-rewards.cron";
     ]),
     ScheduleModule.forRoot(),
     MallIntegrationModule,
+    RewardFulfilmentModule,
     forwardRef(() => PlansModule),
     forwardRef(() => SsoModule),
   ],
@@ -48,6 +51,7 @@ import { PartnerRewardsCron } from "./partner-rewards.cron";
     PartnerBusinessRewardsController,
     PartnerIssuancesController,
     MePartnerRewardsController,
+    PartnerEventsController,
   ],
   providers: [
     PartnerRewardsService,

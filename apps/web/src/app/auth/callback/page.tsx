@@ -68,6 +68,33 @@ function CallbackContent() {
     const handleSuccess = async (data: any) => {
       if (!mountedRef.current) return;
 
+      // Resolve the role FIRST. Consumers (and admins/staff) must never be sent
+      // through the business entitlement/access-pass gate.
+      const userRole = data?.role || data?.user?.role || roleParam;
+      const isBusinessRole =
+        userRole === "Business" || userRole === "business";
+      const isAdminRole = userRole === "Admin" || userRole === "admin";
+      const isStaffRole = userRole === "Staff" || userRole === "staff";
+
+      if (!isBusinessRole && !isAdminRole && !isStaffRole) {
+        toast.success("Welcome back!");
+        router.push("/participant");
+        return;
+      }
+
+      if (isAdminRole) {
+        toast.success("Welcome back!");
+        router.push("/admin/dashboard");
+        return;
+      }
+
+      if (isStaffRole) {
+        toast.success("Welcome back!");
+        router.push("/staff/dashboard");
+        return;
+      }
+
+      // Business roles keep the trial/membership entitlement gate.
       const entitlement = data?.entitlement;
       const isCentralAccessDenied =
         entitlement?.access && entitlement.access.hasAccess === false;
@@ -111,34 +138,23 @@ function CallbackContent() {
 
       toast.success("Welcome back!");
 
-      const userRole = data?.role || data?.user?.role || roleParam;
-
-
-      if (userRole === "Business" || userRole === "business") {
-        try {
-          const { data: status } = await api.get("/setup/status");
-          if (status?.hasReward || status?.hasCampaign) {
+      try {
+        const { data: status } = await api.get("/setup/status");
+        if (status?.hasReward || status?.hasCampaign) {
+          router.push("/dashboard");
+          return;
+        }
+        const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.hasCompletedSetup) {
             router.push("/dashboard");
             return;
           }
-          const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (parsed?.hasCompletedSetup) {
-              router.push("/dashboard");
-              return;
-            }
-          }
-          router.push("/loyalty-setup");
-        } catch {
-          router.push("/dashboard");
         }
-      } else if (userRole === "Admin" || userRole === "admin") {
-        router.push("/admin/dashboard");
-      } else if (userRole === "Staff" || userRole === "staff") {
-        router.push("/staff/dashboard");
-      } else {
-        router.push("/participant");
+        router.push("/loyalty-setup");
+      } catch {
+        router.push("/dashboard");
       }
     };
 

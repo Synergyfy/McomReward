@@ -44,6 +44,7 @@ describe("RewardIssuanceService", () => {
   let mallIntegration: any;
   let partnerEntitlement: any;
   let notifier: any;
+  let fulfilment: any;
   let dataSource: any;
   let service: RewardIssuanceService;
 
@@ -108,6 +109,25 @@ describe("RewardIssuanceService", () => {
       }),
     };
     notifier = { notify: jest.fn() };
+    fulfilment = {
+      fulfil: jest.fn(async (issuance: any) => {
+        try {
+          if (issuance.reward_type === RewardType.GIFT_CARD) {
+            const result = await mallIntegration.createGiftCard({});
+            issuance.mall_reference = result?.id;
+          } else if (issuance.reward_type === RewardType.VOUCHER) {
+            const result = await mallIntegration.createVoucher({});
+            issuance.mall_reference = result?.id;
+          } else if (issuance.reward_type === RewardType.COUPON) {
+            const result = await mallIntegration.createCoupon({});
+            issuance.mall_reference = result?.id;
+          }
+        } catch {
+          // Legacy tests only assert the issuance result.
+        }
+        return issuance;
+      }),
+    };
     dataSource = {
       transaction: jest.fn(async (cb: any) =>
         cb({ getRepository: () => issuanceRepo }),
@@ -123,6 +143,7 @@ describe("RewardIssuanceService", () => {
       mallIntegration,
       partnerEntitlement,
       notifier,
+      fulfilment,
       dataSource,
     );
   });
@@ -871,6 +892,72 @@ describe("RewardIssuanceService", () => {
     });
   });
 
+  describe("catalogue Mall discount targeting", () => {
+    it("builds metadata.mallTargets from the reward fulfilment config", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_type: RewardType.MALL_DISCOUNT,
+          fulfilment_provider: "MALL",
+          fulfilment_kind: "MALL_DISCOUNT",
+          fulfilment_config: {
+            provider: "MALL",
+            kind: "MALL_DISCOUNT",
+            businessId: "biz-1",
+            value: {
+              discountType: "percentage",
+              discountValue: 20,
+              maxDiscount: 10,
+              minSpend: 5,
+            },
+            scope: {
+              mode: "ITEMS",
+              productIds: ["prod-1"],
+              serviceIds: [],
+            },
+          },
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.issue("fundordonate", "reward-1", issueDto as any);
+
+      expect(result.metadata.mallTargets).toMatchObject({
+        scope: "SPECIFIC",
+        discountType: "percentage",
+        discountValue: 20,
+        maxDiscount: 10,
+        minSpend: 5,
+        businessId: "biz-1",
+        productIds: ["prod-1"],
+      });
+    });
+
+    it("treats an ALL scope as whole-business targeting", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_type: RewardType.MALL_DISCOUNT,
+          fulfilment_provider: "MALL",
+          fulfilment_kind: "MALL_DISCOUNT",
+          fulfilment_config: {
+            provider: "MALL",
+            kind: "MALL_DISCOUNT",
+            value: { discountType: "fixed", discountValue: 5 },
+            scope: { mode: "ALL" },
+          },
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.issue("fundordonate", "reward-1", issueDto as any);
+
+      expect(result.metadata.mallTargets).toMatchObject({
+        scope: "ALL",
+        discountType: "fixed",
+        discountValue: 5,
+      });
+    });
+  });
+
   describe("platform-sponsored gift", () => {
     const giftDto = {
       recipient: { email: "Donor@Example.com", mcomUserId: "6f2c" },
@@ -1012,6 +1099,98 @@ describe("RewardIssuanceService", () => {
       await expect(
         service.gift("fundordonate", "reward-1", giftDto as any),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it("gifts a CENTRAL_* reward to a business recipient", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_source: RewardSource.MCOM_VAULT,
+          fulfilment_provider: "CENTRAL",
+          fulfilment_kind: "CENTRAL_MEMBERSHIP",
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+      recipientResolver.resolve.mockResolvedValue({
+        userId: "business-1",
+        userType: "Business",
+        email: "owner@example.com",
+        name: "Owner Ltd",
+        mcomUserId: "central-biz-1",
+      });
+
+      const result = await service.gift(
+        "fundordonate",
+        "reward-1",
+        giftDto as any,
+      );
+
+      expect(result.recipient.userType).toBe("Business");
+      expect(result.recipient.mcomUserId).toBe("6f2c");
+    });
+
+    it("rejects gifting a CENTRAL_* reward to a consumer", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_source: RewardSource.MCOM_VAULT,
+          fulfilment_provider: "CENTRAL",
+          fulfilment_kind: "CENTRAL_MEMBERSHIP",
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+      recipientResolver.resolve.mockResolvedValue(participant);
+
+      await expect(
+        service.gift("fundordonate", "reward-1", giftDto as any),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(issuanceRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("gifts a MALL_* reward to a business recipient", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_source: RewardSource.MCOM_VAULT,
+          fulfilment_provider: "MALL",
+          fulfilment_kind: "MALL_GIFT_CARD",
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+      recipientResolver.resolve.mockResolvedValue({
+        userId: "business-1",
+        userType: "Business",
+        email: "owner@example.com",
+        name: "Owner Ltd",
+      });
+      mallIntegration.createGiftCard.mockResolvedValue({ id: "mall-1" });
+
+      const result = await service.gift(
+        "fundordonate",
+        "reward-1",
+        giftDto as any,
+      );
+
+      expect(result.recipient.userType).toBe("Business");
+      expect(issuanceRepo.save).toHaveBeenCalled();
+    });
+
+    it("keeps Mall rewards available to consumers", async () => {
+      rewardRepo.findOne.mockResolvedValue(
+        baseReward({
+          reward_source: RewardSource.MCOM_VAULT,
+          fulfilment_provider: "MALL",
+          fulfilment_kind: "MALL_GIFT_CARD",
+        }),
+      );
+      issuanceRepo.findOne.mockResolvedValue(null);
+      recipientResolver.resolve.mockResolvedValue(participant);
+      mallIntegration.createGiftCard.mockResolvedValue({ id: "mall-1" });
+
+      const result = await service.gift(
+        "fundordonate",
+        "reward-1",
+        giftDto as any,
+      );
+
+      expect(result.recipient.userType).toBe("Participant");
     });
   });
 
@@ -1235,6 +1414,7 @@ describe("RewardIssuanceService — reservation lifecycle & peer access", () => 
       {} as any,
       {} as any,
       notifier,
+      { fulfil: jest.fn(async (issuance: any) => issuance) } as any,
       dataSource,
     );
   });

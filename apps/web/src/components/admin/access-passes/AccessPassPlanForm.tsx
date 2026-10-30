@@ -2,9 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
-  AlertCircle,
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
@@ -24,28 +22,103 @@ import {
   CreateAccessPassPlanPayload,
   UpdateAccessPassPlanPayload,
 } from "@/services/admin/access-passes";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  FieldError,
+  FieldLabel,
+  InfoTip,
+} from "@/components/admin/forms/FormPrimitives";
 
 const QUOTA_FIELDS = [
-  { key: "maxActiveCampaigns", label: "Max active campaigns" },
-  { key: "maxActiveRewards", label: "Max active rewards" },
-  { key: "maxRewardsPerCampaign", label: "Max rewards per campaign" },
-  { key: "monthlyPointsAllowance", label: "Monthly points allowance" },
-  { key: "monthlyStampsAllowance", label: "Monthly stamps allowance" },
-  { key: "maxTeamMembers", label: "Max team members" },
-  { key: "maxGiftCardTemplates", label: "Max gift card templates" },
-  { key: "maxCouponTemplates", label: "Max coupon templates" },
+  {
+    key: "maxActiveCampaigns",
+    label: "Active campaigns",
+    tooltip:
+      "The maximum number of campaigns a business can have live at the same time. Mark it as unlimited to remove the cap.",
+    placeholder: "e.g. 10",
+  },
+  {
+    key: "maxActiveRewards",
+    label: "Active rewards",
+    tooltip:
+      "The maximum number of rewards that can be live at the same time across all campaigns. Mark it as unlimited to remove the cap.",
+    placeholder: "e.g. 50",
+  },
+  {
+    key: "maxRewardsPerCampaign",
+    label: "Rewards per campaign",
+    tooltip:
+      "How many rewards can be attached to a single campaign. Mark it as unlimited to allow any number.",
+    placeholder: "e.g. 5",
+  },
+  {
+    key: "monthlyPointsAllowance",
+    label: "Monthly points",
+    tooltip:
+      "The number of loyalty points a business can issue each calendar month. Mark it as unlimited to remove the monthly cap.",
+    placeholder: "e.g. 10000",
+  },
+  {
+    key: "monthlyStampsAllowance",
+    label: "Monthly stamps",
+    tooltip:
+      "The number of stamps a business can issue each calendar month. Mark it as unlimited to remove the monthly cap.",
+    placeholder: "e.g. 1000",
+  },
+  {
+    key: "maxTeamMembers",
+    label: "Team members",
+    tooltip:
+      "How many staff accounts can access the business dashboard. Mark it as unlimited to allow any number of members.",
+    placeholder: "e.g. 5",
+  },
+  {
+    key: "maxGiftCardTemplates",
+    label: "Gift card templates",
+    tooltip:
+      "How many gift card designs a business can create. Mark it as unlimited to allow any number of templates.",
+    placeholder: "e.g. 10",
+  },
+  {
+    key: "maxCouponTemplates",
+    label: "Coupon templates",
+    tooltip:
+      "How many coupon designs a business can create. Mark it as unlimited to allow any number of templates.",
+    placeholder: "e.g. 10",
+  },
 ] as const;
 
 const FLAG_FIELDS = [
   {
     key: "canCreateCampaignFromScratch",
     label: "Create campaigns from scratch",
+    description: "Build campaigns without using a centrally managed template.",
   },
-  { key: "canEditAdminTemplates", label: "Edit admin templates" },
-  { key: "hasAccessToAdvancedAnalytics", label: "Advanced analytics" },
-  { key: "hasAccessToCRM", label: "Customer CRM access" },
-  { key: "canUpdateReward", label: "Update rewards" },
-  { key: "priorityInSearch", label: "Priority search placement" },
+  {
+    key: "canEditAdminTemplates",
+    label: "Edit admin templates",
+    description: "Edit templates that are managed by MCOM admin.",
+  },
+  {
+    key: "hasAccessToAdvancedAnalytics",
+    label: "Advanced analytics",
+    description: "Unlock realtime analytics dashboards and exports.",
+  },
+  {
+    key: "hasAccessToCRM",
+    label: "Customer CRM access",
+    description: "Unlock the customer CRM module and segments.",
+  },
+  {
+    key: "canUpdateReward",
+    label: "Update rewards",
+    description: "Edit rewards after a campaign has gone live.",
+  },
+  {
+    key: "priorityInSearch",
+    label: "Priority search placement",
+    description: "Boost the business in marketplace and search results.",
+  },
 ] as const;
 
 type QuotaKey = (typeof QUOTA_FIELDS)[number]["key"];
@@ -57,7 +130,15 @@ const MAX_DESCRIPTION = 1000;
 const MAX_FEATURE = 160;
 const MAX_PRICE = 1_000_000;
 const MAX_DURATION = 3650;
+const MAX_QUOTA = 1_000_000;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const inputBase =
+  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:shadow-none";
+const inputNormal =
+  "border-gray-300 focus:border-orange-500 focus:ring-orange-500/30";
+const inputError =
+  "border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/30";
 
 const slugify = (value: string) =>
   value
@@ -80,19 +161,6 @@ const emptyFlags = (): Record<FlagKey, boolean> =>
     {} as Record<FlagKey, boolean>,
   );
 
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return (
-    <p
-      className="mt-1 text-xs font-medium text-red-600 flex items-center gap-1"
-      role="alert"
-    >
-      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-      {message}
-    </p>
-  );
-}
-
 function Section({
   title,
   description,
@@ -105,18 +173,60 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-100 flex items-start gap-3">
-        <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-100">
-          <Icon className="w-5 h-5" />
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-start gap-3 border-b border-gray-100 px-6 py-5">
+        <div className="rounded-xl border border-orange-100 bg-orange-50 p-2.5 text-orange-600">
+          <Icon className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-base font-black text-gray-900">{title}</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+            {description}
+          </p>
         </div>
       </div>
-      <div className="p-6">{children}</div>
+      <div className="p-6 sm:p-8">{children}</div>
     </section>
+  );
+}
+
+function SwitchCard({
+  id,
+  title,
+  description,
+  tooltip,
+  checked,
+  onChange,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  tooltip: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-gray-900">{title}</span>
+          <InfoTip text={tooltip} />
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-gray-500">
+          {description}
+        </p>
+      </div>
+      <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer sr-only"
+        />
+        <div className="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-orange-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500/40" />
+      </label>
+    </div>
   );
 }
 
@@ -243,10 +353,12 @@ export function AccessPassPlanForm({
       const value = quotas[field.key].trim();
       if (!value) {
         next[`quota.${field.key}`] =
-          "Enter a positive limit or tick Unlimited.";
+          "Enter a limit, or mark this as unlimited.";
       } else if (!/^\d+$/.test(value) || Number(value) < 1) {
+        next[`quota.${field.key}`] = "Use a whole number of 1 or more.";
+      } else if (Number(value) > MAX_QUOTA) {
         next[`quota.${field.key}`] =
-          "Use a whole number of 1 or more, or tick Unlimited.";
+          `Keep the value at ${MAX_QUOTA.toLocaleString()} or below.`;
       }
     }
 
@@ -264,6 +376,9 @@ export function AccessPassPlanForm({
 
   const show = (key: string) =>
     Boolean(errors[key]) && (attempted || touched[key]);
+
+  const fieldClass = (key: string) =>
+    `${inputBase} ${show(key) ? inputError : inputNormal}`;
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -355,459 +470,586 @@ export function AccessPassPlanForm({
     }
   };
 
-  const inputClass = (key: string) =>
-    `w-full px-4 py-2.5 rounded-xl border font-medium text-gray-900 transition-colors focus:outline-none focus:ring-2 ${
-      show(key)
-        ? "border-red-400 bg-red-50/30 focus:ring-red-500"
-        : "border-gray-300 focus:ring-orange-500"
-    }`;
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto"
-    >
-      <div className="flex items-center gap-4">
-        <Link
-          href="/admin/access-passes"
-          className="p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
-          aria-label="Back to access passes"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">
-            {isEdit
-              ? `Edit ${initialPlan?.name || "Access Pass"}`
-              : "Create Access Pass"}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {isEdit
-              ? "Update price, duration, features and limits for this access pass."
-              : "Define a single-tier pass with its own price, access duration and dashboard limits."}
+    <TooltipProvider delayDuration={200}>
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto w-full max-w-7xl space-y-6 px-1 py-2 md:px-2"
+      >
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          <Link
+            href="/admin/access-passes"
+            className="mt-0.5 rounded-xl border border-gray-200 bg-white p-2.5 text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
+            aria-label="Back to access passes"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                {isEdit
+                  ? `Edit ${initialPlan?.name || "Access Pass"}`
+                  : "Create access pass"}
+              </h1>
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                {isEdit ? "Editing" : "New pass"}
+              </span>
+            </div>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-gray-500">
+              {isEdit
+                ? "Update the price, duration, benefits and limits for this access pass."
+                : "Define a single-tier pass with its own price, access duration and dashboard limits."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+          <p className="text-xs leading-relaxed text-blue-900">
+            Access passes have no Standard/Pro/Pro+ tiers. Each pass is sold or
+            gifted on its own, and redemption codes snapshot the configuration
+            at grant time.
           </p>
         </div>
-      </div>
 
-      <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
-        <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-        <p className="text-xs text-blue-900 leading-relaxed">
-          Access passes have no Standard/Pro/Pro+ tiers. Each pass is sold or
-          gifted on its own. Redemption codes snapshot the configuration at
-          grant time.
-        </p>
-      </div>
-
-      <Section
-        title="Pass details"
-        description="How this access pass appears to admins and businesses."
-        icon={Tag}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              onBlur={() => markTouched("name")}
-              maxLength={MAX_NAME}
-              placeholder="e.g. 30-Day Growth Pass"
-              className={inputClass("name")}
-            />
-            <FieldError message={show("name") ? errors.name : undefined} />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Slug <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={slug}
-              onChange={(e) => {
-                setSlugEdited(true);
-                setSlug(e.target.value.toLowerCase());
-              }}
-              onBlur={() => markTouched("slug")}
-              maxLength={MAX_SLUG}
-              placeholder="30-day-growth-pass"
-              className={inputClass("slug")}
-            />
-            <FieldError message={show("slug") ? errors.slug : undefined} />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={() => markTouched("description")}
-              rows={3}
-              maxLength={MAX_DESCRIPTION}
-              placeholder="Who is this pass for and what does it unlock?"
-              className={inputClass("description")}
-            />
-            <div className="flex justify-between mt-1">
-              <FieldError
-                message={show("description") ? errors.description : undefined}
-              />
-              <span className="text-[11px] text-gray-400 tabular-nums ml-auto">
-                {description.length}/{MAX_DESCRIPTION}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Price (GBP) <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
-                £
-              </span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                onBlur={() => markTouched("price")}
-                placeholder="30.00"
-                className={`${inputClass("price")} pl-8`}
-              />
-            </div>
-            <FieldError message={show("price") ? errors.price : undefined} />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Access duration (days) <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <CalendarDays className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                inputMode="numeric"
-                value={durationDays}
-                onChange={(e) => setDurationDays(e.target.value)}
-                onBlur={() => markTouched("durationDays")}
-                placeholder="30"
-                className={`${inputClass("durationDays")} pl-10`}
-              />
-            </div>
-            <FieldError
-              message={show("durationDays") ? errors.durationDays : undefined}
-            />
-          </div>
-        </div>
-      </Section>
-
-      <Section
-        title="Features & benefits"
-        description="Marketing bullets shown on the pass card and in the grant email."
-        icon={Sparkles}
-      >
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={newFeature}
-            onChange={(e) => setNewFeature(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddFeature();
-              }
-            }}
-            maxLength={MAX_FEATURE}
-            placeholder="e.g. Up to 5 active campaigns"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-          <button
-            type="button"
-            onClick={handleAddFeature}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold"
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
-        </div>
-        <FieldError message={show("features") ? errors.features : undefined} />
-        <ul className="mt-4 space-y-2">
-          {features.map((feature, index) => (
-            <li
-              key={`${feature}-${index}`}
-              className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 py-2.5"
-            >
-              <span className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                {feature}
-              </span>
-              <button
-                type="button"
-                onClick={() => removeFeature(index)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
-                aria-label={`Remove ${feature}`}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </li>
-          ))}
-          {features.length === 0 && (
-            <li className="text-xs text-gray-400 italic">
-              No features added yet.
-            </li>
-          )}
-        </ul>
-      </Section>
-
-      <Section
-        title="Limits & feature flags"
-        description="These are enforced for businesses on this pass. Tick Unlimited for no cap, or enter a positive limit."
-        icon={Users}
-      >
-        <div className="flex justify-end mb-3">
-          <button
-            type="button"
-            onClick={setAllUnlimited}
-            className="text-xs font-bold text-orange-600 hover:text-orange-700"
-          >
-            Set all quotas unlimited
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {QUOTA_FIELDS.map((field) => (
-            <div key={field.key}>
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <label
-                  htmlFor={`quota-${field.key}`}
-                  className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider"
-                >
-                  {field.label}
-                </label>
-                <label className="inline-flex items-center gap-1.5 cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={unlimited[field.key]}
-                    onChange={(e) =>
-                      setQuotaUnlimited(field.key, e.target.checked)
-                    }
-                    className="h-3.5 w-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                  />
-                  <span className="text-[11px] font-semibold text-gray-500">
-                    Unlimited
+        <Section
+          title="Pass details"
+          description="How this access pass appears to admins and businesses."
+          icon={Tag}
+        >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <FieldLabel
+                htmlFor="pass-name"
+                label="Name"
+                required
+                tooltip="The name admins and businesses see for this access pass."
+                hint="A clear, commercial name for the pass."
+                trailing={
+                  <span className="text-[11px] tabular-nums text-gray-400">
+                    {name.length}/{MAX_NAME}
                   </span>
-                </label>
-              </div>
-              <input
-                id={`quota-${field.key}`}
-                type="text"
-                inputMode="numeric"
-                value={unlimited[field.key] ? "" : quotas[field.key]}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "");
-                  setQuotas((prev) => ({ ...prev, [field.key]: digits }));
-                }}
-                onBlur={() => markTouched(`quota.${field.key}`)}
-                disabled={unlimited[field.key]}
-                placeholder={
-                  unlimited[field.key] ? "Unlimited" : "Enter a limit"
                 }
-                className={`w-full px-3 py-2 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${
-                  show(`quota.${field.key}`)
-                    ? "border-red-400 bg-red-50/30 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-orange-500"
-                }`}
+              />
+              <input
+                id="pass-name"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onBlur={() => markTouched("name")}
+                maxLength={MAX_NAME}
+                placeholder="e.g. 30-Day Growth Pass"
+                className={`${fieldClass("name")} font-semibold`}
+              />
+              <FieldError message={show("name") ? errors.name : undefined} />
+            </div>
+
+            <div>
+              <FieldLabel
+                htmlFor="pass-slug"
+                label="URL slug"
+                required
+                tooltip="Used in the pass's public URL. Use lowercase letters, numbers and hyphens only."
+                hint="Auto-generated from the name until you edit it."
+                trailing={
+                  <span className="text-[11px] tabular-nums text-gray-400">
+                    {slug.length}/{MAX_SLUG}
+                  </span>
+                }
+              />
+              <input
+                id="pass-slug"
+                value={slug}
+                onChange={(e) => {
+                  setSlugEdited(true);
+                  setSlug(e.target.value.toLowerCase());
+                }}
+                onBlur={() => markTouched("slug")}
+                maxLength={MAX_SLUG}
+                placeholder="30-day-growth-pass"
+                className={`${fieldClass("slug")} font-mono text-[13px]`}
+              />
+              <FieldError message={show("slug") ? errors.slug : undefined} />
+            </div>
+
+            <div>
+              <FieldLabel
+                htmlFor="pass-price"
+                label="Price"
+                required
+                tooltip="One-off price for this pass in GBP. Enter 0 if the pass should be free."
+                trailing={
+                  <span className="text-[11px] font-medium text-gray-400">
+                    GBP
+                  </span>
+                }
+              />
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
+                  £
+                </span>
+                <input
+                  id="pass-price"
+                  type="text"
+                  inputMode="decimal"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  onBlur={() => markTouched("price")}
+                  placeholder="30.00"
+                  className={`${fieldClass("price")} pl-8`}
+                />
+              </div>
+              <FieldError message={show("price") ? errors.price : undefined} />
+            </div>
+
+            <div>
+              <FieldLabel
+                htmlFor="pass-duration"
+                label="Access duration"
+                required
+                tooltip="How many days of access the pass grants from the date it is activated."
+                trailing={
+                  <span className="text-[11px] font-medium text-gray-400">
+                    days
+                  </span>
+                }
+              />
+              <div className="relative">
+                <CalendarDays className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="pass-duration"
+                  type="text"
+                  inputMode="numeric"
+                  value={durationDays}
+                  onChange={(e) => setDurationDays(e.target.value)}
+                  onBlur={() => markTouched("durationDays")}
+                  placeholder="30"
+                  className={`${fieldClass("durationDays")} pl-10`}
+                />
+              </div>
+              <FieldError
+                message={show("durationDays") ? errors.durationDays : undefined}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <FieldLabel
+                htmlFor="pass-description"
+                label="Marketing description"
+                required={false}
+                tooltip="A short buyer-facing summary shown when businesses choose an access pass."
+                hint="Optional. Keep it concise and benefit-led."
+                trailing={
+                  <span className="text-[11px] tabular-nums text-gray-400">
+                    {description.length}/{MAX_DESCRIPTION}
+                  </span>
+                }
+              />
+              <textarea
+                id="pass-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={() => markTouched("description")}
+                rows={3}
+                maxLength={MAX_DESCRIPTION}
+                placeholder="Who is this pass for and what does it unlock?"
+                className={`${fieldClass("description")} resize-y`}
               />
               <FieldError
                 message={
-                  show(`quota.${field.key}`)
-                    ? errors[`quota.${field.key}`]
-                    : undefined
+                  show("description") ? errors.description : undefined
                 }
               />
             </div>
-          ))}
-        </div>
-
-        <div className="mt-6 pt-5 border-t border-gray-100">
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-            Dashboard feature access
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {FLAG_FIELDS.map((field) => (
-              <label
-                key={field.key}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={flags[field.key]}
-                  onChange={(e) =>
-                    setFlags((prev) => ({
-                      ...prev,
-                      [field.key]: e.target.checked,
-                    }))
-                  }
-                  className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700">{field.label}</span>
-              </label>
-            ))}
           </div>
-        </div>
-      </Section>
+        </Section>
 
-      <Section
-        title="Availability"
-        description="Control whether the pass can be purchased, gifted by code, or both."
-        icon={KeyRound}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <label className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600"
-            />
-            <span>
-              <span className="block text-sm font-bold text-gray-800">
-                Active
-              </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
-                Visible in the catalogue
-              </span>
-            </span>
-          </label>
-          <label className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={purchaseEnabled}
-              onChange={(e) => setPurchaseEnabled(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600"
-            />
-            <span>
-              <span className="block text-sm font-bold text-gray-800">
-                Purchasable
-              </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
-                Businesses can pay for it
-              </span>
-            </span>
-          </label>
-          <label className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={codeRedemptionEnabled}
-              onChange={(e) => setCodeRedemptionEnabled(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600"
-            />
-            <span>
-              <span className="block text-sm font-bold text-gray-800">
-                Code redemption
-              </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
-                Admin codes unlock it
-              </span>
-            </span>
-          </label>
-        </div>
-      </Section>
-
-      {isEdit && (
         <Section
-          title="Apply changes to subscribers"
-          description="Choose whether this edit affects only future subscribers or your existing ones too."
-          icon={Users}
+          title="Features & benefits"
+          description="Marketing bullets shown on the pass card and in the grant email."
+          icon={Sparkles}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FieldLabel
+            htmlFor="pass-feature-input"
+            label="Marketing bullet points"
+            required
+            tooltip="Short benefit shown on the pass card and in the grant email. Press Enter or click Add to save each one."
+            hint="Add at least one bullet point."
+            trailing={
+              <span className="text-[11px] font-medium text-gray-400">
+                {features.length} added
+              </span>
+            }
+          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="pass-feature-input"
+              value={newFeature}
+              onChange={(e) => setNewFeature(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddFeature();
+                }
+              }}
+              maxLength={MAX_FEATURE}
+              placeholder="e.g. Up to 5 active campaigns"
+              className={`${inputBase} flex-1 ${inputNormal}`}
+            />
             <button
               type="button"
-              onClick={() => setApplyMode("new")}
-              className={`text-left p-4 rounded-xl border-2 transition-all ${
-                applyMode === "new"
-                  ? "border-orange-500 bg-orange-50/60"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+              onClick={handleAddFeature}
+              disabled={!newFeature.trim()}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span className="block text-sm font-bold text-gray-900">
-                New subscribers only
-              </span>
-              <span className="block text-xs text-gray-500 mt-1">
-                Existing pass holders keep their current features, limits and
-                expiry.
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setApplyMode("existing")}
-              className={`text-left p-4 rounded-xl border-2 transition-all ${
-                applyMode === "existing"
-                  ? "border-orange-500 bg-orange-50/60"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <span className="block text-sm font-bold text-gray-900">
-                New & existing subscribers
-              </span>
-              <span className="block text-xs text-gray-500 mt-1">
-                Update every existing pass snapshot with the new features,
-                limits and price.
-              </span>
+              <Plus className="h-4 w-4" />
+              Add
             </button>
           </div>
-          {applyMode === "existing" && (
-            <label className="mt-4 flex items-start gap-3 p-3.5 rounded-xl border border-amber-200 bg-amber-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={recalculateExpiry}
-                onChange={(e) => setRecalculateExpiry(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600"
-              />
-              <span>
-                <span className="block text-sm font-bold text-amber-900">
-                  Recalculate expiry using the new duration
-                </span>
-                <span className="block text-xs text-amber-800/80 mt-0.5">
-                  Existing passes will end {durationDays || "—"} days after
-                  their original start date.
-                </span>
-              </span>
-            </label>
+          <FieldError
+            message={show("features") ? errors.features : undefined}
+          />
+
+          {features.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {features.map((feature, index) => (
+                <li
+                  key={`${feature}-${index}`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-3"
+                >
+                  <span className="flex min-w-0 items-center gap-2 text-sm text-gray-800">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                    <span className="break-words">{feature}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeFeature(index)}
+                    className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                    aria-label={`Remove ${feature}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-slate-50/60 px-4 py-6 text-center">
+              <p className="text-xs font-medium text-gray-500">
+                No features or benefits added yet.
+              </p>
+              <p className="mt-0.5 text-[11px] text-gray-400">
+                Add at least one bullet point before saving this pass.
+              </p>
+            </div>
           )}
         </Section>
-      )}
 
-      <div className="sticky bottom-4 z-10">
-        <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-2xl shadow-lg px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">
-            {Object.keys(errors).length > 0
-              ? `${Object.keys(errors).length} field(s) need attention`
-              : "All required fields are complete"}
-          </p>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link
-              href="/admin/access-passes"
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 text-center"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4" />
-              )}
-              {isEdit ? "Save changes" : "Create access pass"}
-            </button>
+        <Section
+          title="Limits & feature access"
+          description="These are enforced for businesses on this pass. Every limit needs a number or the unlimited option."
+          icon={Users}
+        >
+          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="flex items-center gap-1.5 text-base font-semibold text-gray-900">
+                  Usage limits
+                  <InfoTip text="Each capability can have a numeric cap, or you can mark it as unlimited. Every limit needs either a number or the unlimited option." />
+                </h3>
+                <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                  Enter a whole number for each limit, or mark it as unlimited.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={setAllUnlimited}
+                className="self-start whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 transition-colors hover:border-orange-200 hover:bg-orange-50"
+              >
+                Set all to unlimited
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+              {QUOTA_FIELDS.map((field) => {
+                const key = `quota.${field.key}`;
+                const hasError = show(key);
+                const isUnlimited = unlimited[field.key];
+                const inputId = `quota-${field.key}`;
+
+                return (
+                  <div
+                    key={field.key}
+                    className={`rounded-xl border bg-white p-4 transition-colors ${
+                      isUnlimited
+                        ? "border-orange-200 ring-1 ring-orange-100"
+                        : hasError
+                        ? "border-red-300"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex min-h-10 items-start justify-between gap-2">
+                      <label
+                        htmlFor={inputId}
+                        className="text-sm font-medium leading-snug text-gray-900"
+                      >
+                        {field.label}
+                        <span className="ml-0.5 text-red-500">*</span>
+                      </label>
+                      <InfoTip text={field.tooltip} />
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <input
+                        id={inputId}
+                        type="text"
+                        inputMode="numeric"
+                        value={isUnlimited ? "" : quotas[field.key]}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          setQuotas((prev) => ({
+                            ...prev,
+                            [field.key]: digits,
+                          }));
+                        }}
+                        onBlur={() => markTouched(key)}
+                        disabled={isUnlimited}
+                        placeholder={
+                          isUnlimited ? "No limit" : field.placeholder
+                        }
+                        className={`h-10 w-full rounded-lg border px-3 text-sm font-medium text-gray-900 shadow-none transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
+                          hasError
+                            ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/30"
+                            : "border-gray-300 focus:border-orange-500 focus:ring-orange-500/30"
+                        }`}
+                      />
+
+                      <label
+                        htmlFor={`${inputId}-unlimited`}
+                        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          isUnlimited
+                            ? "border-orange-200 bg-orange-50 text-orange-700"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          id={`${inputId}-unlimited`}
+                          type="checkbox"
+                          checked={isUnlimited}
+                          onChange={(e) =>
+                            setQuotaUnlimited(field.key, e.target.checked)
+                          }
+                          className="h-3.5 w-3.5 rounded border-gray-300 accent-orange-500"
+                        />
+                        Unlimited
+                      </label>
+                    </div>
+
+                    <FieldError
+                      message={hasError ? errors[key] : undefined}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <div className="mb-4">
+              <h3 className="flex items-center gap-1.5 text-base font-semibold text-gray-900">
+                Feature access
+                <InfoTip text="Toggle on the capabilities included in this pass. Anything left off is denied for this pass." />
+              </h3>
+              <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                Optional toggles. Leave off to deny access, or switch on to
+                include the capability.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {FLAG_FIELDS.map((field) => {
+                const flagId = `flag-${field.key}`;
+                const isEnabled = flags[field.key];
+
+                return (
+                  <div
+                    key={field.key}
+                    className={`flex items-start justify-between gap-4 rounded-xl border p-4 transition-colors ${
+                      isEnabled
+                        ? "border-orange-200 bg-orange-50/50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <label
+                          htmlFor={flagId}
+                          className="cursor-pointer text-sm font-medium text-gray-900"
+                        >
+                          {field.label}
+                        </label>
+                        <InfoTip
+                          text={`${field.description} Toggle on to include this capability in the pass.`}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                        {field.description}
+                      </p>
+                    </div>
+                    <input
+                      id={flagId}
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={(e) =>
+                        setFlags((prev) => ({
+                          ...prev,
+                          [field.key]: e.target.checked,
+                        }))
+                      }
+                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-orange-500"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Availability"
+          description="Control whether the pass can be purchased, gifted by code, or both."
+          icon={KeyRound}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <SwitchCard
+              id="pass-active"
+              title="Active"
+              description="Visible in the catalogue."
+              tooltip="When enabled, the pass appears in the catalogue and can be assigned or purchased."
+              checked={isActive}
+              onChange={setIsActive}
+            />
+            <SwitchCard
+              id="pass-purchasable"
+              title="Purchasable"
+              description="Businesses can pay for it."
+              tooltip="Allow businesses to buy this pass directly from the catalogue."
+              checked={purchaseEnabled}
+              onChange={setPurchaseEnabled}
+            />
+            <SwitchCard
+              id="pass-code-redemption"
+              title="Code redemption"
+              description="Admin codes unlock it."
+              tooltip="Allow admins to grant the pass with a redemption code."
+              checked={codeRedemptionEnabled}
+              onChange={setCodeRedemptionEnabled}
+            />
+          </div>
+        </Section>
+
+        {isEdit && (
+          <Section
+            title="Apply changes to subscribers"
+            description="Choose whether this edit affects only future subscribers or your existing ones too."
+            icon={Users}
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setApplyMode("new")}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  applyMode === "new"
+                    ? "border-orange-500 bg-orange-50/60"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <span className="block text-sm font-semibold text-gray-900">
+                  New subscribers only
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-gray-500">
+                  Existing pass holders keep their current features, limits and
+                  expiry.
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setApplyMode("existing")}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  applyMode === "existing"
+                    ? "border-orange-500 bg-orange-50/60"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <span className="block text-sm font-semibold text-gray-900">
+                  New & existing subscribers
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-gray-500">
+                  Update every existing pass snapshot with the new features,
+                  limits and price.
+                </span>
+              </button>
+            </div>
+            {applyMode === "existing" && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    id="recalculate-expiry"
+                    type="checkbox"
+                    checked={recalculateExpiry}
+                    onChange={(e) => setRecalculateExpiry(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 accent-amber-500"
+                  />
+                  <div>
+                    <label
+                      htmlFor="recalculate-expiry"
+                      className="cursor-pointer text-sm font-semibold text-amber-900"
+                    >
+                      Recalculate expiry using the new duration
+                    </label>
+                    <div className="mt-0.5 flex items-start gap-1.5">
+                      <p className="text-xs leading-relaxed text-amber-800/80">
+                        Existing passes will end {durationDays || "—"} days
+                        after their original start date.
+                      </p>
+                      <InfoTip text="Existing passes will be re-dated using the new duration, counted from each pass's original start date." />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Section>
+        )}
+
+        <div className="sticky bottom-4 z-10">
+          <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur sm:flex-row">
+            <p className="text-xs text-gray-500">
+              {Object.keys(errors).length > 0
+                ? `${Object.keys(errors).length} field(s) need attention`
+                : "All required fields are complete"}
+            </p>
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <Link
+                href="/admin/access-passes"
+                className="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-semibold text-gray-600 hover:bg-gray-100 sm:flex-none"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 disabled:opacity-50 sm:flex-none"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {isEdit ? "Save changes" : "Create access pass"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </TooltipProvider>
   );
 }

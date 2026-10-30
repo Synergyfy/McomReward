@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -32,6 +32,9 @@ const timeRangeOptions: { value: TimeRange; label: string }[] = [
 export default function BusinessDashboard() {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+  const kpiScrollRef = useRef<HTMLDivElement>(null);
+  const kpiTrackerDragging = useRef(false);
+  const [kpiTracker, setKpiTracker] = useState({ width: 20, left: 0 });
 
   const { data: analyticsData, isLoading: isAnalyticsLoading, isError: isAnalyticsError } = useGetGeneralAnalytics();
   const { data: chartData, isLoading: isChartLoading, isError: isChartError } = useGetChartData({ period: timeRange });
@@ -83,72 +86,118 @@ export default function BusinessDashboard() {
       ? 0
       : Math.min(100, Math.round((tierUsed / tierLimit) * 100));
 
+  const updateKpiTracker = useCallback(() => {
+    const element = kpiScrollRef.current;
+    if (!element) return;
+    const maxScroll = element.scrollWidth - element.clientWidth;
+    const width = element.scrollWidth > 0
+      ? Math.min(100, (element.clientWidth / element.scrollWidth) * 100)
+      : 100;
+    const left = maxScroll > 0
+      ? (element.scrollLeft / maxScroll) * (100 - width)
+      : 0;
+    setKpiTracker({ width, left });
+  }, []);
+
+  const moveKpiScrollFromTracker = (clientX: number, track: HTMLDivElement) => {
+    const element = kpiScrollRef.current;
+    if (!element) return;
+    const rect = track.getBoundingClientRect();
+    const available = Math.max(1, rect.width * (1 - kpiTracker.width / 100));
+    const left = Math.min(available, Math.max(0, clientX - rect.left - (rect.width * kpiTracker.width / 200)));
+    const ratio = left / available;
+    element.scrollLeft = ratio * (element.scrollWidth - element.clientWidth);
+    updateKpiTracker();
+  };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(updateKpiTracker);
+    window.addEventListener("resize", updateKpiTracker);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateKpiTracker);
+    };
+  }, [updateKpiTracker, isAnalyticsLoading, isLoadingSubscription, isProfileLoading]);
+
   if (isAnalyticsLoading || isLoadingSubscription || isProfileLoading) {
     return <div className="min-h-screen bg-white flex items-center justify-center"><Loader /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white px-3 pt-1 pb-3 sm:px-5 sm:pt-2 sm:pb-5 lg:px-7 lg:pt-3 lg:pb-7 xl:px-8 xl:pt-3 xl:pb-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Business Dashboard</h1>
         <p className="text-xs sm:text-sm text-gray-500">Your loyalty programme at a glance</p>
       </div>
 
-      {/* KPI Cards - 2 columns on mobile */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-orange-100 rounded-xl"><Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalMembers}</p><p className="text-[10px] sm:text-xs text-gray-500">Total Members</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-green-100 rounded-xl"><ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalPointsIssued.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Points Issued</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-red-100 rounded-xl"><ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.totalPointsRedeemed.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Points Redeemed</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-purple-100 rounded-xl"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.activeCampaigns}</p><p className="text-[10px] sm:text-xs text-gray-500">Active Campaigns</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-amber-100 rounded-xl"><Gift className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.giftCardsIssued}</p><p className="text-[10px] sm:text-xs text-gray-500">Gift Cards Issued</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-blue-100 rounded-xl"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.giftCardsRedeemed}</p><p className="text-[10px] sm:text-xs text-gray-500">Gift Cards Redeemed</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-emerald-100 rounded-xl"><RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">{displayMetrics.repeatCustomerRate}%</p><p className="text-[10px] sm:text-xs text-gray-500">Repeat Rate</p></div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-indigo-100 rounded-xl"><TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" /></div>
-            <div><p className="text-lg sm:text-2xl font-bold text-gray-900">£{displayMetrics.revenueGenerated.toLocaleString()}</p><p className="text-[10px] sm:text-xs text-gray-500">Revenue</p></div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards: swipe on mobile, retain the dashboard grid on desktop */}
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <div
+          id="dashboard-kpi-scroll"
+          ref={kpiScrollRef}
+          onScroll={updateKpiTracker}
+          className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4"
+          aria-label="Business performance statistics"
+        >
+          {[
+            { label: "Total Members", value: displayMetrics.totalMembers.toLocaleString(), Icon: Users, tone: "bg-orange-100 text-orange-600" },
+            { label: "Points Issued", value: displayMetrics.totalPointsIssued.toLocaleString(), Icon: ArrowUp, tone: "bg-green-100 text-green-600" },
+            { label: "Points Redeemed", value: displayMetrics.totalPointsRedeemed.toLocaleString(), Icon: ArrowDown, tone: "bg-red-100 text-red-600" },
+            { label: "Active Campaigns", value: displayMetrics.activeCampaigns.toLocaleString(), Icon: Megaphone, tone: "bg-purple-100 text-purple-600" },
+            { label: "Gift Cards Issued", value: displayMetrics.giftCardsIssued.toLocaleString(), Icon: Gift, tone: "bg-amber-100 text-amber-600" },
+            { label: "Gift Cards Redeemed", value: displayMetrics.giftCardsRedeemed.toLocaleString(), Icon: CheckCircle, tone: "bg-blue-100 text-blue-600" },
+            { label: "Repeat Rate", value: `${displayMetrics.repeatCustomerRate}%`, Icon: RefreshCw, tone: "bg-emerald-100 text-emerald-600" },
+            { label: "Revenue", value: `£${displayMetrics.revenueGenerated.toLocaleString()}`, Icon: TrendingUp, tone: "bg-indigo-100 text-indigo-600" },
+          ].map(({ label, value, Icon, tone }) => (
+            <Card key={label} className="w-[76vw] max-w-[280px] shrink-0 snap-start border border-gray-100 shadow-sm sm:w-auto sm:max-w-none">
+              <CardContent className="flex items-center gap-2.5 p-3 sm:gap-3 sm:p-4">
+                <div className={`shrink-0 rounded-xl p-2 sm:p-2.5 ${tone}`}><Icon className="h-4 w-4 sm:h-5 sm:w-5" /></div>
+                <div className="min-w-0"><p className="text-lg font-bold text-gray-900 sm:text-2xl">{value}</p><p className="text-[10px] text-gray-500 sm:text-xs">{label}</p></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div
+          role="scrollbar"
+          aria-label="Scroll through dashboard statistics"
+          aria-controls="dashboard-kpi-scroll"
+          aria-orientation="horizontal"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round((kpiTracker.left / Math.max(1, 100 - kpiTracker.width)) * 100)}
+          tabIndex={0}
+          onKeyDown={(event) => {
+            const element = kpiScrollRef.current;
+            if (!element) return;
+            if (event.key === "ArrowRight" || event.key === "PageDown") element.scrollBy({ left: element.clientWidth * 0.8, behavior: "smooth" });
+            else if (event.key === "ArrowLeft" || event.key === "PageUp") element.scrollBy({ left: -element.clientWidth * 0.8, behavior: "smooth" });
+            else if (event.key === "Home") element.scrollTo({ left: 0, behavior: "smooth" });
+            else if (event.key === "End") element.scrollTo({ left: element.scrollWidth, behavior: "smooth" });
+            else return;
+            event.preventDefault();
+          }}
+          onPointerDown={(event) => {
+            kpiTrackerDragging.current = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            moveKpiScrollFromTracker(event.clientX, event.currentTarget);
+          }}
+          onPointerMove={(event) => {
+            if (kpiTrackerDragging.current) moveKpiScrollFromTracker(event.clientX, event.currentTarget);
+          }}
+          onPointerUp={(event) => {
+            kpiTrackerDragging.current = false;
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          }}
+          onPointerCancel={() => { kpiTrackerDragging.current = false; }}
+          className="relative mx-auto mt-2 h-2 w-32 cursor-pointer touch-none rounded-full bg-gray-100 outline-none focus-visible:ring-2 focus-visible:ring-orange-500 sm:hidden"
+        >
+          <div className="absolute top-0 h-2 rounded-full bg-orange-500 transition-[left,width] duration-100" style={{ left: `${kpiTracker.left}%`, width: `${kpiTracker.width}%` }} />
+        </div>
       </div>
 
       {/* Quick Actions */}
-      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+      <Card className="mb-4 sm:mb-6 lg:mb-8 shadow-sm border border-gray-100">
         <CardHeader className="pb-2 sm:pb-6">
           <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
         </CardHeader>
@@ -170,7 +219,7 @@ export default function BusinessDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 lg:gap-8 mb-4 sm:mb-6 lg:mb-8">
         <TierProgress tier={{ name: tierName, progress: tierProgress }} hasPlan={tierLimit > 0} />
         <PointsSummary
           summary={{ earned: displayData?.totalPointsEarned || 0, spent: displayData?.totalPointsRedeemed || 0, matchingAvailable: matchingBalanceData?.matching_points || 0 }}
@@ -180,7 +229,7 @@ export default function BusinessDashboard() {
       </div>
 
       {/* Chart */}
-      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+      <Card className="mb-4 sm:mb-6 lg:mb-8 shadow-sm border border-gray-100">
         <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-0 sm:pb-6">
           <CardTitle className="text-base sm:text-lg">Performance ({selectedTimeRangeLabel})</CardTitle>
           <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
@@ -209,7 +258,7 @@ export default function BusinessDashboard() {
       </Card>
 
       {/* Active Campaigns */}
-      <Card className="mb-6 sm:mb-8 shadow-sm border border-gray-100">
+      <Card className="mb-4 sm:mb-6 lg:mb-8 shadow-sm border border-gray-100">
         <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
           <CardTitle className="text-base sm:text-lg">Active Campaigns</CardTitle>
         </CardHeader>

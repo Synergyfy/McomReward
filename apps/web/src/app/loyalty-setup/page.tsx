@@ -133,6 +133,8 @@ export default function LoyaltySetupPage() {
       stampsRequired: reward.stampsRequired || 0,
       rewardType: reward.rewardType,
       image: reward.image,
+      quantity: reward.quantity ?? 0,
+      expiryDatetime: reward.expiryDatetime ?? "",
     }]));
     const nextCustomizations = { ...savedCustomizations, ...updatedCustomizations };
     setSavedCustomizations(nextCustomizations);
@@ -209,8 +211,6 @@ export default function LoyaltySetupPage() {
               <TemplateScreen
                 sectorKey={resolvedSectorKey}
                 templates={templates}
-                initialSelectedId={progress?.selectedTemplateId}
-                initialCustomizedIds={Object.keys(templateOverrides)}
                 onSelect={handleTemplateSelect}
                 onBack={handleTemplateBack}
                 onTemplateSave={handleTemplateSave}

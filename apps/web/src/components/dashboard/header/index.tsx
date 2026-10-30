@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Loader2, Bell, Menu, User, Wallet, Coins, Star, Gift, Crown } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Loader2, Bell, Menu, Wallet, Coins, Star, Gift, Crown, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { tierIcons, tierStyles, TierName } from '@/components/ui/tierBadge';
@@ -50,6 +50,18 @@ export default function BusinessHeader({
   isError: propIsError,
 }: BusinessHeaderProps) {
   const router = useRouter();
+  const [centralBusinessName, setCentralBusinessName] = useState('');
+
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem('mcom_central_business_profile');
+      if (!savedProfile) return;
+      const parsed = JSON.parse(savedProfile);
+      setCentralBusinessName(parsed?.businessName || parsed?.name || '');
+    } catch {
+      setCentralBusinessName('');
+    }
+  }, []);
 
   // Conditionally use hooks or props
   const { data: hookSubscription, isLoading: hookIsLoadingSubscription, isError: hookIsErrorSubscription } = useGetMySubscription();
@@ -80,7 +92,17 @@ export default function BusinessHeader({
   const tierName = subscription?.tier?.name;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const userBadge = pointPackageBalance?.totalBalance?.toLocaleString() ?? '0';
-  const userInitials = profile?.name ? profile.name.charAt(0).toUpperCase() : '...';
+  const businessName = propProfile
+    ? propProfile.name || 'Business'
+    : centralBusinessName || profile?.name || 'Business';
+  const userInitials = businessName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'B';
 
   const unreadCount = notificationsData?.unreadCount ?? 0;
   const notifications = notificationsData?.data ?? [];
@@ -364,21 +386,23 @@ export default function BusinessHeader({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
            <button
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
-            aria-label="User menu"
+            className="flex cursor-pointer items-center justify-center gap-2 w-full px-4 py-3 text-gray-700 hover:bg-gray-200 hover:text-orange-600 transition text-left rounded-4xl border border-transparent focus:outline-none "
+            aria-label={`${businessName} profile menu`}
           >
             {profile?.profileImage ? (
                 <Image
                     src={profile.profileImage}
-                    alt="User Avatar"
+                    alt={`${businessName} logo`}
                     width={32}
                     height={32}
                     className="rounded-full object-cover"
                 />
             ) : (
-                <User size={18} />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700" aria-hidden="true">
+                  {isLoading ? '…' : userInitials}
+                </span>
             )}
-            <span className="truncate max-w-[100px]">{isLoading ? '...' : userInitials}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" aria-hidden="true" />
           </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">

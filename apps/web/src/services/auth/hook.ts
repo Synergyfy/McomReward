@@ -7,8 +7,30 @@ import { clearAuthCookies, getRefreshToken, setAuthTokens } from '@/lib/auth-coo
 const removeTokens = () => {
   clearAuthCookies();
   localStorage.removeItem('authToken'); // Assuming this was also a token storage
+  localStorage.removeItem('user');
+  localStorage.removeItem('mcom_central_business_profile');
   sessionStorage.clear(); // Clear any session storage
   removeBearerToken(); // Clear bearer token from API instance
+};
+
+const storeCentralBusinessProfile = (data: any) => {
+  if (typeof window === 'undefined') return;
+  const businessProfile = data?.user?.businessProfile;
+  const user = data?.user ?? (
+    data?.userId || data?.name || data?.role
+      ? { id: data.userId, name: data.name, role: data.role }
+      : null
+  );
+  if (businessProfile) {
+    localStorage.setItem('mcom_central_business_profile', JSON.stringify(businessProfile));
+  } else {
+    localStorage.removeItem('mcom_central_business_profile');
+  }
+  if (user) {
+    localStorage.setItem('user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('user');
+  }
 };
 
 // Admin Login
@@ -149,6 +171,7 @@ export const useSsoLogin = () => {
     onSuccess: (data) => {
       setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
+      storeCentralBusinessProfile(data);
     },
   });
 };
@@ -168,6 +191,7 @@ export const useSsoExchange = () => {
     onSuccess: (data) => {
       setAuthTokens(data.accessToken, data.refreshToken);
       setBearerToken(data.accessToken);
+      storeCentralBusinessProfile(data);
     },
   });
 };

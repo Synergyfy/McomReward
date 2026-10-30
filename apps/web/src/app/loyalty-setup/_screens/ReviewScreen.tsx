@@ -49,10 +49,9 @@ export default function ReviewScreen({ template, profile, centralBusinessProfile
   return (
     <main className="min-h-screen bg-[#f7f8ff] text-slate-900">
       <div className="mx-auto w-full max-w-[1440px] px-4 pb-3 pt-3 max-sm:px-[2.5vw] sm:px-7 sm:pb-12 sm:pt-6 lg:px-10">
-        <button onClick={onBack} className="mb-5 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-orange-700 max-sm:mb-3 max-sm:py-1.5"><ArrowLeft className="h-4 w-4" />Back to tiers</button>
+        <button onClick={onBack} className="mb-1.5 inline-flex min-h-8 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-white hover:text-orange-700 sm:mb-5 sm:min-h-10 sm:gap-2 sm:rounded-lg sm:px-2 sm:py-2 sm:text-sm"><ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />Back</button>
         <SetupProgress currentStep={4} className="mb-7 max-sm:mb-3" />
         <header className="mb-6 flex flex-col gap-2 max-sm:mb-3 max-sm:gap-1 sm:mb-8">
-          <p className="w-fit rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-orange-800 max-sm:text-[9px]">Final step · Review</p>
           <h1 className="text-2xl font-bold tracking-tight text-slate-950 max-sm:text-[20px] sm:text-4xl">Review your setup</h1>
           <p className="max-w-3xl text-sm leading-6 text-slate-600 max-sm:text-xs max-sm:leading-4 sm:text-base">Review the business details available from your profile, the rewards and campaigns you selected, and your tier settings before saving.</p>
         </header>

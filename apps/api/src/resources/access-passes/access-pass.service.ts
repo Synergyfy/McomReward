@@ -149,7 +149,27 @@ export class AccessPassService implements OnModuleInit {
     return plan;
   }
 
+  /**
+   * Prices are stored as non-negative decimals. The DTO validates this for
+   * HTTP callers; this guard also protects internal/service-to-service calls
+   * (and updates that bypass the create DTO).
+   */
+  private assertValidPrice(price: number | undefined | null): void {
+    if (price === undefined) return;
+    if (
+      price === null ||
+      typeof price !== "number" ||
+      !Number.isFinite(price)
+    ) {
+      throw new BadRequestException("Price must be a valid number");
+    }
+    if (price < 0) {
+      throw new BadRequestException("Price cannot be negative");
+    }
+  }
+
   async createPlan(dto: CreateAccessPassPlanDto): Promise<AccessPassPlan> {
+    this.assertValidPrice(dto.price);
     const slug = dto.slug.trim().toLowerCase();
     const existing = await this.planRepository.findOne({ where: { slug } });
     if (existing) {
@@ -181,6 +201,10 @@ export class AccessPassService implements OnModuleInit {
   ): Promise<AccessPassPlan> {
     const plan = await this.findPlan(id);
     const { updateExistingSubscribers, recalculateExpiry, ...changes } = dto;
+
+    if (changes.price !== undefined) {
+      this.assertValidPrice(changes.price);
+    }
 
     if (changes.slug && changes.slug.trim().toLowerCase() !== plan.slug) {
       const slug = changes.slug.trim().toLowerCase();
@@ -1094,6 +1118,16 @@ export class AccessPassService implements OnModuleInit {
     }
 
     const method = this.mapMethod(dto.provider);
+    const checkoutId = dto.checkoutId?.trim() || randomUUID();
+    const amountMinor = toMinorUnits(plan.price);
+
+    // MCOM Pay only accepts positive minor-unit amounts, so a £0.00 pass can
+    // never be charged — the hub rejects it with "Validation failed". Fulfil
+    // free passes locally instead of trying to create a zero-value charge.
+    if (amountMinor === "0") {
+      return this.completeFreePurchase(business, plan, checkoutId, method);
+    }
+
     if (method === PaymentCheckoutMethod.WALLET && !business.mcomUserId) {
       throw new BadRequestException({
         code: "ACCOUNT_NOT_LINKED",
@@ -1102,8 +1136,6 @@ export class AccessPassService implements OnModuleInit {
       });
     }
 
-    const checkoutId = dto.checkoutId?.trim() || randomUUID();
-    const amountMinor = toMinorUnits(plan.price);
     const idempotencyKey =
       `mcom-rewards-access-pass-${business.id}-${checkoutId}-${method}`.slice(
         0,
@@ -1170,6 +1202,63 @@ export class AccessPassService implements OnModuleInit {
       ...(method === PaymentCheckoutMethod.WALLET
         ? { topUpUrl: this.centralWallet.topUpUrl() }
         : {}),
+    };
+  }
+
+  /**
+   * Activate a £0.00 access pass without going through MCOM Pay. The local
+   * checkout is marked paid immediately so the standard fulfilment path grants
+   * the subscription and the flow stays idempotent on retries.
+   */
+  private async completeFreePurchase(
+    business: Business,
+    plan: AccessPassPlan,
+    checkoutId: string,
+    method: PaymentCheckoutMethod,
+  ) {
+    const idempotencyKey =
+      `mcom-rewards-access-pass-${business.id}-${checkoutId}-${method}-free`.slice(
+        0,
+        255,
+      );
+    const reference =
+      `access-pass-${business.id}-${plan.id}-${checkoutId}`.slice(0, 255);
+
+    const checkout = await this.checkoutService.getOrCreate({
+      businessId: business.id,
+      purpose: PaymentCheckoutPurpose.ACCESS_PASS,
+      purposeRef: plan.id,
+      amountMinor: "0",
+      currency: plan.currency || "GBP",
+      method,
+      idempotencyKey,
+      reference,
+      metadata: {
+        platform: "mcom-rewards",
+        businessId: business.id,
+        accessPassPlanId: plan.id,
+        accessPassPlanName: plan.name,
+        durationDays: plan.durationDays,
+        free: true,
+      },
+    });
+
+    if (checkout.status !== PaymentCheckoutStatus.PAID) {
+      await this.checkoutService.markPaid(checkout);
+    }
+
+    const subscription = await this.activateFromCheckout(checkout);
+
+    return {
+      success: true,
+      free: true,
+      checkoutId: checkout.id,
+      chargeId: null,
+      method,
+      amountMinor: "0",
+      currency: checkout.currency || plan.currency || "GBP",
+      status: "paid" as const,
+      accessPass: subscription,
     };
   }
 

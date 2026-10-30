@@ -72,9 +72,9 @@ export class CreateAccessPassPlanDto {
   description?: string;
 
   @ApiProperty({ example: 30 })
-  @IsNumber()
-  @Min(0)
-  @Max(1_000_000)
+  @IsNumber({}, { message: "price must be a number" })
+  @Min(0, { message: "price cannot be negative" })
+  @Max(1_000_000, { message: "price must be 1,000,000 or less" })
   price: number;
 
   @ApiProperty({ default: "GBP", required: false })

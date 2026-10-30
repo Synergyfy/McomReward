@@ -4,7 +4,6 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  AlertCircle,
   ArrowLeft,
   Check,
   CheckCircle2,
@@ -22,6 +21,15 @@ import {
 } from 'lucide-react';
 import { AdminPlan, CreatePlanPayload } from '@/services/admin/plans';
 import { toast } from 'sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import {
+  FieldError,
+  FieldLabel,
+  InfoTip,
+  inputBase,
+  inputError,
+  inputNormal,
+} from '@/components/admin/forms/FormPrimitives';
 
 /* ------------------------------------------------------------------ */
 /* Backend contract (mirrors GET /plans/schema and CreatePlanDto)      */
@@ -31,14 +39,62 @@ const TIER_ORDER = ['STANDARD', 'PRO', 'PRO_PLUS'] as const;
 type TierKey = (typeof TIER_ORDER)[number];
 
 const CORE_QUOTA_FIELDS = [
-  { key: 'maxActiveCampaigns', label: 'Max active campaigns' },
-  { key: 'maxActiveRewards', label: 'Max active rewards' },
-  { key: 'maxRewardsPerCampaign', label: 'Max rewards per campaign' },
-  { key: 'monthlyPointsAllowance', label: 'Monthly points allowance' },
-  { key: 'monthlyStampsAllowance', label: 'Monthly stamps allowance' },
-  { key: 'maxTeamMembers', label: 'Max team members' },
-  { key: 'maxGiftCardTemplates', label: 'Max gift card templates' },
-  { key: 'maxCouponTemplates', label: 'Max coupon templates' },
+  {
+    key: 'maxActiveCampaigns',
+    label: 'Active campaigns',
+    tooltip:
+      'The maximum number of campaigns a business can have live at the same time. Mark it as unlimited to remove the cap.',
+    placeholder: 'e.g. 10',
+  },
+  {
+    key: 'maxActiveRewards',
+    label: 'Active rewards',
+    tooltip:
+      'The maximum number of rewards that can be live at the same time across all campaigns. Mark it as unlimited to remove the cap.',
+    placeholder: 'e.g. 50',
+  },
+  {
+    key: 'maxRewardsPerCampaign',
+    label: 'Rewards per campaign',
+    tooltip:
+      'How many rewards can be attached to a single campaign. Mark it as unlimited to allow any number.',
+    placeholder: 'e.g. 5',
+  },
+  {
+    key: 'monthlyPointsAllowance',
+    label: 'Monthly points',
+    tooltip:
+      'The number of loyalty points a business can issue each calendar month. Mark it as unlimited to remove the monthly cap.',
+    placeholder: 'e.g. 10000',
+  },
+  {
+    key: 'monthlyStampsAllowance',
+    label: 'Monthly stamps',
+    tooltip:
+      'The number of stamps a business can issue each calendar month. Mark it as unlimited to remove the monthly cap.',
+    placeholder: 'e.g. 1000',
+  },
+  {
+    key: 'maxTeamMembers',
+    label: 'Team members',
+    tooltip:
+      'How many staff accounts can access the business dashboard. Mark it as unlimited to allow any number of members.',
+    placeholder: 'e.g. 5',
+  },
+  {
+    key: 'maxGiftCardTemplates',
+    label: 'Gift card templates',
+    tooltip:
+      'How many gift card designs a business can create. Mark it as unlimited to allow any number of templates.',
+    placeholder: 'e.g. 10',
+  },
+  {
+    key: 'maxCouponTemplates',
+    label: 'Coupon templates',
+    tooltip:
+      'How many coupon designs a business can create. Mark it as unlimited to allow any number of templates.',
+    placeholder: 'e.g. 10',
+  },
 ] as const;
 
 const FEATURE_FLAGS = [
@@ -234,11 +290,11 @@ const validatePrice = (raw: string): string | undefined => {
 
 const validateQuota = (raw: string): string | undefined => {
   const value = raw.trim();
-  if (!value) return 'Enter a positive limit or tick Unlimited.';
-  if (!/^\d+$/.test(value)) return 'Use a whole number of 1 or more, or tick Unlimited.';
+  if (!value) return 'Enter a limit, or mark this as unlimited.';
+  if (!/^\d+$/.test(value)) return 'Use a whole number of 1 or more.';
   const number = Number(value);
   if (!Number.isFinite(number) || number < 1) {
-    return 'Use a whole number of 1 or more, or tick Unlimited.';
+    return 'Use a whole number of 1 or more.';
   }
   if (number > MAX_QUOTA) return `Keep the value at ${MAX_QUOTA.toLocaleString()} or below.`;
   return undefined;
@@ -255,60 +311,34 @@ const REQUIRED_FIELDS_PER_VARIANT = 2 + CORE_QUOTA_FIELDS.length;
 /* Small UI primitives                                                 */
 /* ------------------------------------------------------------------ */
 
-function RequirementBadge({ required }: { required: boolean }) {
-  return (
-    <span
-      className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-        required
-          ? 'text-red-600 bg-red-50 border-red-200'
-          : 'text-gray-500 bg-gray-50 border-gray-200'
-      }`}
-    >
-      {required ? 'Required' : 'Optional'}
-    </span>
-  );
-}
-
-function FieldLabel({
-  htmlFor,
+function StepMarker({
+  index,
   label,
-  required,
-  hint,
-  children,
+  active,
+  current,
 }: {
-  htmlFor?: string;
+  index: number;
   label: string;
-  required: boolean;
-  hint?: string;
-  children?: React.ReactNode;
+  active: boolean;
+  current: boolean;
 }) {
   return (
-    <div className="mb-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <label
-          htmlFor={htmlFor}
-          className="block text-xs font-bold text-gray-700 uppercase tracking-wider"
-        >
-          {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
-        </label>
-        <div className="flex items-center gap-2">
-          {children}
-          <RequirementBadge required={required} />
-        </div>
+    <div className="flex items-center gap-2.5">
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+          active ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500'
+        }`}
+      >
+        {index}
       </div>
-      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
+      <span
+        className={`hidden text-sm font-medium sm:block ${
+          current ? 'text-gray-900' : 'text-gray-500'
+        }`}
+      >
+        {label}
+      </span>
     </div>
-  );
-}
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return (
-    <p className="mt-1 text-xs font-medium text-red-600 flex items-center gap-1" role="alert">
-      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-      {message}
-    </p>
   );
 }
 
@@ -607,243 +637,234 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
   /* ---------------------------- Render ---------------------------- */
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/admin/plans"
-          className="p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
-          aria-label="Back to plans"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">
-            {isEdit ? `Edit ${initialPlan?.name || 'Plan'}` : 'Create Commercial Plan'}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {isEdit
-              ? 'Update the plan family and all three variant configurations.'
-              : 'Define one commercial plan family with Standard (90d), Pro (180d) and Pro+ (1yr) variants.'}
-          </p>
-        </div>
-      </div>
-
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center max-w-xl mx-auto">
-        <div className="flex items-center w-full">
-          <div
-            className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all ${
-              step >= 1 ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-500'
-            }`}
+    <TooltipProvider delayDuration={200}>
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-1 py-2 md:px-2">
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          <Link
+            href="/admin/plans"
+            className="mt-0.5 rounded-xl border border-gray-200 bg-white p-2.5 text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
+            aria-label="Back to plans"
           >
-            1
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                {isEdit ? `Edit ${initialPlan?.name || 'Plan'}` : 'Create commercial plan'}
+              </h1>
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                {isEdit ? 'Editing' : 'New plan'}
+              </span>
+            </div>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-gray-500">
+              {isEdit
+                ? 'Update the plan family and all three variant configurations.'
+                : 'Define one plan family with Standard (90 days), Pro (180 days) and Pro+ (1 year) variants.'}
+            </p>
           </div>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="mx-auto flex max-w-lg items-center">
+          <StepMarker index={1} label="Plan details" active={step >= 1} current={step === 1} />
           <div
-            className={`flex-1 h-1 mx-3 rounded transition-all ${
+            className={`mx-3 h-0.5 flex-1 rounded transition-colors ${
               step >= 2 ? 'bg-blue-600' : 'bg-gray-200'
             }`}
           />
-          <div
-            className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all ${
-              step >= 2 ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-500'
-            }`}
-          >
-            2
-          </div>
+          <StepMarker index={2} label="Variant configuration" active={step >= 2} current={step === 2} />
         </div>
-      </div>
 
-      {/* Required / optional legend */}
-      <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 max-w-4xl mx-auto">
-        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-        <p className="text-xs text-blue-900 leading-relaxed">
-          Fields marked <span className="font-bold text-red-600">Required</span> must be completed.
-          Every variant needs its price, at least one marketing feature and all quotas before the plan
-          can be {isEdit ? 'saved' : 'published'}.{' '}
-          <span className="font-semibold">Optional</span> fields can be left as-is.
-        </p>
-      </div>
+        {/* Required / optional legend */}
+        <div className="mx-auto flex max-w-4xl items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+          <p className="text-xs leading-relaxed text-blue-900">
+            Fields marked <span className="font-semibold text-red-600">*</span> are required. Each
+            variant needs a price, at least one marketing bullet point and a value for every usage
+            limit before the plan can be {isEdit ? 'saved' : 'published'}.
+          </p>
+        </div>
 
-      {/* Step 1: General Info */}
-      {step === 1 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 max-w-2xl mx-auto space-y-6"
-        >
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-lg font-black text-gray-900">Step 1: General Plan Family Information</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Set the commercial brand name and visibility of this plan offering.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <div>
-              <FieldLabel
-                htmlFor="plan-name"
-                label="Plan Family Name"
-                required
-                hint="The name buyers will see at checkout."
-              >
-                <span className="text-[11px] text-gray-400 tabular-nums">
-                  {name.length}/{MAX_NAME}
-                </span>
-              </FieldLabel>
-              <input
-                id="plan-name"
-                type="text"
-                value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onBlur={() => markTouched('name')}
-                placeholder="e.g. Starter Plan, Gold VIP"
-                maxLength={MAX_NAME}
-                aria-invalid={showError('name', stepOneErrors.name, attemptedNext)}
-                aria-describedby={stepOneErrors.name ? 'plan-name-error' : undefined}
-                className={`w-full px-4 py-3 rounded-xl border font-bold text-gray-900 transition-colors focus:outline-none focus:ring-2 ${
-                  showError('name', stepOneErrors.name, attemptedNext)
-                    ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-blue-500'
-                }`}
-              />
-              <div id="plan-name-error">
-                <FieldError
-                  message={
-                    showError('name', stepOneErrors.name, attemptedNext)
-                      ? stepOneErrors.name
-                      : undefined
-                  }
-                />
-              </div>
+        {/* Step 1: General Info */}
+        {step === 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-auto max-w-4xl space-y-7 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8"
+          >
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Plan details</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Set the commercial brand name and visibility of this plan offering.
+              </p>
             </div>
 
-            <div>
-              <FieldLabel
-                htmlFor="plan-slug"
-                label="URL Safe Slug"
-                required
-                hint="Lowercase letters, numbers and hyphens only. Auto-generated from the name until you edit it."
-              >
-                <span className="text-[11px] text-gray-400 tabular-nums">
-                  {slug.length}/{MAX_SLUG}
-                </span>
-              </FieldLabel>
-              <div className="flex gap-2">
-                <input
-                  id="plan-slug"
-                  type="text"
-                  value={slug}
-                  onChange={(e) => handleSlugChange(e.target.value)}
-                  onBlur={() => markTouched('slug')}
-                  placeholder="e.g. starter-plan"
-                  maxLength={MAX_SLUG}
-                  aria-invalid={showError('slug', stepOneErrors.slug, attemptedNext)}
-                  aria-describedby={stepOneErrors.slug ? 'plan-slug-error' : undefined}
-                  className={`flex-1 px-4 py-3 rounded-xl border font-mono text-sm text-gray-800 transition-colors focus:outline-none focus:ring-2 ${
-                    showError('slug', stepOneErrors.slug, attemptedNext)
-                      ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={handleRegenerateSlug}
-                  disabled={!name.trim()}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  Regenerate
-                </button>
-              </div>
-              <div id="plan-slug-error">
-                <FieldError
-                  message={
-                    showError('slug', stepOneErrors.slug, attemptedNext)
-                      ? stepOneErrors.slug
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <FieldLabel
+                    htmlFor="plan-name"
+                    label="Plan family name"
+                    required
+                    tooltip="The name buyers see at checkout and on plan comparison pages."
+                    hint="A clear, commercial name for this plan family."
+                    trailing={
+                      <span className="text-[11px] tabular-nums text-gray-400">
+                        {name.length}/{MAX_NAME}
+                      </span>
+                    }
+                  />
+                  <input
+                    id="plan-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    onBlur={() => markTouched('name')}
+                    placeholder="e.g. Starter Plan, Gold VIP"
+                    maxLength={MAX_NAME}
+                    aria-invalid={showError('name', stepOneErrors.name, attemptedNext)}
+                    aria-describedby={stepOneErrors.name ? 'plan-name-error' : undefined}
+                    className={`${inputBase} font-semibold ${showError('name', stepOneErrors.name, attemptedNext) ? inputError : inputNormal}`}
+                  />
+                  <div id="plan-name-error">
+                    <FieldError
+                      message={
+                        showError('name', stepOneErrors.name, attemptedNext)
+                          ? stepOneErrors.name
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <FieldLabel
-                htmlFor="plan-description"
-                label="Marketing Description"
-                required={false}
-                hint="A short summary shown to buyers on the plan selection screen."
-              >
-                <span className="text-[11px] text-gray-400 tabular-nums">
-                  {description.length}/{MAX_DESCRIPTION}
-                </span>
-              </FieldLabel>
-              <textarea
-                id="plan-description"
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={() => markTouched('description')}
-                placeholder="Brief summary of who this plan is tailored for..."
-                maxLength={MAX_DESCRIPTION}
-                aria-invalid={showError('description', stepOneErrors.description, attemptedNext)}
-                className={`w-full px-4 py-3 rounded-xl border text-sm text-gray-800 transition-colors focus:outline-none focus:ring-2 ${
-                  showError('description', stepOneErrors.description, attemptedNext)
-                    ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-blue-500'
-                }`}
-              />
-              <FieldError
-                message={
-                  showError('description', stepOneErrors.description, attemptedNext)
-                    ? stepOneErrors.description
-                    : undefined
-                }
-              />
-            </div>
+                <div>
+                  <FieldLabel
+                    htmlFor="plan-slug"
+                    label="URL slug"
+                    required
+                    tooltip="Used in the plan's public URL. Use lowercase letters, numbers and hyphens only."
+                    hint="Auto-generated from the name until you edit it."
+                    trailing={
+                      <span className="text-[11px] tabular-nums text-gray-400">
+                        {slug.length}/{MAX_SLUG}
+                      </span>
+                    }
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      id="plan-slug"
+                      type="text"
+                      value={slug}
+                      onChange={(e) => handleSlugChange(e.target.value)}
+                      onBlur={() => markTouched('slug')}
+                      placeholder="e.g. starter-plan"
+                      maxLength={MAX_SLUG}
+                      aria-invalid={showError('slug', stepOneErrors.slug, attemptedNext)}
+                      aria-describedby={stepOneErrors.slug ? 'plan-slug-error' : undefined}
+                      className={`${inputBase} flex-1 font-mono text-[13px] ${showError('slug', stepOneErrors.slug, attemptedNext) ? inputError : inputNormal}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRegenerateSlug}
+                      disabled={!name.trim()}
+                      className="whitespace-nowrap rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Regenerate
+                    </button>
+                  </div>
+                  <div id="plan-slug-error">
+                    <FieldError
+                      message={
+                        showError('slug', stepOneErrors.slug, attemptedNext)
+                          ? stepOneErrors.slug
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-gray-200">
               <div>
-                <span className="text-sm font-bold text-gray-900 block">Plan Visibility</span>
-                <span className="text-xs text-gray-500">
-                  Enable or disable this plan for commercial checkout across storefronts.
-                </span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="sr-only peer"
-                  aria-label="Plan visibility"
+                <FieldLabel
+                  htmlFor="plan-description"
+                  label="Marketing description"
+                  required={false}
+                  tooltip="A short buyer-facing summary shown when choosing between plans."
+                  hint="Optional. Keep it concise and benefit-led."
+                  trailing={
+                    <span className="text-[11px] tabular-nums text-gray-400">
+                      {description.length}/{MAX_DESCRIPTION}
+                    </span>
+                  }
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-              </label>
+                <textarea
+                  id="plan-description"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onBlur={() => markTouched('description')}
+                  placeholder="Brief summary of who this plan is tailored for..."
+                  maxLength={MAX_DESCRIPTION}
+                  aria-invalid={showError('description', stepOneErrors.description, attemptedNext)}
+                  className={`${inputBase} resize-y ${showError('description', stepOneErrors.description, attemptedNext) ? inputError : inputNormal}`}
+                />
+                <FieldError
+                  message={
+                    showError('description', stepOneErrors.description, attemptedNext)
+                      ? stepOneErrors.description
+                      : undefined
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-slate-50 p-4">
+                <div className="flex items-start gap-2">
+                  <div>
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                      Plan visibility
+                      <InfoTip text="When enabled, the plan is available at checkout. When disabled, it stays hidden from buyers." />
+                    </span>
+                    <span className="mt-0.5 block text-xs text-gray-500">
+                      Enable or disable this plan for commercial checkout across storefronts.
+                    </span>
+                  </div>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="peer sr-only"
+                    aria-label="Plan visibility"
+                  />
+                  <div className="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/40" />
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div className="pt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={handleNext}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2"
-            >
-              <span>Next: Configure 3 Variants</span>
-              <Sparkles className="w-4 h-4" />
-            </button>
-          </div>
-        </motion.div>
-      )}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleNext}
+                className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+              >
+                <span>Continue to variants</span>
+                <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
 
-      {/* Step 2: Variant Configuration */}
-      {step === 2 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Variant Selector Tabs */}
-          <div className="flex justify-center">
-            <div className="inline-flex p-1.5 bg-white border border-gray-200 rounded-2xl shadow-sm gap-2 flex-wrap justify-center">
+        {/* Step 2: Variant Configuration */}
+        {step === 2 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Variant Selector Tabs */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {TIER_ORDER.map((tier) => {
                 const meta = TIER_META[tier];
                 const Icon = meta.icon;
@@ -856,433 +877,495 @@ export function PlanForm({ mode, initialPlan, isSubmitting, onSubmit }: PlanForm
                     key={tier}
                     type="button"
                     onClick={() => setActiveTab(tier)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                      isActive ? meta.activeClass : 'text-gray-600 hover:text-gray-900'
+                    aria-current={isActive ? 'true' : undefined}
+                    className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
+                      isActive
+                        ? 'border-blue-500 bg-blue-50/60 shadow-sm ring-1 ring-blue-500/20'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/60'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span>{meta.fullLabel}</span>
                     <span
-                      className={`ml-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
-                        complete
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : isActive
-                          ? 'bg-white/25 text-white'
-                          : 'bg-amber-50 text-amber-700'
-                      }`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${meta.softClass}`}
                     >
-                      {complete ? (
-                        <>
-                          <Check className="w-3 h-3" /> Ready
-                        </>
-                      ) : (
-                        `${remaining} left`
-                      )}
+                      <Icon className="h-5 w-5" />
                     </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-gray-900">
+                        {meta.fullLabel}
+                      </span>
+                      <span className="mt-0.5 flex items-center gap-1 text-xs font-medium">
+                        {complete ? (
+                          <span className="flex items-center gap-1 text-emerald-600">
+                            <Check className="h-3.5 w-3.5" /> Ready
+                          </span>
+                        ) : (
+                          <span className="text-amber-600">{remaining} required left</span>
+                        )}
+                      </span>
+                    </span>
+                    {isActive && (
+                      <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        Editing
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          {/* Active Variant Configuration Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 space-y-8 max-w-4xl mx-auto">
-            {/* Variant header */}
-            <div className="border-b border-gray-100 pb-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-xl border ${activeMeta.softClass}`}>
-                    <ActiveIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-gray-900">
-                      Configure {activeMeta.fullLabel}
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Duration: {activeMeta.duration}. Set pricing, buyer-facing features, quota limits
-                      and feature access for this variant.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 sm:pl-4">
-                  <FieldLabel htmlFor={`price-${activeTab}`} label="One-off Price" required>
-                    <span className="text-[11px] text-gray-400">GBP</span>
-                  </FieldLabel>
-                </div>
-              </div>
-
-              <div>
-                <div className="relative w-full sm:w-48">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500">
-                    £
-                  </span>
-                  <input
-                    id={`price-${activeTab}`}
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    value={activeState.price}
-                    onChange={(e) => handlePriceChange(activeTab, e.target.value)}
-                    onBlur={() => markTouched(`${activeTab}.price`)}
-                    placeholder="0.00"
-                    aria-invalid={showError(`${activeTab}.price`, activeErrors.price, attemptedSave)}
-                    className={`w-full pl-7 pr-3 py-2.5 rounded-xl border font-extrabold text-gray-900 text-lg transition-colors focus:outline-none focus:ring-2 ${
-                      showError(`${activeTab}.price`, activeErrors.price, attemptedSave)
-                        ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-blue-500'
-                    }`}
-                  />
-                </div>
-                <FieldError
-                  message={
-                    showError(`${activeTab}.price`, activeErrors.price, attemptedSave)
-                      ? activeErrors.price
-                      : undefined
-                  }
-                />
-              </div>
-
-              {/* Progress */}
-              <div className="pt-1">
-                <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500 mb-1.5">
-                  <span>Required fields for this variant</span>
-                  <span
-                    className={
-                      activeProgress.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'
-                    }
-                  >
-                    {activeProgress.done}/{activeProgress.total}
-                  </span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      activeProgress.remaining === 0 ? 'bg-emerald-500' : 'bg-amber-500'
-                    }`}
-                    style={{
-                      width: `${Math.round((activeProgress.done / activeProgress.total) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Features List Section */}
-            <div className="space-y-3">
-              <FieldLabel
-                htmlFor={`feature-input-${activeTab}`}
-                label="Marketing Bullet Points"
-                required
-                hint="Shown to buyers on the plan card. Add at least one."
-              >
-                <span className="text-[11px] text-gray-400">
-                  {activeState.features.length} added
-                </span>
-              </FieldLabel>
-
-              <div className="flex gap-2">
-                <input
-                  id={`feature-input-${activeTab}`}
-                  type="text"
-                  value={activeState.newFeatureInput}
-                  onChange={(e) =>
-                    updateVariant(activeTab, (state) => ({
-                      ...state,
-                      newFeatureInput: e.target.value,
-                    }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddFeature(activeTab);
-                    }
-                  }}
-                  onBlur={() => markTouched(`${activeTab}.features`)}
-                  placeholder="e.g. 5 Active Campaigns, Digital Stamp Multiplier..."
-                  maxLength={MAX_FEATURE}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleAddFeature(activeTab)}
-                  disabled={!activeState.newFeatureInput.trim()}
-                  className="px-4 py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add</span>
-                </button>
-              </div>
-
-              {activeState.features.length > 0 ? (
-                <div className="space-y-2 mt-2">
-                  {activeState.features.map((feature, idx) => (
-                    <div
-                      key={`${feature}-${idx}`}
-                      className="flex justify-between items-center p-3 bg-slate-50 border border-gray-200 rounded-xl text-sm text-gray-800"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        {feature}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature(activeTab, idx)}
-                        className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        aria-label={`Remove feature ${feature}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+            {/* Active Variant Configuration Card */}
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              {/* Variant header */}
+              <div className="border-b border-gray-100 p-6 sm:p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className={`shrink-0 rounded-xl border p-2 ${activeMeta.softClass}`}>
+                      <ActiveIcon className="h-5 w-5" />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-2 rounded-xl border border-dashed border-gray-300 bg-slate-50/60 px-4 py-6 text-center">
-                  <p className="text-xs font-semibold text-gray-500">
-                    No marketing features added yet.
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Add at least one bullet point before {isEdit ? 'saving' : 'publishing'} this variant.
-                  </p>
-                </div>
-              )}
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-semibold tracking-tight text-gray-900">
+                        Configure {activeMeta.fullLabel}
+                      </h2>
+                      <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">
+                        {activeMeta.duration} access. Set the price, buyer-facing highlights, usage
+                        limits and feature access for this variant.
+                      </p>
+                    </div>
+                  </div>
 
-              <FieldError
-                message={
-                  showError(`${activeTab}.features`, activeErrors.features, attemptedSave)
-                    ? activeErrors.features
-                    : undefined
-                }
-              />
-            </div>
-
-            {/* Quotas Grid */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-start gap-2">
-                  <Sliders className="w-4 h-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900">Enforced Quota Limits</h3>
-                    <p className="text-xs text-gray-500">
-                      Whole numbers only. Tick <span className="font-semibold">Unlimited</span> for no
-                      cap, or enter a positive limit. All quota fields are required.
-                    </p>
+                  <div className="w-full shrink-0 lg:w-56">
+                    <FieldLabel
+                      htmlFor={`price-${activeTab}`}
+                      label="One-off price"
+                      required
+                      tooltip={`The one-off amount charged for the ${activeMeta.fullLabel} variant, in GBP.`}
+                      trailing={<span className="text-[11px] font-medium text-gray-400">GBP</span>}
+                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
+                        £
+                      </span>
+                      <input
+                        id={`price-${activeTab}`}
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={activeState.price}
+                        onChange={(e) => handlePriceChange(activeTab, e.target.value)}
+                        onBlur={() => markTouched(`${activeTab}.price`)}
+                        placeholder="0.00"
+                        aria-invalid={showError(`${activeTab}.price`, activeErrors.price, attemptedSave)}
+                        className={`${inputBase} pl-7 text-base font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${showError(`${activeTab}.price`, activeErrors.price, attemptedSave) ? inputError : inputNormal}`}
+                      />
+                    </div>
+                    <FieldError
+                      message={
+                        showError(`${activeTab}.price`, activeErrors.price, attemptedSave)
+                          ? activeErrors.price
+                          : undefined
+                      }
+                    />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleSetAllQuotasUnlimited(activeTab)}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 underline underline-offset-2 self-start sm:self-auto"
-                >
-                  Set all quotas unlimited
-                </button>
+
+                {/* Progress */}
+                <div className="mt-6">
+                  <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-gray-500">
+                    <span>Required fields for this variant</span>
+                    <span className={activeProgress.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                      {activeProgress.done}/{activeProgress.total}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        activeProgress.remaining === 0 ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}
+                      style={{
+                        width: `${Math.round((activeProgress.done / activeProgress.total) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {CORE_QUOTA_FIELDS.map((field) => {
-                  const path = `${activeTab}.quotas.${field.key}`;
-                  const error = activeErrors.quotas[field.key];
-                  const hasError = showError(path, error, attemptedSave);
-                  const isUnlimited = activeState.unlimitedQuotas[field.key];
+              <div className="space-y-8 p-6 sm:p-8">
+                {/* Features List Section */}
+                <div className="space-y-3">
+                  <FieldLabel
+                    htmlFor={`feature-input-${activeTab}`}
+                    label="Marketing bullet points"
+                    required
+                    tooltip="Short, buyer-facing highlights shown as bullet points on the plan card. Press Enter or click Add to save each one."
+                    hint="Shown to buyers on the plan card. Add at least one."
+                    trailing={
+                      <span className="text-[11px] font-medium text-gray-400">
+                        {activeState.features.length} added
+                      </span>
+                    }
+                  />
 
-                  return (
-                    <div key={field.key}>
-                      <FieldLabel htmlFor={`${path}`} label={field.label} required>
-                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-500">
-                          <input
-                            type="checkbox"
-                            checked={isUnlimited}
-                            onChange={(e) =>
-                              handleQuotaUnlimitedChange(activeTab, field.key, e.target.checked)
-                            }
-                            className="h-3.5 w-3.5 rounded border-gray-300 accent-blue-600"
-                          />
-                          Unlimited
-                        </label>
-                      </FieldLabel>
-                      <input
-                        id={path}
-                        type="text"
-                        inputMode="numeric"
-                        value={isUnlimited ? '' : activeState.quotas[field.key]}
-                        onChange={(e) => handleQuotaChange(activeTab, field.key, e.target.value)}
-                        onBlur={() => markTouched(path)}
-                        disabled={isUnlimited}
-                        placeholder={isUnlimited ? 'Unlimited' : 'Enter a limit'}
-                        aria-invalid={hasError}
-                        aria-describedby={hasError ? `${path}-error` : undefined}
-                        className={`w-full px-3 py-2.5 rounded-lg border text-sm font-bold text-gray-900 transition-colors focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${
-                          hasError
-                            ? 'border-red-400 bg-red-50/30 focus:ring-red-500'
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                      />
-                      <div id={`${path}-error`}>
-                        <FieldError message={hasError ? error : undefined} />
+                  <div className="flex gap-2">
+                    <input
+                      id={`feature-input-${activeTab}`}
+                      type="text"
+                      value={activeState.newFeatureInput}
+                      onChange={(e) =>
+                        updateVariant(activeTab, (state) => ({
+                          ...state,
+                          newFeatureInput: e.target.value,
+                        }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddFeature(activeTab);
+                        }
+                      }}
+                      onBlur={() => markTouched(`${activeTab}.features`)}
+                      placeholder="e.g. 5 active campaigns, digital stamp multiplier..."
+                      maxLength={MAX_FEATURE}
+                      className={`${inputBase} flex-1 ${inputNormal}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddFeature(activeTab)}
+                      disabled={!activeState.newFeatureInput.trim()}
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+
+                  {activeState.features.length > 0 ? (
+                    <div className="mt-2 space-y-2">
+                      {activeState.features.map((feature, idx) => (
+                        <div
+                          key={`${feature}-${idx}`}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-slate-50 p-3 text-sm text-gray-800"
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Check className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                            <span className="break-words">{feature}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFeature(activeTab, idx)}
+                            className="shrink-0 p-1 text-gray-400 transition-colors hover:text-red-600"
+                            aria-label={`Remove feature ${feature}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-dashed border-gray-300 bg-slate-50/60 px-4 py-6 text-center">
+                      <p className="text-xs font-medium text-gray-500">
+                        No marketing bullet points added yet.
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-gray-400">
+                        Add at least one bullet point before {isEdit ? 'saving' : 'publishing'} this
+                        variant.
+                      </p>
+                    </div>
+                  )}
+
+                  <FieldError
+                    message={
+                      showError(`${activeTab}.features`, activeErrors.features, attemptedSave)
+                        ? activeErrors.features
+                        : undefined
+                    }
+                  />
+                </div>
+
+                {/* Usage Limits */}
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500">
+                        <Sliders className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="flex items-center gap-1.5 text-base font-semibold text-gray-900">
+                          Usage limits
+                          <InfoTip text="Each capability can have a numeric cap, or you can mark it as unlimited. Every limit needs either a number or the unlimited option." />
+                        </h3>
+                        <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                          Enter a whole number for each limit, or mark it as unlimited.
+                        </p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSetAllQuotasUnlimited(activeTab)}
+                      className="self-start whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:border-blue-200 hover:bg-blue-50"
+                    >
+                      Set all to unlimited
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                    {CORE_QUOTA_FIELDS.map((field) => {
+                      const path = `${activeTab}.quotas.${field.key}`;
+                      const error = activeErrors.quotas[field.key];
+                      const hasError = showError(path, error, attemptedSave);
+                      const isUnlimited = activeState.unlimitedQuotas[field.key];
+                      const inputId = `${activeTab}-${field.key}`;
+
+                      return (
+                        <div
+                          key={field.key}
+                          className={`rounded-xl border bg-white p-4 transition-colors ${
+                            isUnlimited
+                              ? 'border-blue-200 ring-1 ring-blue-100'
+                              : hasError
+                              ? 'border-red-300'
+                              : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex min-h-10 items-start justify-between gap-2">
+                            <label
+                              htmlFor={inputId}
+                              className="text-sm font-medium leading-snug text-gray-900"
+                            >
+                              {field.label}
+                              <span className="ml-0.5 text-red-500">*</span>
+                            </label>
+                            <InfoTip text={field.tooltip} />
+                          </div>
+
+                          <div className="mt-3 space-y-2">
+                            <input
+                              id={inputId}
+                              type="text"
+                              inputMode="numeric"
+                              value={isUnlimited ? '' : activeState.quotas[field.key]}
+                              onChange={(e) => handleQuotaChange(activeTab, field.key, e.target.value)}
+                              onBlur={() => markTouched(path)}
+                              disabled={isUnlimited}
+                              placeholder={isUnlimited ? 'No limit' : field.placeholder}
+                              aria-invalid={hasError}
+                              aria-describedby={hasError ? `${path}-error` : undefined}
+                              className={`h-10 w-full rounded-lg border px-3 text-sm font-medium text-gray-900 shadow-none transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
+                                hasError
+                                  ? 'border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500/30'
+                                  : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/30'
+                              }`}
+                            />
+
+                            <label
+                              htmlFor={`${inputId}-unlimited`}
+                              className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                                isUnlimited
+                                  ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <input
+                                id={`${inputId}-unlimited`}
+                                type="checkbox"
+                                checked={isUnlimited}
+                                onChange={(e) =>
+                                  handleQuotaUnlimitedChange(activeTab, field.key, e.target.checked)
+                                }
+                                className="h-3.5 w-3.5 rounded border-gray-300 accent-blue-600"
+                              />
+                              Unlimited
+                            </label>
+                          </div>
+
+                          <div id={`${path}-error`}>
+                            <FieldError message={hasError ? error : undefined} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Feature Switches */}
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="flex items-center gap-1.5 text-base font-semibold text-gray-900">
+                        Feature access
+                        <InfoTip text="Toggle on the capabilities included in this variant. Anything left off is denied for this plan." />
+                      </h3>
+                      <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                        Optional toggles. Leave off to deny access, or switch on to include the
+                        capability in this variant.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {FEATURE_FLAGS.map((flag) => {
+                      const flagId = `${activeTab}-${flag.key}`;
+                      const isEnabled = activeState.featureFlags[flag.key];
+
+                      return (
+                        <div
+                          key={flag.key}
+                          className={`flex items-start justify-between gap-4 rounded-xl border p-4 transition-colors ${
+                            isEnabled
+                              ? 'border-blue-200 bg-blue-50/50'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <label
+                                htmlFor={flagId}
+                                className="cursor-pointer text-sm font-medium text-gray-900"
+                              >
+                                {flag.label}
+                              </label>
+                              <InfoTip text={`${flag.description} Toggle on to include this capability in the variant.`} />
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                              {flag.description}
+                            </p>
+                          </div>
+                          <input
+                            id={flagId}
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={(e) => handleFlagChange(activeTab, flag.key, e.target.checked)}
+                            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-blue-600"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Card actions */}
+                <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+                  >
+                    Back to plan details
+                  </button>
+
+                  {activeTab !== TIER_ORDER[TIER_ORDER.length - 1] && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentIndex = TIER_ORDER.indexOf(activeTab);
+                        setActiveTab(TIER_ORDER[currentIndex + 1]);
+                      }}
+                      className="rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black"
+                    >
+                      Next variant
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Publishing checklist */}
+            <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {isEdit ? 'Save checklist' : 'Publishing checklist'}
+                </h3>
+                <span
+                  className={`text-xs font-semibold ${
+                    completedVariants === TIER_ORDER.length ? 'text-emerald-600' : 'text-amber-600'
+                  }`}
+                >
+                  {completedVariants} of {TIER_ORDER.length} variants ready
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {TIER_ORDER.map((tier) => {
+                  const meta = TIER_META[tier];
+                  const Icon = meta.icon;
+                  const complete = isVariantComplete(tier);
+                  const remaining = variantProgress(tier).remaining;
+
+                  return (
+                    <button
+                      key={tier}
+                      type="button"
+                      onClick={() => setActiveTab(tier)}
+                      className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${
+                        complete
+                          ? 'border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50'
+                          : 'border-amber-200 bg-amber-50/60 hover:bg-amber-50'
+                      }`}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${meta.accentClass}`} />
+                        <span className="truncate text-xs font-semibold text-gray-900">
+                          {meta.label}
+                        </span>
+                      </span>
+                      <span
+                        className={`flex flex-shrink-0 items-center gap-1 text-[10px] font-semibold ${
+                          complete ? 'text-emerald-700' : 'text-amber-700'
+                        }`}
+                      >
+                        {complete ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Ready
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="h-3 w-3" /> {remaining} left
+                          </>
+                        )}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
-            </div>
 
-            {/* Feature Switches */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <div className="flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-gray-400 mt-0.5" />
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">Feature Access</h3>
-                  <p className="text-xs text-gray-500">
-                    Optional toggles. Leave off to deny access; switch on to include the capability in
-                    this variant.
-                  </p>
-                </div>
-              </div>
+              <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[11px] leading-relaxed text-gray-500">
+                  {allVariantsComplete
+                    ? isEdit
+                      ? 'All variants are complete. You can save your changes.'
+                      : 'All variants are complete. You can publish this plan.'
+                    : 'Complete every variant before saving. Click a variant above to jump to it.'}
+                </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {FEATURE_FLAGS.map((flag) => (
-                  <label
-                    key={flag.key}
-                    className="flex items-start justify-between gap-4 p-3.5 bg-slate-50 border border-gray-200 rounded-xl cursor-pointer hover:border-gray-300 transition-colors"
-                  >
-                    <span>
-                      <span className="block text-xs font-semibold text-gray-800">
-                        {flag.label}
-                      </span>
-                      <span className="block text-[11px] text-gray-500 mt-0.5 leading-relaxed">
-                        {flag.description}
-                      </span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={activeState.featureFlags[flag.key]}
-                      onChange={(e) => handleFlagChange(activeTab, flag.key, e.target.checked)}
-                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Card actions */}
-            <div className="pt-6 border-t border-gray-100 flex justify-between items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                Back to Step 1
-              </button>
-
-              {activeTab !== TIER_ORDER[TIER_ORDER.length - 1] && (
                 <button
                   type="button"
-                  onClick={() => {
-                    const currentIndex = TIER_ORDER.indexOf(activeTab);
-                    setActiveTab(TIER_ORDER[currentIndex + 1]);
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-bold transition-colors"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Next variant
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  <span>
+                    {isSubmitting
+                      ? isEdit
+                        ? 'Saving...'
+                        : 'Publishing...'
+                      : isEdit
+                      ? 'Save changes'
+                      : 'Publish plan & 3 variants'}
+                  </span>
                 </button>
-              )}
+              </div>
             </div>
-          </div>
-
-          {/* Publishing checklist */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 max-w-4xl mx-auto space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">
-                {isEdit ? 'Save checklist' : 'Publishing checklist'}
-              </h3>
-              <span
-                className={`text-xs font-bold ${
-                  completedVariants === TIER_ORDER.length ? 'text-emerald-600' : 'text-amber-600'
-                }`}
-              >
-                {completedVariants} of {TIER_ORDER.length} variants ready
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {TIER_ORDER.map((tier) => {
-                const meta = TIER_META[tier];
-                const Icon = meta.icon;
-                const complete = isVariantComplete(tier);
-                const remaining = variantProgress(tier).remaining;
-
-                return (
-                  <button
-                    key={tier}
-                    type="button"
-                    onClick={() => setActiveTab(tier)}
-                    className={`flex items-center justify-between gap-3 p-3 rounded-xl border text-left transition-colors ${
-                      complete
-                        ? 'border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50'
-                        : 'border-amber-200 bg-amber-50/60 hover:bg-amber-50'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${meta.accentClass}`} />
-                      <span className="text-xs font-bold text-gray-900 truncate">
-                        {meta.label}
-                      </span>
-                    </span>
-                    <span
-                      className={`flex items-center gap-1 text-[10px] font-bold flex-shrink-0 ${
-                        complete ? 'text-emerald-700' : 'text-amber-700'
-                      }`}
-                    >
-                      {complete ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Ready
-                        </>
-                      ) : (
-                        <>
-                          <Circle className="w-3 h-3" /> {remaining} left
-                        </>
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-              <p className="text-[11px] text-gray-500">
-                {allVariantsComplete
-                  ? isEdit
-                    ? 'All variants are complete. You can save your changes.'
-                    : 'All variants are complete. You can publish this plan.'
-                  : 'Complete every variant before saving. Click a variant above to jump to it.'}
-              </p>
-
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                <span>
-                  {isSubmitting
-                    ? isEdit
-                      ? 'Saving...'
-                      : 'Publishing...'
-                    : isEdit
-                    ? 'Save Changes'
-                    : 'Publish Plan & 3 Variants'}
-                </span>
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </div>
+          </motion.div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

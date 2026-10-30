@@ -42,14 +42,11 @@ export default function Homepage() {
               Get rewards, gift cards, loyalty points, cashback, and exclusive local offers seamlessly delivered to your MCOM wallet.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link href="/customer" className="inline-flex min-h-12 items-center justify-center rounded-full bg-orange-600 px-7 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:-translate-y-0.5 hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2">
-                Join Free <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
               <Link href="/reward" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:bg-orange-50">
                 Explore Rewards
               </Link>
               <Link href="/business" className="inline-flex min-h-11 items-center justify-center gap-1 px-2 text-sm font-bold text-orange-700 transition hover:text-orange-800">
-                For Businesses <ArrowRight className="h-4 w-4" />
+                Get Started <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500 sm:text-sm">

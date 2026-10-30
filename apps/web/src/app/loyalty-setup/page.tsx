@@ -8,21 +8,19 @@ import {
   useGetLoyaltySetupProgress, useSaveLoyaltySetup, useSkipLoyaltySetup,
   useMarkWelcomeSeen, useMarkEcosystemIntroSeen, useSaveCampaignSelections,
   useSelectTemplate, useSaveRewardCustomizations, useSaveCampaignDescriptions,
-  useSaveTierConfig,
   useGetBusinessLoyaltySetupTemplates,
 } from "@/services/loyalty-setup/hook";
 import { useGetBusinessProfile } from "@/services/business/hook";
 import { useGetAvailableAdminCampaigns } from "@/services/campaigns/hook";
-import type { SectorTemplate, RewardCustomization, TierConfig } from "@/services/loyalty-setup/types";
+import type { SectorTemplate, RewardCustomization } from "@/services/loyalty-setup/types";
 
 import WelcomeScreen from "./_screens/WelcomeScreen";
 import ProfileScreen from "./_screens/ProfileScreen";
 import TemplateScreen from "./_screens/TemplateScreen";
 import CampaignsScreen from "./_screens/CampaignsScreen";
-import TiersScreen from "./_screens/TiersScreen";
 import ReviewScreen from "./_screens/ReviewScreen";
 
-type Step = "welcome" | "profile" | "templates" | "campaigns" | "tiers" | "review" | "saving";
+type Step = "welcome" | "profile" | "templates" | "campaigns" | "review" | "saving";
 
 function SavingScreen() {
   return (
@@ -44,7 +42,6 @@ export default function LoyaltySetupPage() {
   const [step, setStep] = useState<Step>("welcome");
   const hasInitializedStep = useRef(false);
   const [savedCustomizations, setSavedCustomizations] = useState<Record<string, RewardCustomization>>({});
-  const [savedTierConfig, setSavedTierConfig] = useState<TierConfig | null>(null);
   const [templateOverrides, setTemplateOverrides] = useState<Record<string, SectorTemplate>>({});
   const [centralBusinessProfile, setCentralBusinessProfile] = useState<Record<string, string> | null>(null);
 
@@ -68,7 +65,6 @@ export default function LoyaltySetupPage() {
   const { mutateAsync: saveRewardCustomizations } = useSaveRewardCustomizations();
   const { mutateAsync: saveCampaignDescriptions } = useSaveCampaignDescriptions();
   const { mutateAsync: saveCampaignSelections } = useSaveCampaignSelections();
-  const { mutateAsync: saveTierConfig } = useSaveTierConfig();
   const { mutateAsync: saveSetup, isPending: isSaving } = useSaveLoyaltySetup();
 
   const sectorKey = centralBusinessProfile?.industry || centralBusinessProfile?.category || profile?.sector?.name || profile?.category?.name || "retail";
@@ -116,7 +112,6 @@ export default function LoyaltySetupPage() {
 
     hasInitializedStep.current = true;
     if (progress.selectedTemplateId && !selectedTemplate) setStep("templates");
-    else if (progress.tierConfig) setStep("tiers");
     else if (progress.selectedTemplateId && selectedTemplate) setStep("campaigns");
     else if (progress.hasSeenEcosystemIntro) setStep("templates");
     else if (progress.hasSeenWelcome) setStep("profile");
@@ -138,6 +133,8 @@ export default function LoyaltySetupPage() {
       stampsRequired: reward.stampsRequired || 0,
       rewardType: reward.rewardType,
       image: reward.image,
+      quantity: reward.quantity ?? 0,
+      expiryDatetime: reward.expiryDatetime ?? "",
     }]));
     const nextCustomizations = { ...savedCustomizations, ...updatedCustomizations };
     setSavedCustomizations(nextCustomizations);
@@ -154,22 +151,9 @@ export default function LoyaltySetupPage() {
     }
     await saveCampaignDescriptions(Object.fromEntries(campaigns.map((campaign) => [campaign.key, campaign.description])));
     await saveCampaignSelections(campaigns);
-    setStep("tiers");
+    setStep("review");
   };
   const handleCampaignsBack = () => setStep("templates");
-
-  const handleTierConfigSave = async (config: TierConfig) => {
-    setSavedTierConfig(config);
-    await saveTierConfig(config);
-    setStep("review");
-  };
-  const handleTierConfigSkip = async () => {
-    const defaultConfig: TierConfig = { enabled: false, tiers: [] };
-    setSavedTierConfig(defaultConfig);
-    await saveTierConfig(defaultConfig);
-    setStep("review");
-  };
-  const handleTierConfigBack = () => setStep("campaigns");
 
   const handleReviewSave = async (descriptions: Record<string, string>) => {
     await saveCampaignDescriptions(descriptions);
@@ -182,14 +166,11 @@ export default function LoyaltySetupPage() {
       rewardCustomizations: savedCustomizations,
       campaignDescriptions: descriptions,
       enabledEngines: null,
-      tierConfig: savedTierConfig || null,
+      tierConfig: progress?.tierConfig ?? selectedTemplate?.tierConfig ?? null,
     });
     router.push("/dashboard");
   };
-  const handleReviewBack = () => {
-    if (savedTierConfig?.enabled) setStep("tiers");
-    else setStep("campaigns");
-  };
+  const handleReviewBack = () => setStep("campaigns");
 
   const handleJumpTo = (targetStep: string) => {
     setStep(targetStep as Step);
@@ -230,8 +211,6 @@ export default function LoyaltySetupPage() {
               <TemplateScreen
                 sectorKey={resolvedSectorKey}
                 templates={templates}
-                initialSelectedId={progress?.selectedTemplateId}
-                initialCustomizedIds={Object.keys(templateOverrides)}
                 onSelect={handleTemplateSelect}
                 onBack={handleTemplateBack}
                 onTemplateSave={handleTemplateSave}
@@ -253,11 +232,6 @@ export default function LoyaltySetupPage() {
             />
           </motion.div>
         )}
-        {step === "tiers" && (
-          <motion.div key="tiers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <TiersScreen initialConfig={savedTierConfig || selectedTemplate?.tierConfig || progress?.tierConfig || null} onComplete={handleTierConfigSave} onBack={handleTierConfigBack} onSkip={handleTierConfigSkip} />
-          </motion.div>
-        )}
         {step === "review" && selectedTemplate && (
           <motion.div key="review" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <ReviewScreen
@@ -267,7 +241,6 @@ export default function LoyaltySetupPage() {
               campaignDetails={adminCampaignPage?.data || []}
               businessName={centralBusinessProfile?.businessName || profile?.name}
               businessCategory={centralBusinessProfile?.category || centralBusinessProfile?.industry || profile?.sector?.name || profile?.category?.name}
-              tierConfig={savedTierConfig || progress?.tierConfig || null}
               onSave={handleReviewSave}
               onBack={handleReviewBack}
               onJumpTo={handleJumpTo}

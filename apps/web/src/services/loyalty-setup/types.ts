@@ -19,6 +19,9 @@ export interface TemplateReward {
   pointsRequired: number;
   stampsRequired: number;
   image: string;
+  quantity?: number;
+  expiryDatetime?: string;
+  isCustomized?: boolean;
 }
 
 export interface TemplateCampaign {
@@ -36,6 +39,8 @@ export interface RewardCustomization {
   stampsRequired: number;
   rewardType: string;
   image: string;
+  quantity?: number;
+  expiryDatetime?: string;
 }
 
 // ─── STEP 3: REWARD ENGINE TOGGLES ────────────────────────────────────────

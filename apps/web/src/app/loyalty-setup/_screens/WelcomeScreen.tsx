@@ -47,11 +47,11 @@ export default function WelcomeScreen({ onComplete, onSkip }: WelcomeScreenProps
         <section className="mx-auto w-full flex-1 py-2 sm:w-[90%] sm:py-3 lg:w-[70%] lg:py-4">
           <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between lg:mb-6">
             <div className="max-w-none">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-sm">Customer rewards, made simple</p>
-              <h1 className="text-3xl font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl lg:text-5xl">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-700 sm:text-sm">Customer rewards, made simple</p>
+              <h1 className="text-2xl font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl lg:text-5xl">
                 Welcome to <span className="text-orange-600">MCOM Rewards</span>
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              <p className="mt-3 max-w-2xl text-xs leading-5 text-slate-600 sm:text-base sm:leading-7">
                 Bring customers back with points, stamps, rewards, and campaigns tailored to your business. Your business details are ready; let&apos;s shape your programme.
               </p>
             </div>

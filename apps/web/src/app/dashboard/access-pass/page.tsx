@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
+  ChevronDown,
   CreditCard,
   Gift,
   KeyRound,
@@ -41,6 +42,7 @@ export default function BusinessAccessPassPage() {
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | undefined>();
   const [selectedPlan, setSelectedPlan] = useState<AccessPassPlan | null>(null);
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
   const {
     data: myPass,
@@ -313,51 +315,54 @@ export default function BusinessAccessPassPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between hover:border-orange-300 transition-colors"
                   >
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="text-base font-black text-gray-900">
-                            {plan.name}
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2 min-h-[32px]">
-                            {plan.description || "Dashboard access pass"}
-                          </p>
-                        </div>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          <Clock className="w-3 h-3" />
-                          {plan.durationDays}d
+                    <button
+                      type="button"
+                      aria-expanded={expandedPlanId === plan.id}
+                      aria-controls={`access-pass-details-${plan.id}`}
+                      onClick={() => setExpandedPlanId((current) => current === plan.id ? null : plan.id)}
+                      className="flex w-full items-center justify-between gap-3 text-left sm:hidden"
+                    >
+                      <span className="min-w-0 truncate text-sm font-black text-gray-900">{plan.name}</span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700">
+                          <Clock className="h-3 w-3" />{plan.durationDays}d
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${expandedPlanId === plan.id ? "rotate-180" : ""}`} />
+                      </span>
+                    </button>
+
+                    <div id={`access-pass-details-${plan.id}`} className={`${expandedPlanId === plan.id ? "block" : "hidden"} sm:block`}>
+                      <div className="hidden items-start justify-between gap-2 sm:flex">
+                        <h3 className="text-base font-black text-gray-900">{plan.name}</h3>
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700">
+                          <Clock className="h-3 w-3" />{plan.durationDays}d
                         </span>
                       </div>
+                      <p className="mt-1 line-clamp-2 text-xs text-gray-500 sm:min-h-[32px]">
+                        {plan.description || "Dashboard access pass"}
+                      </p>
 
                       <ul className="mt-3 space-y-1.5">
-                        {(plan.features || [])
-                          .slice(0, 4)
-                          .map((feature, index) => (
-                            <li
-                              key={`${feature}-${index}`}
-                              className="flex items-start gap-1.5 text-xs text-gray-600"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                              {feature}
-                            </li>
-                          ))}
+                        {(plan.features || []).map((feature, index) => (
+                          <li key={`${feature}-${index}`} className={`flex items-start gap-1.5 text-xs text-gray-600 ${index >= 4 ? "sm:hidden" : ""}`}>
+                            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                            {feature}
+                          </li>
+                        ))}
                       </ul>
-                    </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-2xl font-black text-gray-900">
-                          £{Number(plan.price).toFixed(2)}
-                        </p>
-                        <p className="text-[10px] text-gray-500">one-off</p>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                        <div>
+                          <p className="text-2xl font-black text-gray-900">£{Number(plan.price).toFixed(2)}</p>
+                          <p className="text-[10px] text-gray-500">one-off</p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedPlan(plan)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-600"
+                        >
+                          <CreditCard className="h-4 w-4" />Buy pass
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setSelectedPlan(plan)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold"
-                      >
-                        <CreditCard className="w-4 h-4" />
-                        Buy pass
-                      </button>
                     </div>
                   </motion.div>
                 ))}

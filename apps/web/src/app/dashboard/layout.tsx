@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Gift, Megaphone, Users, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { clearLocalBusinessPreview, isLocalBusinessPreviewEnabled } from '@/lib/local-business-preview';
+import ReturnToCentralButton from '@/components/dashboard/ReturnToCentralButton';
 
 export default function DashboardLayout({
   children,
@@ -205,6 +206,7 @@ export default function DashboardLayout({
           </div>
         </nav>
 
+        <ReturnToCentralButton />
         <FloatingGuide />
       </div>
     </GuideProvider>

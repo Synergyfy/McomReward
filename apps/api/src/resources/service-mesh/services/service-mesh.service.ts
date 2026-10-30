@@ -266,16 +266,62 @@ export class ServiceMeshService {
     scope?: string,
   ): Promise<T> {
     const service = await this.findService(targetClientId);
+    // An explicit environment override wins over the registry entry. This is
+    // what lets local development point at http://localhost while production
+    // uses the public registry URLs.
     const base =
+      this.getPeerBaseUrlOverride(targetClientId) ||
       service?.baseUrl ||
-      service?.appUrl ||
-      this.getPeerBaseUrlOverride(targetClientId);
+      service?.appUrl;
     if (!base) {
       throw new Error(
         `No registered base URL for peer "${targetClientId}" in the ecosystem registry`,
       );
     }
     return this.callPeer<T>(base, targetClientId, path, options, scope);
+  }
+
+  /**
+   * Direct peer call on behalf of a logged-in user (RFC 8693 token exchange).
+   * Used for business-scoped Mall reads/writes where the receiver resolves
+   * tenancy from the `businessId` claim.
+   */
+  async callPeerDelegatedByClientId<T = any>(
+    subjectToken: string,
+    targetClientId: string,
+    path: string,
+    options: AxiosRequestConfig = {},
+    scope?: string,
+  ): Promise<T> {
+    const service = await this.findService(targetClientId);
+    const base =
+      this.getPeerBaseUrlOverride(targetClientId) ||
+      service?.baseUrl ||
+      service?.appUrl;
+    if (!base) {
+      throw new Error(
+        `No registered base URL for peer "${targetClientId}" in the ecosystem registry`,
+      );
+    }
+
+    const token = await this.getDelegatedServiceToken(
+      subjectToken,
+      targetClientId,
+      scope,
+    );
+    const url = `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+
+    const response = await axios({
+      ...options,
+      url,
+      headers: {
+        ...(options.headers as Record<string, string>),
+        Authorization: `Bearer ${token}`,
+        "X-Caller-Id": this.getClientId(),
+      },
+    });
+
+    return response.data as T;
   }
 
   /**

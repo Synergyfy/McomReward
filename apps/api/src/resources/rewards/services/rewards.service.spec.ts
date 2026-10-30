@@ -16,13 +16,14 @@ import { TierProgressionService } from "../../tier-progression/tier-progression.
 import { PointHistory } from "../../participant-campaign-balance/entities/point-history.entity";
 import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
 import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
+import { AccessPassService } from "../../access-passes/access-pass.service";
 import { CreateRewardDto } from "../dto/create-reward.dto";
 import { RewardType } from "../enums/reward-type.enum";
 import { BadgeLevel } from "../enums/badge-level.enum";
 import { RewardSource } from "../enums/reward-source.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
 import { RewardStatus } from "../enums/reward-status.enum";
-import { NotFoundException, ForbiddenException } from "@nestjs/common";
+import { NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
 
 describe("RewardsService", () => {
   let service: RewardsService;
@@ -140,6 +141,10 @@ describe("RewardsService", () => {
         {
           provide: PartnerIssuanceMetricsService,
           useValue: mockPartnerIssuance,
+        },
+        {
+          provide: AccessPassService,
+          useValue: { findActiveForBusiness: jest.fn().mockResolvedValue(null) },
         },
       ],
     }).compile();
@@ -324,6 +329,169 @@ describe("RewardsService", () => {
           stamps_required: 11,
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("mall fulfilment persistence", () => {
+    const businessId = "b1";
+
+    const createDto = (overrides: Record<string, any> = {}) =>
+      ({
+        title: "Reward",
+        description: "Description",
+        image: "image-url",
+        reward_type: RewardType.GIFT_CARD,
+        points_required: 100,
+        is_points_enabled: true,
+        is_stamps_enabled: false,
+        mall_reward_value: 25,
+        ...overrides,
+      }) as any;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockBusinessRepository.findOne.mockResolvedValue({ id: businessId });
+      mockPlanSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockBusinessRewardRepository.create.mockImplementation((value: any) => value);
+      mockBusinessRewardRepository.save.mockImplementation((value: any) =>
+        Promise.resolve(value),
+      );
+    });
+
+    it("creates a gift card with the matching mall type and fulfilment attachment", async () => {
+      await service.createBusinessReward(
+        businessId,
+        createDto({
+          mall_reward_type: "GIFT_CARD",
+          mall_target_scope: "SPECIFIC",
+          mall_target_product_ids: ["p1"],
+          fulfilment: {
+            provider: "MALL",
+            kind: "MALL_GIFT_CARD",
+            delivery: "CODE",
+            templateRef: { system: "MALL", id: "tpl-1" },
+            scope: { mode: "ITEMS", productIds: ["p1"], serviceIds: [] },
+            value: { amount: 25, currency: "GBP" },
+          },
+        }),
+      );
+
+      const created = mockBusinessRewardRepository.create.mock.calls[0][0];
+      expect(created.mall_reward_type).toBe("GIFT_CARD");
+      expect(created.mall_reward_value).toBe(25);
+      expect(created.is_mall_integrated).toBe(true);
+      expect(created.fulfilment_provider).toBe("MALL");
+      expect(created.fulfilment_kind).toBe("MALL_GIFT_CARD");
+      expect(created.fulfilment_template_id).toBe("tpl-1");
+      expect(created.fulfilment_config.scope).toEqual({
+        mode: "ITEMS",
+        productIds: ["p1"],
+        serviceIds: [],
+      });
+    });
+
+    it("creates a mall discount without a mall instrument type", async () => {
+      await service.createBusinessReward(
+        businessId,
+        createDto({
+          reward_type: RewardType.MALL_DISCOUNT,
+          mall_reward_value: 0,
+          mall_reward_type: "GIFT_CARD",
+          mall_target_scope: "SPECIFIC",
+          mall_target_product_ids: ["p1"],
+          mall_discount_type: "percentage",
+          mall_discount_value: 20,
+        }),
+      );
+
+      const created = mockBusinessRewardRepository.create.mock.calls[0][0];
+      expect(created.mall_reward_type).toBeNull();
+      expect(created.mall_reward_value).toBe(0);
+      expect(created.is_mall_integrated).toBe(true);
+      expect(created.mall_discount_type).toBe("percentage");
+      expect(created.mall_discount_value).toBe(20);
+      expect(created.fulfilment_kind).toBe("MALL_DISCOUNT");
+    });
+
+    it("rejects a mall discount with no products or services when scope is SPECIFIC", async () => {
+      await expect(
+        service.createBusinessReward(
+          businessId,
+          createDto({
+            reward_type: RewardType.MALL_DISCOUNT,
+            mall_reward_value: 0,
+            mall_target_scope: "SPECIFIC",
+            mall_target_product_ids: [],
+            mall_target_service_ids: [],
+            mall_discount_type: "fixed",
+            mall_discount_value: 5,
+          }),
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("clears stale discount fields when switching from a mall discount to a voucher", async () => {
+      const businessReward: any = {
+        id: "r1",
+        business: { id: businessId },
+        reward_type: RewardType.MALL_DISCOUNT,
+        is_mall_integrated: true,
+        mall_reward_value: 0,
+        mall_reward_type: null,
+        mall_target_scope: "ALL",
+        mall_target_product_ids: [],
+        mall_target_service_ids: [],
+        mall_discount_type: "percentage",
+        mall_discount_value: 20,
+        mall_max_discount: 10,
+        mall_min_spend: 30,
+        fulfilment_provider: "MALL",
+        fulfilment_kind: "MALL_DISCOUNT",
+      };
+      mockBusinessRewardRepository.findOne.mockResolvedValue(businessReward);
+
+      await service.updateBusinessReward(businessId, "r1", {
+        reward_type: RewardType.VOUCHER,
+        mall_reward_value: 12,
+      } as any);
+
+      expect(businessReward.mall_reward_type).toBe("VOUCHER");
+      expect(businessReward.mall_reward_value).toBe(12);
+      expect(businessReward.mall_discount_type).toBeNull();
+      expect(businessReward.mall_discount_value).toBeNull();
+      expect(businessReward.mall_max_discount).toBeNull();
+      expect(businessReward.mall_min_spend).toBeNull();
+      expect(businessReward.fulfilment_kind).toBe("MALL_VOUCHER");
+    });
+
+    it("does not wipe mall configuration on an unrelated partial update", async () => {
+      const businessReward: any = {
+        id: "r1",
+        business: { id: businessId },
+        reward_type: RewardType.GIFT_CARD,
+        is_mall_integrated: true,
+        mall_reward_value: 15,
+        mall_reward_type: "GIFT_CARD",
+        mall_target_scope: "SPECIFIC",
+        mall_target_product_ids: ["p1"],
+        mall_target_service_ids: [],
+        mall_discount_type: null,
+        mall_discount_value: null,
+        fulfilment_provider: "MALL",
+        fulfilment_kind: "MALL_GIFT_CARD",
+        fulfilment_template_id: "tpl-1",
+      };
+      mockBusinessRewardRepository.findOne.mockResolvedValue(businessReward);
+
+      await service.updateBusinessReward(businessId, "r1", {
+        disabled: true,
+      } as any);
+
+      expect(businessReward.disabled).toBe(true);
+      expect(businessReward.mall_reward_type).toBe("GIFT_CARD");
+      expect(businessReward.mall_target_product_ids).toEqual(["p1"]);
+      expect(businessReward.fulfilment_kind).toBe("MALL_GIFT_CARD");
+      expect(businessReward.fulfilment_template_id).toBe("tpl-1");
     });
   });
 

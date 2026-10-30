@@ -2,6 +2,11 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
 import { AbstractBaseEntity } from "../../../database/entities/base.entity";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { RewardIssuanceStatus } from "../enums/partner-reward.enums";
+import {
+  FulfilmentKind,
+  FulfilmentProvider,
+  FulfilmentStatus,
+} from "../../reward-fulfilment/reward-fulfilment.enums";
 
 /**
  * A reward issued to an end recipient (donor) on behalf of a calling
@@ -77,6 +82,42 @@ export class RewardIssuance extends AbstractBaseEntity {
   /** Reference returned by the external issuer (e.g. Mall), when applicable. */
   @Column({ nullable: true })
   mall_reference: string;
+
+  // ─── Ecosystem fulfilment state ────────────────────────────────────────────
+  // Independent of the redemption state machine: an issuance can be ISSUED
+  // while fulfilment is PENDING/FAILED, and REDEEMED once the provider confirms.
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_provider: FulfilmentProvider;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_kind: FulfilmentKind;
+
+  @Column({ type: "varchar", default: FulfilmentStatus.NOT_REQUIRED })
+  fulfilment_status: FulfilmentStatus;
+
+  /** Provider id: Mall instrument id, Central grant id, coupon id, etc. */
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_ref: string;
+
+  /** Code shown to the recipient. */
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_code: string;
+
+  @Column({ type: "jsonb", nullable: true })
+  fulfilment_payload: Record<string, any>;
+
+  @Column({ type: "text", nullable: true })
+  fulfilment_error: string;
+
+  @Column({ type: "integer", default: 0 })
+  fulfilment_attempts: number;
+
+  @Column({ type: "timestamp", nullable: true })
+  fulfilled_at: Date;
+
+  /** Explicit Central reference (grant/coupon/code) for reconciliation. */
+  @Column({ type: "varchar", nullable: true })
+  central_reference: string;
 
   @Column({ default: 1 })
   quantity: number;

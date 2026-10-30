@@ -5,6 +5,7 @@ import { SkipMembershipCheck } from "../../../common/decorators/skip-membership-
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import { Role } from "../../../common/role.enum";
 import { RewardIssuanceService } from "../services/reward-issuance.service";
+import { RewardFulfilmentService } from "../../reward-fulfilment/reward-fulfilment.service";
 import { ListIssuancesDto } from "../dto/list-issuances.dto";
 import { RedeemIssuanceDto } from "../dto/redeem-issuance.dto";
 
@@ -33,18 +34,22 @@ interface AuthenticatedUser {
 @Roles(Role.Participant, Role.Business)
 @SkipMembershipCheck()
 export class MePartnerRewardsController {
-  constructor(private readonly issuanceService: RewardIssuanceService) {}
+  constructor(
+    private readonly issuanceService: RewardIssuanceService,
+    private readonly fulfilment: RewardFulfilmentService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: "List my partner-issued rewards" })
-  list(
+  async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListIssuancesDto,
   ) {
-    return this.issuanceService.listForUser(
+    const result = await this.issuanceService.listForUser(
       { id: user.id, email: user.email },
       query,
     );
+    return this.withLinks(result);
   }
 
   @Get(":id/mall-targets")
@@ -63,15 +68,31 @@ export class MePartnerRewardsController {
 
   @Post(":id/claim")
   @ApiOperation({ summary: "Claim one of my partner-issued rewards" })
-  claim(
+  async claim(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: RedeemIssuanceDto,
   ) {
-    return this.issuanceService.claimForUser(
+    const result = await this.issuanceService.claimForUser(
       { id: user.id, email: user.email },
       id,
       dto,
     );
+    return this.withLink(result);
+  }
+
+  private withLinks(result: any) {
+    if (!result) return result;
+    if (Array.isArray(result)) return result.map((row) => this.withLink(row));
+    if (Array.isArray(result.data)) {
+      return { ...result, data: result.data.map((row: any) => this.withLink(row)) };
+    }
+    return this.withLink(result);
+  }
+
+  private withLink(row: any) {
+    if (!row || typeof row !== "object") return row;
+    const deepLink = this.fulfilment.getDeepLink(row);
+    return { ...row, deepLink: deepLink || null };
   }
 }

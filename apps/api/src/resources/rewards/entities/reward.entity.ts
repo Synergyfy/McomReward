@@ -10,6 +10,12 @@ import { PointHistory } from "../../participant-campaign-balance/entities/point-
 import { BusinessReward } from "./business-reward.entity";
 
 import { RewardSource } from "../enums/reward-source.enum";
+import {
+  FulfilmentFundingSource,
+  FulfilmentKind,
+  FulfilmentProvider,
+  RewardFulfilmentConfig,
+} from "../../reward-fulfilment/reward-fulfilment.enums";
 
 @Entity()
 export class Reward extends AbstractBaseEntity {
@@ -105,6 +111,27 @@ export class Reward extends AbstractBaseEntity {
 
   @Column({ default: false })
   disabled: boolean;
+
+  // ─── Ecosystem fulfilment attachment ───────────────────────────────────────
+  // Describes WHO delivers the reward and HOW. Kept separate from
+  // `reward_type` so the catalogue label does not constrain the provider.
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_provider: FulfilmentProvider;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_kind: FulfilmentKind;
+
+  @Column({ type: "jsonb", nullable: true })
+  fulfilment_config: RewardFulfilmentConfig;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_template_id: string;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_business_ref: string;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_funding_source: FulfilmentFundingSource;
 
   business_claimed_count?: number;
   total_redemptions_count?: number;

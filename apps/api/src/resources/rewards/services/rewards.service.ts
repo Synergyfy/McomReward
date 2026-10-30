@@ -40,6 +40,10 @@ import { SubCategory } from "../../subcategory/entities/subcategory.entity";
 import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
 import { PartnerIssuanceMetricsService } from "../../partner-rewards/services/partner-issuance-metrics.service";
 import { AccessPassService } from "../../access-passes/access-pass.service";
+import {
+  FulfilmentKind,
+  FulfilmentProvider,
+} from "../../reward-fulfilment/reward-fulfilment.enums";
 
 @Injectable()
 export class RewardsService {
@@ -104,8 +108,9 @@ export class RewardsService {
       category_id,
       sub_category_id,
       emoji,
+      fulfilment,
       ...rest
-    } = createRewardDto;
+    } = createRewardDto as CreateRewardDto & { fulfilment?: any };
 
     let imageToUse = createRewardDto.image;
 
@@ -163,6 +168,7 @@ export class RewardsService {
 
     const reward = this.rewardRepository.create({
       ...rest,
+      ...this.mapFulfilmentColumns(fulfilment),
       image: imageToUse,
       sectors,
       tiers,
@@ -192,7 +198,13 @@ export class RewardsService {
     updateRewardDto: UpdateRewardDto,
   ): Promise<Reward> {
     await this.findOne(id);
-    await this.rewardRepository.update(id, updateRewardDto);
+    const { fulfilment, ...rest } = updateRewardDto as UpdateRewardDto & {
+      fulfilment?: any;
+    };
+    await this.rewardRepository.update(id, {
+      ...rest,
+      ...this.mapFulfilmentColumns(fulfilment),
+    });
     return this.findOne(id);
   }
 
@@ -218,7 +230,8 @@ export class RewardsService {
     businessId: string,
     addRewardToBusinessDto: AddRewardToBusinessDto,
   ): Promise<BusinessReward> {
-    const { ...rest } = addRewardToBusinessDto;
+    const { fulfilment, ...rest } = addRewardToBusinessDto as
+      AddRewardToBusinessDto & { fulfilment?: any };
     const business = await this.businessRepository.findOne({
       where: { id: businessId },
     });
@@ -312,6 +325,16 @@ export class RewardsService {
       description: (rest as any).description || reward.description,
       image: (rest as any).image || reward.image,
       gallery: (rest as any).gallery || reward.gallery,
+      ...(fulfilment
+        ? this.mapFulfilmentColumns(fulfilment)
+        : {
+            fulfilment_provider: reward.fulfilment_provider,
+            fulfilment_kind: reward.fulfilment_kind,
+            fulfilment_config: reward.fulfilment_config,
+            fulfilment_template_id: reward.fulfilment_template_id,
+            fulfilment_business_ref: reward.fulfilment_business_ref,
+            fulfilment_funding_source: reward.fulfilment_funding_source,
+          }),
     });
 
     return this.businessRewardRepository.save(businessReward);
@@ -385,45 +408,27 @@ export class RewardsService {
 
     createBusinessRewardDto.image = imageToUse;
 
-    // Automatic Mall Integration if type is Voucher/Gift Card/Coupon
-    if (
-      [RewardType.VOUCHER, RewardType.GIFT_CARD, RewardType.COUPON].includes(
-        createBusinessRewardDto.reward_type,
-      )
-    ) {
-      if (
-        !createBusinessRewardDto.mall_reward_value ||
-        createBusinessRewardDto.mall_reward_value <= 0
-      ) {
-        // Option A: Throw Error
-        // throw new BadRequestException("Monetary value required for this reward type");
-        // Option B: Disable integration
-        createBusinessRewardDto.is_mall_integrated = false;
-      } else {
-        createBusinessRewardDto.is_mall_integrated = true;
-        // Map Mall Reward Type
-        if (createBusinessRewardDto.reward_type === RewardType.VOUCHER) {
-          createBusinessRewardDto.mall_reward_type = "VOUCHER";
-        } else if (
-          createBusinessRewardDto.reward_type === RewardType.GIFT_CARD
-        ) {
-          createBusinessRewardDto.mall_reward_type = "GIFT_CARD";
-        } else if (createBusinessRewardDto.reward_type === RewardType.COUPON) {
-          createBusinessRewardDto.mall_reward_type = "COUPON";
-        }
-      }
-    } else {
-      if (createBusinessRewardDto.mall_reward_value) {
-        // User provided value for a physical product? Allow but disable automated distribution?
-        // Usually, keep false.
-      }
-      createBusinessRewardDto.is_mall_integrated = false;
-      createBusinessRewardDto.mall_reward_value = 0;
-      createBusinessRewardDto.mall_reward_type = null;
-    }
+    // Keep the mall columns and the fulfilment attachment in sync with the
+    // selected reward type. This is also what stops a gift card from being
+    // persisted/fulfilled as a mall discount (or vice versa).
+    Object.assign(
+      createBusinessRewardDto,
+      this.resolveMallRewardFields(
+        createBusinessRewardDto as unknown as Record<string, any>,
+      ),
+    );
+
+    const { fulfilment: fulfilmentAttachment, ...rewardFields } =
+      createBusinessRewardDto as CreateBusinessRewardDto & {
+        fulfilment?: any;
+      };
 
     const businessReward = this.businessRewardRepository.create({
-      ...createBusinessRewardDto,
+      ...rewardFields,
+      ...this.resolveFulfilmentColumns(
+        createBusinessRewardDto as unknown as Record<string, any>,
+        fulfilmentAttachment,
+      ),
       business,
       reward_source,
       audience,
@@ -512,7 +517,26 @@ export class RewardsService {
       }
     }
 
-    Object.assign(businessReward, updateBusinessRewardDto);
+    const { fulfilment, ...rewardFields } = updateBusinessRewardDto as
+      UpdateBusinessRewardDto & { fulfilment?: any };
+
+    // Normalise mall columns + fulfilment attachment before persisting so
+    // switching reward types cannot leave stale mall/discount configuration.
+    const mallFields = this.resolveMallRewardFields(
+      updateBusinessRewardDto as unknown as Record<string, any>,
+      businessReward,
+    );
+
+    Object.assign(
+      businessReward,
+      rewardFields,
+      mallFields,
+      this.resolveFulfilmentColumns(
+        updateBusinessRewardDto as unknown as Record<string, any>,
+        fulfilment,
+        businessReward,
+      ),
+    );
     return this.businessRewardRepository.save(businessReward);
   }
 
@@ -1096,5 +1120,276 @@ export class RewardsService {
     return this.businessRewardRepository.count({
       where: { business: { id: businessId }, disabled: false },
     });
+  }
+
+  /**
+   * Map the fulfilment DTO onto the entity's flattened columns. Keeping the
+   * attachment in dedicated columns makes reconciliation/filtering queryable.
+   */
+  private mapFulfilmentColumns(fulfilment: any): Record<string, any> {
+    if (!fulfilment) return {};
+    const { provider, kind, fundingSource, templateRef, ...config } =
+      fulfilment;
+    return {
+      fulfilment_provider: provider ?? null,
+      fulfilment_kind: kind ?? null,
+      fulfilment_config: config,
+      fulfilment_template_id: templateRef?.id ?? null,
+      fulfilment_business_ref: fulfilment.businessId ?? null,
+      fulfilment_funding_source: fundingSource ?? null,
+    };
+  }
+
+  /** Fields that indicate the caller is changing mall configuration. */
+  private static readonly MALL_PAYLOAD_KEYS = [
+    "reward_type",
+    "is_mall_integrated",
+    "mall_reward_type",
+    "mall_reward_value",
+    "mall_target_scope",
+    "mall_target_product_ids",
+    "mall_target_service_ids",
+    "mall_discount_type",
+    "mall_discount_value",
+    "mall_max_discount",
+    "mall_min_spend",
+  ];
+
+  private touchesMallPayload(payload: Record<string, any>): boolean {
+    return RewardsService.MALL_PAYLOAD_KEYS.some(
+      (key) => payload?.[key] !== undefined,
+    );
+  }
+
+  private mallRewardTypeFor(
+    rewardType?: RewardType | string,
+  ): "VOUCHER" | "GIFT_CARD" | "COUPON" | null {
+    switch (rewardType) {
+      case RewardType.VOUCHER:
+        return "VOUCHER";
+      case RewardType.GIFT_CARD:
+        return "GIFT_CARD";
+      case RewardType.COUPON:
+        return "COUPON";
+      default:
+        return null;
+    }
+  }
+
+  private fulfilmentKindFor(
+    rewardType?: RewardType | string,
+  ): FulfilmentKind | null {
+    switch (rewardType) {
+      case RewardType.VOUCHER:
+        return FulfilmentKind.MALL_VOUCHER;
+      case RewardType.GIFT_CARD:
+        return FulfilmentKind.MALL_GIFT_CARD;
+      case RewardType.COUPON:
+        return FulfilmentKind.MALL_COUPON;
+      case RewardType.MALL_DISCOUNT:
+        return FulfilmentKind.MALL_DISCOUNT;
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Derive the `mall_*` columns from the selected reward type so that a gift
+   * card can never be stored/fulfilled as a mall discount (and stale values
+   * from a previous type are cleared).
+   */
+  private resolveMallRewardFields(
+    dto: Record<string, any>,
+    current?: Partial<BusinessReward> | null,
+  ): Record<string, any> {
+    if (!this.touchesMallPayload(dto)) return {};
+
+    const rewardType = (dto.reward_type ?? current?.reward_type) as
+      | RewardType
+      | undefined;
+    if (!rewardType) return {};
+
+    const pick = <T>(value: T | undefined, fallback: T): T =>
+      value !== undefined ? value : fallback;
+    const currentValue = (current ?? {}) as Partial<BusinessReward>;
+
+    switch (rewardType) {
+      case RewardType.VOUCHER:
+      case RewardType.GIFT_CARD:
+      case RewardType.COUPON: {
+        const value =
+          Number(pick(dto.mall_reward_value, currentValue.mall_reward_value)) ||
+          0;
+        const targetScope = pick(
+          dto.mall_target_scope,
+          currentValue.mall_target_scope ?? null,
+        );
+        return {
+          is_mall_integrated: value > 0,
+          mall_reward_type: this.mallRewardTypeFor(rewardType),
+          mall_reward_value: value,
+          mall_target_scope: targetScope,
+          mall_target_product_ids:
+            targetScope === "SPECIFIC"
+              ? pick(
+                  dto.mall_target_product_ids,
+                  currentValue.mall_target_product_ids ?? [],
+                )
+              : [],
+          mall_target_service_ids:
+            targetScope === "SPECIFIC"
+              ? pick(
+                  dto.mall_target_service_ids,
+                  currentValue.mall_target_service_ids ?? [],
+                )
+              : [],
+          // These belong to mall discounts only.
+          mall_discount_type: null,
+          mall_discount_value: null,
+          mall_max_discount: null,
+          mall_min_spend: null,
+        };
+      }
+      case RewardType.MALL_DISCOUNT: {
+        const discountValue =
+          Number(
+            pick(dto.mall_discount_value, currentValue.mall_discount_value),
+          ) || 0;
+        if (discountValue <= 0) {
+          throw new BadRequestException(
+            "A discount value greater than 0 is required for Mall Discount rewards.",
+          );
+        }
+
+        const discountType = pick(
+          dto.mall_discount_type,
+          currentValue.mall_discount_type ?? "percentage",
+        );
+        if (!["percentage", "fixed"].includes(discountType)) {
+          throw new BadRequestException(
+            'Mall Discount type must be either "percentage" or "fixed".',
+          );
+        }
+        if (discountType === "percentage" && discountValue > 100) {
+          throw new BadRequestException(
+            "Mall Discount percentage cannot exceed 100.",
+          );
+        }
+
+        const scope = pick(
+          dto.mall_target_scope,
+          currentValue.mall_target_scope ?? "ALL",
+        );
+        if (!["SPECIFIC", "ALL"].includes(scope)) {
+          throw new BadRequestException(
+            'Mall Discount scope must be either "SPECIFIC" or "ALL".',
+          );
+        }
+
+        const productIds =
+          scope === "SPECIFIC"
+            ? pick(
+                dto.mall_target_product_ids,
+                currentValue.mall_target_product_ids ?? [],
+              )
+            : [];
+        const serviceIds =
+          scope === "SPECIFIC"
+            ? pick(
+                dto.mall_target_service_ids,
+                currentValue.mall_target_service_ids ?? [],
+              )
+            : [];
+        if (
+          scope === "SPECIFIC" &&
+          productIds.length === 0 &&
+          serviceIds.length === 0
+        ) {
+          throw new BadRequestException(
+            "Select at least one product or service for a Mall Discount reward.",
+          );
+        }
+
+        return {
+          is_mall_integrated: true,
+          mall_reward_type: null,
+          mall_reward_value: 0,
+          mall_target_scope: scope,
+          mall_target_product_ids: productIds,
+          mall_target_service_ids: serviceIds,
+          mall_discount_type: discountType,
+          mall_discount_value: discountValue,
+          mall_max_discount: pick(
+            dto.mall_max_discount,
+            currentValue.mall_max_discount ?? null,
+          ),
+          mall_min_spend: pick(
+            dto.mall_min_spend,
+            currentValue.mall_min_spend ?? null,
+          ),
+        };
+      }
+      default:
+        // Point offers, physical products, etc. are not mall rewards.
+        return {
+          is_mall_integrated: false,
+          mall_reward_type: null,
+          mall_reward_value: 0,
+          mall_target_scope: null,
+          mall_target_product_ids: [],
+          mall_target_service_ids: [],
+          mall_discount_type: null,
+          mall_discount_value: null,
+          mall_max_discount: null,
+          mall_min_spend: null,
+        };
+    }
+  }
+
+  /**
+   * Resolve the flattened fulfilment columns. When the caller sends an explicit
+   * attachment it is always used. Otherwise the columns are derived from the
+   * reward type (and only when the payload touches mall configuration), so
+   * partial updates never wipe an existing attachment.
+   */
+  private resolveFulfilmentColumns(
+    dto: Record<string, any>,
+    attachment?: any,
+    current?: Partial<BusinessReward> | null,
+  ): Record<string, any> {
+    if (attachment) {
+      return this.mapFulfilmentColumns(attachment);
+    }
+
+    if (!this.touchesMallPayload(dto)) return {};
+
+    const rewardType = (dto.reward_type ?? current?.reward_type) as
+      | RewardType
+      | undefined;
+    const kind = this.fulfilmentKindFor(rewardType);
+    const isMallDiscount = rewardType === RewardType.MALL_DISCOUNT;
+    const rewardValue = Number(
+      dto.mall_reward_value ?? current?.mall_reward_value ?? 0,
+    );
+    const isMallIntegrated =
+      isMallDiscount ||
+      ((dto.is_mall_integrated ?? current?.is_mall_integrated) === true &&
+        rewardValue > 0);
+
+    if (!kind || !isMallIntegrated) {
+      return {
+        fulfilment_provider: null,
+        fulfilment_kind: null,
+        fulfilment_config: null,
+        fulfilment_template_id: null,
+        fulfilment_business_ref: null,
+        fulfilment_funding_source: null,
+      };
+    }
+
+    return {
+      fulfilment_provider: FulfilmentProvider.MALL,
+      fulfilment_kind: kind,
+    };
   }
 }

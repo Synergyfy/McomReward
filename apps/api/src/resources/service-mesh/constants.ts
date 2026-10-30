@@ -30,6 +30,15 @@ export const SERVICE_SCOPE_MALL_WRITE = "mall:write";
 /** Default ecosystem clientId for the MCOM Mall peer. */
 export const DEFAULT_MALL_CLIENT_ID = "mcom-mall";
 
+// ─── Central Hub peer scopes (scopes THIS app requests from Central) ─────────
+// Declared on `mcom-rewards` in the Central Console. Central serves its
+// partner catalogue (`central:read`) and grants/coupons (`central:issue`).
+export const SERVICE_SCOPE_CENTRAL_READ = "central:read";
+export const SERVICE_SCOPE_CENTRAL_ISSUE = "central:issue";
+
+/** Default ecosystem clientId for the MCOM Central Hub peer. */
+export const DEFAULT_CENTRAL_CLIENT_ID = "mcom-central";
+
 /**
  * Admin-level gifting: lets a peer admin (e.g. FundOrDonate's back office)
  * grant a platform (MCOM) catalogue reward to an MCOM user without a sponsoring

@@ -12,6 +12,7 @@ import { McomWebhookController } from "./mcom-webhook.controller";
 import { McomPackagesService } from "./mcom-packages.service";
 import { PlansModule } from "../plans/plans.module";
 import { AccessPassModule } from "../access-passes/access-pass.module";
+import { RewardFulfilmentModule } from "../reward-fulfilment/reward-fulfilment.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PaymentModule } from "../payment/payment.module";
 import { WalletModule } from "../wallet/wallet.module";
@@ -29,6 +30,7 @@ import { SubscriptionBillingService } from "../plans/services/subscription-billi
     SsoModule,
     PlansModule,
     AccessPassModule,
+    RewardFulfilmentModule,
     JwtModule.register({}),
     PaymentModule,
     WalletModule,

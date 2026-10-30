@@ -65,6 +65,7 @@ describe("PartnerRewardsService", () => {
       rewardRepo?: any;
       businessRewardRepo?: any;
       businessRepo?: any;
+      fulfilment?: any;
     } = {},
   ) =>
     new PartnerRewardsService(
@@ -73,6 +74,7 @@ describe("PartnerRewardsService", () => {
         createQueryBuilder: jest.fn(() => buildQb([businessRewardEntity])),
       },
       overrides.businessRepo ?? { findOne: jest.fn() },
+      overrides.fulfilment ?? { getDeepLink: jest.fn(() => null) },
     );
 
   it("maps catalogue rows to stable partner DTOs", async () => {
@@ -161,6 +163,106 @@ describe("PartnerRewardsService", () => {
         rewardType: RewardType.VOUCHER,
         remainingQuantity: 42,
         sourceRewardId: "reward-1",
+      });
+    });
+  });
+
+  describe("fulfilment descriptors", () => {
+    it("marks Central catalogue rewards as business-only", async () => {
+      const service = buildService({
+        rewardRepo: {
+          createQueryBuilder: jest.fn(() =>
+            buildQb([
+              {
+                ...rewardEntity,
+                fulfilment_provider: "CENTRAL",
+                fulfilment_kind: "CENTRAL_MEMBERSHIP",
+                fulfilment_config: {
+                  provider: "CENTRAL",
+                  kind: "CENTRAL_MEMBERSHIP",
+                  businessMcomUserId: "should-not-leak",
+                  grant: { planId: "plan-1" },
+                },
+              },
+            ]),
+          ),
+        },
+      });
+
+      const result = await service.listCatalog({ page: 1, limit: 20 } as any);
+      expect(result.data[0]).toMatchObject({
+        fulfilmentProvider: "CENTRAL",
+        fulfilmentKind: "CENTRAL_MEMBERSHIP",
+        consumerEligible: false,
+        businessEligible: true,
+      });
+      expect(result.data[0].fulfilmentConfig).not.toHaveProperty(
+        "businessMcomUserId",
+      );
+      expect(result.data[0].fulfilmentConfig).toMatchObject({
+        grant: { planId: "plan-1" },
+      });
+    });
+
+    it("allows both audiences for Mall rewards and honours eligibility flags", async () => {
+      const service = buildService({
+        rewardRepo: {
+          createQueryBuilder: jest.fn(() =>
+            buildQb([
+              {
+                ...rewardEntity,
+                fulfilment_provider: "MALL",
+                fulfilment_kind: "MALL_DISCOUNT",
+              },
+            ]),
+          ),
+        },
+      });
+
+      const result = await service.listCatalog({ page: 1, limit: 20 } as any);
+      expect(result.data[0]).toMatchObject({
+        fulfilmentProvider: "MALL",
+        fulfilmentKind: "MALL_DISCOUNT",
+        consumerEligible: true,
+        businessEligible: true,
+      });
+    });
+
+    it("exposes descriptors for business-owned rewards too", async () => {
+      const service = buildService({
+        businessRewardRepo: {
+          createQueryBuilder: jest.fn(() =>
+            buildQb([
+              {
+                ...businessRewardEntity,
+                fulfilment_provider: "MALL",
+                fulfilment_kind: "MALL_VOUCHER",
+                fulfilment_config: { scope: { mode: "ALL" } },
+              },
+            ]),
+          ),
+        },
+        businessRepo: {
+          findOne: jest.fn().mockResolvedValue({
+            id: "biz-1",
+            name: "Acme",
+            email: "shop@example.com",
+            mcomUserId: "6f2c",
+          }),
+        },
+      });
+
+      const result = await service.listBusinessRewards({
+        mcomUserId: "6f2c",
+        page: 1,
+        limit: 20,
+      } as any);
+
+      expect(result.data[0]).toMatchObject({
+        fulfilmentProvider: "MALL",
+        fulfilmentKind: "MALL_VOUCHER",
+        consumerEligible: true,
+        businessEligible: true,
       });
     });
   });

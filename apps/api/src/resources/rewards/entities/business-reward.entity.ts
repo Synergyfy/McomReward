@@ -8,6 +8,12 @@ import { RewardType } from "../enums/reward-type.enum";
 import { RewardSource } from "../enums/reward-source.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
 import { RewardStatus } from "../enums/reward-status.enum";
+import {
+  FulfilmentFundingSource,
+  FulfilmentKind,
+  FulfilmentProvider,
+  RewardFulfilmentConfig,
+} from "../../reward-fulfilment/reward-fulfilment.enums";
 
 @Entity()
 export class BusinessReward extends AbstractBaseEntity {
@@ -116,6 +122,25 @@ export class BusinessReward extends AbstractBaseEntity {
 
   @Column({ type: "decimal", precision: 12, scale: 2, nullable: true })
   mall_min_spend: number;
+
+  // ─── Ecosystem fulfilment attachment ───────────────────────────────────────
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_provider: FulfilmentProvider;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_kind: FulfilmentKind;
+
+  @Column({ type: "jsonb", nullable: true })
+  fulfilment_config: RewardFulfilmentConfig;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_template_id: string;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_business_ref: string;
+
+  @Column({ type: "varchar", nullable: true })
+  fulfilment_funding_source: FulfilmentFundingSource;
 
   @ManyToOne(() => Business)
   @JoinColumn({ name: "business_id" })

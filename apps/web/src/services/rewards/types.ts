@@ -23,6 +23,11 @@ export interface CreateRewardRequest {
   category_id?: string;
   sub_category_id?: string;
   emoji?: string;
+  fulfilment?: {
+    provider: 'NONE' | 'MALL' | 'CENTRAL';
+    kind: string;
+    [key: string]: any;
+  };
 }
 
 export interface UpdateRewardRequest {
@@ -52,6 +57,11 @@ export interface UpdateRewardRequest {
   audience?: string;
   sector_ids?: string[];
   tier_ids?: string[];
+  fulfilment?: {
+    provider: 'NONE' | 'MALL' | 'CENTRAL';
+    kind: string;
+    [key: string]: any;
+  };
 }
 
 export interface RewardResponse {
@@ -87,6 +97,12 @@ export interface RewardResponse {
   totalRedemptionsCount?: number;
   totalPointsRedeemed?: number;
   totalStampsRedeemed?: number;
+  fulfilment_provider?: 'NONE' | 'MALL' | 'CENTRAL' | null;
+  fulfilment_kind?: string | null;
+  fulfilment_config?: Record<string, any> | null;
+  fulfilment_template_id?: string | null;
+  fulfilment_business_ref?: string | null;
+  fulfilment_funding_source?: string | null;
 }
 
 export interface GetRewardsResponse {

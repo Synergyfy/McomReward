@@ -73,3 +73,45 @@ describe("MallIntegrationService (partner mesh client)", () => {
     ).rejects.toBeDefined();
   });
 });
+
+describe("MallIntegrationService deep-link base URL", () => {
+  const build = (values: Record<string, string | undefined>) =>
+    new MallIntegrationService(
+      {} as any,
+      {
+        get: <T = string>(key: string) => values[key] as T | undefined,
+      } as any,
+      {} as any,
+      {} as any,
+    );
+
+  it("prefers MALL_WEB_URL", () => {
+    const service = build({
+      MALL_WEB_URL: "http://localhost:3003/",
+      MALL_APP_URL: "http://localhost:9999",
+      NODE_ENV: "development",
+    });
+    expect(service.getMallFrontendUrl()).toBe("http://localhost:3003");
+  });
+
+  it("falls back through MALL_FRONTEND_URL and MALL_APP_URL", () => {
+    expect(
+      build({
+        MALL_FRONTEND_URL: "https://mall-frontend.example",
+        MALL_APP_URL: "http://localhost:9999",
+      }).getMallFrontendUrl(),
+    ).toBe("https://mall-frontend.example");
+
+    expect(
+      build({ MALL_APP_URL: "http://localhost:3003" }).getMallFrontendUrl(),
+    ).toBe("http://localhost:3003");
+  });
+
+  it("never falls back to the Central host outside production", () => {
+    const service = build({
+      NODE_ENV: "development",
+      MCOM_CENTRAL_WEB_URL: "http://localhost:3000",
+    });
+    expect(() => service.getMallFrontendUrl()).toThrow(/MALL_WEB_URL/);
+  });
+});

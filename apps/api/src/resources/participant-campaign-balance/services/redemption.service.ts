@@ -25,6 +25,11 @@ import {
 } from "../../notification/enums/notification-type.enum";
 import { WalletService } from "../../wallet/wallet.service";
 import { MallIntegrationService } from "../../mall-integration/mall-integration.service";
+import { RewardIssuance } from "../../partner-rewards/entities/reward-issuance.entity";
+import { RewardIssuanceStatus } from "../../partner-rewards/enums/partner-reward.enums";
+import { RewardFulfilmentService } from "../../reward-fulfilment/reward-fulfilment.service";
+import { FulfilmentStatus } from "../../reward-fulfilment/reward-fulfilment.enums";
+import { nanoid } from "nanoid";
 
 @Injectable()
 export class RedemptionService {
@@ -48,6 +53,7 @@ export class RedemptionService {
     private readonly notificationService: NotificationService,
     private readonly walletService: WalletService,
     private readonly mallIntegrationService: MallIntegrationService,
+    private readonly rewardFulfilmentService: RewardFulfilmentService,
   ) {}
 
   // Helper to find performer (Staff or Business)
@@ -94,6 +100,8 @@ export class RedemptionService {
     transactionManager?: EntityManager,
     idempotencyKey?: string,
   ): Promise<ParticipantCampaignBalance> {
+    let redemptionIssuanceId: string | undefined;
+
     const execute = async (manager: any) => {
       // Idempotency Check
       if (idempotencyKey) {
@@ -372,7 +380,63 @@ export class RedemptionService {
       }
 
       let voucherCode: string | undefined;
-      if (
+      if (businessReward && businessReward.fulfilment_provider) {
+        // Ecosystem fulfilment: create the issuance ledger row inside the
+        // points transaction, then deliver through the provider after commit.
+        voucherCode = `MCOM-${nanoid(10).toUpperCase()}`;
+        const fundingSource =
+          businessReward.fulfilment_funding_source || "BUSINESS_WALLET";
+
+        if (fundingSource !== "PLATFORM") {
+          await this.walletService.spend(
+            business.id,
+            Number(businessReward.mall_reward_value) || 0,
+            `Reward Redemption: ${businessReward.title || (reward ? reward.title : "Reward")} (Participant: ${participant.name})`,
+            {
+              category: "PURCHASE",
+              ...(idempotencyKey
+                ? {
+                    idempotencyKey:
+                      `rewards-redeem-${idempotencyKey}`.slice(0, 255),
+                  }
+                : {}),
+            },
+          );
+        }
+
+        const issuance = manager.create(RewardIssuance, {
+          reward: reward || null,
+          business_reward_id: businessReward.id,
+          issuer_client_id: "mcom-rewards",
+          external_ref: idempotencyKey || null,
+          idempotency_key:
+            idempotencyKey || `redemption-${nanoid(24)}`,
+          recipient_email: participant.email,
+          recipient_mcom_user_id: participant.mcomUserId || null,
+          recipient_user_id: participant.id,
+          recipient_user_type: "Participant",
+          recipient_name: participant.name,
+          recipient_resolved: true,
+          code: voucherCode,
+          status: RewardIssuanceStatus.ISSUED,
+          reward_type: businessReward.reward_type,
+          value: Number(businessReward.mall_reward_value) || 0,
+          quantity: 1,
+          expires_at: businessReward.expiry_datetime || null,
+          fulfilment_provider: businessReward.fulfilment_provider,
+          fulfilment_kind: businessReward.fulfilment_kind,
+          fulfilment_status: FulfilmentStatus.PENDING,
+          metadata: {
+            campaignId,
+            businessId: business.id,
+            businessName: business.name,
+            redemptionMethod: resolvedMethod,
+            pointHistoryIdempotencyKey: idempotencyKey || null,
+          },
+        });
+        const savedIssuance = await manager.save(RewardIssuance, issuance);
+        redemptionIssuanceId = savedIssuance.id;
+      } else if (
         businessReward &&
         businessReward.is_mall_integrated &&
         businessReward.mall_reward_value > 0
@@ -521,11 +585,24 @@ export class RedemptionService {
       return participantCampaignBalance;
     };
 
-    if (transactionManager) {
-      return execute(transactionManager);
-    } else {
-      return await this.dataSource.transaction(execute);
+    const result = transactionManager
+      ? await execute(transactionManager)
+      : await this.dataSource.transaction(execute);
+
+    if (redemptionIssuanceId) {
+      try {
+        await this.rewardFulfilmentService.fulfil(redemptionIssuanceId);
+      } catch (err) {
+        // Delivery is retried by the fulfilment outbox; points redemption
+        // must not fail because a provider is temporarily unavailable.
+        console.error(
+          `Fulfilment deferred for redemption issuance ${redemptionIssuanceId}:`,
+          err,
+        );
+      }
     }
+
+    return result;
   }
 
   // Method A: Staff/Business scans Participant to Redeem

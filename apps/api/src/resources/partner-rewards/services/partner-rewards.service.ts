@@ -11,6 +11,8 @@ import { BusinessReward } from "../../rewards/entities/business-reward.entity";
 import { Business } from "../../business/entities/business.entity";
 import { ListPartnerRewardsDto } from "../dto/list-partner-rewards.dto";
 import { ListBusinessRewardsDto } from "../dto/list-business-rewards.dto";
+import { RewardFulfilmentService } from "../../reward-fulfilment/reward-fulfilment.service";
+import { FulfilmentKind } from "../../reward-fulfilment/reward-fulfilment.enums";
 
 /**
  * Read-only reward catalogue exposed to ecosystem partners. Returns a stable,
@@ -25,6 +27,7 @@ export class PartnerRewardsService {
     private readonly businessRewardRepository: Repository<BusinessReward>,
     @InjectRepository(Business)
     private readonly businessRepository: Repository<Business>,
+    private readonly fulfilment: RewardFulfilmentService,
   ) {}
 
   async listCatalog(query: ListPartnerRewardsDto): Promise<any> {
@@ -176,6 +179,7 @@ export class PartnerRewardsService {
       quantity: reward.quantity,
       expiresAt: reward.expiry_datetime,
       updatedAt: reward.updated_at,
+      ...this.fulfilmentDescriptor(reward),
     };
   }
 
@@ -207,6 +211,81 @@ export class PartnerRewardsService {
       expiresAt: br.expiry_datetime,
       createdAt: br.created_at,
       updatedAt: br.updated_at,
+      ...this.fulfilmentDescriptor(br),
     };
+  }
+
+  /**
+   * The single source of truth for "who delivers this reward and who may claim
+   * it". Partners (FOD) use these fields to label the reward picker and to
+   * reject invalid campaign/audience combinations before issuing anything.
+   *
+   * Eligibility is derived from the fulfilment *kind* — never the cosmetic
+   * `rewardType` — and falls back to the legacy `audience` column for rewards
+   * that predate the fulfilment taxonomy.
+   */
+  private fulfilmentDescriptor(source: {
+    fulfilment_provider?: string | null;
+    fulfilment_kind?: string | null;
+    fulfilment_config?: Record<string, any> | null;
+    audience?: string | null;
+  }): Record<string, any> {
+    const provider = source.fulfilment_provider ?? null;
+    const kind = source.fulfilment_kind ?? null;
+    const config = source.fulfilment_config ?? null;
+
+    const central = this.isCentralKind(kind);
+    const mall =
+      kind === FulfilmentKind.MALL_DISCOUNT ||
+      kind === FulfilmentKind.MALL_GIFT_CARD ||
+      kind === FulfilmentKind.MALL_VOUCHER ||
+      kind === FulfilmentKind.MALL_COUPON;
+    const legacyAudience = (source.audience ?? "").toLowerCase();
+
+    // Central rewards are business-only. Mall rewards can be claimed by either
+    // audience, unless the legacy audience column narrows them.
+    let consumerEligible: boolean;
+    let businessEligible: boolean;
+    if (central) {
+      consumerEligible = false;
+      businessEligible = true;
+    } else if (mall) {
+      consumerEligible = legacyAudience !== "business";
+      businessEligible = legacyAudience !== "consumer";
+    } else {
+      consumerEligible = legacyAudience !== "business";
+      businessEligible = legacyAudience !== "consumer";
+    }
+
+    return {
+      fulfilmentProvider: provider,
+      fulfilmentKind: kind,
+      // Never echo internal funding/business-identity fields to partners.
+      fulfilmentConfig: this.sanitiseFulfilmentConfig(config),
+      consumerEligible,
+      businessEligible,
+      deepLink: kind
+        ? this.fulfilment.getDeepLink({
+            fulfilment_kind: kind,
+            metadata: config ?? {},
+          })
+        : null,
+    };
+  }
+
+  private isCentralKind(kind: string | null): boolean {
+    return typeof kind === "string" && kind.startsWith("CENTRAL_");
+  }
+
+  private sanitiseFulfilmentConfig(
+    config: Record<string, any> | null,
+  ): Record<string, any> | null {
+    if (!config || typeof config !== "object") return null;
+    const {
+      businessMcomUserId: _businessMcomUserId,
+      metadata: _metadata,
+      ...safe
+    } = config as Record<string, any>;
+    return safe;
   }
 }

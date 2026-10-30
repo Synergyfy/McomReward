@@ -16,6 +16,20 @@ export class RedeemIssuanceDto {
   @IsString()
   @MaxLength(500)
   note?: string;
+
+  /**
+   * Instrument kind (GIFT_CARD | VOUCHER | COUPON) sent by the redeeming peer
+   * for audit. It is recorded on the issuance metadata and never used to make
+   * behavioural decisions.
+   *
+   * Optional because the contract predates it; the global validation pipe
+   * rejects unknown properties, so peers that do send it must be tolerated.
+   */
+  @ApiPropertyOptional({ example: 'VOUCHER' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  instrumentType?: string;
 }
 
 export class RevokeIssuanceDto {

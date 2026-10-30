@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   IsString,
   IsNumber,
@@ -7,11 +8,13 @@ import {
   IsArray,
   IsDateString,
   IsBoolean,
+  ValidateNested,
 } from "class-validator";
 import { RewardType } from "../enums/reward-type.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
 import { RewardStatus } from "../enums/reward-status.enum";
 import { ImageSourceType } from "../enums/image-source-type.enum";
+import { RewardFulfilmentConfigDto } from "../../reward-fulfilment/dto/reward-fulfilment.dto";
 
 export class CreateRewardDto {
   @ApiProperty({
@@ -214,4 +217,15 @@ export class CreateRewardDto {
   @IsString()
   @IsOptional()
   emoji?: string;
+
+  @ApiProperty({
+    description:
+      "Ecosystem fulfilment attachment (Mall instrument or Central entitlement)",
+    type: () => RewardFulfilmentConfigDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RewardFulfilmentConfigDto)
+  fulfilment?: RewardFulfilmentConfigDto;
 }

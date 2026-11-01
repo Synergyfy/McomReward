@@ -210,12 +210,19 @@ export class SsoService {
         ? await this.planSubscriptionService.hasActiveSubscription(user.id)
         : true;
 
+    // Super Businesses bypass subscription checks. Keep the claim in the SSO
+    // token so capability is consistent even when the user enters via Central.
+    const isSuperBusiness =
+      user.role === Role.Business &&
+      (user as Business).isSuperBusiness === true;
+
     const payload = {
       username: user.email,
       sub: user.id,
       role: user.role,
       isEmailVerified: true,
-      hasActiveSubscription,
+      hasActiveSubscription: isSuperBusiness ? true : hasActiveSubscription,
+      isSuperBusiness,
       mcomUserId: user.mcomUserId,
     };
 
@@ -567,12 +574,19 @@ export class SsoService {
         ? await this.planSubscriptionService.hasActiveSubscription(user.id)
         : true;
 
+    // Super Businesses bypass subscription checks. Keep the claim in the SSO
+    // token so capability is consistent even when the user enters via Central.
+    const isSuperBusiness =
+      user.role === Role.Business &&
+      (user as Business).isSuperBusiness === true;
+
     const jwtPayload = {
       username: user.email,
       sub: user.id,
       role: user.role,
       isEmailVerified: true,
-      hasActiveSubscription,
+      hasActiveSubscription: isSuperBusiness ? true : hasActiveSubscription,
+      isSuperBusiness,
       mcomUserId: user.mcomUserId,
     };
 

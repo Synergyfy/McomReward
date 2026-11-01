@@ -33,6 +33,13 @@ export class PlanSubscriptionService {
     { data: PlanSubscription[]; expiresAt: number }
   >();
 
+  // Cached read of the Super Business privilege. Kept separate from the
+  // subscription cache so grant/revoke can be invalidated independently.
+  private readonly superBusinessCache = new Map<
+    string,
+    { value: boolean; expiresAt: number }
+  >();
+
   private cachedTtlMs?: number;
   private readonly MAX_CACHE_SIZE = 5000;
 
@@ -75,6 +82,10 @@ export class PlanSubscriptionService {
 
   invalidateSubscriptionCache(businessId: string): void {
     this.activeSubscriptionCache.delete(this.getCacheKey(businessId));
+  }
+
+  invalidateSuperBusinessCache(businessId: string): void {
+    this.superBusinessCache.delete(`super:${businessId}`);
   }
 
   clearAllSubscriptionCache(): void {
@@ -155,6 +166,43 @@ export class PlanSubscriptionService {
   async hasActiveSubscription(businessId: string): Promise<boolean> {
     const active = await this.findActiveSubscriptions(businessId);
     return active.length > 0;
+  }
+
+  /**
+   * Live (cached) read of the Super Business privilege.
+   *
+   * Guards must not trust the JWT claim for this: an admin can revoke the
+   * privilege at any time, and the token may still say `true` until refresh.
+   */
+  async isSuperBusiness(businessId: string): Promise<boolean> {
+    const cacheKey = `super:${businessId}`;
+    const nowMs = Date.now();
+    const cached = this.superBusinessCache.get(cacheKey);
+    if (cached && cached.expiresAt > nowMs) {
+      return cached.value;
+    }
+
+    const business = await this.businessRepository.findOne({
+      where: { id: businessId },
+      select: ["id", "isSuperBusiness"],
+    });
+    const value = business?.isSuperBusiness === true;
+
+    if (this.superBusinessCache.size >= this.MAX_CACHE_SIZE) {
+      const keysToDelete = Array.from(this.superBusinessCache.keys()).slice(
+        0,
+        500,
+      );
+      for (const key of keysToDelete) {
+        this.superBusinessCache.delete(key);
+      }
+    }
+
+    this.superBusinessCache.set(cacheKey, {
+      value,
+      expiresAt: nowMs + this.getCacheTtlMs(),
+    });
+    return value;
   }
 
   async getMySubscription(user: any): Promise<PlanSubscription | null> {

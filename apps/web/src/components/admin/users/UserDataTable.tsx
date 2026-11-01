@@ -36,6 +36,7 @@ interface DataTableProps<TData, TValue> {
   onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void;
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onToggleSuperBusiness?: (businessId: string, isSuperBusiness: boolean) => void;
   onViewDetails: (userId: string) => void;
   onImpersonate?: (businessId: string) => void;
   router: ReturnType<typeof useRouter>; // Add router prop
@@ -48,6 +49,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
   onDeleteUser,
   onAdjustUserPoints,
   onSuspendUser,
+  onToggleSuperBusiness,
   onViewDetails,
   onImpersonate,
   router,
@@ -142,6 +144,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
       onDeleteUser: onDeleteUser,
       onAdjustUserPoints: onAdjustUserPoints,
       onSuspendUser: onSuspendUser,
+      onToggleSuperBusiness: onToggleSuperBusiness ?? (() => {}),
     };
     return columns(handlers, router); // Pass the single handlers object AND router
   }, [
@@ -151,6 +154,7 @@ export function UserDataTable<TData extends BusinessUser | ConsumerUser, TValue>
     onDeleteUser,
     onAdjustUserPoints,
     onSuspendUser,
+    onToggleSuperBusiness,
     router, // Add router to the dependency array
   ]);
 

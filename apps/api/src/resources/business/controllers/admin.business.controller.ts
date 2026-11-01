@@ -24,6 +24,7 @@ import { StaffService } from "../../staff/services/staff.service";
 import { UpdateBusinessDto } from "../dto/update-business.dto";
 import { UpdateStaffDto } from "../../staff/dto/update-staff.dto";
 import { AdminService } from "../../admin/services/admin.service";
+import { SetSuperBusinessDto } from "../../admin/dto/set-super-business.dto";
 
 @ApiTags("Admin")
 @ApiBearerAuth()
@@ -114,6 +115,26 @@ export class AdminBusinessController {
   @ApiResponse({ status: 404, description: "Business not found." })
   async disable(@Param("id") id: string) {
     return this.adminService.disableBusiness(id);
+  }
+
+  @Patch(":id/super-business")
+  @ApiOperation({
+    summary: "Grant or revoke the Super Business privilege (admin only)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "The Super Business privilege has been updated.",
+    type: Business,
+  })
+  @ApiResponse({ status: 404, description: "Business not found." })
+  async setSuperBusiness(
+    @Param("id") id: string,
+    @Body() setSuperBusinessDto: SetSuperBusinessDto,
+  ) {
+    return this.adminService.setSuperBusiness(
+      id,
+      setSuperBusinessDto.isSuperBusiness,
+    );
   }
 
   @Get(":id/participants")

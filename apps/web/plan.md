@@ -1,10 +1,12 @@
-endpoint: POST /admin/create-super-business
+endpoint: PATCH /admin/businesses/:id/super-business
 
-Request body: 
+Request body:
 {
-  "name": "The Gourmet Kitchen",
-  "email": "contact@gourmetkitchen.com",
-  "password": "aStrongPassword123!",
-  "confirmPassword": "aStrongPassword123!",
-  "referralCode": "a1b2c3d4e"
+  "isSuperBusiness": true
 }
+
+Notes:
+- Grant and revoke use the same endpoint; send `false` to revoke.
+- Admin authentication required.
+- Takes effect on the next request (guard reads the flag from the DB cache and
+  the admin toggle invalidates that cache).

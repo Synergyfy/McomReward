@@ -175,6 +175,8 @@ export function AccessPassPaymentModal({
   if (!isOpen || !plan) return null;
 
   const amountText = `£${Number(plan.price).toFixed(2)}`;
+  const isFreePass =
+    Number.isFinite(Number(plan.price)) && Number(plan.price) <= 0;
   const centralTopUpUrl =
     topUpUrl ||
     wallet?.topUpUrl ||
@@ -211,6 +213,13 @@ export function AccessPassPaymentModal({
       if (response.checkoutId) setCheckoutId(response.checkoutId);
       if (response.chargeId) setChargeId(response.chargeId);
       if (response.topUpUrl) setTopUpUrl(response.topUpUrl);
+
+      if (response.free) {
+        setSuccess(true);
+        toast.success("Access pass activated!");
+        setTimeout(onSuccess, 1400);
+        return;
+      }
 
       if (provider === "stripe") {
         if (!response.clientSecret) {
@@ -349,24 +358,39 @@ export function AccessPassPaymentModal({
                   </span>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                    Payment method
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {providerButton("stripe", "Card", <CreditCard size={20} />)}
-                    {providerButton(
-                      "paypal",
-                      "PayPal",
-                      <span className="text-sm font-black italic">PayPal</span>,
-                    )}
-                    {providerButton(
-                      "wallet",
-                      "MCOM Wallet",
-                      <Wallet size={20} />,
-                    )}
+                {isFreePass ? (
+                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-sm text-emerald-900">
+                    <p className="font-semibold">Free access pass</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">
+                      No payment is required — activate it instantly.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                      Payment method
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {providerButton(
+                        "stripe",
+                        "Card",
+                        <CreditCard size={20} />,
+                      )}
+                      {providerButton(
+                        "paypal",
+                        "PayPal",
+                        <span className="text-sm font-black italic">
+                          PayPal
+                        </span>,
+                      )}
+                      {providerButton(
+                        "wallet",
+                        "MCOM Wallet",
+                        <Wallet size={20} />,
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 flex gap-2">
@@ -397,9 +421,18 @@ export function AccessPassPaymentModal({
                       <span className="text-sm">
                         {confirming
                           ? "Confirming payment…"
-                          : "Connecting to MCOM Payments…"}
+                          : isFreePass
+                            ? "Activating your pass…"
+                            : "Connecting to MCOM Payments…"}
                       </span>
                     </div>
+                  ) : isFreePass ? (
+                    <button
+                      onClick={startPayment}
+                      className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                    >
+                      <Zap size={18} /> Activate free pass
+                    </button>
                   ) : provider === "stripe" ? (
                     clientSecret && stripePromise ? (
                       <Elements

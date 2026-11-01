@@ -16,6 +16,7 @@ import { PlanSubscription } from "../plans/entities/plan-subscription.entity";
 import { CampaignModule } from "../campaign/campaign.module";
 import { ParticipantModule } from "../participant/participant.module";
 import { AdminBusinessController } from "../business/controllers/admin.business.controller";
+import { PlansModule } from "../plans/plans.module";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AdminBusinessController } from "../business/controllers/admin.business.
     HashModule,
     CampaignModule,
     ParticipantModule,
+    PlansModule,
   ],
   providers: [AdminService],
   controllers: [AdminController, AdminBusinessController],

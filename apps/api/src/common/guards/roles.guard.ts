@@ -79,8 +79,12 @@ export class RolesGuard implements CanActivate {
       requiredRoles.includes(Role.Business) &&
       !skipSubscriptionCheck
     ) {
-      // Super business bypass (from JWT, config-driven role)
-      if (user.isSuperBusiness) {
+      // Super Business bypass — read from the DB-backed cache, not the JWT, so
+      // an admin revoking the privilege takes effect on the next request.
+      const isSuperBusiness =
+        await this.getSubscriptionService().isSuperBusiness(user.id);
+      user.isSuperBusiness = isSuperBusiness;
+      if (isSuperBusiness) {
         return requiredRoles.some((role) => user.role === role);
       }
       const hasActive =

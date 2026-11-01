@@ -1,6 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { BusinessUser, ConsumerUser } from '@/services/admin/types';
 import Link from 'next/link';
 
@@ -33,6 +39,7 @@ export type ActionHandlers = {
   onDeleteUser: (userId: string, userType: 'business' | 'consumer') => void;
   onAdjustUserPoints: (userId: string, userType: 'business' | 'consumer', amount: number, reason: string) => void;
   onSuspendUser: (userId: string, userType: 'business' | 'consumer') => void;
+  onToggleSuperBusiness: (businessId: string, isSuperBusiness: boolean) => void;
   onViewDetails: (userId: string) => void; // This handler is now for navigation
   onImpersonate?: (businessId: string) => void;
 };
@@ -46,6 +53,8 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
   id: 'actions',
   cell: ({ row }) => {
     const item = row.original;
+    const isSuperBusiness =
+      itemType === 'business' && (item as BusinessUser).isSuperBusiness === true;
 
     const handleAdjustPoints = (amount: number, reason: string) => {
       handlers.onAdjustUserPoints(item.id, itemType, amount, reason);
@@ -98,6 +107,24 @@ const createActionColumn: <T extends BusinessUser | ConsumerUser>(
                 onClick={() => handlers.onViewDetails(item.id)} // This now triggers navigation
               >
                 View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handlers.onOpenConfirmationDialog(
+                    isSuperBusiness
+                      ? `Revoke Super Business from ${item.name}?`
+                      : `Grant Super Business to ${item.name}?`,
+                    isSuperBusiness
+                      ? `${item.name} will lose Super Business access. Subscription checks, campaign limits and point limits will apply again.`
+                      : `${item.name} will receive full Super Business access, including unlimited campaigns and points and no subscription checks.`,
+                    () => handlers.onToggleSuperBusiness(item.id, !isSuperBusiness),
+                    isSuperBusiness ? 'Revoke' : 'Grant',
+                    'Cancel'
+                  )
+                }
+                className="text-amber-700"
+              >
+                {isSuperBusiness ? 'Revoke Super Business' : 'Grant Super Business'}
               </DropdownMenuItem>
             </>
           )}
@@ -163,7 +190,33 @@ export const createBusinessColumns = (handlers: ActionHandlers, router: ReturnTy
     accessorKey: 'name',
     header: 'Business Name',
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue('name')}</div>
+      <div className="flex items-center gap-2 font-medium">
+        <span>{row.getValue('name')}</span>
+        {row.original.isSuperBusiness && (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  tabIndex={0}
+                  aria-label="Super Business"
+                  className="inline-flex cursor-help rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-amber-200 bg-amber-50 text-amber-700"
+                  >
+                    <Gem className="h-3 w-3" aria-hidden="true" />
+                    Super Business
+                  </Badge>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Super Business</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
     ),
   },
   {

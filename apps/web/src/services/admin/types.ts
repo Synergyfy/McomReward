@@ -24,6 +24,7 @@ export interface AdminBusiness {
   rewardsAttached: number;
   pointsBalance: number;
   memberSince: string;
+  isSuperBusiness?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -46,6 +47,7 @@ export type BusinessUser = {
   rewardsAttached: number;
   pointsBalance: number;
   memberSince: Date;
+  isSuperBusiness?: boolean;
 };
 
 export type ConsumerUser = {
@@ -106,12 +108,4 @@ export interface AdminBusinessDetails {
   total_points_redeemed: number;
   remainingPointBalance: number;
   extraPoints: number;
-}
-
-export interface CreateSuperBusinessDto {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  referralCode: string;
 }

@@ -334,6 +334,7 @@ export function AccessPassPlanForm({
       next.description = `Keep under ${MAX_DESCRIPTION} characters.`;
 
     if (!price.trim()) next.price = "Enter a price (use 0 for free).";
+    else if (Number(price) < 0) next.price = "Price cannot be negative.";
     else if (!/^\d+(\.\d{1,2})?$/.test(price.trim()))
       next.price = "Use a valid amount with up to 2 decimals.";
     else if (Number(price) > MAX_PRICE)

@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -11,7 +12,6 @@ import { BusinessService } from "../../business/services/business.service";
 import { StaffService } from "../../staff/services/staff.service";
 import { PointHistory } from "../../participant-campaign-balance/entities/point-history.entity";
 import { CreateAdminDto } from "../dto/create-admin.dto";
-import { CreateSuperBusinessDto } from "../dto/create-super-business.dto";
 import { HashService } from "../../../common/hash/hash.service";
 import { Campaign } from "../../campaign/entities/campaign.entity";
 import { CampaignService } from "../../campaign/campaign.service";
@@ -25,9 +25,12 @@ import { Staff } from "../../staff/entities/staff.entity";
 import { Reward } from "../../rewards/entities/reward.entity";
 import { Participant } from "../../participant/entities/participant.entity";
 import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
+import { PlanSubscriptionService } from "../../plans/services/plan-subscription.service";
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     @InjectRepository(Admin)
     private readonly adminRepository: Repository<Admin>,
@@ -50,10 +53,34 @@ export class AdminService {
     private readonly pointHistoryRepository: Repository<PointHistory>,
     @InjectRepository(PlanSubscription)
     private readonly planSubscriptionRepository: Repository<PlanSubscription>,
+    private readonly planSubscriptionService: PlanSubscriptionService,
   ) {}
 
-  async createSuperBusiness(createSuperBusinessDto: CreateSuperBusinessDto) {
-    return this.businessService.create(createSuperBusinessDto, true);
+  async setSuperBusiness(id: string, isSuperBusiness: boolean) {
+    const business = await this.businessRepository.findOne({
+      where: { id },
+    });
+
+    if (!business) {
+      throw new NotFoundException("Business not found");
+    }
+
+    if (business.isSuperBusiness === isSuperBusiness) {
+      return business;
+    }
+
+    business.isSuperBusiness = isSuperBusiness;
+    const saved = await this.businessRepository.save(business);
+
+    // The roles guard reads this flag from a short-lived cache so that a
+    // grant/revoke applies on the next request instead of the next login.
+    this.planSubscriptionService.invalidateSuperBusinessCache(id);
+
+    this.logger.log(
+      `Super Business ${isSuperBusiness ? "granted to" : "revoked from"} ${business.email} (${id})`,
+    );
+
+    return saved;
   }
 
   async create(createAdminDto: CreateAdminDto): Promise<Admin> {

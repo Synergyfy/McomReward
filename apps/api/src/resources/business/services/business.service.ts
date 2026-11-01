@@ -105,10 +105,7 @@ export class BusinessService {
     return affiliateCode;
   }
 
-  async create(
-    createBusinessDto: CreateBusinessDto,
-    isSuperBusiness: boolean = false,
-  ): Promise<Business> {
+  async create(createBusinessDto: CreateBusinessDto): Promise<Business> {
     const existingBusiness = await this.findByEmail(createBusinessDto.email);
     if (existingBusiness) {
       throw new ConflictException("Email already exists");
@@ -150,7 +147,7 @@ export class BusinessService {
       affiliateCode,
       referredBy: referrer,
       relationshipTag: referrer ? NetworkRelationshipTag.AFFILIATE : null,
-      isSuperBusiness,
+      isSuperBusiness: false,
     });
     const newBusiness = await this.businessRepository.save(business);
 

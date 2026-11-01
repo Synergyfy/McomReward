@@ -1,6 +1,6 @@
 import api from '../api';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { AdminParticipant, AdminBusiness, PaginatedResponse, AdminBusinessDetails, CreateSuperBusinessDto } from './types';
+import { AdminParticipant, AdminBusiness, PaginatedResponse, AdminBusinessDetails } from './types';
 import type { ParticipantHistoryItem, MyCampaign } from '../customer-campaigns/types';
 import { GetMallRewardHistoryResponse } from '../business-reward/types';
 import { WishlistItem } from '../wishlist/types';
@@ -191,21 +191,5 @@ export const useAdminBusinessById = (id: string | null) => {
         queryKey: ['admin-business', id],
         queryFn: () => getAdminBusinessById(id!),
         enabled: !!id, // Only run query if id is not null
-    });
-};
-
-// Create Super Business
-const createSuperBusiness = async (payload: CreateSuperBusinessDto): Promise<any> => {
-    const { data } = await api.post('/admin/create-super-business', payload);
-    return data;
-};
-
-export const useCreateSuperBusiness = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: createSuperBusiness,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
-        },
     });
 };

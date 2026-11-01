@@ -347,16 +347,20 @@ export default function BusinessAccessPassPage() {
                     <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
                       <div>
                         <p className="text-2xl font-black text-gray-900">
-                          £{Number(plan.price).toFixed(2)}
+                          {Number(plan.price) <= 0
+                            ? "Free"
+                            : `£${Number(plan.price).toFixed(2)}`}
                         </p>
-                        <p className="text-[10px] text-gray-500">one-off</p>
+                        <p className="text-[10px] text-gray-500">
+                          {Number(plan.price) <= 0 ? "no payment" : "one-off"}
+                        </p>
                       </div>
                       <button
                         onClick={() => setSelectedPlan(plan)}
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold"
                       >
                         <CreditCard className="w-4 h-4" />
-                        Buy pass
+                        {Number(plan.price) <= 0 ? "Activate" : "Buy pass"}
                       </button>
                     </div>
                   </motion.div>

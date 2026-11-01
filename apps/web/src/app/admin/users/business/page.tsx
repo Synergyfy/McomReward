@@ -60,6 +60,7 @@ function BusinessUsersContent() {
     rewardsAttached: business.rewardsAttached || 0, // Default to 0 if missing
     pointsBalance: business.pointsBalance,
     memberSince: new Date(business.memberSince),
+    isSuperBusiness: business.isSuperBusiness === true,
   })) || [];
 
   const handleUpdateUser = (updatedUser: BusinessUser | ConsumerUser) => {
@@ -95,6 +96,29 @@ function BusinessUsersContent() {
 
   const handleViewDetails = (userId: string) => {
     router.push(`/admin/users/business/${userId}`);
+  };
+
+  const handleToggleSuperBusiness = async (
+    businessId: string,
+    isSuperBusiness: boolean
+  ) => {
+    try {
+      await api.patch(`/admin/businesses/${businessId}/super-business`, {
+        isSuperBusiness,
+      });
+      toast.success(
+        isSuperBusiness
+          ? 'Super Business privilege granted.'
+          : 'Super Business privilege revoked.'
+      );
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+      refetch();
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          'Failed to update Super Business privilege.'
+      );
+    }
   };
 
   const handleImpersonate = (businessId: string) => {
@@ -211,6 +235,7 @@ function BusinessUsersContent() {
             onDeleteUser={handleDeleteUser}
             onAdjustUserPoints={handleAdjustUserPoints}
             onSuspendUser={handleSuspendUser}
+            onToggleSuperBusiness={handleToggleSuperBusiness}
             onViewDetails={handleViewDetails}
             onImpersonate={handleImpersonate}
             router={router}

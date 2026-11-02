@@ -812,60 +812,27 @@ export default function UnifiedRewardWizardModal({
 
                                     {isMallFulfilment && (
                                         <div className="space-y-4 rounded-lg border bg-gray-50/60 p-4">
-                                            <div className="grid gap-4 sm:grid-cols-2">
-                                                <div>
-                                                    <Label>Mall instrument</Label>
-                                                    <Select
-                                                        value={fulfilmentKind}
-                                                        onValueChange={setFulfilmentKind}
-                                                    >
-                                                        <SelectTrigger className="mt-1 bg-white">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="MALL_GIFT_CARD">
-                                                                Gift card
-                                                            </SelectItem>
-                                                            <SelectItem value="MALL_VOUCHER">
-                                                                Voucher
-                                                            </SelectItem>
-                                                            <SelectItem value="MALL_COUPON">
-                                                                Coupon
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div>
-                                                    <Label>Business (optional)</Label>
-                                                    <Select
-                                                        value={fulfilmentBusinessId || 'none'}
-                                                        onValueChange={(value) => {
-                                                            setFulfilmentBusinessId(
-                                                                value === 'none' ? '' : value,
-                                                            );
-                                                            setFulfilmentTemplateId('');
-                                                        }}
-                                                    >
-                                                        <SelectTrigger className="mt-1 bg-white">
-                                                            <SelectValue placeholder="All of Mall" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="none">
-                                                                All of Mall
-                                                            </SelectItem>
-                                                            {mallListings.map((listing: any) => (
-                                                                <SelectItem
-                                                                    key={listing.id}
-                                                                    value={listing.id}
-                                                                >
-                                                                    {listing.name ||
-                                                                        listing.businessName ||
-                                                                        listing.id}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                            <div>
+                                                <Label>Mall instrument</Label>
+                                                <Select
+                                                    value={fulfilmentKind}
+                                                    onValueChange={setFulfilmentKind}
+                                                >
+                                                    <SelectTrigger className="mt-1 bg-white">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="MALL_GIFT_CARD">
+                                                            Gift card
+                                                        </SelectItem>
+                                                        <SelectItem value="MALL_VOUCHER">
+                                                            Voucher
+                                                        </SelectItem>
+                                                        <SelectItem value="MALL_COUPON">
+                                                            Coupon
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
 
                                             {fulfilmentBusinessId && (

@@ -15,7 +15,6 @@ import {
   TrialTierConfig,
 } from "../tier/interfaces/tier-config.interface";
 import { TierType } from "../tier/entities/tier-type.enum";
-import { RewardsService } from "../rewards/services/rewards.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Between } from "typeorm";
 import {
@@ -31,10 +30,8 @@ export enum ActionType {
   CREATE_CAMPAIGN = "CREATE_CAMPAIGN",
   CREATE_REWARD = "CREATE_REWARD",
   ACCESS_ANALYTICS = "ACCESS_ANALYTICS",
-  ACCESS_CRM = "ACCESS_CRM",
   EDIT_TEMPLATE = "EDIT_TEMPLATE",
   UPDATE_CAMPAIGN = "UPDATE_CAMPAIGN",
-  ADD_REWARD_TO_BUSINESS = "ADD_REWARD_TO_BUSINESS",
   UPDATE_REWARD = "UPDATE_REWARD",
   AWARD_POINTS = "AWARD_POINTS",
   AWARD_STAMPS = "AWARD_STAMPS",
@@ -49,7 +46,6 @@ export class CapabilityService {
     private readonly planSubscriptionService: PlanSubscriptionService,
     @Inject(forwardRef(() => CampaignService))
     private readonly campaignService: CampaignService,
-    private readonly rewardsService: RewardsService,
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
     @InjectRepository(Staff)
@@ -128,7 +124,6 @@ export class CapabilityService {
     // Ensure quotas and featureFlags objects are safely initialized to prevent runtime TypeErrors
     effectiveConfig.quotas = {
       maxActiveCampaigns: -1,
-      maxActiveRewards: -1,
       maxRewardsPerCampaign: -1,
       monthlyPointsAllowance: -1,
       monthlyStampsAllowance: -1,
@@ -141,7 +136,6 @@ export class CapabilityService {
       canCreateCampaignFromScratch: true,
       canEditAdminTemplates: true,
       hasAccessToAdvancedAnalytics: true,
-      hasAccessToCRM: true,
       canUpdateReward: true,
       canCreateRewardFromScratch: true,
       ...(effectiveConfig.featureFlags || {}),
@@ -196,25 +190,12 @@ export class CapabilityService {
         await this.checkRewardLimit(context?.campaignId, effectiveConfig);
         break;
 
-      case ActionType.ADD_REWARD_TO_BUSINESS:
-        await this.checkRewardInventoryLimit(userId, effectiveConfig);
-        break;
-
       case ActionType.ACCESS_ANALYTICS:
         if (!effectiveConfig.featureFlags.hasAccessToAdvancedAnalytics) {
           this.logger.warn(
             `User ${userId} tried to access advanced analytics but is not allowed.`,
           );
           throw new ForbiddenException("Upgrade to access advanced analytics.");
-        }
-        break;
-
-      case ActionType.ACCESS_CRM:
-        if (!effectiveConfig.featureFlags.hasAccessToCRM) {
-          this.logger.warn(
-            `User ${userId} tried to access CRM but is not allowed.`,
-          );
-          throw new ForbiddenException("Upgrade to access CRM features.");
         }
         break;
 
@@ -365,22 +346,6 @@ export class CapabilityService {
       this.logger.warn(`Reward count ${count} exceeds limit ${limit}`);
       throw new ForbiddenException(
         `You have reached the limit of ${limit} rewards per campaign.`,
-      );
-    }
-  }
-
-  private async checkRewardInventoryLimit(userId: string, config: TierConfig) {
-    const limit = config.quotas.maxActiveRewards;
-    if (limit === -1) return;
-
-    const currentUsage =
-      await this.rewardsService.countActiveBusinessRewards(userId);
-    if (currentUsage >= limit) {
-      this.logger.warn(
-        `User ${userId} reached active reward limit: ${currentUsage}/${limit}`,
-      );
-      throw new ForbiddenException(
-        `You have reached your limit of ${limit} active rewards. Upgrade or level up to unlock more.`,
       );
     }
   }

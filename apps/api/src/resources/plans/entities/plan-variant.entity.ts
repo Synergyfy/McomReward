@@ -8,13 +8,10 @@ import { PlanPrice } from "./plan-price.entity";
 export interface PlanVariantConfiguration {
   quotas: {
     maxActiveCampaigns?: number;
-    maxActiveRewards?: number;
     maxRewardsPerCampaign?: number;
     monthlyPointsAllowance?: number;
     monthlyStampsAllowance?: number;
     maxTeamMembers?: number;
-    maxGiftCardTemplates?: number;
-    maxCouponTemplates?: number;
     maxLoyaltyPrograms?: number;
     maxImagesPerListing?: number;
     featuredListingAllowance?: number;
@@ -24,7 +21,6 @@ export interface PlanVariantConfiguration {
     canCreateCampaignFromScratch?: boolean;
     canEditAdminTemplates?: boolean;
     hasAccessToAdvancedAnalytics?: boolean;
-    hasAccessToCRM?: boolean;
     canUpdateReward?: boolean;
     priorityInSearch?: boolean;
     allowCustomBranding?: boolean;

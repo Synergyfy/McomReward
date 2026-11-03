@@ -262,7 +262,6 @@ export class RewardsController {
   @ApiBearerAuth()
   @Post("business/rewards/:rewardId")
   @UseGuards(CapabilitiesGuard)
-  @CheckPermission(ActionType.ADD_REWARD_TO_BUSINESS)
   async addRewardToBusiness(
     @Param("rewardId") rewardId: string,
     @Body() addRewardToBusinessDto: AddRewardToBusinessDto,

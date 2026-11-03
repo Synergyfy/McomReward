@@ -33,6 +33,10 @@ export class CamelCaseInterceptor implements NestInterceptor {
           "tier_prices",
           "tier_features",
           "tier_durations",
+          "rewardCustomizations",
+          "reward_customizations",
+          "campaignDescriptions",
+          "campaign_descriptions",
         ].includes(parentKey);
 
       return Object.keys(data).reduce((acc, key) => {

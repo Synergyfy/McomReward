@@ -173,13 +173,6 @@ export default function BusinessSubscriptionPage() {
               <li className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>Customer CRM & Direct Marketing Engine</span>
-                </span>
-                <span className="text-[11px] font-bold text-amber-600">Unlock in Pro+</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   <span>Custom White-label Storefront Branding</span>
                 </span>
                 <span className="text-[11px] font-bold text-amber-600">Unlock in Pro+</span>
@@ -341,22 +334,6 @@ export default function BusinessSubscriptionPage() {
                     {plans.map((p) => {
                       const v = p.variants?.find((v) => v.tierLevel?.toUpperCase() === durationTab);
                       const has = v?.configuration?.featureFlags?.hasAccessToAdvancedAnalytics;
-                      return (
-                        <td key={p.id} className="p-4 text-center">
-                          {has ? (
-                            <CheckCircle2 size={18} className="text-emerald-600 mx-auto" />
-                          ) : (
-                            <span className="text-gray-300 font-bold">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  <tr>
-                    <td className="p-4 font-semibold text-gray-900">Customer CRM Access</td>
-                    {plans.map((p) => {
-                      const v = p.variants?.find((v) => v.tierLevel?.toUpperCase() === durationTab);
-                      const has = v?.configuration?.featureFlags?.hasAccessToCRM;
                       return (
                         <td key={p.id} className="p-4 text-center">
                           {has ? (

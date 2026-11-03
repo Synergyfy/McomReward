@@ -43,14 +43,6 @@ export const FeatureFlagsEditor: React.FC<FeatureFlagsEditorProps> = ({ featureF
                 />
             </div>
             <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="hasAccessToCRM" className="flex-1">Access CRM</Label>
-                <Switch
-                    id="hasAccessToCRM"
-                    checked={featureFlags.hasAccessToCRM ?? false}
-                    onCheckedChange={() => handleToggle('hasAccessToCRM')}
-                />
-            </div>
-            <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="canUpdateReward" className="flex-1">Update Rewards</Label>
                 <Switch
                     id="canUpdateReward"

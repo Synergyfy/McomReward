@@ -1472,13 +1472,7 @@ export class AccessPassService implements OnModuleInit {
       quotas: [
         {
           key: "maxActiveCampaigns",
-          label: "Max Active Campaigns",
-          type: "number",
-          unlimited: true,
-        },
-        {
-          key: "maxActiveRewards",
-          label: "Max Active Rewards",
+          label: "Number of Campaigns",
           type: "number",
           unlimited: true,
         },
@@ -1499,16 +1493,6 @@ export class AccessPassService implements OnModuleInit {
           type: "number",
         },
         { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
-        {
-          key: "maxGiftCardTemplates",
-          label: "Max Gift Card Templates",
-          type: "number",
-        },
-        {
-          key: "maxCouponTemplates",
-          label: "Max Coupon Templates",
-          type: "number",
-        },
       ],
       featureFlags: [
         {
@@ -1524,11 +1508,6 @@ export class AccessPassService implements OnModuleInit {
         {
           key: "hasAccessToAdvancedAnalytics",
           label: "Advanced Analytics Dashboard",
-          type: "boolean",
-        },
-        {
-          key: "hasAccessToCRM",
-          label: "Customer CRM Access",
           type: "boolean",
         },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },

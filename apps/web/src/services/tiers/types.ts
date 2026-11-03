@@ -23,7 +23,6 @@ export interface TierResponse {
             monthlyPointsAllowance: number;
         };
         featureFlags: {
-            hasAccessToCrm: boolean;
             canEditAdminTemplates: boolean;
             canCreateCampaignFromScratch: boolean;
             hasAccessToAdvancedAnalytics: boolean;

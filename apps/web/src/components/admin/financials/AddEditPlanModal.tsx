@@ -26,7 +26,6 @@ interface AddEditPlanModalProps {
 const defaultConfiguration: TierConfiguration = {
   quotas: {
     maxActiveCampaigns: 5,
-    maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
     monthlyStampsAllowance: 0,
@@ -37,7 +36,6 @@ const defaultConfiguration: TierConfiguration = {
     canCreateCampaignFromScratch: false,
     canEditAdminTemplates: false,
     hasAccessToAdvancedAnalytics: false,
-    hasAccessToCRM: false,
     canUpdateReward: false,
     canCreateRewardFromScratch: false,
   },
@@ -89,8 +87,6 @@ export function AddEditPlanModal({ isOpen, onClose, initialData, onSave, onShowF
         const normalizedFlags = {
           ...defaultConfiguration.featureFlags,
           ...config.featureFlags,
-          // Fix casing mismatch: API returns hasAccessToCrm, component expects hasAccessToCRM
-          hasAccessToCRM: config.featureFlags?.hasAccessToCrm ?? config.featureFlags?.hasAccessToCRM ?? false,
         };
 
         const normalizedBonuses = {
@@ -446,18 +442,10 @@ function QuotasSection({ quotas, onChange }: { quotas: Partial<TierQuotas>, onCh
       <h3 className="font-semibold text-lg">Quotas</h3>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <LabelWithTooltip label="Max Active Campaigns" tooltip="The maximum number of campaigns a business can have active simultaneously. Check 'Unlimited' to set to -1." />
+          <LabelWithTooltip label="Number of Campaigns" tooltip="The number of campaigns a business can create. Check 'Unlimited' to set to -1." />
           <InputWithUnlimitedCheckbox
             value={quotas.maxActiveCampaigns}
             onChange={(val) => onChange('maxActiveCampaigns', val)}
-            placeholder="Inherit"
-          />
-        </div>
-        <div>
-          <LabelWithTooltip label="Max Active Rewards" tooltip="The maximum number of active rewards a business can have. Check 'Unlimited' to set to -1." />
-          <InputWithUnlimitedCheckbox
-            value={quotas.maxActiveRewards}
-            onChange={(val) => onChange('maxActiveRewards', val)}
             placeholder="Inherit"
           />
         </div>
@@ -532,12 +520,6 @@ function FeatureFlagsSection({ flags, onChange }: { flags: Partial<TierFeatureFl
           tooltip="Grants access to detailed analytics dashboards."
           checked={flags.hasAccessToAdvancedAnalytics}
           onChange={(v) => onChange('hasAccessToAdvancedAnalytics', v)}
-        />
-        <FeatureFlagToggle
-          label="CRM Access"
-          tooltip="Grants access to Customer Relationship Management features."
-          checked={flags.hasAccessToCRM}
-          onChange={(v) => onChange('hasAccessToCRM', v)}
         />
         <FeatureFlagToggle
           label="Update Rewards"

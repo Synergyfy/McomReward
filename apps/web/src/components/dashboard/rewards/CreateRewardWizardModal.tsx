@@ -18,7 +18,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useUploadToCloudinary } from '@/services/upload/hook';
 import { useGetBusinessProfile } from '@/services/business/hook';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Star } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+  Gift,
+  Info,
+  ShoppingBag,
+  Star,
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,6 +39,68 @@ import {
 
 } from '@/components/ui/alert-dialog';
 import { ImageCropper } from '@/components/ui/image-cropper';
+
+type RewardSource = 'internal' | 'mall';
+
+interface RewardTypeOption {
+  value: string;
+  label: string;
+  source: RewardSource;
+  description: string;
+}
+
+const REWARD_TYPE_OPTIONS: RewardTypeOption[] = [
+  {
+    value: 'point offer',
+    label: 'Point Offer',
+    source: 'internal',
+    description: 'An offer you fulfil yourself when the customer redeems it.',
+  },
+  {
+    value: 'physical product',
+    label: 'Physical Product',
+    source: 'internal',
+    description: 'A physical item you hand over or ship to the customer.',
+  },
+  {
+    value: 'Voucher',
+    label: 'Voucher',
+    source: 'mall',
+    description: 'A voucher issued and redeemed through MCOM Mall.',
+  },
+  {
+    value: 'gift card',
+    label: 'Gift Card',
+    source: 'mall',
+    description: 'A gift card loaded with a set value on MCOM Mall.',
+  },
+  {
+    value: 'coupon',
+    label: 'Coupon',
+    source: 'mall',
+    description: 'A percentage or fixed-value coupon for MCOM Mall.',
+  },
+  {
+    value: 'MallDiscount',
+    label: 'Mall Discount',
+    source: 'mall',
+    description: 'A discount applied automatically at MCOM Mall checkout.',
+  },
+];
+
+const getRewardSourceForType = (rewardType?: string): RewardSource => {
+  const normalised = (rewardType ?? '').trim().toLowerCase();
+  if (normalised === 'point offer' || normalised === 'physical product') {
+    return 'internal';
+  }
+  return 'mall';
+};
+
+// Public MCOM Mall landing page. The user signs in there themselves instead
+// of going through an automatic SSO handoff.
+const MCOM_MALL_URL = (
+  process.env.NEXT_PUBLIC_MCOM_MALL_URL || 'http://localhost:3003'
+).replace(/\/+$/, '');
 
 const MALL_REWARD_TYPES = ['Voucher', 'gift card', 'coupon'] as const;
 
@@ -65,6 +135,46 @@ const getStoredFulfilment = (reward?: Reward | null) => {
   };
 };
 
+interface MallEmptyStateProps {
+  title: string;
+  description: string;
+  onGoToMall: () => void;
+  ctaLabel?: string;
+}
+
+function MallEmptyState({
+  title,
+  description,
+  onGoToMall,
+  ctaLabel = 'Go to MCOM Mall',
+}: MallEmptyStateProps) {
+  return (
+    <div className="rounded-lg border border-dashed border-orange-200 bg-orange-50/60 p-3 dark:border-orange-900/50 dark:bg-orange-900/10">
+      <div className="flex items-start gap-2">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-orange-900 dark:text-orange-200">
+            {title}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-orange-700/90 dark:text-orange-300/80">
+            {description}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onGoToMall}
+            className="mt-2 h-8 border-orange-300 bg-white text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-800 dark:bg-transparent dark:text-orange-300 dark:hover:bg-orange-900/30"
+          >
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+            {ctaLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CreateRewardWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -90,7 +200,7 @@ export default function CreateRewardWizardModal({
   const router = useRouter();
   const { mutateAsync: uploadToCloudinary } = useUploadToCloudinary();
   const [step, setStep] = useState(1);
-  const totalSteps = 2;
+  const [rewardSource, setRewardSource] = useState<RewardSource | null>(null);
 
   // Derive modes from props (priority to enabledModes if provided)
   const finalEnabledModes = useMemo(() => {
@@ -242,8 +352,52 @@ export default function CreateRewardWizardModal({
     isError: isMallCatalogError,
   } = useGetMallCatalog(isMallDiscount || isVoucherType);
 
-  const { data: mallTemplates, isLoading: isMallTemplatesLoading } =
-    useGetBusinessMallTemplates(mallTemplateKind, isVoucherType);
+  const {
+    data: mallTemplates,
+    isLoading: isMallTemplatesLoading,
+    isError: isMallTemplatesError,
+  } = useGetBusinessMallTemplates(mallTemplateKind, isVoucherType);
+
+  const rewardTypeOptions = useMemo<RewardTypeOption[]>(() => {
+    // Editing shows every type (with its tag) so the reward can move between
+    // internal and MCOM Mall fulfilment. Creating is filtered by the source
+    // the business picked on the previous step.
+    if (isEditMode || !rewardSource) return REWARD_TYPE_OPTIONS;
+    return REWARD_TYPE_OPTIONS.filter(
+      (option) => option.source === rewardSource,
+    );
+  }, [isEditMode, rewardSource]);
+
+  const mallTemplateKindLabel =
+    mallTemplateKind === 'gift-cards'
+      ? 'gift card'
+      : mallTemplateKind === 'coupons'
+        ? 'coupon'
+        : 'voucher';
+
+  const hasMallTemplates = (mallTemplates?.templates?.length ?? 0) > 0;
+  const isMallCatalogEmpty =
+    !!mallCatalog &&
+    mallCatalog.products.length === 0 &&
+    mallCatalog.services.length === 0;
+
+  const handleGoToMall = () => {
+    // Just open the Mall landing page. The business logs in there themselves;
+    // the current reward form stays open in this tab.
+    window.open(MCOM_MALL_URL, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleSelectRewardSource = (source: RewardSource) => {
+    setRewardSource(source);
+    if (getRewardSourceForType(rewardType) !== source) {
+      if (source === 'mall') {
+        setRewardType('Voucher');
+        setMallRewardType('VOUCHER');
+      } else {
+        setRewardType('point offer');
+      }
+    }
+  };
 
   const isPointsExceedingMax = useMemo(() => {
     const points = Number(pointsRequired);
@@ -256,7 +410,14 @@ export default function CreateRewardWizardModal({
     const storedScope = stored.config?.scope;
     const storedValue = stored.config?.value;
 
-    setStep(1);
+    setStep(reward ? 1 : 0);
+    setRewardSource(
+      reward
+        ? getRewardSourceForType(
+            reward?.reward_type ?? reward?.rewardType,
+          )
+        : null,
+    );
     setName(reward?.title || '');
     setDescription(reward?.description || '');
     setPointsRequired(reward?.pointsRequired ?? 0);
@@ -549,6 +710,15 @@ export default function CreateRewardWizardModal({
   };
 
   const handleNext = () => {
+    if (step === 0) {
+      if (!rewardSource) {
+        toast.error('Choose internal or MCOM Mall rewards to continue.');
+        return;
+      }
+      setStep(1);
+      return;
+    }
+
     if (step === 1) {
       if (isStep1Valid) {
         setStep(2);
@@ -585,7 +755,7 @@ export default function CreateRewardWizardModal({
   };
 
   const handleBack = () => {
-    if (step > 1) setStep(step - 1);
+    if (step > 0) setStep(step - 1);
   };
 
   const handleSubmit = () => {
@@ -646,12 +816,13 @@ export default function CreateRewardWizardModal({
           ? 0
           : Math.trunc(numericQuantity);
 
-      const scopeMode: 'ALL' | 'ITEMS' =
-        isMallDiscount
-          ? mallTargetScope === 'SPECIFIC'
-            ? 'ITEMS'
-            : 'ALL'
-          : fulfilmentScopeMode;
+      const scopeMode: 'ALL' | 'ITEMS' = isMallDiscount
+        ? mallTargetScope === 'SPECIFIC'
+          ? 'ITEMS'
+          : 'ALL'
+        : isVoucherType
+          ? fulfilmentScopeMode
+          : 'ALL';
 
       const scopedProductIds = scopeMode === 'ITEMS' ? mallProductIds : [];
       const scopedServiceIds = scopeMode === 'ITEMS' ? mallServiceIds : [];
@@ -756,7 +927,10 @@ export default function CreateRewardWizardModal({
     }
   };
 
-  const progressValue = (step / totalSteps) * 100;
+  // Create flow adds the reward-source step before the details step.
+  const totalSteps = isEditMode ? 2 : 3;
+  const displayStep = isEditMode ? step : step + 1;
+  const progressValue = (displayStep / totalSteps) * 100;
 
   // Helper to determine if field should show error
   const shouldShowError = (field: string) => {
@@ -783,31 +957,187 @@ export default function CreateRewardWizardModal({
 
             {/* Progress indicator with validation status */}
             <div className="flex items-center gap-2 mt-3">
-              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${step === 1
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                : isStep1Valid
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                }`}>
-                {step > 1 && isStep1Valid && <CheckCircle2 className="h-3 w-3" />}
-                1. Details
-              </div>
-              <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${step === 2
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                }`}>
-                2. Review
-              </div>
+              {(isEditMode
+                ? [
+                    { label: '1. Details', value: 1 },
+                    { label: '2. Review', value: 2 },
+                  ]
+                : [
+                    { label: '1. Reward type', value: 0 },
+                    { label: '2. Details', value: 1 },
+                    { label: '3. Review', value: 2 },
+                  ]
+              ).map((stage, index, stages) => (
+                <React.Fragment key={stage.value}>
+                  <div
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium transition-colors ${
+                      step === stage.value
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                        : step > stage.value
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                    }`}
+                  >
+                    {step > stage.value && <CheckCircle2 className="h-3 w-3" />}
+                    {stage.label}
+                  </div>
+                  {index < stages.length - 1 && (
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </DialogHeader>
+
+          {step === 0 && (
+            <div className="grid gap-4 py-4">
+              <div className="text-center">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                  What kind of reward would you like to create?
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Choose where this reward is fulfilled. You&apos;ll pick the
+                  exact reward type next.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleSelectRewardSource('internal')}
+                className={`relative flex w-full items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                  rewardSource === 'internal'
+                    ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-900/10'
+                    : 'border-gray-200 hover:border-emerald-200 dark:border-gray-700 dark:hover:border-emerald-800'
+                }`}
+              >
+                {rewardSource === 'internal' && (
+                  <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-emerald-500" />
+                )}
+                <div className="rounded-xl bg-emerald-100 p-3 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300">
+                  <Gift className="h-6 w-6" />
+                </div>
+                <div className="flex-1 pr-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      Internal rewards
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    >
+                      Internal
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Rewards you fulfil yourself, outside MCOM Mall. Customers
+                    redeem them with points or stamps and you hand over the
+                    offer or product.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {['Point offer', 'Physical product'].map((label) => (
+                      <span
+                        key={label}
+                        className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectRewardSource('mall')}
+                className={`relative flex w-full items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                  rewardSource === 'mall'
+                    ? 'border-orange-500 bg-orange-50/60 dark:bg-orange-900/10'
+                    : 'border-gray-200 hover:border-orange-200 dark:border-gray-700 dark:hover:border-orange-800'
+                }`}
+              >
+                {rewardSource === 'mall' && (
+                  <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-orange-500" />
+                )}
+                <div className="rounded-xl bg-orange-100 p-3 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300">
+                  <ShoppingBag className="h-6 w-6" />
+                </div>
+                <div className="flex-1 pr-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      MCOM Mall rewards
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300"
+                    >
+                      MCOM Mall
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Rewards fulfilled through MCOM Mall — issue a voucher, gift
+                    card or coupon, or apply a discount automatically at Mall
+                    checkout.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {['Voucher', 'Gift card', 'Coupon', 'Mall discount'].map(
+                      (label) => (
+                        <span
+                          key={label}
+                          className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
+                        >
+                          {label}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              <p className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Not sure? Choose <strong>Internal</strong> for an offer or
+                  product you hand over yourself. Choose{' '}
+                  <strong>MCOM Mall</strong> if the reward should be issued and
+                  redeemed online.
+                </span>
+              </p>
+            </div>
+          )}
 
           {step === 1 && (
             <div className="grid gap-4 py-4">
               {/* Quantity and Type */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="rewardType" className="block text-sm font-medium mb-1">Reward Type</label>
+                  <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="rewardType" className="block text-sm font-medium">
+                        Reward Type
+                      </label>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          getRewardSourceForType(rewardType) === 'mall'
+                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300'
+                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        }
+                      >
+                        {getRewardSourceForType(rewardType) === 'mall'
+                          ? 'MCOM Mall'
+                          : 'Internal'}
+                      </Badge>
+                    </div>
+                    {!isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => setStep(0)}
+                        className="text-xs font-medium text-orange-600 hover:underline dark:text-orange-400"
+                      >
+                        Change source
+                      </button>
+                    )}
+                  </div>
                   <Select
                     value={rewardType}
                     onValueChange={(val) => {
@@ -818,18 +1148,45 @@ export default function CreateRewardWizardModal({
                     }}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select type">
+                        {
+                          rewardTypeOptions.find(
+                            (option) => option.value === rewardType,
+                          )?.label
+                        }
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Voucher">Voucher</SelectItem>
-                      <SelectItem value="gift card">Gift Card</SelectItem>
-                      <SelectItem value="coupon">Coupon</SelectItem>
-                      <SelectItem value="point offer">Point Offer</SelectItem>
-                      <SelectItem value="physical product">Physical Product</SelectItem>
-                      <SelectItem value="MallDiscount">Mall Discount</SelectItem>
+                    <SelectContent className="min-w-[340px] max-w-[420px]">
+                      {rewardTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <span className="flex w-full items-start gap-2 py-0.5">
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-1.5">
+                                <span className="font-medium">{option.label}</span>
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                    option.source === 'mall'
+                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                  }`}
+                                >
+                                  {option.source === 'mall' ? 'MCOM Mall' : 'Internal'}
+                                </span>
+                              </span>
+                              <span className="mt-0.5 block text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                                {option.description}
+                              </span>
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500 mt-1">Select the category of your reward.</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {isEditMode
+                      ? 'The tag shows whether the reward type is fulfilled by you (Internal) or through MCOM Mall.'
+                      : 'Only reward types for the source you picked are shown. Use "Change source" to switch.'}
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="quantity" className="block text-sm font-medium mb-1">Total Quantity</label>
@@ -892,38 +1249,52 @@ export default function CreateRewardWizardModal({
                     <label className="block text-sm font-medium mb-1">
                       Mall template (optional)
                     </label>
-                    <Select
-                      value={fulfilmentTemplateId || 'none'}
-                      onValueChange={(val) =>
-                        setFulfilmentTemplateId(val === 'none' ? '' : val)
-                      }
-                    >
-                      <SelectTrigger className="w-full bg-white">
-                        <SelectValue
-                          placeholder={
-                            isMallTemplatesLoading
-                              ? 'Loading templates…'
-                              : 'Default Mall template'
+                    {isMallTemplatesLoading ? (
+                      <p className="text-xs text-gray-500">
+                        Loading templates…
+                      </p>
+                    ) : isMallTemplatesError ? (
+                      <MallEmptyState
+                        title="Couldn't load your MCOM Mall templates"
+                        description="We couldn't fetch your MCOM Mall templates. Check that your Mall store is set up, then come back and try again. You can also continue without a template."
+                        onGoToMall={handleGoToMall}
+                      />
+                    ) : !hasMallTemplates ? (
+                      <MallEmptyState
+                        title={`No ${mallTemplateKindLabel} templates found`}
+                        description={`You don't have any ${mallTemplateKindLabel} templates on MCOM Mall yet, so there is nothing to attach. Create one in MCOM Mall, then come back and select it here. You can also continue without a template.`}
+                        onGoToMall={handleGoToMall}
+                      />
+                    ) : (
+                      <>
+                        <Select
+                          value={fulfilmentTemplateId || 'none'}
+                          onValueChange={(val) =>
+                            setFulfilmentTemplateId(val === 'none' ? '' : val)
                           }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
-                          Default (no template)
-                        </SelectItem>
-                        {(mallTemplates?.templates ?? []).map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name ||
-                              template.title ||
-                              `Template ${template.id.slice(0, 8)}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Choose a gift card, voucher, or coupon template from your
-                      MCOM Mall catalogue.
-                    </p>
+                        >
+                          <SelectTrigger className="w-full bg-white">
+                            <SelectValue placeholder="Default Mall template" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              Default (no template)
+                            </SelectItem>
+                            {(mallTemplates?.templates ?? []).map((template) => (
+                              <SelectItem key={template.id} value={template.id}>
+                                {template.name ||
+                                  template.title ||
+                                  `Template ${template.id.slice(0, 8)}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Choose a gift card, voucher, or coupon template from
+                          your MCOM Mall catalogue.
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div>
@@ -1009,20 +1380,27 @@ export default function CreateRewardWizardModal({
                           </div>
                         </div>
                       ) : null}
-                      {mallCatalog &&
-                        mallCatalog.products.length === 0 &&
-                        mallCatalog.services.length === 0 && (
-                          <p className="text-xs text-gray-500">
-                            No products or services found.
-                          </p>
-                        )}
-                      {mallProductIds.length === 0 &&
+                      {isMallCatalogError ? (
+                        <MallEmptyState
+                          title="Couldn't load your MCOM Mall catalogue"
+                          description="We couldn't connect to your MCOM Mall store. Check that your Mall store is set up, then come back and try again."
+                          onGoToMall={handleGoToMall}
+                        />
+                      ) : isMallCatalogEmpty ? (
+                        <MallEmptyState
+                          title="No products or services in MCOM Mall yet"
+                          description="You don't have any products or services listed on MCOM Mall, so there is nothing to attach to this reward. Add them in MCOM Mall, then come back and select them here."
+                          onGoToMall={handleGoToMall}
+                        />
+                      ) : (
+                        mallProductIds.length === 0 &&
                         mallServiceIds.length === 0 && (
                           <p className="text-xs text-red-500">
                             {errors.fulfilmentScope ||
                               'Select at least one product or service.'}
                           </p>
-                        )}
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -1049,10 +1427,19 @@ export default function CreateRewardWizardModal({
                       {isMallCatalogLoading && (
                         <p className="text-xs text-gray-500">Loading mall catalogue…</p>
                       )}
-                      {isMallCatalogError && (
-                        <p className="text-xs text-red-500">Could not load your mall catalogue.</p>
-                      )}
-                      {mallCatalog && (
+                      {isMallCatalogError ? (
+                        <MallEmptyState
+                          title="Couldn't load your MCOM Mall catalogue"
+                          description="We couldn't connect to your MCOM Mall store. Check that your Mall store is set up, then come back and try again."
+                          onGoToMall={handleGoToMall}
+                        />
+                      ) : isMallCatalogEmpty ? (
+                        <MallEmptyState
+                          title="No products or services in MCOM Mall yet"
+                          description="You don't have any products or services listed on MCOM Mall, so there is nothing to target with this discount. Add them in MCOM Mall, then come back and select them here."
+                          onGoToMall={handleGoToMall}
+                        />
+                      ) : mallCatalog ? (
                         <>
                           {mallCatalog.products.length > 0 && (
                             <div>
@@ -1090,17 +1477,14 @@ export default function CreateRewardWizardModal({
                               </div>
                             </div>
                           )}
-                          {mallCatalog.products.length === 0 && mallCatalog.services.length === 0 && (
-                            <p className="text-xs text-gray-500">No products or services found in mall.</p>
+                          {shouldShowError('mallTargets') && (
+                            <p className="text-xs text-red-500 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {errors.mallTargets}
+                            </p>
                           )}
                         </>
-                      )}
-                      {shouldShowError('mallTargets') && (
-                        <p className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          {errors.mallTargets}
-                        </p>
-                      )}
+                      ) : null}
                     </div>
                   )}
 
@@ -1668,9 +2052,23 @@ export default function CreateRewardWizardModal({
                       <span className="font-medium">Quantity:</span>
                       <span>{quantity || 'Unlimited'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between">
                       <span className="font-medium">Type:</span>
-                      <span>{rewardType}</span>
+                      <div className="flex items-center gap-2">
+                        {rewardType}
+                        <Badge
+                          variant="secondary"
+                          className={
+                            getRewardSourceForType(rewardType) === 'mall'
+                              ? 'bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300'
+                              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          }
+                        >
+                          {getRewardSourceForType(rewardType) === 'mall'
+                            ? 'MCOM Mall'
+                            : 'Internal'}
+                        </Badge>
+                      </div>
                     </div>
                     {isVoucherType && (
                       <>
@@ -1733,10 +2131,18 @@ export default function CreateRewardWizardModal({
           )}
 
           <div className="flex justify-between pt-4 border-t">
-            <Button variant="outline" onClick={handleBack} disabled={step === 1 || isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={step === 0 || (step === 1 && isEditMode) || isSubmitting}
+            >
               Back
             </Button>
-            {step < totalSteps ? (
+            {step === 0 ? (
+              <Button onClick={handleNext} disabled={!rewardSource}>
+                Continue
+              </Button>
+            ) : step === 1 ? (
               <Button onClick={handleNext}>
                 Next
               </Button>

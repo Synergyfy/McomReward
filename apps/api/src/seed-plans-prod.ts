@@ -137,19 +137,15 @@ async function run() {
       configuration: {
         quotas: {
           maxActiveCampaigns: 3,
-          maxActiveRewards: 5,
           maxRewardsPerCampaign: 2,
           monthlyPointsAllowance: 1000,
           monthlyStampsAllowance: 500,
           maxTeamMembers: 2,
-          maxGiftCardTemplates: 2,
-          maxCouponTemplates: 3,
         },
         featureFlags: {
           canCreateCampaignFromScratch: true,
           canEditAdminTemplates: false,
           hasAccessToAdvancedAnalytics: false,
-          hasAccessToCRM: false,
           canUpdateReward: true,
           priorityInSearch: false,
           allowCustomBranding: false,
@@ -205,19 +201,15 @@ async function run() {
       configuration: {
         quotas: {
           maxActiveCampaigns: 10,
-          maxActiveRewards: 20,
           maxRewardsPerCampaign: 5,
           monthlyPointsAllowance: 5000,
           monthlyStampsAllowance: 2500,
           maxTeamMembers: 5,
-          maxGiftCardTemplates: 10,
-          maxCouponTemplates: 10,
         },
         featureFlags: {
           canCreateCampaignFromScratch: true,
           canEditAdminTemplates: true,
           hasAccessToAdvancedAnalytics: true,
-          hasAccessToCRM: true,
           canUpdateReward: true,
           priorityInSearch: true,
           allowCustomBranding: true,
@@ -273,19 +265,15 @@ async function run() {
       configuration: {
         quotas: {
           maxActiveCampaigns: -1,
-          maxActiveRewards: -1,
           maxRewardsPerCampaign: -1,
           monthlyPointsAllowance: 25000,
           monthlyStampsAllowance: 15000,
           maxTeamMembers: 20,
-          maxGiftCardTemplates: 50,
-          maxCouponTemplates: 50,
         },
         featureFlags: {
           canCreateCampaignFromScratch: true,
           canEditAdminTemplates: true,
           hasAccessToAdvancedAnalytics: true,
-          hasAccessToCRM: true,
           canUpdateReward: true,
           priorityInSearch: true,
           allowCustomBranding: true,

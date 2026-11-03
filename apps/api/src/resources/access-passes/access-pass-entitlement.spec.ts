@@ -106,8 +106,8 @@ const localPlan = {
   durationDays: 7,
   features: ["Local feature"],
   configuration: {
-    quotas: { maxActiveCampaigns: 3, maxActiveRewards: 2 },
-    featureFlags: { hasAccessToCRM: false },
+    quotas: { maxActiveCampaigns: 3, maxTeamMembers: 2 },
+    featureFlags: { hasAccessToAdvancedAnalytics: false },
   },
   price: 25,
   currency: "GBP",
@@ -119,7 +119,7 @@ describe("AccessPassService.syncFromEntitlement", () => {
 
     const entitlement = directPassEntitlement({
       quotas: { maxActiveCampaigns: 5 },
-      limits: { hasAccessToCRM: true },
+      limits: { hasAccessToAdvancedAnalytics: true },
     });
 
     const result = await service.syncFromEntitlement("business-1", entitlement);
@@ -136,8 +136,10 @@ describe("AccessPassService.syncFromEntitlement", () => {
     );
     // Central values override the local catalogue snapshot.
     expect(values.configuration.quotas.maxActiveCampaigns).toBe(5);
-    expect(values.configuration.quotas.maxActiveRewards).toBe(2);
-    expect(values.configuration.featureFlags.hasAccessToCRM).toBe(true);
+    expect(values.configuration.quotas.maxTeamMembers).toBe(2);
+    expect(
+      values.configuration.featureFlags.hasAccessToAdvancedAnalytics,
+    ).toBe(true);
     expect(result).not.toBeNull();
   });
 

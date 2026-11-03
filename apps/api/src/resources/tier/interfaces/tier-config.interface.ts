@@ -1,6 +1,5 @@
 export interface TierQuotas {
   maxActiveCampaigns: number; // -1 for unlimited
-  maxActiveRewards: number; // -1 for unlimited
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
   monthlyStampsAllowance: number;
@@ -13,7 +12,6 @@ export interface TierFeatureFlags {
   canCreateCampaignFromScratch: boolean;
   canEditAdminTemplates: boolean;
   hasAccessToAdvancedAnalytics: boolean;
-  hasAccessToCRM: boolean;
   canUpdateReward: boolean;
   canCreateRewardFromScratch: boolean;
 }

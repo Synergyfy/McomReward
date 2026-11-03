@@ -126,7 +126,6 @@ export class Tier extends AbstractBaseEntity {
     example: {
       quotas: {
         maxActiveCampaigns: 5,
-        maxActiveRewards: 10,
         maxRewardsPerCampaign: 3,
         monthlyPointsAllowance: 1000,
         monthlyStampsAllowance: 100,
@@ -136,7 +135,6 @@ export class Tier extends AbstractBaseEntity {
         canCreateCampaignFromScratch: true,
         canEditAdminTemplates: false,
         hasAccessToAdvancedAnalytics: true,
-        hasAccessToCRM: false,
         canUpdateReward: true,
       },
       progressBonuses: {
@@ -180,7 +178,6 @@ export class Tier extends AbstractBaseEntity {
       trial: {
         quotas: {
           maxActiveCampaigns: 2,
-          maxActiveRewards: 5,
         },
         featureFlags: {
           canCreateCampaignFromScratch: false,

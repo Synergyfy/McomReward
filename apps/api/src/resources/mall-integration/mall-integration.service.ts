@@ -124,7 +124,6 @@ export class MallIntegrationService {
   private mallApiUrl: string;
   private apiKey: string;
   private ssoSecret: string;
-  private mallFrontendUrl: string;
 
   constructor(
     private httpService: HttpService,
@@ -149,9 +148,6 @@ export class MallIntegrationService {
     // Dev-only fallbacks — never ship a known constant secret to production.
     this.apiKey = this.apiKey || "dev-mall-key";
     this.ssoSecret = this.ssoSecret || "dev-sso-secret";
-    this.mallFrontendUrl =
-      this.configService.get<string>("MALL_FRONTEND_URL") ||
-      "http://localhost:3000";
   }
 
   private get mallClientId(): string {
@@ -436,7 +432,7 @@ export class MallIntegrationService {
 
     return {
       token,
-      redirectUrl: `${this.mallFrontendUrl}/sso-login?token=${token}`,
+      redirectUrl: `${this.getMallFrontendUrl()}/sso-login?token=${token}`,
     };
   }
 

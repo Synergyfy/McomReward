@@ -14,14 +14,12 @@ import {
   ReferralStatus,
 } from "../../referral/entities/referral.entity";
 import { BusinessCampaign } from "../../campaign/entities/business-campaign.entity";
-import { BusinessReward } from "../../rewards/entities/business-reward.entity";
 import { Staff } from "../../staff/entities/staff.entity";
 import { Network } from "../../network/entities/network.entity";
 import {
   NetworkLocationTag,
   NetworkRelationshipTag,
 } from "../../../common/enums/network-tags.enum";
-import { RewardStatus } from "../../rewards/enums/reward-status.enum";
 import { ReferralService } from "../../referral/referral.service";
 import { CreateBusinessDto } from "../dto/create-business.dto";
 import { UpdateBusinessDto } from "../dto/update-business.dto";
@@ -73,8 +71,6 @@ export class BusinessService {
     private readonly systemSettingService: SystemSettingService,
     @InjectRepository(BusinessCampaign)
     private readonly businessCampaignRepository: Repository<BusinessCampaign>,
-    @InjectRepository(BusinessReward)
-    private readonly businessRewardRepository: Repository<BusinessReward>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
     @InjectRepository(Network)
@@ -955,7 +951,6 @@ export class BusinessService {
         tierName: "Free",
         features: {
           campaigns: { limit: 0, used: 0, remaining: 0 },
-          rewards: { limit: 0, used: 0, remaining: 0 },
           teamMembers: { limit: 0, used: 0, remaining: 0 },
           monthlyPoints: { limit: 0, used: 0, remaining: 0 },
         },
@@ -970,14 +965,6 @@ export class BusinessService {
         business: { id: businessId },
         disabled: false,
         end_date: MoreThanOrEqual(new Date()),
-      },
-    });
-
-    // Active Rewards: Status is ACTIVE
-    const activeRewardsCount = await this.businessRewardRepository.count({
-      where: {
-        business: { id: businessId },
-        status: RewardStatus.ACTIVE,
       },
     });
 
@@ -1005,14 +992,6 @@ export class BusinessService {
           remaining: calculateRemaining(
             quotas.maxActiveCampaigns,
             activeCampaignsCount,
-          ),
-        },
-        rewards: {
-          limit: quotas.maxActiveRewards,
-          used: activeRewardsCount,
-          remaining: calculateRemaining(
-            quotas.maxActiveRewards,
-            activeRewardsCount,
           ),
         },
         teamMembers: {

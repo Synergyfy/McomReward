@@ -833,6 +833,10 @@ export default function CreateRewardWizardModal({
             kind: 'MALL_DISCOUNT',
             delivery: 'CHECKOUT_APPLY',
             businessId: mallCatalog?.business?.id ?? storedFulfilment.businessRef ?? null,
+            businessMcomUserId:
+              mallCatalog?.business?.mcomUserId ??
+              storedFulfilment.config?.businessMcomUserId ??
+              null,
             businessName: mallCatalog?.business?.name ?? storedFulfilment.config?.businessName ?? null,
             scope: {
               mode: scopeMode,
@@ -853,6 +857,10 @@ export default function CreateRewardWizardModal({
               kind: deriveMallFulfilmentKind(mallRewardType),
               delivery: 'CODE',
               businessId: mallCatalog?.business?.id ?? storedFulfilment.businessRef ?? null,
+              businessMcomUserId:
+                mallCatalog?.business?.mcomUserId ??
+                storedFulfilment.config?.businessMcomUserId ??
+                null,
               businessName: mallCatalog?.business?.name ?? storedFulfilment.config?.businessName ?? null,
               templateRef: fulfilmentTemplateId
                 ? { system: 'MALL', id: fulfilmentTemplateId }

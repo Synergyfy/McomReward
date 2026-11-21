@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api';
-import { Wallet, PaginatedPointHistory, PointHistoryRecord } from './types';
+import {
+  Wallet,
+  CentralWalletTransaction,
+  PaginatedPointHistory,
+  PointHistoryRecord,
+} from './types';
 
 const WALLET_QUERY_KEY = 'wallet';
+const WALLET_TRANSACTIONS_QUERY_KEY = 'walletTransactions';
 const POINT_HISTORY_QUERY_KEY = 'pointHistory';
 
 export const useGetWallet = () => {
@@ -11,6 +17,21 @@ export const useGetWallet = () => {
     queryFn: async () => {
       const { data } = await api.get('/wallet/my-balance');
       return data;
+    },
+  });
+};
+
+/**
+ * Transactions this platform originated for the linked MCOM wallet. Central is
+ * the source of truth; the API falls back to the local mirror for legacy
+ * wallets that are not linked via SSO.
+ */
+export const useGetWalletTransactions = () => {
+  return useQuery<CentralWalletTransaction[], Error>({
+    queryKey: [WALLET_TRANSACTIONS_QUERY_KEY],
+    queryFn: async () => {
+      const { data } = await api.get('/wallet/my-transactions');
+      return Array.isArray(data) ? data : data?.data || [];
     },
   });
 };

@@ -9,6 +9,63 @@ import * as crypto from "crypto";
 
 export type McomPayMethod = "stripe" | "paypal" | "wallet";
 
+/**
+ * Ledger intent labels from the MCOM Payments guide (Part H). The intent is
+ * stored on the transfer and drives analytics and the payer's wallet history.
+ */
+export type McomPaymentIntent =
+  | "ORDER"
+  | "BOOKING"
+  | "DELEGATION"
+  | "PURCHASE"
+  | "SUBSCRIPTION"
+  | "REFERRAL_COMMISSION"
+  | "TOP_UP"
+  | "REFUND"
+  | "PAYOUT"
+  | "TRANSFER"
+  | "ADJUSTMENT"
+  | "FEE";
+
+/**
+ * Payee split (guide Part G). MCOM Rewards does not currently pay third-party
+ * sellers, but the client supports the shape so marketplace/booking flows can
+ * be added without another transport change.
+ */
+export interface McomChargeSplit {
+  payeeType: "mcom_user" | "external";
+  payeeUserId?: string;
+  payeeExternalId?: string;
+  amountMinor: string;
+}
+
+export interface McomChargeSplitResult {
+  id: string;
+  payeeType: "mcom_user" | "external";
+  payeeUserId?: string;
+  payeeExternalId?: string;
+  amountMinor: string;
+  feeMinor: string;
+  netMinor: string;
+  status: "pending" | "credited" | "failed";
+  walletTransactionId?: string | null;
+  failureReason?: string | null;
+}
+
+export interface McomChargeSplits {
+  chargeId: string;
+  settlementState: "PENDING" | "SETTLED" | "PARTIAL" | "FAILED";
+  splits: McomChargeSplitResult[];
+}
+
+export interface McomAppBalance {
+  currency: string;
+  payableMinor: string;
+  pendingPayoutMinor: string;
+  availableMinor: string;
+  paidOutMinor: string;
+}
+
 export interface McomCharge {
   id: string;
   appClientId: string;
@@ -19,6 +76,7 @@ export interface McomCharge {
   method: McomPayMethod;
   status: "pending" | "paid" | "failed" | "refunded" | "canceled";
   reference: string;
+  intent?: McomPaymentIntent;
   provider?: string;
   providerRef?: string;
   mcomUserId?: string;
@@ -27,6 +85,7 @@ export interface McomCharge {
   createdAt?: string;
   paidAt?: string;
   refundedAt?: string;
+  refundedMinor?: string;
 }
 
 export interface McomChargeResponse {
@@ -41,9 +100,11 @@ export interface CreateMcomChargeInput {
   reference: string;
   currency?: string;
   description?: string;
+  intent?: McomPaymentIntent;
   mcomUserId?: string;
   externalCustomerId?: string;
   metadata?: Record<string, unknown>;
+  splits?: McomChargeSplit[];
   idempotencyKey: string;
 }
 
@@ -66,6 +127,8 @@ export class McomPaymentsError extends Error {
 
 const TRANSIENT_STATUSES = new Set([409, 429, 500, 503]);
 const TOP_UP_PATH = "/dashboard/wallet";
+const MAX_SPLITS = 50;
+const MINOR_UNIT_PATTERN = /^[1-9]\d*$/;
 
 /**
  * HMAC partner client for MCOM Pay (`/api/v1/app-payments`).
@@ -151,6 +214,78 @@ export class McomPaymentsService {
     }
   }
 
+  private assertMinorUnits(amountMinor: string, field: string): void {
+    if (
+      typeof amountMinor !== "string" ||
+      !MINOR_UNIT_PATTERN.test(amountMinor)
+    ) {
+      throw new BadRequestException(
+        `${field} must be a positive integer string in minor units`,
+      );
+    }
+  }
+
+  /**
+   * Validate a charge before it leaves this app: exact minor units, and splits
+   * that reconcile to the charge amount (guide Part G4).
+   */
+  private validateChargeInput(input: CreateMcomChargeInput): void {
+    this.assertMinorUnits(input.amountMinor, "amountMinor");
+
+    if (!input.splits) return;
+
+    if (input.splits.length === 0) {
+      throw new BadRequestException("splits must not be empty when provided");
+    }
+    if (input.splits.length > MAX_SPLITS) {
+      throw new BadRequestException(
+        `A charge can have at most ${MAX_SPLITS} splits`,
+      );
+    }
+
+    const seenPayees = new Set<string>();
+    let total = 0n;
+
+    for (const split of input.splits) {
+      if (split.payeeType !== "mcom_user" && split.payeeType !== "external") {
+        throw new BadRequestException(
+          "payeeType must be either 'mcom_user' or 'external'",
+        );
+      }
+      this.assertMinorUnits(split.amountMinor, "splits[].amountMinor");
+
+      const payeeKey =
+        split.payeeType === "mcom_user"
+          ? `mcom_user:${split.payeeUserId || ""}`
+          : `external:${split.payeeExternalId || ""}`;
+
+      if (split.payeeType === "mcom_user" && !split.payeeUserId) {
+        throw new BadRequestException(
+          "payeeUserId is required for mcom_user splits",
+        );
+      }
+      if (split.payeeType === "external" && !split.payeeExternalId) {
+        throw new BadRequestException(
+          "payeeExternalId is required for external splits",
+        );
+      }
+      if (seenPayees.has(payeeKey)) {
+        throw new BadRequestException(
+          "Only one split is allowed per payee",
+        );
+      }
+
+      seenPayees.add(payeeKey);
+      total += BigInt(split.amountMinor);
+    }
+
+    if (total !== BigInt(input.amountMinor)) {
+      throw new BadRequestException(
+        "splits must sum exactly to amountMinor",
+      );
+    }
+  }
+
   private async fetchWithTimeout(
     url: string,
     init: RequestInit,
@@ -209,7 +344,10 @@ export class McomPaymentsService {
         res.statusText ||
         "MCOM Pay request failed";
 
-      if (code === "INSUFFICIENT_BALANCE" || res.status === 422) {
+      // Guide B6: only INSUFFICIENT_BALANCE is a top-up condition. Other 422s
+      // (validation, daily/monthly/amount limits) must keep their real code so
+      // the UI can explain what actually went wrong.
+      if (code === "INSUFFICIENT_BALANCE" || res.status === 402) {
         throw new McomPaymentsError(
           "WALLET_INSUFFICIENT_FUNDS",
           message || "Top up your MCOM Wallet to continue.",
@@ -244,6 +382,7 @@ export class McomPaymentsService {
   }
 
   createCharge(input: CreateMcomChargeInput): Promise<McomChargeResponse> {
+    this.validateChargeInput(input);
     const { idempotencyKey, ...body } = input;
     return this.call<McomChargeResponse>(
       "/charges",
@@ -268,7 +407,18 @@ export class McomPaymentsService {
     chargeId: string,
     amountMinor?: string,
     reason?: string,
+    idempotencyKey?: string,
   ): Promise<McomChargeResponse> {
+    if (amountMinor !== undefined) {
+      this.assertMinorUnits(amountMinor, "amountMinor");
+    }
+
+    // The live MCOM Pay API also requires an idempotency key on refunds. Derive
+    // a deterministic one per charge + amount so a retry cannot refund twice.
+    const refundKey =
+      idempotencyKey ||
+      `mcom-rewards-refund-${chargeId}-${amountMinor || "full"}`.slice(0, 255);
+
     return this.call<McomChargeResponse>(
       `/charges/${encodeURIComponent(chargeId)}/refund`,
       {
@@ -276,6 +426,7 @@ export class McomPaymentsService {
         ...(reason ? { reason } : {}),
       },
       "POST",
+      refundKey,
     );
   }
 
@@ -297,6 +448,29 @@ export class McomPaymentsService {
     const suffix = query.toString() ? `?${query.toString()}` : "";
     return this.call<{ data: McomCharge[]; total?: number }>(
       `/charges${suffix}`,
+      undefined,
+      "GET",
+    );
+  }
+
+  /** Payee splits and their settlement status for a charge (guide Part G5). */
+  getSplits(
+    chargeId: string,
+  ): Promise<{ success: boolean; data: McomChargeSplits }> {
+    return this.call<{ success: boolean; data: McomChargeSplits }>(
+      `/charges/${encodeURIComponent(chargeId)}/splits`,
+      undefined,
+      "GET",
+    );
+  }
+
+  /**
+   * This app's payable balance, pending payouts and lifetime paid-out amount
+   * (guide Part G6). Payouts are approved by MCOM admins.
+   */
+  getBalance(): Promise<{ success: boolean; data: McomAppBalance }> {
+    return this.call<{ success: boolean; data: McomAppBalance }>(
+      "/balance",
       undefined,
       "GET",
     );

@@ -1,6 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PaymentCheckoutService } from "./payment-checkout.service";
 import { PaymentFulfillmentService } from "./payment-fulfillment.service";
+import {
+  McomChargeSplit,
+  McomPaymentIntent,
+} from "./mcom-payments.service";
 
 export interface McomPaymentWebhookPayload {
   event: string;
@@ -16,12 +20,15 @@ export interface McomPaymentWebhookPayload {
     method?: string;
     status?: string;
     reference?: string;
+    intent?: McomPaymentIntent;
+    splits?: McomChargeSplit[];
     mcomUserId?: string;
     externalCustomerId?: string;
     provider?: string;
     providerRef?: string;
     paidAt?: string;
     refundedAt?: string;
+    failureReason?: string;
     [key: string]: unknown;
   };
 }
@@ -55,6 +62,9 @@ export class McomPaymentWebhookService {
         break;
       case "payment.refunded":
         await this.handleRefunded(payload);
+        break;
+      case "payment.failed":
+        await this.handleFailed(payload);
         break;
       default:
         this.logger.log(`Ignoring unhandled MCOM Pay event: ${event}`);
@@ -116,6 +126,31 @@ export class McomPaymentWebhookService {
     await this.checkoutService.markRefunded(checkout, data as any);
     this.logger.log(
       `Marked checkout ${checkout.id} refunded (charge ${chargeId})`,
+    );
+  }
+
+  private async handleFailed(
+    payload: McomPaymentWebhookPayload,
+  ): Promise<void> {
+    const data = payload.data || {};
+    const chargeId = data.chargeId || data.id;
+    if (!chargeId) {
+      this.logger.warn("payment.failed without a chargeId");
+      return;
+    }
+
+    const checkout = await this.checkoutService.findByChargeId(chargeId);
+    if (!checkout) {
+      this.logger.warn(`No local checkout found for failed charge ${chargeId}`);
+      return;
+    }
+
+    await this.checkoutService.markFailed(
+      checkout,
+      data.failureReason || "MCOM Pay reported the charge as failed",
+    );
+    this.logger.log(
+      `Marked checkout ${checkout.id} failed (charge ${chargeId})`,
     );
   }
 }

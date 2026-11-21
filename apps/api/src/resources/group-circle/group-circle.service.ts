@@ -45,7 +45,7 @@ import {
   PaymentCheckoutPurpose,
   PaymentCheckoutStatus,
 } from "../payment/entities/payment-checkout.entity";
-import { toMinorUnits } from "../../common/utils/money.util";
+import { minorUnitsEqual, toMinorUnits } from "../../common/utils/money.util";
 import { randomUUID } from "crypto";
 import { Referral, ReferralStatus } from "../referral/entities/referral.entity";
 import { NetworkRelationshipTag } from "../../common/enums/network-tags.enum";
@@ -625,12 +625,18 @@ export class GroupCircleService {
       metadata,
     });
 
+    const payer = await this.businessRepo.findOne({
+      where: { id: businessId },
+    });
+
     try {
       const response = await this.mcomPayments.createCharge({
         amountMinor,
         method,
         reference,
+        intent: "TRANSFER",
         description,
+        mcomUserId: payer?.mcomUserId || undefined,
         externalCustomerId: businessId,
         metadata: { ...metadata, localCheckoutId: checkout.id },
         idempotencyKey,
@@ -748,7 +754,7 @@ export class GroupCircleService {
           }
           if (
             response.charge.amountMinor &&
-            response.charge.amountMinor !== checkout.amountMinor
+            !minorUnitsEqual(response.charge.amountMinor, checkout.amountMinor)
           ) {
             throw new BadRequestException(
               "Paid amount does not match the contribution amount",

@@ -40,6 +40,39 @@ export interface CentralReceipt {
   processedAt?: string;
 }
 
+export interface CentralHold {
+  success: boolean;
+  holdId: string;
+  amount?: number;
+  status?: string;
+  expiresAt?: string;
+  availableBalance?: number;
+  balanceBefore?: number;
+  balanceAfter?: number;
+  currency?: string;
+}
+
+export interface CentralTransaction {
+  id: string;
+  type?: string;
+  amount?: number;
+  balanceAfter?: number;
+  category?: string;
+  description?: string;
+  reference?: string;
+  metadata?: Record<string, unknown>;
+  processedAt?: string;
+  [key: string]: unknown;
+}
+
+export interface WalletWriteOptions {
+  category?: string;
+  description: string;
+  reference?: string;
+  metadata?: Record<string, unknown>;
+  idempotencyKey: string;
+}
+
 const TRANSIENT_STATUSES = new Set([409, 429, 500, 503]);
 const TOP_UP_PATH = "/dashboard/wallet";
 
@@ -146,7 +179,7 @@ export class McomWalletPartnerService {
     return res.json();
   }
 
-  async getTransactions(userId: string): Promise<any[]> {
+  async getTransactions(userId: string): Promise<CentralTransaction[]> {
     const res = await this.fetchWithTimeout(
       `${this.base}/transactions/${encodeURIComponent(userId)}`,
       { headers: this.headers("") as any },
@@ -160,50 +193,126 @@ export class McomWalletPartnerService {
     return Array.isArray(data) ? data : data?.data || [];
   }
 
+  /**
+   * Look up one transaction originated by this platform (guide A5). Pass
+   * `by: "idempotencyKey"` when you only have the key that was sent.
+   */
+  async getTransaction(
+    id: string,
+    by?: "id" | "idempotencyKey",
+  ): Promise<CentralTransaction> {
+    const query = by === "idempotencyKey" ? "?by=idempotencyKey" : "";
+    const res = await this.fetchWithTimeout(
+      `${this.base}/transaction/${encodeURIComponent(id)}${query}`,
+      { headers: this.headers("") as any },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new McomWalletError(
+        "TRANSACTION_ERROR",
+        text || `Central transaction lookup failed (${res.status})`,
+        res.status,
+      );
+    }
+    return res.json();
+  }
+
   async debit(
     userId: string,
     amount: number,
-    opts: {
-      category: string;
-      description: string;
-      reference?: string;
-      metadata?: Record<string, unknown>;
-      idempotencyKey: string;
-    },
+    opts: WalletWriteOptions,
   ): Promise<CentralReceipt> {
-    const body = { userId, amount, ...opts };
-    return this.write("debit", body, opts.idempotencyKey);
+    this.assertAmount(amount);
+    // The idempotency key travels in the header only (guide A4/A5.1).
+    const { idempotencyKey, ...payload } = opts;
+    return this.write(
+      "debit",
+      { userId, amount, ...payload },
+      idempotencyKey,
+    );
   }
 
   async credit(
     userId: string,
     amount: number,
+    opts: WalletWriteOptions,
+  ): Promise<CentralReceipt> {
+    this.assertAmount(amount);
+    const { idempotencyKey, ...payload } = opts;
+    return this.write(
+      "credit",
+      { userId, amount, ...payload },
+      idempotencyKey,
+    );
+  }
+
+  /**
+   * Reserve funds before confirming an order (guide A5.3). Holds auto-expire
+   * after the platform TTL (default 24h); capture converts a hold into a real
+   * debit, release returns the funds to the available balance.
+   */
+  async placeHold(
+    userId: string,
+    amount: number,
     opts: {
-      category: string;
-      description: string;
+      description?: string;
       reference?: string;
       metadata?: Record<string, unknown>;
-      idempotencyKey: string;
-    },
+      idempotencyKey?: string;
+    } = {},
+  ): Promise<CentralHold> {
+    this.assertAmount(amount);
+    const { idempotencyKey, ...payload } = opts;
+    return this.write(
+      "hold/place",
+      { userId, amount, ...payload },
+      idempotencyKey,
+    );
+  }
+
+  /**
+   * Capture a hold. The partner API captures the full held amount and accepts
+   * only `holdId` in the body (extra properties are rejected by validation).
+   */
+  async captureHold(
+    holdId: string,
+    opts: { idempotencyKey?: string } = {},
   ): Promise<CentralReceipt> {
-    const body = { userId, amount, ...opts };
-    return this.write("credit", body, opts.idempotencyKey);
+    return this.write("hold/capture", { holdId }, opts.idempotencyKey);
+  }
+
+  /** Release a hold. Like capture, the body is just `{ holdId }`. */
+  async releaseHold(
+    holdId: string,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<CentralHold> {
+    return this.write("hold/release", { holdId }, opts.idempotencyKey);
+  }
+
+  private assertAmount(amount: number): void {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException("amount must be a positive number");
+    }
   }
 
   private async write(
-    path: "debit" | "credit",
+    path: "debit" | "credit" | "hold/place" | "hold/capture" | "hold/release",
     body: Record<string, unknown>,
-    idempotencyKey: string,
+    idempotencyKey?: string,
     maxRetries = 3,
-  ): Promise<CentralReceipt> {
-    if (!idempotencyKey) {
-      throw new BadRequestException("X-Idempotency-Key is required for wallet writes");
+  ): Promise<any> {
+    // Debit and credit are money movements and must be idempotent (guide A5).
+    // Hold operations accept a key but it is optional.
+    if ((path === "debit" || path === "credit") && !idempotencyKey) {
+      throw new BadRequestException(
+        "X-Idempotency-Key is required for wallet writes",
+      );
     }
     let lastError: any = null;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       let res: Response;
       try {
-        res = await fetch(`${this.base}/${path}`, {
+        res = await this.fetchWithTimeout(`${this.base}/${path}`, {
           method: "POST",
           headers: this.headers(body, idempotencyKey) as any,
           body: JSON.stringify(body),
@@ -216,18 +325,29 @@ export class McomWalletPartnerService {
       }
       if (res.ok) return res.json();
       const err: any = await res.json().catch(() => ({}));
-      const code = err?.error || err?.code || `HTTP_${res.status}`;
+      const rawError = err?.error;
+      const code =
+        (typeof rawError === "string" ? rawError : rawError?.code) ||
+        err?.code ||
+        `HTTP_${res.status}`;
+      const message =
+        err?.message ||
+        (typeof rawError === "object" ? rawError?.message : undefined) ||
+        "Wallet operation failed";
 
-      if (code === "INSUFFICIENT_BALANCE" || res.status === 422) {
+      // Only INSUFFICIENT_BALANCE is a top-up condition (guide A6). Keep the
+      // remaining 422s (daily/monthly/single-txn limits) as 422 with their own
+      // code so the caller can show the real reason.
+      if (code === "INSUFFICIENT_BALANCE" || res.status === 402) {
         throw new McomWalletError(
           "WALLET_INSUFFICIENT_FUNDS",
-          err?.message || "Top up your MCOM Wallet to continue.",
+          message || "Top up your MCOM Wallet to continue.",
           402,
           this.topUpUrl(),
         );
       }
       if (TRANSIENT_STATUSES.has(res.status)) {
-        lastError = new McomWalletError(code, err?.message || "Transient wallet error", res.status);
+        lastError = new McomWalletError(code, message, res.status);
         if (attempt === maxRetries) throw lastError;
         // Same key on every retry per guide (1-2s for 409, backoff otherwise)
         await this.sleep(res.status === 409 ? 1500 : 2 ** attempt * 1000);
@@ -236,7 +356,7 @@ export class McomWalletPartnerService {
       if (res.status === 401) {
         this.logger.error(`Central wallet auth failed — check MCOM_HMAC_SECRET rotation`);
       }
-      throw new McomWalletError(code, err?.message || "Wallet operation failed", res.status);
+      throw new McomWalletError(code, message, res.status);
     }
     throw lastError ?? new McomWalletError("INTERNAL_ERROR", "Wallet write failed", 500);
   }
@@ -245,18 +365,18 @@ export class McomWalletPartnerService {
     return new Promise((r) => setTimeout(r, ms));
   }
 
-  /** Map central receipt failure to HTTP for controllers. */
-  toHttpException(e: unknown): HttpException {
-    if (e instanceof McomWalletError && e.httpStatus === 402) {
-      return new HttpException(
+  /** Map central wallet failures to the HTTP shape controllers expect. */
+  toHttpException(e: unknown): never {
+    if (e instanceof McomWalletError) {
+      throw new HttpException(
         {
           error: e.code,
           message: e.message,
-          topUpUrl: e.topUpUrl,
+          ...(e.topUpUrl ? { topUpUrl: e.topUpUrl } : {}),
         },
-        402,
+        e.httpStatus,
       );
     }
-    throw e as any;
+    throw e as Error;
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useGetWallet } from '@/services/wallet/hook';
+import { useGetWallet, useGetWalletTransactions } from '@/services/wallet/hook';
 import { useGetCashbackBalance } from '@/services/cashback/hook';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -109,7 +109,26 @@ function WalletPageContent() {
   const defaultTab = searchParams.get('tab') === 'customer' ? 'customer' : 'business';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const { data: wallet, isLoading: isWalletLoading, refetch: refetchWallet, isRefetching } = useGetWallet();
+  const { data: centralTransactions } = useGetWalletTransactions();
   const { data: cashback, isLoading: isCashbackLoading } = useGetCashbackBalance();
+
+  // Central is the source of truth; fall back to the local mirror for legacy
+  // wallets that are not linked via SSO.
+  const transactions = centralTransactions?.length
+    ? centralTransactions.map((tx) => {
+        // Central returns absolute amounts with a DEBIT/CREDIT type. Normalise
+        // debits to a negative value so the table sign and colour are correct.
+        const rawAmount = Number(tx.amount ?? 0);
+        const isDebit = String(tx.type || '').toUpperCase() === 'DEBIT';
+        return {
+          id: tx.id,
+          type: tx.type || tx.category || 'TRANSACTION',
+          reference: tx.reference || tx.description || '',
+          amount: isDebit ? -Math.abs(rawAmount) : rawAmount,
+          createdAt: tx.processedAt || tx.createdAt || '',
+        };
+      })
+    : (wallet?.transactions || []);
 
   const hasCentralWallet = wallet?.centralBalance !== undefined || wallet?.centralAvailableBalance !== undefined;
   const centralUnavailable = Boolean(wallet?.centralConfigured) && !hasCentralWallet;
@@ -302,7 +321,7 @@ function WalletPageContent() {
               <CardTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Transaction History</CardTitle>
             </CardHeader>
             <CardContent>
-              {wallet?.transactions && wallet.transactions.length > 0 ? (
+              {transactions.length > 0 ? (
                 <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -314,7 +333,7 @@ function WalletPageContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {wallet.transactions
+                    {transactions
                       .slice()
                       .sort((a, b) => {
                         const dateA = new Date(a.createdAt).getTime();
@@ -336,7 +355,7 @@ function WalletPageContent() {
                             <TableCell className="capitalize">{tx.type.replace(/_/g, ' ').toLowerCase()}</TableCell>
                             <TableCell className="max-w-[250px] truncate" title={tx.reference}>{tx.reference}</TableCell>
                             <TableCell className={`text-right font-medium ${Number(tx.amount) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {Number(tx.amount) > 0 ? '+' : ''}£{Number(tx.amount).toFixed(2)}
+                              {Number(tx.amount) > 0 ? '+' : Number(tx.amount) < 0 ? '-' : ''}£{Math.abs(Number(tx.amount)).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         );

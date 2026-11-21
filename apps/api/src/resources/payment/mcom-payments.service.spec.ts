@@ -157,7 +157,7 @@ describe("McomPaymentsService", () => {
 
     await expect(
       service.createCharge({
-        amountMinor: "10.5",
+        amountMinor: "1000",
         method: "stripe",
         reference: "plan-1",
         idempotencyKey: "key-1",
@@ -165,6 +165,148 @@ describe("McomPaymentsService", () => {
     ).rejects.toBeInstanceOf(McomPaymentsError);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects non-integer minor-unit amounts before calling MCOM", () => {
+    expect(() =>
+      service.createCharge({
+        amountMinor: "10.5",
+        method: "stripe",
+        reference: "plan-1",
+        idempotencyKey: "key-1",
+      }),
+    ).toThrow("amountMinor must be a positive integer string in minor units");
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps non-balance 422 errors as 422 with their original code", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      fail({ error: "DAILY_LIMIT_EXCEEDED", message: "Daily limit" }, 422),
+    );
+
+    await expect(
+      service.createCharge({
+        amountMinor: "1000",
+        method: "wallet",
+        reference: "plan-1",
+        idempotencyKey: "key-1",
+      }),
+    ).rejects.toMatchObject({
+      code: "DAILY_LIMIT_EXCEEDED",
+      httpStatus: 422,
+    });
+  });
+
+  it("validates that splits reconcile to the charge amount", () => {
+    expect(() =>
+      service.createCharge({
+        amountMinor: "9000",
+        method: "wallet",
+        reference: "order-1",
+        intent: "ORDER",
+        idempotencyKey: "key-1",
+        splits: [
+          {
+            payeeType: "mcom_user",
+            payeeUserId: "seller-1",
+            amountMinor: "8000",
+          },
+        ],
+      }),
+    ).toThrow("splits must sum exactly to amountMinor");
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("sends intent and splits on a charge", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      ok({ charge: { id: "ch_1", status: "paid", amountMinor: "9000" } }),
+    );
+
+    await service.createCharge({
+      amountMinor: "9000",
+      method: "wallet",
+      reference: "order-1",
+      intent: "ORDER",
+      idempotencyKey: "order-1",
+      splits: [
+        {
+          payeeType: "mcom_user",
+          payeeUserId: "seller-1",
+          amountMinor: "9000",
+        },
+      ],
+    });
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    const body = JSON.parse(init.body);
+    expect(body.intent).toBe("ORDER");
+    expect(body.splits).toHaveLength(1);
+    expect(body.splits[0]).toMatchObject({
+      payeeType: "mcom_user",
+      payeeUserId: "seller-1",
+      amountMinor: "9000",
+    });
+  });
+
+  it("reads this app's payable balance", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      ok({
+        success: true,
+        data: {
+          currency: "GBP",
+          payableMinor: "1374547",
+          pendingPayoutMinor: "0",
+          availableMinor: "1374547",
+          paidOutMinor: "0",
+        },
+      }),
+    );
+
+    const balance = await service.getBalance();
+
+    expect(balance.data.availableMinor).toBe("1374547");
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe("http://localhost:3010/api/v1/app-payments/balance");
+    expect(init.method).toBe("GET");
+  });
+
+  it("sends a deterministic idempotency key on refunds", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      ok({ charge: { id: "ch_1", status: "refunded" } }),
+    );
+
+    await service.refundCharge("ch_1", "500", "partial");
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe(
+      "http://localhost:3010/api/v1/app-payments/charges/ch_1/refund",
+    );
+    expect(init.headers["X-Idempotency-Key"]).toBe(
+      "mcom-rewards-refund-ch_1-500",
+    );
+  });
+
+  it("reads split settlement status for a charge", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      ok({
+        success: true,
+        data: {
+          chargeId: "ch_1",
+          settlementState: "SETTLED",
+          splits: [],
+        },
+      }),
+    );
+
+    const splits = await service.getSplits("ch_1");
+
+    expect(splits.data.settlementState).toBe("SETTLED");
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe(
+      "http://localhost:3010/api/v1/app-payments/charges/ch_1/splits",
+    );
   });
 
   it("rejects idempotency keys with invalid characters", async () => {

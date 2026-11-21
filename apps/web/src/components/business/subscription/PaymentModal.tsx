@@ -139,10 +139,12 @@ export default function PaymentModal({
     `${(process.env.NEXT_PUBLIC_MCOM_SOLUTIONS_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/wallet`;
 
   const isBusy = isInitiating || isConfirming;
+  // MCOM Pay charges are one-time and MCOM stores no card/PayPal mandate for
+  // partner plans (guide Part C). Only wallet renewals can be auto-debited.
   const renewalLabel =
     selectedProvider === 'wallet'
       ? 'Auto-renews from MCOM Wallet'
-      : 'Renews at period end';
+      : 'Renews each period - payment required';
 
   const handleConnectMcom = async () => {
     try {

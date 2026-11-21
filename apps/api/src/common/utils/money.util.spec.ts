@@ -1,5 +1,10 @@
 import { BadRequestException } from "@nestjs/common";
-import { formatMinorUnits, fromMinorUnits, toMinorUnits } from "./money.util";
+import {
+  formatMinorUnits,
+  fromMinorUnits,
+  minorUnitsEqual,
+  toMinorUnits,
+} from "./money.util";
 
 describe("money.util", () => {
   describe("toMinorUnits", () => {
@@ -31,6 +36,20 @@ describe("money.util", () => {
 
     it("rejects non-integer minor amounts", () => {
       expect(() => fromMinorUnits("10.5")).toThrow(BadRequestException);
+    });
+  });
+
+  describe("minorUnitsEqual", () => {
+    it("compares strings and numbers exactly", () => {
+      expect(minorUnitsEqual("10270", "10270")).toBe(true);
+      expect(minorUnitsEqual(10270, "10270")).toBe(true);
+      expect(minorUnitsEqual("10270", "10271")).toBe(false);
+    });
+
+    it("returns false for missing or malformed amounts", () => {
+      expect(minorUnitsEqual(undefined, "1")).toBe(false);
+      expect(minorUnitsEqual("1", null)).toBe(false);
+      expect(minorUnitsEqual("10.5", "10.5")).toBe(false);
     });
   });
 });

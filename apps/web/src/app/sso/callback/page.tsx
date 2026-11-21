@@ -116,18 +116,17 @@ function CallbackContent() {
 
       if (userRole === "Business" || userRole === "business") {
         try {
-          const { data: status } = await api.get("/setup/status");
-          if (status?.hasReward || status?.hasCampaign) {
+          const [{ data: status }, { data: progress }] = await Promise.all([
+            api.get("/setup/status"),
+            api.get("/loyalty-setup/progress"),
+          ]);
+          if (
+            status?.hasReward ||
+            status?.hasCampaign ||
+            progress?.hasCompletedSetup
+          ) {
             router.push("/dashboard");
             return;
-          }
-          const stored = typeof window !== "undefined" ? localStorage.getItem("loyalty_setup_progress") : null;
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (parsed?.hasCompletedSetup) {
-              router.push("/dashboard");
-              return;
-            }
           }
           router.push("/loyalty-setup");
         } catch {

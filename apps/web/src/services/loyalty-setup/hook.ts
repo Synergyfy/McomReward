@@ -7,220 +7,147 @@ import type {
   RewardEngineConfig, TierConfig,
 } from "./types";
 
-// ─── LOCAL STORAGE ─────────────────────────────────────────────────────────
+// ─── PROGRESS (backend: loyalty-setup/progress) ────────────────────────────
 
-const PROGRESS_KEY = "mcom-loyalty-setup-progress";
+const PROGRESS_QUERY_KEY = ["loyaltySetupProgress"] as const;
 
-function defaultProgress(): LoyaltySetupProgress {
-  return {
-    hasSeenWelcome: false,
-    hasSeenEcosystemIntro: false,
-    selectedTemplateId: null,
-    selectedCampaigns: [],
-    rewardCustomizations: {},
-    campaignDescriptions: {},
-    enabledEngines: null,
-    tierConfig: null,
-    hasCompletedSetup: false,
-    hasSkippedOnboarding: false,
-  };
-}
-
-function getStoredProgress(): LoyaltySetupProgress {
-  if (typeof window === "undefined") return defaultProgress();
-  try {
-    const raw = localStorage.getItem(PROGRESS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return { ...defaultProgress(), ...parsed };
-    }
-  } catch { /* ignore */ }
-  return defaultProgress();
-}
-
-function storeProgress(p: LoyaltySetupProgress) {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
-}
-
-// ─── HOOKS ─────────────────────────────────────────────────────────────────
+const fetchProgress = async (): Promise<LoyaltySetupProgress> => {
+  const { data } = await api.get<LoyaltySetupProgress>("/loyalty-setup/progress");
+  return data;
+};
 
 export function useGetLoyaltySetupProgress() {
   return useQuery<LoyaltySetupProgress>({
-    queryKey: ["loyaltySetupProgress"],
-    queryFn: async () => getStoredProgress(),
+    queryKey: PROGRESS_QUERY_KEY,
+    queryFn: fetchProgress,
+  });
+}
+
+function useUpdateProgress() {
+  const queryClient = useQueryClient();
+  return useMutation<LoyaltySetupProgress, Error, Partial<LoyaltySetupProgress>>({
+    mutationFn: async (patch) => {
+      const { data } = await api.patch<LoyaltySetupProgress>(
+        "/loyalty-setup/progress",
+        patch,
+      );
+      return data;
+    },
+    onSuccess: (progress) => {
+      queryClient.setQueryData(PROGRESS_QUERY_KEY, progress);
+      queryClient.invalidateQueries({ queryKey: PROGRESS_QUERY_KEY });
+    },
   });
 }
 
 export function useSaveLoyaltySetup() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: SaveSetupRequest) => {
-      await new Promise((r) => setTimeout(r, 300));
-      const progress: LoyaltySetupProgress = {
-        hasSeenWelcome: data.hasSeenWelcome,
-        hasSeenEcosystemIntro: data.hasSeenEcosystemIntro,
-        selectedTemplateId: data.selectedTemplateId,
-        selectedCampaigns: data.selectedCampaigns,
-        rewardCustomizations: data.rewardCustomizations,
-        campaignDescriptions: data.campaignDescriptions,
-        enabledEngines: data.enabledEngines,
-        tierConfig: data.tierConfig,
-        hasCompletedSetup: true,
-        hasSkippedOnboarding: false,
-      };
-      storeProgress(progress);
+  return useMutation<LoyaltySetupProgress, Error, SaveSetupRequest>({
+    mutationFn: async (data) => {
+      const { data: progress } = await api.post<LoyaltySetupProgress>(
+        "/loyalty-setup/progress/complete",
+        data,
+      );
       return progress;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    onSuccess: (progress) => {
+      queryClient.setQueryData(PROGRESS_QUERY_KEY, progress);
+      queryClient.invalidateQueries({ queryKey: PROGRESS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["businessSetupStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["businessRewards"] });
+      queryClient.invalidateQueries({ queryKey: ["allRewards"] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
     },
   });
 }
 
-
 export function useSkipLoyaltySetup() {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<LoyaltySetupProgress, Error, void>({
     mutationFn: async () => {
-      const progress = getStoredProgress();
-      progress.hasSeenWelcome = true;
-      progress.hasSkippedOnboarding = true;
-      storeProgress(progress);
-      return progress;
+      const { data } = await api.post<LoyaltySetupProgress>(
+        "/loyalty-setup/progress/skip",
+      );
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
+    onSuccess: (progress) => {
+      queryClient.setQueryData(PROGRESS_QUERY_KEY, progress);
+      queryClient.invalidateQueries({ queryKey: PROGRESS_QUERY_KEY });
     },
   });
 }
 
 export function useMarkWelcomeSeen() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.hasSeenWelcome = true;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: () => update.mutateAsync({ hasSeenWelcome: true }),
+  };
 }
 
 export function useMarkEcosystemIntroSeen() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.hasSeenEcosystemIntro = true;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: () => update.mutateAsync({ hasSeenEcosystemIntro: true }),
+  };
 }
 
 export function useSelectTemplate() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (templateId: string) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.selectedTemplateId = templateId;
-      progress.selectedCampaigns = [];
-      progress.campaignDescriptions = {};
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (templateId: string) =>
+      update.mutateAsync({
+        selectedTemplateId: templateId,
+        selectedCampaigns: [],
+        campaignDescriptions: {},
+      }),
+  };
 }
 
 export function useSaveRewardCustomizations() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (customizations: Record<string, RewardCustomization>) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.rewardCustomizations = customizations;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (customizations: Record<string, RewardCustomization>) =>
+      update.mutateAsync({ rewardCustomizations: customizations }),
+  };
 }
 
 export function useSaveCampaignSelections() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (campaigns: LoyaltySetupProgress["selectedCampaigns"]) => {
-      const progress = getStoredProgress();
-      progress.selectedCampaigns = campaigns;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (campaigns: LoyaltySetupProgress["selectedCampaigns"]) =>
+      update.mutateAsync({ selectedCampaigns: campaigns }),
+  };
 }
 
 export function useSaveCampaignDescriptions() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (descriptions: Record<string, string>) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.campaignDescriptions = descriptions;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (descriptions: Record<string, string>) =>
+      update.mutateAsync({ campaignDescriptions: descriptions }),
+  };
 }
 
 export function useSaveEngineConfig() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (config: RewardEngineConfig) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.enabledEngines = config;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (config: RewardEngineConfig) =>
+      update.mutateAsync({ enabledEngines: config }),
+  };
 }
 
 export function useSaveTierConfig() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (config: TierConfig) => {
-      await new Promise((r) => setTimeout(r, 200));
-      const progress = getStoredProgress();
-      progress.tierConfig = config;
-      storeProgress(progress);
-      return progress;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["loyaltySetupProgress"] });
-    },
-  });
+  const update = useUpdateProgress();
+  return {
+    ...update,
+    mutateAsync: (config: TierConfig) => update.mutateAsync({ tierConfig: config }),
+  };
 }
 
 // ─── TEMPLATE CRUD (backend: loyalty-setup/templates) ──────────────────────
@@ -292,5 +219,3 @@ export function useDeleteLoyaltySetupTemplate() {
     },
   });
 }
-
-

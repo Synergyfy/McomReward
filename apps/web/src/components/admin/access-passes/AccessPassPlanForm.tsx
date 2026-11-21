@@ -32,17 +32,10 @@ import {
 const QUOTA_FIELDS = [
   {
     key: "maxActiveCampaigns",
-    label: "Active campaigns",
+    label: "Number of campaigns",
     tooltip:
-      "The maximum number of campaigns a business can have live at the same time. Mark it as unlimited to remove the cap.",
+      "The number of campaigns a business can create. Mark it as unlimited to remove the cap.",
     placeholder: "e.g. 10",
-  },
-  {
-    key: "maxActiveRewards",
-    label: "Active rewards",
-    tooltip:
-      "The maximum number of rewards that can be live at the same time across all campaigns. Mark it as unlimited to remove the cap.",
-    placeholder: "e.g. 50",
   },
   {
     key: "maxRewardsPerCampaign",
@@ -72,20 +65,6 @@ const QUOTA_FIELDS = [
       "How many staff accounts can access the business dashboard. Mark it as unlimited to allow any number of members.",
     placeholder: "e.g. 5",
   },
-  {
-    key: "maxGiftCardTemplates",
-    label: "Gift card templates",
-    tooltip:
-      "How many gift card designs a business can create. Mark it as unlimited to allow any number of templates.",
-    placeholder: "e.g. 10",
-  },
-  {
-    key: "maxCouponTemplates",
-    label: "Coupon templates",
-    tooltip:
-      "How many coupon designs a business can create. Mark it as unlimited to allow any number of templates.",
-    placeholder: "e.g. 10",
-  },
 ] as const;
 
 const FLAG_FIELDS = [
@@ -103,11 +82,6 @@ const FLAG_FIELDS = [
     key: "hasAccessToAdvancedAnalytics",
     label: "Advanced analytics",
     description: "Unlock realtime analytics dashboards and exports.",
-  },
-  {
-    key: "hasAccessToCRM",
-    label: "Customer CRM access",
-    description: "Unlock the customer CRM module and segments.",
   },
   {
     key: "canUpdateReward",

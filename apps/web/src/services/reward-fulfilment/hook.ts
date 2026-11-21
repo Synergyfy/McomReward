@@ -45,17 +45,6 @@ export const useAdminCentralAccessPlans = (enabled = true) =>
     enabled,
   );
 
-export const useAdminMallListings = (
-  params: { query?: string; page?: number; limit?: number } = {},
-  enabled = true,
-) =>
-  useAdminQuery<AdminMallPage>(
-    ['admin-mall-listings'],
-    '/rewards/admin/mall/listings',
-    { page: 1, limit: 50, ...params },
-    enabled,
-  );
-
 export const useAdminMallProducts = (
   params: { query?: string; page?: number; limit?: number; businessId?: string } = {},
   enabled = true,

@@ -32,6 +32,7 @@ import { Business } from "../business/entities/business.entity";
 import { Admin } from "../admin/entities/admin.entity";
 import { Public } from "../../common/decorators/public.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { SkipMembershipCheck } from "../../common/decorators/skip-membership-check.decorator";
 import { CampaignAnalyticsQueryDto } from "./dto/campaign-analytics-query.dto";
 import { PublicCampaignQueryDto } from "./dto/public-campaign-query.dto";
 import { User } from "../../common/interfaces/user.interface";
@@ -190,6 +191,7 @@ export class CampaignController {
   @ApiBearerAuth()
   @UseGuards(RolesGuard)
   @Roles(Role.Business)
+  @SkipMembershipCheck()
   @ApiOperation({
     summary: "Get all campaigns created by admins",
     description: "Accessible by Business Owners.",

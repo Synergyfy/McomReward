@@ -6,6 +6,19 @@ export interface WalletTransaction {
   createdAt: string;
 }
 
+export interface CentralWalletTransaction {
+  id: string;
+  type?: string;
+  amount?: string | number;
+  balanceAfter?: number;
+  category?: string;
+  description?: string;
+  reference?: string;
+  metadata?: Record<string, unknown>;
+  processedAt?: string;
+  createdAt?: string;
+}
+
 export interface Wallet {
   id: string;
   tierBalance: string | number;

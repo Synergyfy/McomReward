@@ -11,7 +11,6 @@ export interface PaginatedResponse<T> {
 
 export interface TierQuotas {
   maxActiveCampaigns: number;
-  maxActiveRewards: number;
   maxRewardsPerCampaign: number;
   monthlyPointsAllowance: number;
   monthlyStampsAllowance: number;
@@ -23,7 +22,6 @@ export interface TierFeatureFlags {
   canCreateCampaignFromScratch: boolean;
   canEditAdminTemplates: boolean;
   hasAccessToAdvancedAnalytics: boolean;
-  hasAccessToCRM: boolean;
   canUpdateReward: boolean;
   canCreateRewardFromScratch: boolean;
 }

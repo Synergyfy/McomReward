@@ -216,6 +216,7 @@ EMAIL_PASSWORD=your-google-app-password
 # ---- Payments ----
 # Customer payments use MCOM Pay (see the MCOM_* variables below).
 # No direct Stripe/PayPal server credentials are needed.
+# Integration guide: docs/MCOM_PAYMENTS_PARTNER_INTEGRATION.md
 
 # ---- Bot protection (optional) ----
 TURNSTILE_SECRET=
@@ -300,6 +301,8 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 NEXT_PUBLIC_BYPASS_SSO=false
 NEXT_PUBLIC_MCOM_SOLUTIONS_URL=http://localhost:3000
 NEXT_PUBLIC_MCOM_CENTRAL_API=http://localhost:3010/api/v1
+# Public MCOM Mall landing page used by dashboard "Go to MCOM Mall" links
+NEXT_PUBLIC_MCOM_MALL_URL=http://localhost:3003
 NEXT_PUBLIC_MCOM_CLIENT_ID=mcom-rewards
 NEXT_PUBLIC_MCOM_REDIRECT_URI=http://localhost:3005/auth/callback
 NEXT_PUBLIC_MCOM_SCOPES=profile email business membership packages
@@ -551,6 +554,8 @@ pnpm format
 ## 12. Documentation index
 
 - **This README** — setup, structure, env, architecture.
+- `docs/MCOM_PAYMENTS_PARTNER_INTEGRATION.md` — MCOM Wallet, MCOM Pay, payee
+  splits and recurring-billing partner guide plus the MCOM Rewards surface map.
 - `apps/api/GEMINI.md` — backend conventions and AI-agent rules (strict typing,
   no `any`, no migrations/tests/commits without explicit instruction).
 - `apps/api/docs/` — feature and endpoint docs:

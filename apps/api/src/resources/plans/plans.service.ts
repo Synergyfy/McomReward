@@ -107,19 +107,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: 3,
-                maxActiveRewards: 5,
                 maxRewardsPerCampaign: 2,
                 monthlyPointsAllowance: 1000,
                 monthlyStampsAllowance: 500,
                 maxTeamMembers: 2,
-                maxGiftCardTemplates: 2,
-                maxCouponTemplates: 3,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: false,
                 hasAccessToAdvancedAnalytics: false,
-                hasAccessToCRM: false,
                 canUpdateReward: true,
                 priorityInSearch: false,
                 allowCustomBranding: false,
@@ -138,19 +134,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: 5,
-                maxActiveRewards: 10,
                 maxRewardsPerCampaign: 4,
                 monthlyPointsAllowance: 3000,
                 monthlyStampsAllowance: 1500,
                 maxTeamMembers: 4,
-                maxGiftCardTemplates: 5,
-                maxCouponTemplates: 6,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: true,
                 hasAccessToAdvancedAnalytics: true,
-                hasAccessToCRM: false,
                 canUpdateReward: true,
                 priorityInSearch: true,
                 allowCustomBranding: true,
@@ -169,19 +161,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: -1,
-                maxActiveRewards: -1,
                 maxRewardsPerCampaign: -1,
                 monthlyPointsAllowance: 10000,
                 monthlyStampsAllowance: 5000,
                 maxTeamMembers: 10,
-                maxGiftCardTemplates: 20,
-                maxCouponTemplates: 20,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: true,
                 hasAccessToAdvancedAnalytics: true,
-                hasAccessToCRM: true,
                 canUpdateReward: true,
                 priorityInSearch: true,
                 allowCustomBranding: true,
@@ -209,19 +197,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: 10,
-                maxActiveRewards: 20,
                 maxRewardsPerCampaign: 8,
                 monthlyPointsAllowance: 15000,
                 monthlyStampsAllowance: 7500,
                 maxTeamMembers: 8,
-                maxGiftCardTemplates: 15,
-                maxCouponTemplates: 15,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: true,
                 hasAccessToAdvancedAnalytics: true,
-                hasAccessToCRM: true,
                 canUpdateReward: true,
                 priorityInSearch: true,
                 allowCustomBranding: true,
@@ -240,19 +224,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: 25,
-                maxActiveRewards: 50,
                 maxRewardsPerCampaign: 15,
                 monthlyPointsAllowance: 35000,
                 monthlyStampsAllowance: 18000,
                 maxTeamMembers: 15,
-                maxGiftCardTemplates: 30,
-                maxCouponTemplates: 30,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: true,
                 hasAccessToAdvancedAnalytics: true,
-                hasAccessToCRM: true,
                 canUpdateReward: true,
                 priorityInSearch: true,
                 allowCustomBranding: true,
@@ -271,19 +251,15 @@ export class PlansService implements OnModuleInit {
             configuration: {
               quotas: {
                 maxActiveCampaigns: -1,
-                maxActiveRewards: -1,
                 maxRewardsPerCampaign: -1,
                 monthlyPointsAllowance: 100000,
                 monthlyStampsAllowance: 50000,
                 maxTeamMembers: 50,
-                maxGiftCardTemplates: 100,
-                maxCouponTemplates: 100,
               },
               featureFlags: {
                 canCreateCampaignFromScratch: true,
                 canEditAdminTemplates: true,
                 hasAccessToAdvancedAnalytics: true,
-                hasAccessToCRM: true,
                 canUpdateReward: true,
                 priorityInSearch: true,
                 allowCustomBranding: true,
@@ -582,13 +558,7 @@ export class PlansService implements OnModuleInit {
       quotas: [
         {
           key: "maxActiveCampaigns",
-          label: "Max Active Campaigns",
-          type: "number",
-          unlimited: true,
-        },
-        {
-          key: "maxActiveRewards",
-          label: "Max Active Rewards",
+          label: "Number of Campaigns",
           type: "number",
           unlimited: true,
         },
@@ -609,16 +579,6 @@ export class PlansService implements OnModuleInit {
           type: "number",
         },
         { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
-        {
-          key: "maxGiftCardTemplates",
-          label: "Max Gift Card Templates",
-          type: "number",
-        },
-        {
-          key: "maxCouponTemplates",
-          label: "Max Coupon Templates",
-          type: "number",
-        },
       ],
       featureFlags: [
         {
@@ -634,11 +594,6 @@ export class PlansService implements OnModuleInit {
         {
           key: "hasAccessToAdvancedAnalytics",
           label: "Advanced Analytics Dashboard",
-          type: "boolean",
-        },
-        {
-          key: "hasAccessToCRM",
-          label: "Customer CRM Access",
           type: "boolean",
         },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },

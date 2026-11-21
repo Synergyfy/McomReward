@@ -21,7 +21,6 @@ export default function ComparisonTable({ activeTab = "standard" }: ComparisonTa
     "Number of QR Plaques",
     "NFC Items Supported",
     "Advanced Analytics",
-    "Audience Segmentation",
     "Team Members",
     "Support"
   ]
@@ -99,8 +98,6 @@ export default function ComparisonTable({ activeTab = "standard" }: ComparisonTa
         return (tier.qrCodeCount ?? 0) >= 10
       case "Advanced Analytics":
         return !!flags?.hasAccessToAdvancedAnalytics
-      case "Audience Segmentation":
-        return !!flags?.hasAccessToCrm
       case "Team Members":
         // Fallback or specific logic if needed
         if (tier.name === "Platinum") return "Unlimited"

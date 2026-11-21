@@ -16,9 +16,6 @@ function createService(options: CreateOptions = {}) {
     countActiveCampaigns: jest.fn().mockResolvedValue(0),
     countRewards: jest.fn().mockResolvedValue(0),
   };
-  const rewardsService = {
-    countActiveBusinessRewards: jest.fn().mockResolvedValue(0),
-  };
   const businessService = {
     findById: jest.fn().mockResolvedValue({ isSuperBusiness: false }),
   };
@@ -31,7 +28,6 @@ function createService(options: CreateOptions = {}) {
   const service = new CapabilityService(
     planSubscriptionService as any,
     campaignService as any,
-    rewardsService as any,
     {} as any,
     { count: jest.fn() } as any,
     businessService as any,
@@ -50,19 +46,19 @@ describe("CapabilityService access pass entitlements", () => {
   it("denies when neither a plan nor an access pass is active", async () => {
     const { service } = createService();
     await expect(
-      service.checkPermission("business-1", ActionType.ACCESS_CRM),
+      service.checkPermission("business-1", ActionType.ACCESS_ANALYTICS),
     ).rejects.toThrow("Active plan subscription required.");
   });
 
   it("enforces feature flags from an access pass when there is no plan", async () => {
     const { service } = createService({
       accessPass: {
-        configuration: { featureFlags: { hasAccessToCRM: false } },
+        configuration: { featureFlags: { hasAccessToAdvancedAnalytics: false } },
       },
     });
 
     await expect(
-      service.checkPermission("business-1", ActionType.ACCESS_CRM),
+      service.checkPermission("business-1", ActionType.ACCESS_ANALYTICS),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -75,13 +71,13 @@ describe("CapabilityService access pass entitlements", () => {
         }),
       ],
       accessPass: {
-        configuration: { featureFlags: { hasAccessToCRM: false } },
+        configuration: { featureFlags: { hasAccessToAdvancedAnalytics: false } },
       },
     });
 
-    // The plan does not define hasAccessToCRM, so the pass value applies.
+    // The plan does not define hasAccessToAdvancedAnalytics, so the pass value applies.
     await expect(
-      service.checkPermission("business-1", ActionType.ACCESS_CRM),
+      service.checkPermission("business-1", ActionType.ACCESS_ANALYTICS),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -90,16 +86,16 @@ describe("CapabilityService access pass entitlements", () => {
       subscriptions: [
         planWithConfig({
           quotas: { maxActiveCampaigns: 5 },
-          featureFlags: { hasAccessToCRM: true },
+          featureFlags: { hasAccessToAdvancedAnalytics: true },
         }),
       ],
       accessPass: {
-        configuration: { featureFlags: { hasAccessToCRM: false } },
+        configuration: { featureFlags: { hasAccessToAdvancedAnalytics: false } },
       },
     });
 
     await expect(
-      service.checkPermission("business-1", ActionType.ACCESS_CRM),
+      service.checkPermission("business-1", ActionType.ACCESS_ANALYTICS),
     ).resolves.toBeUndefined();
   });
 });

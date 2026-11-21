@@ -29,7 +29,6 @@ interface TierConfigurationEditorProps {
 
 const DEFAULT_QUOTAS: TierQuotas = {
     maxActiveCampaigns: 5,
-    maxActiveRewards: 10,
     maxRewardsPerCampaign: 1,
     monthlyPointsAllowance: 500,
     monthlyRewardBudget: 0,
@@ -40,7 +39,6 @@ const DEFAULT_FEATURE_FLAGS: TierFeatureFlags = {
     canCreateCampaignFromScratch: false,
     canEditAdminTemplates: false,
     hasAccessToAdvancedAnalytics: false,
-    hasAccessToCRM: false,
     canUpdateReward: false,
     canCreateRewardFromScratch: false
 };

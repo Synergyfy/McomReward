@@ -175,7 +175,6 @@ export class CreateTierDto {
     example: {
       quotas: {
         maxActiveCampaigns: 5,
-        maxActiveRewards: 10,
         maxRewardsPerCampaign: 3,
         monthlyPointsAllowance: 1000,
         maxTeamMembers: 2,
@@ -184,7 +183,6 @@ export class CreateTierDto {
         canCreateCampaignFromScratch: true,
         canEditAdminTemplates: false,
         hasAccessToAdvancedAnalytics: true,
-        hasAccessToCRM: false,
         canUpdateReward: true,
       },
       progressBonuses: {
@@ -228,7 +226,6 @@ export class CreateTierDto {
       winter: {
         quotas: {
           maxActiveCampaigns: 10,
-          maxActiveRewards: 20,
           maxRewardsPerCampaign: 5,
           monthlyPointsAllowance: 2000,
         },
@@ -242,7 +239,6 @@ export class CreateTierDto {
       summer: {
         quotas: {
           maxActiveCampaigns: -1,
-          maxActiveRewards: -1,
           maxRewardsPerCampaign: 10,
           monthlyPointsAllowance: 5000,
         },
@@ -252,7 +248,6 @@ export class CreateTierDto {
       trial: {
         quotas: {
           maxActiveCampaigns: 2,
-          maxActiveRewards: 5,
         },
         featureFlags: {
           canCreateCampaignFromScratch: false,

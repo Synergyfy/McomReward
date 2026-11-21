@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   useGetLoyaltySetupProgress, useSaveLoyaltySetup, useSkipLoyaltySetup,
   useMarkWelcomeSeen, useMarkEcosystemIntroSeen, useSaveCampaignSelections,
@@ -92,14 +93,42 @@ export default function LoyaltySetupPage() {
   useEffect(() => {
     const templateId = progress?.selectedTemplateId;
     const savedCampaigns = progress?.selectedCampaigns;
+    const savedCustomizations = progress?.rewardCustomizations || {};
+    const savedDescriptions = progress?.campaignDescriptions || {};
     const baseTemplate = allTemplates.find((template) => template.id === templateId);
     if (!templateId || !baseTemplate || !savedCampaigns) return;
+
     setTemplateOverrides((current) => {
       const currentTemplate = current[templateId] || baseTemplate;
-      if (currentTemplate.campaigns === savedCampaigns) return current;
-      return { ...current, [templateId]: { ...currentTemplate, campaigns: savedCampaigns } };
+      const rewards = (currentTemplate.rewards || []).map((reward) => {
+        const customization = savedCustomizations[reward.id] || savedCustomizations[reward.key];
+        return customization
+          ? { ...reward, ...customization, isCustomized: true }
+          : reward;
+      });
+      const campaigns = savedCampaigns.map((campaign) => ({
+        ...campaign,
+        description: savedDescriptions[campaign.key] ?? campaign.description,
+      }));
+
+      const rewardsUnchanged = rewards.every((reward, index) =>
+        reward === (currentTemplate.rewards || [])[index],
+      );
+      const campaignsUnchanged = campaigns.every((campaign, index) => {
+        const existing = currentTemplate.campaigns?.[index];
+        return existing && existing.key === campaign.key && existing.description === campaign.description;
+      }) && campaigns.length === (currentTemplate.campaigns?.length || 0);
+
+      if (rewardsUnchanged && campaignsUnchanged) return current;
+      return { ...current, [templateId]: { ...currentTemplate, rewards, campaigns } };
     });
-  }, [allTemplates, progress?.selectedTemplateId, progress?.selectedCampaigns]);
+  }, [
+    allTemplates,
+    progress?.selectedTemplateId,
+    progress?.selectedCampaigns,
+    progress?.rewardCustomizations,
+    progress?.campaignDescriptions,
+  ]);
 
   useEffect(() => {
     if (!progress || isProgressLoading || hasInitializedStep.current) return;
@@ -117,11 +146,39 @@ export default function LoyaltySetupPage() {
     else if (progress.hasSeenWelcome) setStep("profile");
   }, [progress, isProgressLoading, areTemplatesLoading, selectedTemplate, router]);
 
-  const handleWelcomeComplete = async () => { await markWelcomeSeen(); setStep("profile"); };
-  const handleWelcomeSkip = async () => { await skipLoyaltySetup(); router.push("/dashboard"); };
-  const handleProfileComplete = async () => { await markEcosystemIntroSeen(); setStep("templates"); };
+  const handleWelcomeComplete = async () => {
+    try {
+      await markWelcomeSeen();
+      setStep("profile");
+    } catch {
+      toast.error("We couldn't save your progress. Please try again.");
+    }
+  };
+  const handleWelcomeSkip = async () => {
+    try {
+      await skipLoyaltySetup();
+      router.push("/dashboard");
+    } catch {
+      toast.error("We couldn't skip setup right now. Please try again.");
+    }
+  };
+  const handleProfileComplete = async () => {
+    try {
+      await markEcosystemIntroSeen();
+      setStep("templates");
+    } catch {
+      toast.error("We couldn't save your progress. Please try again.");
+    }
+  };
   const handleProfileBack = () => setStep("welcome");
-  const handleTemplateSelect = async (id: string) => { await selectTemplate(id); setStep("campaigns"); };
+  const handleTemplateSelect = async (id: string) => {
+    try {
+      await selectTemplate(id);
+      setStep("campaigns");
+    } catch {
+      toast.error("We couldn't select that template. Please try again.");
+    }
+  };
   const handleTemplateBack = () => setStep("profile");
 
   const handleTemplateSave = (template: SectorTemplate) => {
@@ -138,7 +195,9 @@ export default function LoyaltySetupPage() {
     }]));
     const nextCustomizations = { ...savedCustomizations, ...updatedCustomizations };
     setSavedCustomizations(nextCustomizations);
-    void saveRewardCustomizations(nextCustomizations);
+    void saveRewardCustomizations(nextCustomizations).catch(() => {
+      toast.error("We couldn't save your reward changes. Please try again.");
+    });
   };
 
   const handleCampaignsComplete = async (campaigns: SectorTemplate["campaigns"]) => {
@@ -149,26 +208,36 @@ export default function LoyaltySetupPage() {
         return { ...current, [selected.id]: { ...currentTemplate, campaigns } };
       });
     }
-    await saveCampaignDescriptions(Object.fromEntries(campaigns.map((campaign) => [campaign.key, campaign.description])));
-    await saveCampaignSelections(campaigns);
-    setStep("review");
+    try {
+      await saveCampaignDescriptions(Object.fromEntries(campaigns.map((campaign) => [campaign.key, campaign.description])));
+      await saveCampaignSelections(campaigns);
+      setStep("review");
+    } catch {
+      toast.error("We couldn't save your campaign selections. Please try again.");
+    }
   };
   const handleCampaignsBack = () => setStep("templates");
 
   const handleReviewSave = async (descriptions: Record<string, string>) => {
-    await saveCampaignDescriptions(descriptions);
     setStep("saving");
-    await saveSetup({
-      hasSeenWelcome: true,
-      hasSeenEcosystemIntro: true,
-      selectedTemplateId: progress?.selectedTemplateId || null,
-      selectedCampaigns: (selectedTemplate?.campaigns || []).map((campaign) => ({ ...campaign, description: descriptions[campaign.key] ?? campaign.description })),
-      rewardCustomizations: savedCustomizations,
-      campaignDescriptions: descriptions,
-      enabledEngines: null,
-      tierConfig: progress?.tierConfig ?? selectedTemplate?.tierConfig ?? null,
-    });
-    router.push("/dashboard");
+    try {
+      await saveCampaignDescriptions(descriptions);
+      await saveSetup({
+        hasSeenWelcome: true,
+        hasSeenEcosystemIntro: true,
+        selectedTemplateId: progress?.selectedTemplateId || null,
+        selectedCampaigns: (selectedTemplate?.campaigns || []).map((campaign) => ({ ...campaign, description: descriptions[campaign.key] ?? campaign.description })),
+        rewardCustomizations: savedCustomizations,
+        campaignDescriptions: descriptions,
+        enabledEngines: progress?.enabledEngines ?? null,
+        tierConfig: progress?.tierConfig ?? selectedTemplate?.tierConfig ?? null,
+      });
+      router.push("/dashboard");
+    } catch (error) {
+      setStep("review");
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(typeof message === "string" ? message : "We couldn't save your setup. Please try again.");
+    }
   };
   const handleReviewBack = () => setStep("campaigns");
 

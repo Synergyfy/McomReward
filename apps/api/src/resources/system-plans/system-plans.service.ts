@@ -529,13 +529,7 @@ export class SystemPlansService {
       quotas: [
         {
           key: "maxActiveCampaigns",
-          label: "Max Active Campaigns",
-          type: "number",
-          unlimited: true,
-        },
-        {
-          key: "maxActiveRewards",
-          label: "Max Active Rewards",
+          label: "Number of Campaigns",
           type: "number",
           unlimited: true,
         },
@@ -572,7 +566,6 @@ export class SystemPlansService {
           label: "Advanced Analytics",
           type: "boolean",
         },
-        { key: "hasAccessToCRM", label: "CRM Access", type: "boolean" },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },
       ],
     };

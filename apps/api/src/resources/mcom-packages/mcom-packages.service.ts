@@ -33,7 +33,11 @@ import { PlanTierLevelEnum } from "../plans/entities/plan-tier-level.entity";
 import { JwtService } from "@nestjs/jwt";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
 import { Role } from "../../common/role.enum";
-import { toMinorUnits, fromMinorUnits } from "../../common/utils/money.util";
+import {
+  fromMinorUnits,
+  minorUnitsEqual,
+  toMinorUnits,
+} from "../../common/utils/money.util";
 import {
   McomPaymentsService,
   McomChargeResponse,
@@ -321,13 +325,13 @@ export class McomPackagesService implements OnModuleInit {
         currency: price.currency || "GBP",
         method,
         reference,
+        intent: "SUBSCRIPTION",
         description: `Plan: ${variant.plan?.name || "Rewards Plan"} (${
           variant.tierLevel?.name || "Standard"
         })`,
-        mcomUserId:
-          method === PaymentCheckoutMethod.WALLET
-            ? business.mcomUserId
-            : undefined,
+        // Send the CHS identity for card/PayPal too when we have it: it is what
+        // lets support tie a payment to a person (guide B4.1a).
+        mcomUserId: business.mcomUserId || undefined,
         externalCustomerId: business.id,
         metadata: { ...metadata, checkoutId: checkout.id },
         idempotencyKey,
@@ -441,7 +445,7 @@ export class McomPackagesService implements OnModuleInit {
 
         if (
           response.charge.amountMinor &&
-          response.charge.amountMinor !== checkout.amountMinor
+          !minorUnitsEqual(response.charge.amountMinor, checkout.amountMinor)
         ) {
           throw new BadRequestException(
             "Paid amount does not match the checkout amount",

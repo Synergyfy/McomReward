@@ -107,6 +107,32 @@ describe("MallIntegrationService deep-link base URL", () => {
     ).toBe("http://localhost:3003");
   });
 
+  it("builds the SSO redirect against the configured Mall frontend", async () => {
+    const jwt = { sign: jest.fn().mockReturnValue("sso-token") };
+    const service = new MallIntegrationService(
+      {} as any,
+      {
+        get: <T = string>(key: string) =>
+          ({
+            MALL_WEB_URL: "http://localhost:3003",
+            SSO_SECRET: "legacy-sso",
+          })[key] as T | undefined,
+      } as any,
+      jwt as any,
+      {} as any,
+    );
+
+    const result = await service.generateSsoToken({
+      email: "owner@example.com",
+      name: "Owner",
+      role: "business",
+    });
+
+    expect(result.redirectUrl).toBe(
+      "http://localhost:3003/sso-login?token=sso-token",
+    );
+  });
+
   it("never falls back to the Central host outside production", () => {
     const service = build({
       NODE_ENV: "development",

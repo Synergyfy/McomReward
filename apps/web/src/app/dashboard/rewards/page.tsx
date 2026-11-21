@@ -13,12 +13,10 @@ import {
   useAddBusinessReward,
   useRemoveBusinessReward,
 } from '@/services/business-reward/hooks';
-import { useGetBusinessTierUsage } from '@/services/business/hook';
 import { useGetMySubscription } from '@/services/tiers/hook';
 import { BusinessReward, Reward, PaginationMeta, CreateBusinessRewardDto, RewardStatus } from '@/services/business-reward/types';
 import { buildBusinessRewardPayload } from '@/services/business-reward/payload';
 import LoadingSpinner from '@/components/ui/Loading';
-import UsageCard from '@/components/dashboard/shared/UsageCard';
 import ClaimRewardModal from '@/components/dashboard/rewards/ClaimRewardModal';
 import UpgradePlanModal from '@/components/dashboard/rewards/UpgradePlanModal';
 import CreateRewardWizardModal from '@/components/dashboard/rewards/CreateRewardWizardModal';
@@ -201,7 +199,6 @@ export default function BusinessRewardsPage() {
     isError: isErrorBusinessRewards,
   } = useGetBusinessRewards(businessRewardsPage, limit);
 
-  const { data: tierUsageData } = useGetBusinessTierUsage();
   const { data: subscription } = useGetMySubscription();
 
   const plan = (subscription?.tier?.name || 'starter').toLowerCase();
@@ -409,15 +406,6 @@ export default function BusinessRewardsPage() {
           <p className="text-gray-600 mb-8">
             These are the rewards you have added to your business.
           </p>
-
-          {tierUsageData && (
-            <div className="mb-8 max-w-md">
-              <UsageCard
-                title="Rewards Usage"
-                usage={tierUsageData.features.rewards}
-              />
-            </div>
-          )}
 
           {businessRewardsData?.data.length === 0 ? (
             <div className="text-center py-12">

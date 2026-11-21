@@ -12,6 +12,7 @@ import { McomPaymentsService } from "./mcom-payments.service";
 import { PaymentCheckoutService } from "./payment-checkout.service";
 import { PaymentFulfillmentService } from "./payment-fulfillment.service";
 import { McomPaymentWebhookService } from "./mcom-payment-webhook.service";
+import { PaymentAdminController } from "./payment-admin.controller";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { McomPaymentWebhookService } from "./mcom-payment-webhook.service";
     CashbackController,
     McomPaymentWebhookController,
     PaymentCheckoutController,
+    PaymentAdminController,
   ],
   providers: [
     PaymentService,

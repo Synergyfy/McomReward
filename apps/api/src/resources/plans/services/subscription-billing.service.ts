@@ -35,7 +35,11 @@ import {
   PaymentCheckoutMethod,
   PaymentCheckoutPurpose,
 } from "../../payment/entities/payment-checkout.entity";
-import { fromMinorUnits, toMinorUnits } from "../../../common/utils/money.util";
+import {
+  fromMinorUnits,
+  minorUnitsEqual,
+  toMinorUnits,
+} from "../../../common/utils/money.util";
 
 const RENEWAL_LOCK_ID = 918_273_645;
 const RETRY_DELAYS_DAYS = [1, 3, 7];
@@ -309,7 +313,9 @@ export class SubscriptionBillingService implements OnModuleInit {
       currency: invoice.currency,
       method,
       reference: invoice.id,
+      intent: "SUBSCRIPTION",
       description: `${subscription.planVariant?.plan?.name || "MCOM Rewards"} renewal`,
+      mcomUserId: subscription.business?.mcomUserId || undefined,
       externalCustomerId: subscription.business?.id,
       metadata: {
         subscriptionId: subscription.id,
@@ -365,7 +371,7 @@ export class SubscriptionBillingService implements OnModuleInit {
       }
       if (
         response.charge.amountMinor &&
-        response.charge.amountMinor !== checkout.amountMinor
+        !minorUnitsEqual(response.charge.amountMinor, checkout.amountMinor)
       ) {
         throw new BadRequestException(
           "Paid amount does not match the renewal amount",

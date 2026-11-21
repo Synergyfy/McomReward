@@ -272,7 +272,6 @@ async function seedProd() {
         configuration: {
           quotas: {
             maxActiveCampaigns: 1,
-            maxActiveRewards: 5,
             maxRewardsPerCampaign: 2,
             monthlyPointsAllowance: 500,
             monthlyStampsAllowance: 50,
@@ -284,14 +283,12 @@ async function seedProd() {
             canCreateCampaignFromScratch: true,
             canEditAdminTemplates: false,
             hasAccessToAdvancedAnalytics: false,
-            hasAccessToCRM: false,
             canUpdateReward: true,
             canCreateRewardFromScratch: true,
           },
           trial: {
             quotas: {
               maxActiveCampaigns: 1,
-              maxActiveRewards: 2,
             },
             featureFlags: {
               canCreateCampaignFromScratch: true,
@@ -317,7 +314,6 @@ async function seedProd() {
         configuration: {
           quotas: {
             maxActiveCampaigns: 5,
-            maxActiveRewards: 10,
             maxRewardsPerCampaign: 3,
             monthlyPointsAllowance: 1000,
             monthlyStampsAllowance: 100,
@@ -329,7 +325,6 @@ async function seedProd() {
             canCreateCampaignFromScratch: true,
             canEditAdminTemplates: true,
             hasAccessToAdvancedAnalytics: true,
-            hasAccessToCRM: true,
             canUpdateReward: true,
             canCreateRewardFromScratch: true,
           },
@@ -374,7 +369,6 @@ async function seedProd() {
           trial: {
             quotas: {
               maxActiveCampaigns: 2,
-              maxActiveRewards: 5,
             },
             featureFlags: {
               canCreateCampaignFromScratch: false,
@@ -401,7 +395,6 @@ async function seedProd() {
         configuration: {
           quotas: {
             maxActiveCampaigns: -1,
-            maxActiveRewards: -1,
             maxRewardsPerCampaign: 10,
             monthlyPointsAllowance: 5000,
             monthlyStampsAllowance: 500,
@@ -413,7 +406,6 @@ async function seedProd() {
             canCreateCampaignFromScratch: true,
             canEditAdminTemplates: true,
             hasAccessToAdvancedAnalytics: true,
-            hasAccessToCRM: true,
             canUpdateReward: true,
             canCreateRewardFromScratch: true,
           },
@@ -454,7 +446,6 @@ async function seedProd() {
           trial: {
             quotas: {
               maxActiveCampaigns: 3,
-              maxActiveRewards: 8,
             },
             featureFlags: {
               canCreateCampaignFromScratch: true,

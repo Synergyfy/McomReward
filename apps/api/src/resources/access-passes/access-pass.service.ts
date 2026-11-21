@@ -39,7 +39,10 @@ import {
   McomChargeResponse,
 } from "../payment/mcom-payments.service";
 import { McomWalletPartnerService } from "../wallet/mcom-wallet-partner.service";
-import { toMinorUnits } from "../../common/utils/money.util";
+import {
+  minorUnitsEqual,
+  toMinorUnits,
+} from "../../common/utils/money.util";
 import { EmailQueueService } from "../../mail/email-queue.service";
 import type { PlatformEntitlement } from "../sso/interfaces/entitlement.interface";
 import { CreateAccessPassPlanDto } from "./dto/create-access-pass-plan.dto";
@@ -1170,11 +1173,10 @@ export class AccessPassService implements OnModuleInit {
         currency: plan.currency || "GBP",
         method,
         reference,
+        intent: "PURCHASE",
         description: `Access pass: ${plan.name} (${plan.durationDays} days)`,
-        mcomUserId:
-          method === PaymentCheckoutMethod.WALLET
-            ? business.mcomUserId
-            : undefined,
+        // Send the CHS identity for every rail when known (guide B4.1a).
+        mcomUserId: business.mcomUserId || undefined,
         externalCustomerId: business.id,
         metadata: { ...metadata, checkoutId: checkout.id },
         idempotencyKey,
@@ -1326,7 +1328,7 @@ export class AccessPassService implements OnModuleInit {
         }
         if (
           response.charge.amountMinor &&
-          response.charge.amountMinor !== checkout.amountMinor
+          !minorUnitsEqual(response.charge.amountMinor, checkout.amountMinor)
         ) {
           throw new BadRequestException(
             "Paid amount does not match the checkout amount",
@@ -1472,13 +1474,7 @@ export class AccessPassService implements OnModuleInit {
       quotas: [
         {
           key: "maxActiveCampaigns",
-          label: "Max Active Campaigns",
-          type: "number",
-          unlimited: true,
-        },
-        {
-          key: "maxActiveRewards",
-          label: "Max Active Rewards",
+          label: "Number of Campaigns",
           type: "number",
           unlimited: true,
         },
@@ -1499,16 +1495,6 @@ export class AccessPassService implements OnModuleInit {
           type: "number",
         },
         { key: "maxTeamMembers", label: "Max Team Members", type: "number" },
-        {
-          key: "maxGiftCardTemplates",
-          label: "Max Gift Card Templates",
-          type: "number",
-        },
-        {
-          key: "maxCouponTemplates",
-          label: "Max Coupon Templates",
-          type: "number",
-        },
       ],
       featureFlags: [
         {
@@ -1524,11 +1510,6 @@ export class AccessPassService implements OnModuleInit {
         {
           key: "hasAccessToAdvancedAnalytics",
           label: "Advanced Analytics Dashboard",
-          type: "boolean",
-        },
-        {
-          key: "hasAccessToCRM",
-          label: "Customer CRM Access",
           type: "boolean",
         },
         { key: "canUpdateReward", label: "Update Reward", type: "boolean" },

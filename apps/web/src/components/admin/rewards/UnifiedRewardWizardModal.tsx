@@ -54,7 +54,6 @@ import { useCreateReward, useUpdateReward } from '@/services/rewards/hook';
 import {
     useAdminCentralAccessPlans,
     useAdminCentralMemberships,
-    useAdminMallListings,
     useAdminMallProducts,
     useAdminMallServices,
     useAdminMallTemplates,
@@ -152,9 +151,9 @@ export default function UnifiedRewardWizardModal({
     const [fulfilmentProvider, setFulfilmentProvider] = useState<'NONE' | 'MALL' | 'CENTRAL'>('NONE');
     const [fulfilmentKind, setFulfilmentKind] = useState<string>('MALL_VOUCHER');
     const [fulfilmentBusinessId, setFulfilmentBusinessId] = useState('');
+    const [fulfilmentBusinessName, setFulfilmentBusinessName] = useState('');
     const [fulfilmentTemplateId, setFulfilmentTemplateId] = useState('');
-    const [fulfilmentScopeMode, setFulfilmentScopeMode] = useState<'ALL' | 'LISTINGS' | 'ITEMS'>('ALL');
-    const [fulfilmentListingIds, setFulfilmentListingIds] = useState<string[]>([]);
+    const [fulfilmentScopeMode, setFulfilmentScopeMode] = useState<'ALL' | 'ITEMS'>('ALL');
     const [fulfilmentProductIds, setFulfilmentProductIds] = useState<string[]>([]);
     const [fulfilmentServiceIds, setFulfilmentServiceIds] = useState<string[]>([]);
     const [centralPlanId, setCentralPlanId] = useState('');
@@ -181,16 +180,12 @@ export default function UnifiedRewardWizardModal({
         useAdminCentralMemberships(isCentralMembership);
     const { data: centralAccessPlans = [] } =
         useAdminCentralAccessPlans(isCentralAccess);
-    const { data: mallListingsPage } = useAdminMallListings(
-        { limit: 100 },
-        isMallFulfilment,
-    );
     const { data: mallProductsPage } = useAdminMallProducts(
-        { limit: 100 },
+        { limit: 100, businessId: fulfilmentBusinessId || undefined },
         isMallFulfilment && fulfilmentScopeMode === 'ITEMS',
     );
     const { data: mallServicesPage } = useAdminMallServices(
-        { limit: 100 },
+        { limit: 100, businessId: fulfilmentBusinessId || undefined },
         isMallFulfilment && fulfilmentScopeMode === 'ITEMS',
     );
     const { data: mallTemplatesData } = useAdminMallTemplates(
@@ -199,7 +194,6 @@ export default function UnifiedRewardWizardModal({
         isMallFulfilment && !!fulfilmentBusinessId,
     );
 
-    const mallListings = mallListingsPage?.data ?? [];
     const mallProducts = mallProductsPage?.data ?? [];
     const mallServices = mallServicesPage?.data ?? [];
     const mallTemplates = mallTemplatesData?.templates ?? [];
@@ -266,13 +260,23 @@ export default function UnifiedRewardWizardModal({
                     config.businessId ||
                     '',
                 );
+                setFulfilmentBusinessName(config.businessName || '');
                 setFulfilmentTemplateId(
                     (reward as any).fulfilment_template_id ||
                     config.templateRef?.id ||
                     '',
                 );
-                setFulfilmentScopeMode(config.scope?.mode || 'ALL');
-                setFulfilmentListingIds(config.scope?.listingIds || []);
+                const storedScopeMode = config.scope?.mode;
+                const hasStoredItems = Boolean(
+                    config.scope?.productIds?.length ||
+                    config.scope?.serviceIds?.length,
+                );
+                setFulfilmentScopeMode(
+                    storedScopeMode === 'ITEMS' ||
+                    (storedScopeMode === 'LISTINGS' && hasStoredItems)
+                        ? 'ITEMS'
+                        : 'ALL',
+                );
                 setFulfilmentProductIds(config.scope?.productIds || []);
                 setFulfilmentServiceIds(config.scope?.serviceIds || []);
                 setCentralPlanId(config.grant?.planId || '');
@@ -326,9 +330,9 @@ export default function UnifiedRewardWizardModal({
         setFulfilmentProvider('NONE');
         setFulfilmentKind('MALL_VOUCHER');
         setFulfilmentBusinessId('');
+        setFulfilmentBusinessName('');
         setFulfilmentTemplateId('');
         setFulfilmentScopeMode('ALL');
-        setFulfilmentListingIds([]);
         setFulfilmentProductIds([]);
         setFulfilmentServiceIds([]);
         setCentralPlanId('');
@@ -348,12 +352,6 @@ export default function UnifiedRewardWizardModal({
 
         if (fulfilmentProvider === 'MALL') {
             if (!(Number(rewardValue) > 0)) return false;
-            if (
-                fulfilmentScopeMode === 'LISTINGS' &&
-                fulfilmentListingIds.length === 0
-            ) {
-                return false;
-            }
             if (
                 fulfilmentScopeMode === 'ITEMS' &&
                 fulfilmentProductIds.length === 0 &&
@@ -387,7 +385,6 @@ export default function UnifiedRewardWizardModal({
         fulfilmentProvider,
         fulfilmentKind,
         fulfilmentScopeMode,
-        fulfilmentListingIds,
         fulfilmentProductIds,
         fulfilmentServiceIds,
         centralPlanId,
@@ -446,10 +443,6 @@ export default function UnifiedRewardWizardModal({
         }
     };
 
-    const toggleFulfilmentListing = (id: string) =>
-        setFulfilmentListingIds((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-        );
     const toggleFulfilmentProduct = (id: string) =>
         setFulfilmentProductIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
@@ -461,16 +454,12 @@ export default function UnifiedRewardWizardModal({
 
     const buildFulfilment = (): any => {
         if (fulfilmentProvider === 'MALL') {
-            const business = mallListings.find(
-                (listing: any) => listing.id === fulfilmentBusinessId,
-            );
             return {
                 provider: 'MALL',
                 kind: fulfilmentKind,
                 delivery: 'CODE',
                 businessId: fulfilmentBusinessId || undefined,
-                businessName:
-                    business?.name || business?.businessName || undefined,
+                businessName: fulfilmentBusinessName || undefined,
                 templateRef: fulfilmentTemplateId
                     ? { system: 'MALL', id: fulfilmentTemplateId }
                     : undefined,
@@ -480,9 +469,6 @@ export default function UnifiedRewardWizardModal({
                 },
                 scope: {
                     mode: fulfilmentScopeMode,
-                    ...(fulfilmentScopeMode === 'LISTINGS'
-                        ? { listingIds: fulfilmentListingIds }
-                        : {}),
                     ...(fulfilmentScopeMode === 'ITEMS'
                         ? {
                               productIds: fulfilmentProductIds,
@@ -881,10 +867,7 @@ export default function UnifiedRewardWizardModal({
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="ALL">
-                                                            All eligible Mall listings
-                                                        </SelectItem>
-                                                        <SelectItem value="LISTINGS">
-                                                            Selected listings
+                                                            All eligible Mall products and services
                                                         </SelectItem>
                                                         <SelectItem value="ITEMS">
                                                             Specific products/services
@@ -892,36 +875,6 @@ export default function UnifiedRewardWizardModal({
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-
-                                            {fulfilmentScopeMode === 'LISTINGS' && (
-                                                <div className="max-h-48 space-y-1 overflow-y-auto rounded border bg-white p-2">
-                                                    {mallListings.map((listing: any) => (
-                                                        <label
-                                                            key={listing.id}
-                                                            className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-gray-50"
-                                                        >
-                                                            <Checkbox
-                                                                checked={fulfilmentListingIds.includes(
-                                                                    listing.id,
-                                                                )}
-                                                                onCheckedChange={() =>
-                                                                    toggleFulfilmentListing(listing.id)
-                                                                }
-                                                            />
-                                                            <span>
-                                                                {listing.name ||
-                                                                    listing.businessName ||
-                                                                    listing.id}
-                                                            </span>
-                                                        </label>
-                                                    ))}
-                                                    {mallListings.length === 0 && (
-                                                        <p className="text-xs text-gray-500">
-                                                            No listings found.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            )}
 
                                             {fulfilmentScopeMode === 'ITEMS' && (
                                                 <div className="grid gap-4 sm:grid-cols-2">

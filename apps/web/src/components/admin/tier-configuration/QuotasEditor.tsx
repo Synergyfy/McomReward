@@ -22,21 +22,12 @@ export const QuotasEditor: React.FC<QuotasEditorProps> = ({ quotas, onChange }) 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="maxActiveCampaigns">Max Active Campaigns (-1 for unlimited)</Label>
+                <Label htmlFor="maxActiveCampaigns">Number of Campaigns (-1 for unlimited)</Label>
                 <Input
                     id="maxActiveCampaigns"
                     type="number"
                     value={quotas.maxActiveCampaigns ?? 0}
                     onChange={(e) => handleChange('maxActiveCampaigns', e.target.value)}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="maxActiveRewards">Max Active Rewards (-1 for unlimited)</Label>
-                <Input
-                    id="maxActiveRewards"
-                    type="number"
-                    value={quotas.maxActiveRewards ?? 0}
-                    onChange={(e) => handleChange('maxActiveRewards', e.target.value)}
                 />
             </div>
             <div className="space-y-2">

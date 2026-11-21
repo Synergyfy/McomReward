@@ -8,7 +8,11 @@ import { Repository } from "typeorm";
 import { randomUUID } from "crypto";
 import { Business } from "../business/entities/business.entity";
 import { CashbackEvent } from "../../common/enums/cashback-event.enum";
-import { fromMinorUnits, toMinorUnits } from "../../common/utils/money.util";
+import {
+  fromMinorUnits,
+  minorUnitsEqual,
+  toMinorUnits,
+} from "../../common/utils/money.util";
 import {
   McomChargeResponse,
   McomPaymentsService,
@@ -145,7 +149,7 @@ export class PaymentService {
     }
     if (
       response.charge.amountMinor &&
-      response.charge.amountMinor !== checkout.amountMinor
+      !minorUnitsEqual(response.charge.amountMinor, checkout.amountMinor)
     ) {
       throw new BadRequestException(
         "Paid amount does not match the expected amount",
@@ -200,11 +204,10 @@ export class PaymentService {
         amountMinor,
         method,
         reference,
+        intent: "PURCHASE",
         description: `Extra Points: ${points} Points`,
-        mcomUserId:
-          method === PaymentCheckoutMethod.WALLET
-            ? business.mcomUserId
-            : undefined,
+        // Send the CHS identity for every rail when known (guide B4.1a).
+        mcomUserId: business.mcomUserId || undefined,
         externalCustomerId: business.id,
         metadata: { ...metadata, localCheckoutId: checkout.id },
         idempotencyKey,
@@ -316,11 +319,10 @@ export class PaymentService {
         amountMinor,
         method,
         reference,
+        intent: "PURCHASE",
         description: `${packageType} Package: ${packageName}`,
-        mcomUserId:
-          method === PaymentCheckoutMethod.WALLET
-            ? business.mcomUserId
-            : undefined,
+        // Send the CHS identity for every rail when known (guide B4.1a).
+        mcomUserId: business.mcomUserId || undefined,
         externalCustomerId: business.id,
         metadata: { ...metadata, localCheckoutId: checkout.id },
         idempotencyKey,

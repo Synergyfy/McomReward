@@ -114,4 +114,131 @@ describe("McomWalletPartnerService", () => {
       McomWalletError,
     );
   });
+
+  it("keeps the idempotency key in the header, not the debit body", async () => {
+    const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, transactionId: "tx_1" }),
+    } as Response);
+
+    const service = new McomWalletPartnerService(
+      config({
+        MCOM_SOLUTIONS_URL: "http://localhost:3010",
+        MCOM_HMAC_SECRET: HMAC_SECRET,
+      }),
+    );
+
+    await service.debit("user-1", 12.5, {
+      category: "PURCHASE",
+      description: "Reward spend",
+      reference: "reward-1",
+      idempotencyKey: "key-1",
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://localhost:3010/api/v1/wallet/partner/debit");
+    expect((init as RequestInit).headers).toMatchObject({
+      "X-Idempotency-Key": "key-1",
+    });
+
+    const body = JSON.parse(String((init as RequestInit).body));
+    expect(body).toMatchObject({
+      userId: "user-1",
+      amount: 12.5,
+      category: "PURCHASE",
+      reference: "reward-1",
+    });
+    expect(body).not.toHaveProperty("idempotencyKey");
+  });
+
+  it("keeps non-balance 422 errors as 422", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({
+        error: "DAILY_LIMIT_EXCEEDED",
+        message: "Daily limit",
+      }),
+    } as Response);
+
+    const service = new McomWalletPartnerService(
+      config({
+        MCOM_SOLUTIONS_URL: "http://localhost:3010",
+        MCOM_HMAC_SECRET: HMAC_SECRET,
+      }),
+    );
+
+    await expect(
+      service.debit("user-1", 10, {
+        category: "PURCHASE",
+        description: "Reward spend",
+        idempotencyKey: "key-1",
+      }),
+    ).rejects.toMatchObject({
+      code: "DAILY_LIMIT_EXCEEDED",
+      httpStatus: 422,
+    });
+  });
+
+  it("places, captures and releases wallet holds", async () => {
+    const fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, holdId: "hold_1" }),
+      } as Response);
+
+    const service = new McomWalletPartnerService(
+      config({
+        MCOM_SOLUTIONS_URL: "http://localhost:3010",
+        MCOM_HMAC_SECRET: HMAC_SECRET,
+      }),
+    );
+
+    await service.placeHold("user-1", 25, {
+      description: "Reserve for order",
+      idempotencyKey: "hold-key-1",
+    });
+    await service.captureHold("hold_1");
+    await service.releaseHold("hold_1");
+
+    const [placeUrl, placeInit] = fetchMock.mock.calls[0];
+    const [captureUrl, captureInit] = fetchMock.mock.calls[1];
+    const [releaseUrl, releaseInit] = fetchMock.mock.calls[2];
+
+    expect(placeUrl).toBe(
+      "http://localhost:3010/api/v1/wallet/partner/hold/place",
+    );
+    expect((placeInit as RequestInit).headers).toMatchObject({
+      "X-Idempotency-Key": "hold-key-1",
+    });
+    expect(captureUrl).toBe(
+      "http://localhost:3010/api/v1/wallet/partner/hold/capture",
+    );
+    expect(captureInit.body).toBe(JSON.stringify({ holdId: "hold_1" }));
+    expect(releaseUrl).toBe(
+      "http://localhost:3010/api/v1/wallet/partner/hold/release",
+    );
+    expect(releaseInit.body).toBe(JSON.stringify({ holdId: "hold_1" }));
+  });
+
+  it("looks up a transaction by idempotency key", async () => {
+    const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ transactionId: "tx_1" }),
+    } as Response);
+
+    const service = new McomWalletPartnerService(
+      config({
+        MCOM_SOLUTIONS_URL: "http://localhost:3010",
+        MCOM_HMAC_SECRET: HMAC_SECRET,
+      }),
+    );
+
+    await service.getTransaction("key-1", "idempotencyKey");
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://localhost:3010/api/v1/wallet/partner/transaction/key-1?by=idempotencyKey",
+    );
+  });
 });

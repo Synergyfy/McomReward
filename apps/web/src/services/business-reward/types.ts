@@ -12,8 +12,8 @@ export type RewardFulfilmentKind =
   | 'CENTRAL_COUPON';
 
 export interface RewardFulfilmentScope {
-  mode?: 'ALL' | 'LISTINGS' | 'ITEMS' | 'NO_SCOPE';
-  listingIds?: string[];
+  /** Mall rewards can only target the whole business/Mall or specific items. */
+  mode?: 'ALL' | 'ITEMS' | 'NO_SCOPE';
   productIds?: string[];
   serviceIds?: string[];
   planIds?: string[];

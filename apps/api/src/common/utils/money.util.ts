@@ -38,3 +38,22 @@ export function fromMinorUnits(minor: string | number): number {
 export function formatMinorUnits(minor: string | number): string {
   return fromMinorUnits(minor).toFixed(2);
 }
+
+/**
+ * Compare two minor-unit amounts exactly without assuming the transport type.
+ * MCOM should return strings, but a numeric response (or a legacy provider
+ * response) must not be mistaken for an amount mismatch.
+ */
+export function minorUnitsEqual(
+  left: string | number | null | undefined,
+  right: string | number | null | undefined,
+): boolean {
+  if (left === null || left === undefined) return false;
+  if (right === null || right === undefined) return false;
+
+  try {
+    return BigInt(String(left)) === BigInt(String(right));
+  } catch {
+    return false;
+  }
+}

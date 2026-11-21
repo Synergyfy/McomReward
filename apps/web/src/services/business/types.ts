@@ -137,7 +137,6 @@ export interface TierUsageResponse {
   tierName: string;
   features: {
     campaigns: TierUsageFeature;
-    rewards: TierUsageFeature;
     teamMembers: TierUsageFeature;
     monthlyPoints: TierUsageFeature;
   };

@@ -162,12 +162,8 @@ export function TierProgressionModal({
                     <h4 className="font-medium mt-2 mb-1">Quotas</h4>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Max Active Campaigns</Label>
+                            <Label>Number of Campaigns</Label>
                             <Input type="number" value={config.benefits.quotas?.maxActiveCampaigns || ''} onChange={e => updateBenefitQuota(level, 'maxActiveCampaigns', Number(e.target.value))} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Max Active Rewards</Label>
-                            <Input type="number" value={config.benefits.quotas?.maxActiveRewards || ''} onChange={e => updateBenefitQuota(level, 'maxActiveRewards', Number(e.target.value))} />
                         </div>
                         <div className="space-y-2">
                             <Label>Max Rewards Per Campaign</Label>
@@ -196,10 +192,6 @@ export function TierProgressionModal({
                         <div className="flex items-center space-x-2">
                             <Switch checked={config.benefits.featureFlags?.hasAccessToAdvancedAnalytics || false} onCheckedChange={c => updateBenefitFlag(level, 'hasAccessToAdvancedAnalytics', c)} />
                             <Label>Advanced Analytics</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Switch checked={config.benefits.featureFlags?.hasAccessToCRM || false} onCheckedChange={c => updateBenefitFlag(level, 'hasAccessToCRM', c)} />
-                            <Label>CRM Access</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                             <Switch checked={config.benefits.featureFlags?.canUpdateReward || false} onCheckedChange={c => updateBenefitFlag(level, 'canUpdateReward', c)} />

@@ -14,7 +14,12 @@ import {
   TransactionType,
 } from "./entities/wallet-transaction.entity";
 import { Business } from "../business/entities/business.entity";
-import { McomWalletPartnerService } from "./mcom-wallet-partner.service";
+import {
+  CentralHold,
+  CentralReceipt,
+  CentralTransaction,
+  McomWalletPartnerService,
+} from "./mcom-wallet-partner.service";
 
 @Injectable()
 export class WalletService {
@@ -97,6 +102,93 @@ export class WalletService {
     }
 
     return result;
+  }
+
+  private async resolveCentralUserId(businessId: string): Promise<string> {
+    if (!this.centralWallet?.isConfigured()) {
+      throw new HttpException(
+        {
+          error: "MCOM_WALLET_DISABLED",
+          message: "MCOM Wallet is not configured for this platform.",
+        },
+        503,
+      );
+    }
+
+    const business = await this.businessRepository.findOne({
+      where: { id: businessId },
+    });
+    if (!business?.mcomUserId) {
+      throw new BadRequestException({
+        code: "ACCOUNT_NOT_LINKED",
+        message:
+          "This business is not linked to an MCOM account. Sign in with MCOM SSO to link it.",
+      });
+    }
+    return business.mcomUserId;
+  }
+
+  /**
+   * Transactions originated by this platform for the linked MCOM user
+   * (guide A5). Central is the source of truth; the local mirror is only a
+   * fallback for legacy wallets that predate SSO linking.
+   */
+  async getCentralTransactions(
+    businessId: string,
+  ): Promise<CentralTransaction[]> {
+    if (this.centralWallet?.isConfigured()) {
+      try {
+        const mcomUserId = await this.resolveCentralUserId(businessId);
+        return await this.centralWallet.getTransactions(mcomUserId);
+      } catch (error: any) {
+        if (error?.status === 400 || error?.status === 403) throw error;
+        this.logger.warn(
+          `Central transactions unavailable for business ${businessId}: ${error?.message}`,
+        );
+      }
+    }
+
+    const wallet = await this.getWallet(businessId);
+    return (wallet.transactions || []).map((transaction) => ({
+      id: transaction.id,
+      type: transaction.type,
+      amount: Number(transaction.amount),
+      reference: transaction.reference,
+      description: transaction.reference,
+      processedAt: transaction.created_at?.toISOString?.(),
+    }));
+  }
+
+  async placeHold(
+    businessId: string,
+    amount: number,
+    opts: {
+      description?: string;
+      reference?: string;
+      metadata?: Record<string, unknown>;
+      idempotencyKey?: string;
+    } = {},
+  ): Promise<CentralHold> {
+    const mcomUserId = await this.resolveCentralUserId(businessId);
+    return this.centralWallet!.placeHold(mcomUserId, amount, opts);
+  }
+
+  async captureHold(
+    businessId: string,
+    holdId: string,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<CentralReceipt> {
+    await this.resolveCentralUserId(businessId);
+    return this.centralWallet!.captureHold(holdId, opts);
+  }
+
+  async releaseHold(
+    businessId: string,
+    holdId: string,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<CentralHold> {
+    await this.resolveCentralUserId(businessId);
+    return this.centralWallet!.releaseHold(holdId, opts);
   }
 
   async addTierAllocation(businessId: string, amount: number) {
@@ -201,16 +293,11 @@ export class WalletService {
           return true;
         }
       } catch (e: any) {
-        // 402 insufficient funds must surface (top-up prompt), not fall back.
-        if (e?.name === "McomWalletError" && e?.httpStatus === 402) {
-          throw new HttpException(
-            {
-              error: "WALLET_INSUFFICIENT_FUNDS",
-              message: e.message,
-              topUpUrl: e.topUpUrl,
-            },
-            402,
-          );
+        // A typed central-wallet failure (insufficient funds, frozen wallet,
+        // limits) is authoritative: surface it and do NOT silently spend from
+        // the local mirror. Only transport/unmapped-account errors fall back.
+        if (e?.name === "McomWalletError") {
+          this.centralWallet!.toHttpException(e);
         }
         this.logger.warn(
           `Central debit failed, falling back to local ledger: ${e?.message}`,

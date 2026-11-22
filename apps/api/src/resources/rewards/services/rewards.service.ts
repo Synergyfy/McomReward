@@ -23,6 +23,7 @@ import { RewardStatus } from "../enums/reward-status.enum";
 import { RewardAudience } from "../enums/reward-audience.enum";
 import { RewardType } from "../enums/reward-type.enum";
 import { PlanSubscription } from "../../plans/entities/plan-subscription.entity";
+import { resolveEffectiveSubscription } from "../../plans/utils/subscription-priority.util";
 import { Sector } from "../../sector/entities/sector.entity";
 import { Tier } from "../../tier/entities/tier.entity";
 import { In, Brackets } from "typeorm";
@@ -294,10 +295,11 @@ export class RewardsService {
     }
 
     // Check points Required against Plan Max Points
-    const subscription = await this.planSubscriptionRepository.findOne({
+    const subscriptions = await this.planSubscriptionRepository.find({
       where: { business: { id: businessId } },
       relations: ["planVariant"],
     });
+    const subscription = resolveEffectiveSubscription(subscriptions);
 
     const maxPoints = await this.resolveMaxRewardPoints(
       businessId,
@@ -352,10 +354,11 @@ export class RewardsService {
     }
 
     // 1. Check points Required against Plan Max Points
-    const subscription = await this.planSubscriptionRepository.findOne({
+    const subscriptions = await this.planSubscriptionRepository.find({
       where: { business: { id: businessId } },
       relations: ["planVariant"],
     });
+    const subscription = resolveEffectiveSubscription(subscriptions);
 
     const isPointsEnabled = createBusinessRewardDto.is_points_enabled ?? true;
     const isStampsEnabled = createBusinessRewardDto.is_stamps_enabled ?? false;
@@ -497,10 +500,11 @@ export class RewardsService {
 
     // Check points Required against Plan Max Points
     if (updateBusinessRewardDto.points_required) {
-      const subscription = await this.planSubscriptionRepository.findOne({
+      const subscriptions = await this.planSubscriptionRepository.find({
         where: { business: { id: businessId } },
         relations: ["planVariant"],
       });
+      const subscription = resolveEffectiveSubscription(subscriptions);
 
       const maxPoints = await this.resolveMaxRewardPoints(
         businessId,

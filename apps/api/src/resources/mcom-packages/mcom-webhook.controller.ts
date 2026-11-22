@@ -24,9 +24,11 @@ import {
 import { PlanVariant } from "../plans/entities/plan-variant.entity";
 import { Plan } from "../plans/entities/plan.entity";
 import { PlanSubscriptionService } from "../plans/services/plan-subscription.service";
+import { isCentralSubscription } from "../plans/utils/subscription-priority.util";
 import { McomCentralService } from "../sso/mcom-central.service";
 import { EntitlementSyncService } from "../sso/entitlement-sync.service";
 import { RewardFulfilmentService } from "../reward-fulfilment/reward-fulfilment.service";
+import { MembershipSyncService } from "../membership-sync/membership-sync.service";
 
 @ApiTags("MCOM Webhooks")
 @Controller("mcom")
@@ -44,6 +46,7 @@ export class McomWebhookController {
     private readonly mcomCentralService: McomCentralService,
     private readonly entitlementSyncService: EntitlementSyncService,
     private readonly rewardFulfilment: RewardFulfilmentService,
+    private readonly membershipSyncService: MembershipSyncService,
   ) {}
 
   private verifySignature(
@@ -143,6 +146,10 @@ export class McomWebhookController {
 
       case "package.expired":
         await this.handlePackageExpired(data);
+        break;
+
+      case "membership.updated":
+        await this.membershipSyncService.handleMembershipUpdated(data);
         break;
 
       case "payment.failed":
@@ -287,17 +294,34 @@ export class McomWebhookController {
       return;
     }
 
-    const subscription = await this.subscriptionRepository.findOne({
+    // Expire only the access Central provisioned. A locally purchased plan
+    // remains valid until its own expiry.
+    const subscriptions = await this.subscriptionRepository.find({
       where: { business: { id: business.id } },
     });
+    const centralSubscriptions = subscriptions.filter((subscription) =>
+      isCentralSubscription(subscription),
+    );
+    const toExpire = centralSubscriptions.filter(
+      (subscription) =>
+        subscription.status === SubscriptionStatus.ACTIVE ||
+        subscription.isActive === true,
+    );
 
-    if (subscription) {
-      subscription.status = SubscriptionStatus.EXPIRED;
-      subscription.isActive = false;
-      await this.subscriptionRepository.save(subscription);
+    if (toExpire.length > 0) {
+      for (const subscription of toExpire) {
+        subscription.status = SubscriptionStatus.EXPIRED;
+        subscription.isActive = false;
+      }
+      await this.subscriptionRepository.save(toExpire);
+      this.planSubscriptionService.invalidateSubscriptionCache(business.id);
+    }
+
+    const stillActive =
+      await this.planSubscriptionService.findActiveSubscription(business.id);
+    if (!stillActive) {
       business.membershipStatus = "expired";
       await this.businessRepository.save(business);
-      this.planSubscriptionService.invalidateSubscriptionCache(business.id);
     }
 
     this.logger.log(

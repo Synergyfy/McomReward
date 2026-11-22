@@ -197,12 +197,16 @@ export class AdminService {
     if (businesses.length === 0) return businesses;
     const businessIds = businesses.map((b) => b.id);
 
-    // Batch 1: latest subscription per business (single query with DISTINCT ON)
+    // Batch 1: the subscription that currently grants access. Prefer an
+    // unexpired row, then local > central > membership > trial.
     const latestSubs = await this.planSubscriptionRepository.query(
       `SELECT DISTINCT ON (sub.business_id) sub.id AS "subId"
        FROM plan_subscriptions sub
        WHERE sub.business_id = ANY($1)
-       ORDER BY sub.business_id, sub.created_at DESC`,
+       ORDER BY sub.business_id,
+         (sub.expires_at IS NULL OR sub.expires_at > NOW()) DESC,
+         sub.source ASC,
+         sub.created_at DESC`,
       [businessIds],
     );
     const subIds: string[] = (latestSubs ?? []).map((r: any) => r.subId).filter(Boolean);

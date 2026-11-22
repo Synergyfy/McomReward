@@ -1,4 +1,8 @@
 import { PlanSubscriptionService } from "./plan-subscription.service";
+import {
+  PlanSubscriptionSource,
+  SubscriptionStatus,
+} from "../entities/plan-subscription.entity";
 import type { PlatformEntitlement } from "../../sso/interfaces/entitlement.interface";
 
 function baseEntitlement(
@@ -55,7 +59,18 @@ function setup(
 
   const subscriptionRepository = {
     find: jest.fn(async () => subscriptions),
-    findOne: jest.fn(async () => options.subscription ?? null),
+    findOne: jest.fn(async (query?: any) => {
+      if (options.subscription) return options.subscription;
+      const source = query?.where?.source;
+      if (source) {
+        return (
+          subscriptions.find(
+            (subscription: any) => subscription.source === source,
+          ) ?? null
+        );
+      }
+      return null;
+    }),
     create: jest.fn((values: any) => ({ id: "created-sub", ...values })),
     save: jest.fn(async (value: any) => value),
   };
@@ -100,8 +115,10 @@ describe("PlanSubscriptionService.syncFromEntitlement", () => {
   it("does not create a plan subscription for a Central access pass", async () => {
     const centralSubscription = {
       id: "sub-1",
-      status: "active",
+      status: SubscriptionStatus.ACTIVE,
       isActive: true,
+      source: PlanSubscriptionSource.MEMBERSHIP,
+      transaction_id: "CENTRAL-ENTITLEMENT-PAID_MEMBERSHIP-rewards-plus",
     };
     const { service, subscriptionRepository, planRepository } = setup({
       existing: [centralSubscription],
@@ -259,6 +276,124 @@ describe("PlanSubscriptionService.syncFromEntitlement", () => {
 
     const values = subscriptionRepository.create.mock.calls[0][0] as any;
     expect(values.planVariantId).toBe("variant-gold-pro");
+  });
+
+  it("keeps a locally purchased plan when Central provisions a membership", async () => {
+    const localSubscription: any = {
+      id: "local-sub",
+      status: SubscriptionStatus.ACTIVE,
+      isActive: true,
+      source: PlanSubscriptionSource.LOCAL,
+      transaction_id: "ch_local_123",
+      planVariantId: "local-variant",
+      planVariant: { id: "local-variant" },
+    };
+    const membershipSubscription: any = {
+      id: "membership-sub",
+      status: SubscriptionStatus.ACTIVE,
+      isActive: true,
+      source: PlanSubscriptionSource.MEMBERSHIP,
+      transaction_id: "CENTRAL-ENTITLEMENT-PAID_MEMBERSHIP-rewards-plus",
+      planVariantId: "old-membership-variant",
+      planVariant: { id: "old-membership-variant" },
+    };
+
+    const { service, subscriptionRepository } = setup({
+      existing: [localSubscription, membershipSubscription],
+    });
+
+    await service.syncFromEntitlement("business-1", baseEntitlement());
+
+    // The local plan is never touched...
+    expect(localSubscription.planVariantId).toBe("local-variant");
+    expect(localSubscription.source).toBe(PlanSubscriptionSource.LOCAL);
+    expect(localSubscription.status).toBe(SubscriptionStatus.ACTIVE);
+
+    // ...while the membership row is updated independently.
+    expect(membershipSubscription.planVariantId).toBe("variant-1");
+    expect(membershipSubscription.source).toBe(
+      PlanSubscriptionSource.MEMBERSHIP,
+    );
+    expect(subscriptionRepository.create).not.toHaveBeenCalled();
+    expect(subscriptionRepository.save).toHaveBeenCalledWith(
+      membershipSubscription,
+    );
+  });
+
+  it("marks Central entitlements with the membership source", async () => {
+    const { service, subscriptionRepository } = setup();
+
+    await service.syncFromEntitlement("business-1", baseEntitlement());
+
+    const values = subscriptionRepository.create.mock.calls[0][0] as any;
+    expect(values.source).toBe(PlanSubscriptionSource.MEMBERSHIP);
+  });
+
+  it("marks Central trials with the trial source", async () => {
+    const { service, subscriptionRepository } = setup();
+    const trialExpiresAt = new Date(Date.now() + 86400000).toISOString();
+    const entitlement = baseEntitlement({
+      access: {
+        hasAccess: true,
+        accessType: "TRIAL_PROGRAMME",
+        upgradeUrl: "https://central.test/dashboard/memberships",
+      },
+      plan: {
+        planId: "trial_rewards",
+        planName: "Programme Trial Access",
+        source: "trial",
+        status: "trial",
+        expiresAt: trialExpiresAt,
+        quotas: {},
+        limits: {},
+        features: [],
+      },
+    });
+
+    await service.syncFromEntitlement("business-1", entitlement);
+
+    const values = subscriptionRepository.create.mock.calls[0][0] as any;
+    expect(values.source).toBe(PlanSubscriptionSource.TRIAL);
+  });
+
+  describe("effective subscription resolution", () => {
+    const local = (overrides: any = {}) => ({
+      id: "local-sub",
+      source: PlanSubscriptionSource.LOCAL,
+      status: SubscriptionStatus.ACTIVE,
+      expires_at: new Date(Date.now() + 30 * 86400000),
+      is_trial: false,
+      ...overrides,
+    });
+    const membership = (overrides: any = {}) => ({
+      id: "membership-sub",
+      source: PlanSubscriptionSource.MEMBERSHIP,
+      status: SubscriptionStatus.ACTIVE,
+      expires_at: new Date(Date.now() + 365 * 86400000),
+      is_trial: false,
+      ...overrides,
+    });
+
+    it("returns the local plan while both local and membership plans are active", async () => {
+      const { service } = setup({ existing: [membership(), local()] });
+
+      const active = await service.findActiveSubscription("business-1");
+
+      expect(active?.id).toBe("local-sub");
+    });
+
+    it("returns the membership plan once the local plan has expired", async () => {
+      const { service } = setup({
+        existing: [
+          local({ expires_at: new Date(Date.now() - 1000) }),
+          membership(),
+        ],
+      });
+
+      const active = await service.findActiveSubscription("business-1");
+
+      expect(active?.id).toBe("membership-sub");
+    });
   });
 
   it("maps a Central plan id that is one of our plan-variant ids", async () => {

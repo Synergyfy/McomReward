@@ -68,6 +68,7 @@ import {
   PlanSubscription,
   PlanSubscriptionStatus,
 } from "../plans/entities/plan-subscription.entity";
+import { resolveEffectiveSubscription } from "../plans/utils/subscription-priority.util";
 
 @Injectable()
 export class CampaignService {
@@ -1656,6 +1657,25 @@ export class CampaignService {
       .leftJoin("pv.tierLevel", "t")
       .where("bc.campaign_id = :campaignId", { campaignId })
       .andWhere("s.status = :status", { status: PlanSubscriptionStatus.ACTIVE })
+      // Count each business once, under the plan that actually grants access
+      // (local > central > membership > trial).
+      .andWhere(
+        `
+        (s.expires_at IS NULL OR s.expires_at > NOW())
+        AND NOT EXISTS (
+          SELECT 1 FROM plan_subscriptions s2
+          WHERE s2.business_id = s.business_id
+            AND s2.id <> s.id
+            AND s2.deleted_at IS NULL
+            AND s2.status = 'active'
+            AND (s2.expires_at IS NULL OR s2.expires_at > NOW())
+            AND (
+              s2.source < s.source
+              OR (s2.source = s.source AND s2.created_at > s.created_at)
+            )
+        )
+      `,
+      )
       .select([
         'COALESCE(t.id, pv.id) AS "tierId"',
         'COALESCE(t.name, pv.name) AS "tierName"',
@@ -1678,6 +1698,23 @@ export class CampaignService {
       .leftJoin("pv.tierLevel", "t")
       .where("bc.campaign_id = :campaignId", { campaignId })
       .andWhere("s.status = :status", { status: PlanSubscriptionStatus.ACTIVE })
+      .andWhere(
+        `
+        (s.expires_at IS NULL OR s.expires_at > NOW())
+        AND NOT EXISTS (
+          SELECT 1 FROM plan_subscriptions s2
+          WHERE s2.business_id = s.business_id
+            AND s2.id <> s.id
+            AND s2.deleted_at IS NULL
+            AND s2.status = 'active'
+            AND (s2.expires_at IS NULL OR s2.expires_at > NOW())
+            AND (
+              s2.source < s.source
+              OR (s2.source = s.source AND s2.created_at > s.created_at)
+            )
+        )
+      `,
+      )
       .select([
         'COALESCE(t.id, pv.id) AS "tierId"',
         'COUNT(pcb.id) AS "totalParticipants"',
@@ -1710,21 +1747,24 @@ export class CampaignService {
     });
     if (business && business.isSuperBusiness) return;
 
-    const activeSubscriptions = await this.planSubscriptionRepository.find({
+    const subscriptions = await this.planSubscriptionRepository.find({
       where: {
         business: { id: businessId },
         status: PlanSubscriptionStatus.ACTIVE,
       },
-      order: { expires_at: "DESC" },
     });
 
-    if (activeSubscriptions.length === 0) {
+    // Local plan > Central membership > trial. Use the expiry of the plan
+    // that actually grants access, not whichever row happens to be newest.
+    const effectiveSubscription = resolveEffectiveSubscription(subscriptions);
+
+    if (!effectiveSubscription) {
       throw new BadRequestException(
         "Business has no active plan subscription.",
       );
     }
 
-    const latestExpiry = activeSubscriptions[0].expires_at;
+    const latestExpiry = effectiveSubscription.expires_at;
     if (latestExpiry && new Date(endDate) > new Date(latestExpiry)) {
       throw new BadRequestException(
         `Campaign end date cannot exceed your plan subscription expiration date (${new Date(latestExpiry).toISOString().split("T")[0]}).`,

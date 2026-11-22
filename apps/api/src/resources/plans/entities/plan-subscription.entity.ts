@@ -34,12 +34,30 @@ export enum SubscriptionPlanType {
   SEASONAL = "seasonal",
 }
 
+/**
+ * Where a subscription came from. A business can hold one row per source at
+ * the same time, and access is resolved in this order:
+ *
+ *   LOCAL (bought here) > CENTRAL (direct plan from Central) >
+ *   MEMBERSHIP (bundled with a Central membership) > TRIAL
+ *
+ * The enum values are declared in priority order because Postgres also uses
+ * declaration order when sorting the enum.
+ */
+export enum PlanSubscriptionSource {
+  LOCAL = "local",
+  CENTRAL = "central",
+  MEMBERSHIP = "membership",
+  TRIAL = "trial",
+}
+
 export {
   SubscriptionStatus as PlanSubscriptionStatus,
   SubscriptionPlanType as PlanType,
 };
 
 @Entity({ name: "plan_subscriptions" })
+@Index("IDX_plan_subscriptions_business_source", ["business", "source"])
 export class PlanSubscription extends AbstractBaseEntity {
   @ApiProperty({
     description:
@@ -49,6 +67,19 @@ export class PlanSubscription extends AbstractBaseEntity {
   @ManyToOne(() => Business, { onDelete: "CASCADE" })
   @JoinColumn({ name: "business_id" })
   business: Business;
+
+  @ApiProperty({
+    description:
+      "Where the subscription came from. Locally purchased plans take priority over Central membership plans and trials.",
+    enum: PlanSubscriptionSource,
+    example: PlanSubscriptionSource.LOCAL,
+  })
+  @Column({
+    type: "enum",
+    enum: PlanSubscriptionSource,
+    default: PlanSubscriptionSource.LOCAL,
+  })
+  source: PlanSubscriptionSource;
 
   @ApiProperty({ description: "Foreign key linking to active PlanVariant" })
   @Column({ name: "plan_variant_id", type: "uuid", nullable: true })

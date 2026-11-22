@@ -13,6 +13,7 @@ import { Business } from "../business/entities/business.entity";
 import { Tier } from "../tier/entities/tier.entity";
 import {
   PlanSubscription,
+  PlanSubscriptionSource,
   SubscriptionBillingMethod,
   SubscriptionStatus,
   SubscriptionPlanType,
@@ -543,7 +544,10 @@ export class McomPackagesService implements OnModuleInit {
     // subscription so the confirm response can still issue fresh tokens.
     if (checkout.fulfilledAt) {
       const existing = await this.subscriptionRepository.findOne({
-        where: { business: { id: businessId } },
+        where: {
+          business: { id: businessId },
+          source: PlanSubscriptionSource.LOCAL,
+        },
       });
       if (existing) return existing;
     }
@@ -602,11 +606,17 @@ export class McomPackagesService implements OnModuleInit {
     const autoRenew = checkout.metadata?.autoRenew !== false;
     const billingMethod = this.mapBillingMethod(checkout.method);
 
+    // Buying here always owns the LOCAL row. A Central membership row may
+    // exist alongside it and must not be overwritten.
     let subscription = await this.subscriptionRepository.findOne({
-      where: { business: { id: business.id } },
+      where: {
+        business: { id: business.id },
+        source: PlanSubscriptionSource.LOCAL,
+      },
     });
 
     if (subscription) {
+      subscription.source = PlanSubscriptionSource.LOCAL;
       subscription.planVariantId = variant.id;
       subscription.planVariant = variant;
       subscription.priceId = price.id;
@@ -633,6 +643,7 @@ export class McomPackagesService implements OnModuleInit {
     } else {
       subscription = this.subscriptionRepository.create({
         business,
+        source: PlanSubscriptionSource.LOCAL,
         planVariantId: variant.id,
         planVariant: variant,
         priceId: price.id,
@@ -711,7 +722,10 @@ export class McomPackagesService implements OnModuleInit {
 
   async setAutoRenew(userId: string, autoRenew: boolean) {
     const subscription = await this.subscriptionRepository.findOne({
-      where: { business: { id: userId } },
+      where: {
+        business: { id: userId },
+        source: PlanSubscriptionSource.LOCAL,
+      },
     });
     if (!subscription) {
       throw new NotFoundException("No subscription found for this business");
@@ -738,19 +752,10 @@ export class McomPackagesService implements OnModuleInit {
   }
 
   async getMyActivePackage(userId: string) {
-    const subscriptionRelations = [
-      "planVariant",
-      "planVariant.plan",
-      "planVariant.tierLevel",
-      "planVariant.prices",
-      "price",
-      "payment",
-    ];
-
-    let subscription = await this.subscriptionRepository.findOne({
-      where: { business: { id: userId } },
-      relations: subscriptionRelations,
-    });
+    // Local plan > Central membership plan > trial. The resolver falls back
+    // to the newest record when everything has expired.
+    let subscription =
+      await this.planSubscriptionService.findOneByBusinessId(userId);
 
     const business = await this.businessRepository.findOne({
       where: { id: userId },
@@ -807,10 +812,8 @@ export class McomPackagesService implements OnModuleInit {
 
       if (entitlement) {
         await this.entitlementSyncService.apply(business.id, entitlement);
-        subscription = await this.subscriptionRepository.findOne({
-          where: { business: { id: userId } },
-          relations: subscriptionRelations,
-        });
+        subscription =
+          await this.planSubscriptionService.findOneByBusinessId(userId);
       }
     }
 
@@ -865,10 +868,12 @@ export class McomPackagesService implements OnModuleInit {
     const isTrial = planHasAccess && (subscription?.is_trial || false);
     const hasAccess = planHasAccess || Boolean(accessPass);
 
+    const isMembershipPlan =
+      subscription?.source === PlanSubscriptionSource.MEMBERSHIP;
     const accessType = planHasAccess
       ? isTrial
         ? "TRIAL_PROGRAMME"
-        : business?.entitlementSource === "membership"
+        : isMembershipPlan
           ? "PAID_MEMBERSHIP"
           : subscription?.isActive
             ? "DIRECT_PACKAGE"
@@ -929,7 +934,11 @@ export class McomPackagesService implements OnModuleInit {
       hasAccess,
       accessType,
       source: planHasAccess
-        ? business?.entitlementSource || (isTrial ? "trial" : "direct")
+        ? isTrial
+          ? "trial"
+          : isMembershipPlan
+            ? "membership"
+            : "direct"
         : accessPass
           ? "access-pass"
           : business?.entitlementSource || "direct",

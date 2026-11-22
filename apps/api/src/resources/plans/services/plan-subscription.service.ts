@@ -1,8 +1,9 @@
 import { Injectable, Logger, NotFoundException, Inject, forwardRef } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like, ILike } from "typeorm";
+import { Repository, ILike } from "typeorm";
 import {
   PlanSubscription,
+  PlanSubscriptionSource,
   SubscriptionStatus,
   SubscriptionPlanType,
 } from "../entities/plan-subscription.entity";
@@ -22,6 +23,11 @@ import {
   extractTierFromPlanName,
   stripTierSuffix,
 } from "../utils/plan-display.util";
+import {
+  isCentralSubscription,
+  resolveEffectiveSubscription,
+  resolveEffectiveSubscriptions,
+} from "../utils/subscription-priority.util";
 
 @Injectable()
 export class PlanSubscriptionService {
@@ -92,22 +98,30 @@ export class PlanSubscriptionService {
     this.activeSubscriptionCache.clear();
   }
 
+  private readonly subscriptionRelations = [
+    "planVariant",
+    "planVariant.plan",
+    "planVariant.tierLevel",
+    "planVariant.prices",
+    "price",
+    "payment",
+  ];
+
+  /**
+   * Resolve the subscription that currently governs access. A locally
+   * purchased plan always wins over a Central membership plan, which wins over
+   * a trial. When nothing is active we return the newest record so callers can
+   * still report an expired plan/trial.
+   */
   async findOneByBusinessId(
     businessId: string,
   ): Promise<PlanSubscription | null> {
     const subscriptions = await this.subscriptionRepository.find({
       where: { business: { id: businessId } },
-      relations: [
-        "planVariant",
-        "planVariant.plan",
-        "planVariant.tierLevel",
-        "planVariant.prices",
-        "price",
-        "payment",
-      ],
+      relations: this.subscriptionRelations,
       order: { created_at: "DESC" },
     });
-    return subscriptions[0] || null;
+    return resolveEffectiveSubscription(subscriptions);
   }
 
   async findActiveSubscriptions(
@@ -125,20 +139,13 @@ export class PlanSubscriptionService {
         business: { id: businessId },
         status: SubscriptionStatus.ACTIVE,
       },
-      relations: [
-        "planVariant",
-        "planVariant.plan",
-        "planVariant.tierLevel",
-        "planVariant.prices",
-        "price",
-        "payment",
-      ],
+      relations: this.subscriptionRelations,
     });
 
-    const now = new Date();
-    const filtered = subscriptions.filter(
-      (s) => !s.expires_at || new Date(s.expires_at) > now,
-    );
+    // Only the highest-priority active source grants access. Keeping the
+    // other source rows untouched lets a Central membership take over as
+    // soon as the local plan expires.
+    const filtered = resolveEffectiveSubscriptions(subscriptions);
 
     if (this.activeSubscriptionCache.size >= this.MAX_CACHE_SIZE) {
       const keysToDelete = Array.from(
@@ -228,9 +235,12 @@ export class PlanSubscriptionService {
   ): Promise<PlanSubscription | null> {
     if (!appPlan) return null;
 
+    const source = this.resolveAppPlanSource(appPlan);
+    const isTrial = source === PlanSubscriptionSource.TRIAL;
+    const fallbackDays = isTrial ? 14 : 365;
     const expiresAt = appPlan.expiresAt
       ? new Date(appPlan.expiresAt)
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      : new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000);
     const isExpired = expiresAt <= new Date();
     const isActive = appPlan.status === "active" && !isExpired;
 
@@ -256,8 +266,10 @@ export class PlanSubscriptionService {
       }
     }
 
+    // Only update the row for this source. A Central membership sync must
+    // never replace a plan the business purchased directly from us.
     let subscription = await this.subscriptionRepository.findOne({
-      where: { business: { id: businessId } },
+      where: { business: { id: businessId }, source },
       relations: ["planVariant", "price"],
     });
 
@@ -280,7 +292,12 @@ export class PlanSubscriptionService {
       subscription.isActive = isActive;
       subscription.expires_at = expiresAt;
       subscription.transaction_id = transactionId;
-      subscription.is_trial = false;
+      subscription.source = source;
+      subscription.is_trial = isTrial;
+      // Central owns this access; it must never be picked up by the local
+      // renewal scheduler.
+      subscription.autoRenew = false;
+      subscription.nextBillingAt = null;
     } else {
       const activePrice =
         variant?.prices?.find((p) => p.isActive) || variant?.prices?.[0];
@@ -297,7 +314,8 @@ export class PlanSubscriptionService {
           ? SubscriptionStatus.ACTIVE
           : SubscriptionStatus.EXPIRED,
         isActive,
-        is_trial: false,
+        is_trial: isTrial,
+        source,
         transaction_id: transactionId,
         payment_provider: PaymentProvider.STRIPE,
       });
@@ -319,7 +337,7 @@ export class PlanSubscriptionService {
    * may also be encoded in the plan name (e.g. "Gold Pro"). We always return
    * one of OUR variants so the dashboard can show the local plan + tier.
    */
-  private async resolveEntitlementVariant(
+  async resolveEntitlementVariant(
     planId?: string | null,
     planName?: string | null,
   ): Promise<PlanVariant | null> {
@@ -385,12 +403,12 @@ export class PlanSubscriptionService {
    * plans/passes are left alone.
    */
   private async expireCentralSubscriptions(businessId: string): Promise<void> {
-    const centralSubscriptions = await this.subscriptionRepository.find({
-      where: {
-        business: { id: businessId },
-        transaction_id: Like("CENTRAL-%"),
-      },
+    const subscriptions = await this.subscriptionRepository.find({
+      where: { business: { id: businessId } },
     });
+    const centralSubscriptions = subscriptions.filter((subscription) =>
+      isCentralSubscription(subscription),
+    );
 
     const active = centralSubscriptions.filter(
       (subscription) =>
@@ -429,6 +447,9 @@ export class PlanSubscriptionService {
     }
 
     const isTrial = accessType === "TRIAL_PROGRAMME";
+    const source = isTrial
+      ? PlanSubscriptionSource.TRIAL
+      : PlanSubscriptionSource.MEMBERSHIP;
 
     // Resolve expiry date
     let expiresAt: Date;
@@ -464,8 +485,11 @@ export class PlanSubscriptionService {
       }
     }
 
+    // A Central membership/trial only ever owns its own row. Locally
+    // purchased plans are never overwritten, so they keep priority until they
+    // expire.
     let subscription = await this.subscriptionRepository.findOne({
-      where: { business: { id: businessId } },
+      where: { business: { id: businessId }, source },
       relations: ["planVariant", "price"],
     });
 
@@ -496,7 +520,10 @@ export class PlanSubscriptionService {
       subscription.isActive = isActive;
       subscription.expires_at = expiresAt;
       subscription.transaction_id = transactionId;
+      subscription.source = source;
       subscription.is_trial = isTrial;
+      subscription.autoRenew = false;
+      subscription.nextBillingAt = null;
       if (isTrial && entitlement.trialContext?.daysRemaining !== undefined) {
         subscription.trial_days = entitlement.trialContext.daysRemaining;
       }
@@ -517,6 +544,7 @@ export class PlanSubscriptionService {
           : SubscriptionStatus.EXPIRED,
         isActive,
         is_trial: isTrial,
+        source,
         trial_days: isTrial
           ? (entitlement.trialContext?.daysRemaining || 14)
           : undefined,
@@ -549,10 +577,12 @@ export class PlanSubscriptionService {
     const expiresAt = new Date(centralPackage.expiresAt);
     const isExpired = expiresAt <= new Date();
 
+    // Central packages are membership bundles; keep them on their own row so
+    // a locally purchased plan is untouched.
     let subscription = await this.subscriptionRepository.findOne({
       where: {
         business: { id: businessId },
-        transaction_id: Like(`CENTRAL-%`),
+        source: PlanSubscriptionSource.MEMBERSHIP,
       },
       relations: ["planVariant"],
     });
@@ -568,6 +598,9 @@ export class PlanSubscriptionService {
       subscription.isActive = !isExpired;
       subscription.expires_at = expiresAt;
       subscription.is_trial = false;
+      subscription.source = PlanSubscriptionSource.MEMBERSHIP;
+      subscription.autoRenew = false;
+      subscription.nextBillingAt = null;
     } else {
       const activePrice =
         variant?.prices?.find((p) => p.isActive) || variant?.prices?.[0];
@@ -585,6 +618,7 @@ export class PlanSubscriptionService {
           : SubscriptionStatus.ACTIVE,
         isActive: !isExpired,
         is_trial: false,
+        source: PlanSubscriptionSource.MEMBERSHIP,
         transaction_id: `CENTRAL-${centralPackage.providerSubscriptionId}`,
         payment_provider:
           centralPackage.provider === "stripe"
@@ -596,6 +630,32 @@ export class PlanSubscriptionService {
     const saved = await this.subscriptionRepository.save(subscription);
     this.invalidateSubscriptionCache(businessId);
     return saved;
+  }
+
+  /**
+   * Map Central's `appPlan.source` onto one of our access sources. Anything
+   * bundled with a membership is treated as membership access; a direct app
+   * plan is still Central-owned (never `local`), so a locally purchased plan
+   * keeps priority.
+   */
+  private resolveAppPlanSource(appPlan: {
+    source?: string;
+    membershipPlanName?: string;
+  }): PlanSubscriptionSource {
+    const source = (appPlan.source || "").toLowerCase();
+
+    if (source === "trial") return PlanSubscriptionSource.TRIAL;
+    if (
+      source === "membership" ||
+      source === "bundle" ||
+      source === "webhook"
+    ) {
+      return PlanSubscriptionSource.MEMBERSHIP;
+    }
+    if (appPlan.membershipPlanName) {
+      return PlanSubscriptionSource.MEMBERSHIP;
+    }
+    return PlanSubscriptionSource.CENTRAL;
   }
 
   private mapPlanType(planName: string): SubscriptionPlanType {

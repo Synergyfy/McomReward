@@ -50,6 +50,7 @@ describe("RewardsService", () => {
     findOne: jest.fn(),
   };
   const mockPlanSubscriptionRepository = {
+    find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn(),
   };
 

@@ -73,6 +73,7 @@ import { BusinessAssetsModule } from "./resources/business-assets/business-asset
 import { ServiceMeshModule } from "./resources/service-mesh/service-mesh.module";
 import { PartnerRewardsModule } from "./resources/partner-rewards/partner-rewards.module";
 import { RewardFulfilmentModule } from "./resources/reward-fulfilment/reward-fulfilment.module";
+import { MembershipSyncModule } from "./resources/membership-sync/membership-sync.module";
 
 @Module({
   imports: [
@@ -148,6 +149,7 @@ import { RewardFulfilmentModule } from "./resources/reward-fulfilment/reward-ful
     ServiceMeshModule,
     PartnerRewardsModule,
     RewardFulfilmentModule,
+    MembershipSyncModule,
   ],
   controllers: [AppController],
   providers: [

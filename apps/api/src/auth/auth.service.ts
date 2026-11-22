@@ -15,10 +15,8 @@ import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Role } from "../common/role.enum";
 import { BusinessService } from "../resources/business/services/business.service";
 import { InjectRepository } from "@nestjs/typeorm";
-import {
-  PlanSubscription,
-  PlanSubscriptionStatus,
-} from "../resources/plans/entities/plan-subscription.entity";
+import { PlanSubscription } from "../resources/plans/entities/plan-subscription.entity";
+import { resolveEffectiveSubscriptions } from "../resources/plans/utils/subscription-priority.util";
 import { Repository } from "typeorm";
 import { PartnerService } from "../resources/partner/partner.service";
 import { Business } from "../resources/business/entities/business.entity";
@@ -141,23 +139,18 @@ export class AuthService {
         // Super businesses don't need subscription checks
         payload.hasActiveSubscription = true;
       } else {
-        const subscription = await this.planSubscriptionRepository.findOne({
+        const subscriptions = await this.planSubscriptionRepository.find({
           where: { business: { id: user.id } },
-          order: { created_at: "DESC" },
         });
-
-        // No trials — active means non-expired ACTIVE subscription
-        const isActive =
-          subscription &&
-          subscription.status === PlanSubscriptionStatus.ACTIVE &&
-          new Date(subscription.expires_at) > new Date();
+        const effective = resolveEffectiveSubscriptions(subscriptions);
+        const isActive = effective.length > 0;
 
         response.user.subscription = {
-          isActive: !!isActive,
-          isTrial: false,
+          isActive,
+          isTrial: effective[0]?.is_trial === true,
         };
 
-        payload.hasActiveSubscription = !!isActive;
+        payload.hasActiveSubscription = isActive;
       }
     }
 
@@ -359,17 +352,13 @@ export class AuthService {
     };
 
     if (userType === "business") {
-      const subscription = await this.planSubscriptionRepository.findOne({
+      const subscriptions = await this.planSubscriptionRepository.find({
         where: { business: { id: user.id } },
-        order: { created_at: "DESC" },
       });
-
       const isActive =
-        subscription &&
-        subscription.status === PlanSubscriptionStatus.ACTIVE &&
-        new Date(subscription.expires_at) > new Date();
+        resolveEffectiveSubscriptions(subscriptions).length > 0;
 
-      payload.hasActiveSubscription = !!isActive;
+      payload.hasActiveSubscription = isActive;
     }
 
     const accessExpiresIn =

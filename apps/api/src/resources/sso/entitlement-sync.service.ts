@@ -7,9 +7,9 @@ import { PlatformEntitlement } from "./interfaces/entitlement.interface";
  * Single entry point for applying a MCOM Central `PlatformEntitlement` to our
  * local records.
  *
- * Central resolves the access priority for us (membership > access pass >
- * trial), so all we have to do is provision the matching local entitlement and
- * revoke anything Central no longer grants. Each side is responsible for
+ * Access priority is local plan > Central membership plan > trial. A Central
+ * membership is still recorded while a local plan is active, so it can take
+ * over automatically when the local plan expires. Each side is responsible for
  * cleaning up only records that Central itself created — locally purchased
  * plans and passes are never touched.
  */

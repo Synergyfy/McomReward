@@ -319,7 +319,7 @@ export class PlanSubscriptionService {
    * may also be encoded in the plan name (e.g. "Gold Pro"). We always return
    * one of OUR variants so the dashboard can show the local plan + tier.
    */
-  private async resolveEntitlementVariant(
+  async resolveEntitlementVariant(
     planId?: string | null,
     planName?: string | null,
   ): Promise<PlanVariant | null> {

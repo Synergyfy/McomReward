@@ -27,6 +27,7 @@ import { PlanSubscriptionService } from "../plans/services/plan-subscription.ser
 import { McomCentralService } from "../sso/mcom-central.service";
 import { EntitlementSyncService } from "../sso/entitlement-sync.service";
 import { RewardFulfilmentService } from "../reward-fulfilment/reward-fulfilment.service";
+import { MembershipSyncService } from "../membership-sync/membership-sync.service";
 
 @ApiTags("MCOM Webhooks")
 @Controller("mcom")
@@ -44,6 +45,7 @@ export class McomWebhookController {
     private readonly mcomCentralService: McomCentralService,
     private readonly entitlementSyncService: EntitlementSyncService,
     private readonly rewardFulfilment: RewardFulfilmentService,
+    private readonly membershipSyncService: MembershipSyncService,
   ) {}
 
   private verifySignature(
@@ -143,6 +145,10 @@ export class McomWebhookController {
 
       case "package.expired":
         await this.handlePackageExpired(data);
+        break;
+
+      case "membership.updated":
+        await this.membershipSyncService.handleMembershipUpdated(data);
         break;
 
       case "payment.failed":

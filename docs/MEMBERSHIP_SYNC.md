@@ -43,6 +43,26 @@ The endpoint is signed with `MCOM_WEBHOOK_SECRET` (falling back to
 If the event says `active` but the expiry is already in the past, it is treated
 as expired.
 
+## Access priority
+
+A business can hold more than one source of access at the same time. The local
+`plan_subscriptions` row records the source, and access is resolved in this
+order:
+
+| Priority | Source | Meaning |
+| --- | --- | --- |
+| 1 | `local` | A plan bought directly from MCOM Rewards. |
+| 2 | `central` | A direct plan provisioned by Central (legacy `appPlan`). |
+| 3 | `membership` | A plan bundled with a Central membership. |
+| 4 | `trial` | An active Central trial. |
+
+A locally purchased plan therefore shadows the membership plan for as long as
+it is active. The membership row is still kept up to date in the background. If
+the local plan expires, the membership plan automatically becomes the effective
+entitlement without needing another webhook. Revoking or expiring the
+membership only expires Central-owned rows; locally purchased plans are never
+touched.
+
 ## How plans are matched
 
 `package.externalPlanId` is the identifier this app published to Central. It can

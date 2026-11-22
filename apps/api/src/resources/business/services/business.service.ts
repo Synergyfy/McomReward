@@ -765,9 +765,11 @@ export class BusinessService {
           ? new Date(rewardsPackage.expiresAt)
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    const isAnnual =
-      activeSub?.plan_type === PlanType.ANNUAL ||
-      rewardsPackage?.packageName?.toLowerCase().includes("annual");
+    // When an active plan exists it is the authority; the Central package is
+    // only a fallback for legacy accounts without a local subscription row.
+    const isAnnual = activeSub
+      ? activeSub.plan_type === PlanType.ANNUAL
+      : rewardsPackage?.packageName?.toLowerCase().includes("annual");
     const durationMonths = isAnnual ? 12 : 1;
 
     const totalAllowance = monthlyAllowance * durationMonths;

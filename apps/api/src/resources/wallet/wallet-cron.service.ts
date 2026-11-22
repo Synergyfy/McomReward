@@ -11,6 +11,7 @@ import {
   PlanSubscription,
   PlanSubscriptionStatus,
 } from "../plans/entities/plan-subscription.entity";
+import { resolveEffectiveSubscriptions } from "../plans/utils/subscription-priority.util";
 import {
   AccessPassSubscription,
   AccessPassSubscriptionStatus,
@@ -167,13 +168,53 @@ export class WalletCronService {
       if (chunk.length === 0) break;
       skip += chunk.length;
 
+      // A business may hold several source rows (local plan + Central
+      // membership + trial). Only the highest-priority active plan sets the
+      // allowance. Load the complete set for these businesses because the
+      // competing row may fall in a different page.
+      const businessIds = [
+        ...new Set(
+          chunk
+            .map((subscription) => subscription.business?.id)
+            .filter(Boolean) as string[],
+        ),
+      ];
+      const effectiveSubscriptionIds = new Set<string>();
+      if (businessIds.length > 0) {
+        const allSubscriptions = await this.planSubscriptionRepository.find({
+          where: {
+            business: { id: In(businessIds) },
+            status: PlanSubscriptionStatus.ACTIVE,
+          },
+          relations: ["business"],
+        });
+        const byBusiness = new Map<string, PlanSubscription[]>();
+        for (const subscription of allSubscriptions) {
+          const businessId = subscription.business?.id;
+          if (!businessId) continue;
+          const list = byBusiness.get(businessId) || [];
+          list.push(subscription);
+          byBusiness.set(businessId, list);
+        }
+        for (const subscriptions of byBusiness.values()) {
+          for (const subscription of resolveEffectiveSubscriptions(
+            subscriptions,
+          )) {
+            effectiveSubscriptionIds.add(subscription.id);
+          }
+        }
+      }
+
       // One transaction per chunk for local mirror rows (not per row).
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       try {
         for (const subscription of chunk) {
-          if (!subscription.business) {
+          if (
+            !subscription.business ||
+            !effectiveSubscriptionIds.has(subscription.id)
+          ) {
             skipped++;
             continue;
           }

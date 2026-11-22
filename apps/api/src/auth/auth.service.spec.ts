@@ -38,9 +38,11 @@ describe("AuthService", () => {
 
   const mockBusinessService = {
     findOne: jest.fn(),
+    findById: jest.fn(),
   };
 
   const mockPlanSubscriptionRepository = {
+    find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn(),
   };
 

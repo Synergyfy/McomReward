@@ -36,6 +36,7 @@ import {
   PlanSubscription,
   PlanSubscriptionStatus,
 } from "../plans/entities/plan-subscription.entity";
+import { resolveEffectiveSubscription } from "../plans/utils/subscription-priority.util";
 import { PaginationDto } from "../../common/dto/pagination.dto";
 import { McomPaymentsService } from "../payment/mcom-payments.service";
 import { PaymentCheckoutService } from "../payment/payment-checkout.service";
@@ -135,13 +136,14 @@ export class GroupCircleService {
         if (createDto.type === GroupCircleType.SMART_MONEY) {
           await this.validateSmartMoneyRules(createDto, business, manager);
 
-          const subscription = await manager.findOne(PlanSubscription, {
+          const subscriptions = await manager.find(PlanSubscription, {
             where: {
               business: { id: business.id },
               status: PlanSubscriptionStatus.ACTIVE,
             },
             relations: ["planVariant"],
           });
+          const subscription = resolveEffectiveSubscription(subscriptions);
 
           const limits = await this.getSmartMoneyLimits(subscription);
           if (
@@ -294,13 +296,14 @@ export class GroupCircleService {
     manager?: EntityManager,
   ) {
     const repo = manager || this.circleRepo.manager;
-    const subscription = await repo.findOne(PlanSubscription, {
+    const subscriptions = await repo.find(PlanSubscription, {
       where: {
         business: { id: business.id },
         status: PlanSubscriptionStatus.ACTIVE,
       },
       relations: ["planVariant"],
     });
+    const subscription = resolveEffectiveSubscription(subscriptions);
 
     const limits = await this.getSmartMoneyLimits(subscription);
 
@@ -567,16 +570,14 @@ export class GroupCircleService {
     if (!member) throw new NotFoundException("Member not found");
 
     // Optional: Validate amount against limits
-    const subscription = await this.circleRepo.manager.findOne(
-      PlanSubscription,
-      {
-        where: {
-          business: { id: businessId },
-          status: PlanSubscriptionStatus.ACTIVE,
-        },
-        relations: ["planVariant"],
+    const subscriptions = await this.circleRepo.manager.find(PlanSubscription, {
+      where: {
+        business: { id: businessId },
+        status: PlanSubscriptionStatus.ACTIVE,
       },
-    );
+      relations: ["planVariant"],
+    });
+    const subscription = resolveEffectiveSubscription(subscriptions);
     const limits = await this.getSmartMoneyLimits(subscription);
     if (dto.amount > limits.maxContributionAmount) {
       throw new BadRequestException(
